@@ -1,5 +1,6 @@
 build
 build_clang
+cmake-build-debug
 CMakeLists.txt.*
 *.autosave
 /compile_commands.json
@@ -11,3 +12,4 @@ test_env_cmake.h
 /uninstall.sh
 .vscode
 .orig
+.idea
