@@ -42,6 +42,14 @@
  9. `make -j8`
      Note that the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
  10. `make install`
+ 
+## Building documentation
+
+1. `cp -r docs build/docs` 
+2. `cd build`
+3. `doxygen Doxyfile.doxygen` 
+
+documentation can be found in a new `doxygen` folder
 
 ## Running the simulation
 
