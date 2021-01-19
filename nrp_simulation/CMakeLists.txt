@@ -166,8 +166,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 		${NAMESPACE_NAME}::${LIBRARY_NAME}
 		NRPNestJSONEngine::NRPNestJSONEngine
 		NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
-		GTest::gtest
-		GTest::gtest_main)
+		GTest::GTest
+		GTest::Main)
 
 	gtest_discover_tests(${TEST_NAME}
 		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
