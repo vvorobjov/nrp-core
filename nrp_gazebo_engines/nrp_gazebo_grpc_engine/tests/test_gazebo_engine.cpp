@@ -45,8 +45,6 @@ TEST(TestGazeboEngine, Start)
 	conf.gazeboWorldFile() = TEST_EMPTY_WORLD_FILE;
 	conf.maxWorldLoadTime() = 1;
 
-	conf.userProcStartParams().push_back("--verbose");
-
 	confHolder.Data = conf.writeConfig();
 
 	std::cout << confHolder.Data.dump(4, ' ') << std::endl;
@@ -71,8 +69,6 @@ TEST(TestGazeboEngine, WorldPlugin)
 	conf.gazeboRNGSeed() = 12345;
 	conf.gazeboWorldFile() = TEST_WORLD_PLUGIN_FILE;
 
-	conf.userProcStartParams().push_back("--verbose");
-
 	confHolder.Data = conf.writeConfig();
 
 	// Launch gazebo server
@@ -85,7 +81,7 @@ TEST(TestGazeboEngine, WorldPlugin)
 	sleep(1);
 
 	ASSERT_NO_THROW(engine->initialize());
-	ASSERT_NO_THROW(engine->runLoopStep(SimulationTime(1000000)));
+	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 }
 
@@ -100,8 +96,6 @@ TEST(TestGazeboEngine, CameraPlugin)
 	conf.gazeboWorldFile() = TEST_CAMERA_PLUGIN_FILE;
 
 	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
-
-	conf.userProcStartParams().push_back("--verbose");
 
 	confHolder.Data = conf.writeConfig();
 
@@ -154,8 +148,6 @@ TEST(TestGazeboEngine, JointPlugin)
 
 	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
 
-	conf.userProcStartParams().push_back("--verbose");
-
 	confHolder.Data = conf.writeConfig();
 
 	// Launch gazebo server
@@ -198,8 +190,6 @@ TEST(TestGazeboEngine, LinkPlugin)
 	conf.gazeboWorldFile() = TEST_LINK_PLUGIN_FILE;
 
 	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
-
-	conf.userProcStartParams().push_back("--verbose");
 
 	confHolder.Data = conf.writeConfig();
 

@@ -99,6 +99,9 @@ TEST(SimulationLoopTest, RunLoop)
 	EngineInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 	EngineInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
+	// TODO Without this, gazebo engine fails to launch. Fix it!
+	sleep(1);
+
 	SimulationLoop simLoop(config, {brain, physics});
 
 	ASSERT_NO_THROW(simLoop.initLoop());
