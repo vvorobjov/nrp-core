@@ -423,7 +423,7 @@
           <material>
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/BlueGlow</name>
+              <name>Gazebo/RedGlow</name>
             </script>
           </material>
         </visual>
@@ -3441,7 +3441,6 @@
     <atmosphere type='adiabatic'/>
     <physics type='ode'>
       <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
     <scene>
@@ -3846,7 +3845,7 @@
         </link>
       </model>
       <model name='husky'>
-        <pose>-0.009853 0.086704 0.187752 1e-06 1e-06 -0.138237</pose>
+        <pose>-0.009853 0.086704 0.187752 1e-06 1e-06 1.66944</pose>
         <scale>1 1 1</scale>
         <link name='back_left_wheel'>
           <pose>-0.224073 0.404732 0.222752 3.14157 -1.20629 3.00337</pose>

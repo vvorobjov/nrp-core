@@ -69,22 +69,22 @@ def transceiver_function(camera):
     res = detect_red(camera)
     
     # Set to True to display camera image data and pause for 10 s
-    if False and cam_height > 0 and cam_width > 0:
-        img = camera.image_data.reshape((camDevice.image_height,camDevice.image_width,3))
+    if False and camera.image_height > 0 and camera.image_width > 0:
+        img = Image.fromarray(camera.image_data.reshape((camera.image_height,camera.image_width,3)))
         img.show()
         time.sleep(10)
 
-    print("Left Red:  " + str(res.left))
-    print("Right Red: " + str(res.right))
-    print("Go On:     " + str(res.go_on))
+    # print("Left Red:  " + str(res.left))
+    # print("Right Red: " + str(res.right))
+    # print("Go On:     " + str(res.go_on))
 
     lpg = NestDevice("lpg", "nest")
-    lpg.data = {'rate': 2000.0*res.left}
     rpg = NestDevice("rpg", "nest")
-    rpg.data = {'rate': 2000.0*res.right}
-
     gpg = NestDevice("gpg", "nest")
+
+    lpg.data = {'rate': 2000.0*res.left}
+    rpg.data = {'rate': 2000.0*res.right}
     gpg.data = {'rate': 75.0*res.go_on}
 
-    return [ rpg, lpg, gpg ]
+    return [ lpg, rpg, gpg ]
 
