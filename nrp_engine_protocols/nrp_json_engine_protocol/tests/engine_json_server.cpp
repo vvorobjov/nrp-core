@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@
 #include <restclient-cpp/restclient.h>
 
 using namespace testing;
-
-using dcm_t = DeviceConversionMechanism<nlohmann::json, nlohmann::json::const_iterator>;
 
 class TestEngineJSONServer
         : public EngineJSONServer
@@ -124,14 +122,14 @@ TEST(EngineJSONServerTest, Functions)
 	ASSERT_EQ(retData.size(), 1);
 
 	data = nlohmann::json();
-	data.update(dcm_t::serializeID(dev1.id()));
-	data.update(dcm_t::serializeID(dev2.id()));
+	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev1.id()));
+	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev2.id()));
 	retData = server.getDeviceData(data);
-	ASSERT_STREQ(retData["device1"][dcm_t::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
-	ASSERT_STREQ(retData["device2"][dcm_t::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
+	ASSERT_STREQ(retData["device1"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
+	ASSERT_STREQ(retData["device2"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
 	ASSERT_EQ(retData.size(), 2);
 
-	data = dcm_t::serializeID(devThrow.id());
+	data = DeviceSerializerMethods<nlohmann::json>::serializeID(devThrow.id());
 	ASSERT_THROW(server.getDeviceData(data), std::invalid_argument);
 
 	// Clear devices
@@ -179,12 +177,12 @@ TEST(EngineJSONServerTest, HttpRequests)
 
 	// Run get server command
 	data.clear();
-	data.update(dcm_t::serializeID(dev1.id()));
-	data.update(dcm_t::serializeID(dev2.id()));
+	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev1.id()));
+	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev2.id()));
 	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
 	retData = nlohmann::json::parse(resp.body);
-	ASSERT_STREQ(retData["device1"][dcm_t::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
-	ASSERT_STREQ(retData["device2"][dcm_t::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
+	ASSERT_STREQ(retData["device1"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
+	ASSERT_STREQ(retData["device2"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
 	ASSERT_EQ(retData.size(), 2);
 
 	// Run set server command

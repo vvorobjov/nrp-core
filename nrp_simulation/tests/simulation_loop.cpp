@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,10 +58,10 @@ TEST(SimulationLoopTest, Constructor)
 	SimulationConfigSharedPtr config(new SimulationConfig(simConfig));
 	config->engineConfigs().resize(2);
 
-	EngineInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	config->engineConfigs().at(1).Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
-	EngineInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NO_THROW(SimulationLoop simLoop(config, {brain, physics}));
 }
@@ -96,8 +96,8 @@ TEST(SimulationLoopTest, RunLoop)
 		config->engineConfigs().at(1).Data = gazeboCfg.writeConfig();
 	}
 
-	EngineInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-	EngineInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	// TODO Without this, gazebo engine fails to launch. Fix it!
 	sleep(1);

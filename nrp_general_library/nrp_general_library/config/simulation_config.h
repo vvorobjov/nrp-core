@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,19 @@ struct SimulationConfigConst
 	static constexpr FixedString SimulationTimeout = "SimulationTimeout";
 	static constexpr unsigned int DefSimulationTimeout = 0;
 
+    /*!
+     * \brief Simulation Timestep.
+     * Defines how far the simulation should progress in between processing client requests.
+     */
+    static constexpr FixedString SimulationTimestep = "SimulationTimestep";
+    static constexpr float DefSimulationTimestep = 0.01f;
+
+    /*!
+	 * \brief Process Launcher Type. Can be used to change the way engine processes are started
+	 */
+    static constexpr FixedString ProcessLauncherType = "ProcessLauncher";
+    static constexpr std::string_view DefProcessLauncherType = "Basic";
+
 	/*!
 	 * \brief Simulator configuration. Can vary depending on the type of brain
 	 */
@@ -64,12 +77,16 @@ struct SimulationConfigConst
 	static constexpr FixedString SimName = "SimulationName";
 
 	using SPropNames = PropNames<SimulationConfigConst::SimulationTimeout,
+	                             SimulationConfigConst::SimulationTimestep,
+	                             SimulationConfigConst::ProcessLauncherType,
 	                             SimulationConfigConst::EngineSimulatorsConfig,
 								 SimulationConfigConst::TFArrayConfig,
-	                             SimName>;
+								 SimulationConfigConst::SimName>;
 
 	using SProps = JSONConfigProperties<SimulationConfig, SimulationConfigConst::SPropNames,
 	                                    unsigned int,
+	                                    float,
+                                        std::string,
 										std::vector<SimulationConfigConst::config_storage_t>,
 	                                    std::vector<SimulationConfigConst::config_storage_t>,
 										std::string >;
@@ -88,8 +105,14 @@ class SimulationConfig
 		const std::string &name() const;
 		std::string &name();
 
-		unsigned int simulationTimeOut() const;
 		unsigned int &simulationTimeOut();
+        unsigned int simulationTimeOut() const;
+
+        float &simulationTimestep();
+        float simulationTimestep() const;
+
+        std::string &processLauncherType();
+        const std::string &processLauncherType() const;
 
 		const tf_configs_t &engineConfigs() const;
 		tf_configs_t &engineConfigs();

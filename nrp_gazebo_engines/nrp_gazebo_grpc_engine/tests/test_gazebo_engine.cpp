@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ TEST(TestGazeboEngine, CameraPlugin)
 
 	ASSERT_NO_THROW(engine->initialize());
 
-	auto devices = engine->requestOutputDevices({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
@@ -162,7 +162,7 @@ TEST(TestGazeboEngine, JointPlugin)
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->requestOutputDevices({DeviceIdentifier("youbot::base_footprint_joint", conf.engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", conf.engineName(), PhysicsJoint::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
@@ -176,7 +176,7 @@ TEST(TestGazeboEngine, JointPlugin)
 	newJointDev.setVelocity(NAN);
 	newJointDev.setPosition(newTargetPos);
 
-	ASSERT_NO_THROW(engine->handleInputDevices({&newJointDev}));
+	ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
 }
 
 TEST(TestGazeboEngine, LinkPlugin)
@@ -205,7 +205,7 @@ TEST(TestGazeboEngine, LinkPlugin)
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->requestOutputDevices({DeviceIdentifier("link_youbot::base_footprint", conf.engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", conf.engineName(), PhysicsJoint::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());

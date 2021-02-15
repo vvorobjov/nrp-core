@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,21 @@
 #include <nlohmann/json.hpp>
 
 #include "nrp_general_library/config/engine_config.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 
 template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG, DEVICE_C ...DEVICES>
 class EngineGrpcClient
-    : public Engine<ENGINE, ENGINE_CONFIG>
+    : public EngineClient<ENGINE, ENGINE_CONFIG>
 {
     void prepareRpcContext(grpc::ClientContext * context)
     {
-        // Set RPC timeout, if it has been specified by the user
+        // let client wait for server ready
+        context->set_wait_for_ready(true);
 
+        // Set RPC timeout (in absolute time), if it has been specified by the user
         if(this->_rpcTimeout > SimulationTime::zero())
         {
             context->set_deadline(std::chrono::system_clock::now() + this->_rpcTimeout);
@@ -51,7 +53,7 @@ class EngineGrpcClient
     public:
 
         EngineGrpcClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-            : Engine<ENGINE, ENGINE_CONFIG>(config, std::move(launcher))
+            : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher))
         {
             std::string serverAddress = this->engineConfig()->engineServerAddress();
 
@@ -194,7 +196,7 @@ class EngineGrpcClient
             this->_engineTime = this->_loopStepThread.get();
         }
 
-		virtual void handleInputDevices(const typename EngineInterface::device_inputs_t &inputDevices) override
+		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
         {
             EngineGrpc::SetDeviceRequest request;
             EngineGrpc::SetDeviceReply   reply;
@@ -202,7 +204,7 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            for(const auto &device : inputDevices)
+            for(const auto &device : devicesArray)
             {
                 if(device->engineName().compare(this->engineName()) == 0)
                 {
@@ -215,7 +217,7 @@ class EngineGrpcClient
 
             if(!status.ok())
             {
-                const auto errMsg = "Engine server handleInputDevices failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                const auto errMsg = "Engine server sendDevicesToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
             }
         }
@@ -242,9 +244,9 @@ class EngineGrpcClient
             }
         }
 
-        typename EngineInterface::device_outputs_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
+        typename EngineClientInterface::devices_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
         {
-            typename EngineInterface::device_outputs_set_t interfaces;
+            typename EngineClientInterface::devices_set_t interfaces;
 
             for(int i = 0; i < reply.reply_size(); i++)
             {
@@ -280,7 +282,7 @@ class EngineGrpcClient
         }
 
 	protected:
-		virtual typename EngineInterface::device_outputs_set_t requestOutputDeviceCallback(const typename EngineInterface::device_identifiers_t &deviceIdentifiers) override
+		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			EngineGrpc::GetDeviceRequest request;
 			EngineGrpc::GetDeviceReply   reply;
@@ -302,7 +304,7 @@ class EngineGrpcClient
 
 			if(!status.ok())
 			{
-				const auto errMsg = "Engine server getOutputDevices failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+				const auto errMsg = "Engine client getDevicesFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
 				throw std::runtime_error(errMsg);
 			}
 

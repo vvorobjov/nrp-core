@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -405,15 +405,15 @@ TEST(EngineGrpc, SetDeviceData)
 
     input_devices.push_back(&dev1);
 
-    // The gRPC server isn't running, so the handleInputDevices command should fail
+    // The gRPC server isn't running, so the sendDevicesToEngine command should fail
 
-    ASSERT_THROW(client.handleInputDevices(input_devices), std::runtime_error);
+    ASSERT_THROW(client.sendDevicesToEngine(input_devices), std::runtime_error);
 
     // Normal command execution
 
     server.startServer();
     testSleep(1500);
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
 	ASSERT_EQ(deviceController.getDeviceInformationCallback()->id().Name,       deviceName);
 	ASSERT_EQ(deviceController.getDeviceInformationCallback()->id().Type,       deviceType);
@@ -428,7 +428,7 @@ TEST(EngineGrpc, SetDeviceData)
 
     input_devices.push_back(&dev2);
 
-    ASSERT_THROW(client.handleInputDevices(input_devices), std::runtime_error);
+    ASSERT_THROW(client.sendDevicesToEngine(input_devices), std::runtime_error);
 
     // TODO Add test for setData timeout
 }
@@ -458,20 +458,20 @@ TEST(EngineGrpc, GetDeviceData)
 
     input_devices.push_back(&dev1);
 
-    EngineInterface::device_identifiers_t deviceIdentifiers;
+    EngineClientInterface::device_identifiers_set_t deviceIdentifiers;
     deviceIdentifiers.insert(devId);
 
-    // The gRPC server isn't running, so the getOutputDevices command should fail
+    // The gRPC server isn't running, so the updateDevicesFromEngine command should fail
 
-    ASSERT_THROW(client.requestOutputDevices(deviceIdentifiers), std::runtime_error);
+    ASSERT_THROW(client.updateDevicesFromEngine(deviceIdentifiers), std::runtime_error);
 
     // Normal command execution
 
     server.startServer();
     testSleep(1500);
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
-    const auto output = client.requestOutputDevices(deviceIdentifiers);
+    const auto output = client.updateDevicesFromEngine(deviceIdentifiers);
 
     ASSERT_EQ(output.size(), 1);
     ASSERT_EQ(output.at(0)->name(),       deviceName);
@@ -487,7 +487,7 @@ TEST(EngineGrpc, GetDeviceData)
 
     deviceIdentifiers.insert(devId2);
 
-    ASSERT_THROW(client.requestOutputDevices(deviceIdentifiers), std::runtime_error);
+    ASSERT_THROW(client.updateDevicesFromEngine(deviceIdentifiers), std::runtime_error);
 
     // TODO Add test for getData timeout
 }
@@ -526,13 +526,13 @@ TEST(EngineGrpc, GetDeviceData2)
     input_devices.push_back(&dev2);
 
     server.startServer();
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
-    EngineInterface::device_identifiers_t deviceIdentifiers;
+    EngineClientInterface::device_identifiers_set_t deviceIdentifiers;
     deviceIdentifiers.insert(devId1);
     deviceIdentifiers.insert(devId2);
 
-    const auto output = client.requestOutputDevices(deviceIdentifiers);
+    const auto output = client.updateDevicesFromEngine(deviceIdentifiers);
 
     ASSERT_EQ(output.size(), 2);
     ASSERT_EQ(output.at(0)->engineName(), engineName);

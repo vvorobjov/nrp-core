@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@
 #ifndef ENGINE_MPI_SERVER_H
 #define ENGINE_MPI_SERVER_H
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/engine_interfaces/engine_mpi_interface/config/engine_mpi_config.h"
 #include "nrp_general_library/engine_interfaces/engine_mpi_interface/engine_server/engine_mpi_device_controller.h"
-#include "nrp_general_library/utils/serializers/mpi_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/mpi_property_serializer.h"
 
 #include <mutex>
 #include <variant>
@@ -189,22 +189,22 @@ class EngineMPIServer
 		void runLoopStepHandler(SimulationTime timeStep);
 
 		/*!
-		 * \brief Calls requestOutputDevices() and sets _state
+		 * \brief Calls updateDevicesFromEngine() and sets _state
 		 * \param numDevices Number of devices that should be sent
-		 * \return Returns result of requestOutputDevices()
+		 * \return Returns result of updateDevicesFromEngine()
 		 * \exception Throws std::runtime_error if sim was not in PAUSED state at call time,
-		 * or any exception requestOutputDevices() generates
+		 * or any exception updateDevicesFromEngine() generates
 		 */
-		void requestOutputDevicesHandler(const int numDevices);
+		void updateDevicesFromEngineHandler(const int numDevices);
 
 		/*!
-		 * \brief Calls handleInputDevices() and sets _state
+		 * \brief Calls sendDevicesToEngine() and sets _state
 		 * \param numDevices Number of devices that should be sent
-		 * \return Returns result of handleInputDevices()
+		 * \return Returns result of sendDevicesToEngine()
 		 * \exception Throws std::runtime_error if sim was not in PAUSED state at call time,
-		 * or any exception handleInputDevices() generates
+		 * or any exception sendDevicesToEngine() generates
 		 */
-		void handleInputDevicesHandler(const int numDevices);
+		void sendDevicesToEngineHandler(const int numDevices);
 
 		/*!
 		 * \brief Register a new device controller for incoming/outgoing device data

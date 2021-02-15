@@ -3,16 +3,16 @@
 
 #include "nrp_example_json_engine/config/example_json_config.h"
 #include "nrp_example_json_engine/devices/example_device.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <future>
 
 class ExampleEngineClient
-        : public Engine<ExampleEngineClient, ExampleJSONConfig>
+        : public EngineClient<ExampleEngineClient, ExampleJSONConfig>
 {
 	public:
 		ExampleEngineClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine(config, std::move(launcher))
+		    : EngineClient(config, std::move(launcher))
 		{}
 
 		virtual ~ExampleEngineClient() override;
@@ -24,7 +24,7 @@ class ExampleEngineClient
 		virtual step_result_t runLoopStep(float timeStep) override
 		{
 			this->_loopStepThread = std::async(std::launch::async, std::bind(&ExampleEngineClient::sendRunLoopStepCommand, this, timeStep));
-			return EngineInterface::SUCCESS;
+			return EngineClientInterface::SUCCESS;
 		}
 
 		float sendRunLoopStepCommand(float timeStep);
@@ -47,8 +47,8 @@ class ExampleEngineClient
 			this->_engineTime = this->_loopStepThread.get();
 		}
 
-		virtual void handleInputDevices(const device_inputs_t &inputDevices) override;
-		virtual device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override;
+		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
+		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
 	private:
 		float _engineTime     = 0.0f;

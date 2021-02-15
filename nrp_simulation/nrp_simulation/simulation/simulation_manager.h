@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
-#include "nrp_simulation/config/server_config.h"
 #include "nrp_simulation/simulation/simulation_loop.h"
 
 #include <mutex>
@@ -99,7 +98,7 @@ class SimulationManager
 		 * \param serverConfig Server configuration
 		 * \param simulationConfig Simulation configuration
 		 */
-		SimulationManager(const ServerConfigConstSharedPtr &serverConfig, const SimulationConfigSharedPtr &simulationConfig);
+		SimulationManager(const SimulationConfigSharedPtr &simulationConfig);
 
 		/*!
 		 * \brief Destructor. Will stop any currently running threads
@@ -206,11 +205,6 @@ class SimulationManager
 		 * \brief Simulation Configuration
 		 */
 		SimulationConfigSharedPtr _simConfig;
-
-		/*!
-		 * \brief Server Configuration
-		 */
-		ServerConfigConstSharedPtr _serverConfig;
 
 		/*!
 		 * \brief Simulation loop

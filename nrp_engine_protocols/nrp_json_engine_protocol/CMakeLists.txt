@@ -20,7 +20,6 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_json_engine_protocol/config/engine_json_config.cpp
-	nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.cpp
 	nrp_json_engine_protocol/device_interfaces/json_device_serializer.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_device_controller.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_server.cpp

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,14 @@
 #include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <map>
 
 struct TransceiverFunctionSortedResults
-        : public std::map<std::string, EngineInterface::device_inputs_t>
+        : public std::map<std::string, EngineClientInterface::devices_ptr_t>
 {
-	using devices_t = EngineInterface::device_inputs_t;
+	using devices_t = EngineClientInterface::devices_ptr_t;
 	using interface_results_t = std::map<std::string, devices_t>;
 
 	/*!
@@ -51,7 +51,7 @@ struct TransceiverFunctionSortedResults
 
 	private:
 	    /*!
-		 * \brief All python lists. Manage them to prevent devices from destructing before their respective device_inputs_t
+		 * \brief All python lists. Manage them to prevent devices from destructing before their respective devices_ptr_t
 		 */
 	    std::list<TransceiverFunctionInterpreter::device_list_t> _pyList;
 

@@ -8,7 +8,7 @@ class Script(EngineScript):
         """Initialize device1 with empty time"""
         print("Engine 2 is initializing. Registering device...")
         self._registerDevice("rec_device1")
-        self._setDevice("rec_device1", { "time" : self._time, "timestep": 0 })
+        self._setDevice("rec_device1", { "time" : self._time.count(), "timestep": 0 })
 
     def runLoop(self, timestep):
         """Receive device1 at every timestep"""

@@ -50,7 +50,7 @@ An explanation of the code can be found \ref tutorial_engine_creation_engine_dev
 An EngineClient is used by the CLE to interface with a simulator via an EngineServer. A communication protocol is required to facilitate data exchange. We provide a set of predefined protocol implementations \ref engine_types "here".
 In most cases, using one of these as a base template suffices and greatly reduces development efforts. Should you be unsure, we recommend using the EngineGrpcClient as a base template.
 
-A new engine client must inherit from the EngineClient class. As such, it may look as shown below. A detailed function description can be found in \ref EngineInterface.
+A new engine client must inherit from the EngineClient class. As such, it may look as shown below. A detailed function description can be found in \ref EngineClientInterface.
 
 \subsubsection tutorial_engine_creation_engine_client_example Example
 
@@ -116,7 +116,7 @@ Add functions to access new properties
 
 Add base Engine client header
 \skip #include
-\until engine_interface
+\until engine_client_interface
 
 Create new client class, derived from the base engine. Include ExampleConfig into template to link the configuration class to this client.
 
@@ -127,7 +127,7 @@ Add standard constructor. Pass arguments to base engine class
 
 \until {}
 
-Override initialization and shutdown functions. They should send commands to the engine server to initialize/shutdown its simulator. A more in-depth explanation can be found in \ref EngineInterface.
+Override initialization and shutdown functions. They should send commands to the engine server to initialize/shutdown its simulator. A more in-depth explanation can be found in \ref EngineClientInterface.
 
 \skip initialize
 \until shutdown
@@ -140,11 +140,11 @@ Manage simulation execution. These functions are used to execute the EngineServe
 \until }
 \until }
 
-Handle sending and receiving of devices. The handleInputDevices function takes a list of \ref DeviceInterface "DeviceInterfaces" and sends them to the EngineServer, which will then process them.
-The requestOutputDeviceCallback takes a list of \ref DeviceIdentifier "DeviceIdentifiers", and requests their data from the EngineServer.
+Handle sending and receiving of devices. The sendDevicesToEngine function takes a list of \ref DeviceInterface "DeviceInterfaces" and sends them to the EngineServer, which will then process them.
+The getDevicesFromEngine takes a list of \ref DeviceIdentifier "DeviceIdentifiers", and requests their data from the EngineServer.
 
-\skip handleInputDevices
-\until requestOutputDeviceCallback
+\skip sendDevicesToEngine
+\until getDevicesFromEngine
 
 Add variables to track runtime of this Engine's simulation as well as the runLoopStep thread.
 

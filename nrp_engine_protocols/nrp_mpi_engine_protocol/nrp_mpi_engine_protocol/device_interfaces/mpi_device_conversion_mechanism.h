@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@
 
 #include "nrp_general_library/device_interface/device_conversion_mechanism.h"
 #include "nrp_general_library/utils/mpi_communication.h"
-#include "nrp_general_library/utils/serializers/mpi_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/mpi_property_serializer.h"
 
 template<DEVICE_C ...DEVICES>
 struct DeviceConversionMechanism<MPIPropertyData, MPIDeviceData, DEVICES...> : protected MPICommunication
 {
-	static void init(const EngineInterface &)
+	static void init(const EngineClientInterface &)
 	{}
 
 	static void shutdown()

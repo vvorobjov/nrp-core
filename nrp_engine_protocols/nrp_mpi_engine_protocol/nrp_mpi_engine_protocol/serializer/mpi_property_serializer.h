@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 #include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/utils/python_error_handler.h"
-#include "nrp_general_library/utils/serializers/property_serializer.h"
+#include "nrp_general_library/property_template/serializers/property_serializer.h"
 
 #include <assert.h>
 #include <boost/python.hpp>
@@ -326,7 +326,7 @@ class ObjectPropertySerializerMethods<MPIPropertyData>
 		}
 };
 
-#include "nrp_general_library/utils/serializers/mpi_property_serializer_methods.h"
+#include "nrp_general_library/property_template/serializers/mpi_property_serializer_methods.h"
 
 template<PROPERTY_TEMPLATE_C PROPERTY_TEMPLATE>
 struct PropertySerializer<MPIPropertyData, PROPERTY_TEMPLATE>

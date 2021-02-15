@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_general_library/utils/serializers/mpi_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/mpi_property_serializer.h"
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/mpi_setup.h"

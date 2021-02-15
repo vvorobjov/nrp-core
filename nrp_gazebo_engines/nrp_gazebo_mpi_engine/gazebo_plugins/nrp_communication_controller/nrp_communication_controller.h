@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ class NRPCommunicationController
 		void initialize(const std::string &initData) override;
 		void shutdown(const std::string &shutdownData) override;
 
-		EngineInterface::step_result_t runLoopStep(SimulationTime timeStep) override;
+		EngineClientInterface::step_result_t runLoopStep(SimulationTime timeStep) override;
 		SimulationTime getSimTime() const override;
 
 		/*!

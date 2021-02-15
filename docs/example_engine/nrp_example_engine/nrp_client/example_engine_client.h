@@ -3,16 +3,16 @@
 
 #include "nrp_example_engine/config/example_config.h"
 #include "nrp_example_engine/devices/example_device.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <future>
 
 class ExampleEngineClient
-        : public Engine<ExampleEngineClient, ExampleConfig>
+        : public EngineClient<ExampleEngineClient, ExampleConfig>
 {
 	public:
 		ExampleEngineClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine(config, std::move(launcher))
+		    : EngineClient(config, std::move(launcher))
 		{}
 
 		virtual ~ExampleEngineClient() override;
@@ -24,7 +24,7 @@ class ExampleEngineClient
 		virtual step_result_t runLoopStep(float timeStep) override
 		{
 			this->_loopStepThread = std::async(std::launch::async, std::bind(&ExampleEngineClient::sendRunLoopStepCommand, this, timeStep));
-			return EngineInterface::SUCCESS;
+			return EngineClientInterface::SUCCESS;
 		}
 
 		float sendRunLoopStepCommand(float timeStep);
@@ -39,17 +39,17 @@ class ExampleEngineClient
 			if(timeOut > 0)
 			{
 				if(this->_loopStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-					return EngineInterface::ERROR;
+					return EngineClientInterface::ERROR;
 			}
 			else
 				this->_loopStepThread.wait();
 
 			this->_engineTime = this->_loopStepThread.get();
-			return EngineInterface::SUCCESS;
+			return EngineClientInterface::SUCCESS;
 		}
 
-		virtual void handleInputDevices(const device_inputs_t &inputDevices) override;
-		virtual device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override;
+		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
+		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
 	private:
 		float _engineTime     = 0.0f;

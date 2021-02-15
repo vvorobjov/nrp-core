@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@
 #define ENGINE_JSON_SERVER_H
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
+
+#include "nrp_general_library/utils/time_utils.h"
 
 #include <map>
 #include <memory>
@@ -46,8 +48,6 @@ To control devices, EngineJSONDeviceController can be registered with the server
 To help create servers, EngineJSONOptsParser can be used to parse start parameters and extract relevant information.
 Additionally, the CLE will launch an instance of EngineJSONRegistrationServer which can be used by EngineJSONServers communicate its address with clients.
 
-TODO: Remove JSONDeviceConversionMechanism and only use JSONPropertySerializer.
-
 TODO: Rewrite EngineJSONDeviceController to use classes as inputs/outputs instead of json.
  */
 
@@ -67,8 +67,6 @@ class EngineJSONServer
 		static constexpr std::string_view RunLoopStepRoute = EngineJSONConfigConst::EngineServerRunLoopStepRoute;
 		static constexpr std::string_view InitializeRoute = EngineJSONConfigConst::EngineServerInitializeRoute;
 		static constexpr std::string_view ShutdownRoute = EngineJSONConfigConst::EngineServerShutdownRoute;
-
-		using dcm_t = DeviceConversionMechanism<nlohmann::json, nlohmann::json::const_iterator>;
 
 	public:
 		using mutex_t = std::timed_mutex;

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@
 
 
 NestEngineServerNRPClient::NestEngineServerNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-    : Engine(config, std::move(launcher))
+    : EngineClient(config, std::move(launcher))
 {
 	RestClientSetup::ensureInstance();
 }
@@ -155,11 +155,11 @@ void NestEngineServerNRPClient::waitForStepCompletion(float timeOut)
 		throw NRPException::logCreate("Nest loop failed unexpectedly");
 }
 
-EngineInterface::device_outputs_set_t NestEngineServerNRPClient::requestOutputDeviceCallback(const EngineInterface::device_identifiers_t &deviceIdentifiers)
+EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEngine(const EngineClientInterface::device_identifiers_set_t &deviceIdentifiers)
 {
 	const auto serverAddr = this->serverAddress();
 
-	EngineInterface::device_outputs_set_t retVals;
+	EngineClientInterface::devices_set_t retVals;
 	//retVals.reserve(deviceIdentifiers.size());
 
 	for(const auto &devID : deviceIdentifiers)
@@ -179,11 +179,11 @@ EngineInterface::device_outputs_set_t NestEngineServerNRPClient::requestOutputDe
 	return retVals;
 }
 
-void NestEngineServerNRPClient::handleInputDevices(const EngineInterface::device_inputs_t &inputDevices)
+void NestEngineServerNRPClient::sendDevicesToEngine(const EngineClientInterface::devices_ptr_t &devicesArray)
 {
 	const auto serverAddr = this->serverAddress();
 
-	for(DeviceInterface *const inDev : inputDevices)
+	for(DeviceInterface *const inDev : devicesArray)
 	{
 		// If type cannot be processed, skip it
 		if(inDev->id().Type != NestServerDevice::TypeName.m_data)

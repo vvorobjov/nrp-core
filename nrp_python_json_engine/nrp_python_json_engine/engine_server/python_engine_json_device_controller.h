@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@
 #ifndef PYTHON_ENGINE_JSON_DEVICE_CONTROLLER_H
 #define PYTHON_ENGINE_JSON_DEVICE_CONTROLLER_H
 
-#include "nrp_general_library/device_interface/devices/pyobject_device.h"
+#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
-#include "nrp_general_library/utils/serializers/python_dict_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/python_dict_property_serializer.h"
 
 #include <boost/python.hpp>
 

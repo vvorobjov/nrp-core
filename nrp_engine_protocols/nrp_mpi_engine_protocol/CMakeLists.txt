@@ -31,10 +31,10 @@ set(LIB_SRC_FILES
 	nrp_general_library/device_interface/device.cpp
 	nrp_general_library/device_interface/device_serializer.cpp
 	nrp_general_library/device_interface/device_serializer_methods.cpp
-	nrp_general_library/device_interface/devices/pyobject_device.cpp
-	nrp_general_library/device_interface/python_device.cpp
+	nrp_python_device/devices/pyobject_device.cpp
+	nrp_general_library/device_interface/device_python_wrappers.cpp
 	nrp_general_library/engine_interfaces/engine_device_controller.cpp
-	nrp_general_library/engine_interfaces/engine_interface.cpp
+	nrp_general_library/engine_interfaces/engine_client_interface.cpp
 	nrp_general_library/engine_interfaces/engine_grpc_interface/engine_server/engine_grpc_device_controller.cpp
 	nrp_general_library/engine_interfaces/engine_grpc_interface/engine_server/engine_grpc_server.cpp
 	nrp_general_library/engine_interfaces/engine_grpc_interface/engine_client/engine_grpc_client.cpp
@@ -67,15 +67,15 @@ set(LIB_SRC_FILES
 	nrp_general_library/transceiver_function/transceiver_function_manager.cpp
 	nrp_general_library/transceiver_function/transceiver_function_sorted_results.cpp
 	nrp_general_library/utils/concepts.cpp
-	nrp_general_library/utils/property_template.cpp
+	nrp_general_library/property_template/property_template.cpp
 	nrp_general_library/utils/ptr_templates.cpp
 	nrp_general_library/utils/restclient_setup.cpp
-	nrp_general_library/utils/serializers/json_property_serializer.cpp
-	nrp_general_library/utils/serializers/mpi_property_serializer.cpp
-	nrp_general_library/utils/serializers/mpi_property_serializer_methods.cpp
-	nrp_general_library/utils/serializers/property_serializer.cpp
-	nrp_general_library/utils/serializers/property_serializer_general.cpp
-	nrp_general_library/utils/serializers/python_dict_property_serializer.cpp
+	nrp_general_library/property_template/serializers/json_property_serializer.cpp
+	nrp_general_library/property_template/serializers/mpi_property_serializer.cpp
+	nrp_general_library/property_template/serializers/mpi_property_serializer_methods.cpp
+	nrp_general_library/property_template/serializers/property_serializer.cpp
+	nrp_general_library/property_template/serializers/property_serializer_general.cpp
+	nrp_general_library/property_template/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/utils/file_finder.cpp
 	nrp_general_library/utils/fixed_string.cpp
 	nrp_general_library/utils/mpi_communication.cpp
@@ -92,7 +92,7 @@ set(LIB_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-	nrp_python_device/python_module.cpp
+	nrp_python_device/python/python_module.cpp
 )
 
 # List executable build files
@@ -206,7 +206,7 @@ set(NRP_CLEAR_ENV "NRP_CLEAR_ENV")
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python Module defines
-configure_file("nrp_python_device/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+configure_file("nrp_python_device/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 # Process startup script
 configure_file("cmake/set_env_exec.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh" @ONLY)

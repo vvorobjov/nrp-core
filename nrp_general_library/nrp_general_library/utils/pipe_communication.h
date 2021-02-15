@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 
 /*!
  * \brief Creates a pipe, used for inter-process communication.
- * Call fork after creating a PipeCommunication object
+ * Currently used just in Tests
  */
 class PipeCommunication
 {

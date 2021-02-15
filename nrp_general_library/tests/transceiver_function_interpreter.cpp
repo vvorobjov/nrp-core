@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ TEST(TransceiverFunctionInterpreterTest, TestTransceiverFcnDevices)
 	TransceiverDeviceInterface::setTFInterpreter(interpreter.get());
 
 	std::shared_ptr<TestOutputDevice> dev(new TestOutputDevice(TestOutputDevice::ID()));
-	EngineInterface::device_outputs_t devs({dev});
+	EngineClientInterface::devices_t devs({dev});
 	interpreter->setEngineDevices({{dev->engineName(), &devs}});
 
 	// Load and execute simple python function
@@ -151,7 +151,7 @@ TEST(TransceiverFunctionInterpreterTest, TestTransceiverFunction)
 
 	std::shared_ptr<TestOutputDevice> dev(new TestOutputDevice(TestOutputDevice::ID()));
 	dev->TestValue = 4;
-	EngineInterface::device_outputs_t devs({dev});
+	EngineClientInterface::devices_t devs({dev});
 	interpreter->setEngineDevices({{dev->engineName(), &devs}});
 
 	// Load and execute simple python function

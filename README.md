@@ -69,7 +69,7 @@ documentation can be found in a new `doxygen` folder
 	 - EngineServer: Server running in a separate process to facilitate communication between Engine and CLE
 	 - EngineDeviceController: Server side device controller. Handles the sending and receiving of devices. Each device requires a controller
 	 - NRPClient: CLE-side client that communicates with a single EngineServer
-	 - DeviceConversionMechanism: Mechanism to convert a device to/from a communication data type. Currently, it converts devices to/from a JSON structure which can then be exchanged between the EngineServer and NRPClient
+	 - DeviceConversionMechanism: Mechanism to convert a device to/from a communication data type. Currently, it converts devices to/from a JSON structure which can then be exchanged between the EngineServer and NRPClient [TODO: deprecated]
  - Device: Data Type used for communication between Engine and CLE. Can be anything, from single integer value, over string, to a mixture of differently-typed arrays
 	 - DeviceIdentifier: Unique Identifier for device data. 
 	Contains 3 strings:
@@ -88,7 +88,7 @@ documentation can be found in a new `doxygen` folder
  - PluginSystem: Load additional engines on startup by supplying their .so library
  - ProcessLaunchers: Different options can be supplied to launch processes. This is important when switching from a local machine to an HPC cluster with managed ressources, or when integrating MPI
 
-### Current Engine Interface: EngineJSON
+### Current Engine Interface: EngineJSON [OUTDATED]
 
  - EngineJSONServer: Server-side engine. 
    Supports the following communication functions:
@@ -98,7 +98,7 @@ documentation can be found in a new `doxygen` folder
 	 - getDeviceData: Receives an array of DeviceIdentifiers in JSON format from the NRPClient. Will retrieve the requested devices via the EngineDeviceController and send them back
 	 - setDeviceData: Receives an array of Devicedata in JSON format from NRPClient. Will set data in the engine and perform any functions stored inside the corresponding EngineDeviceController
  - EngineJSONNRPClient: CLE-side communicator that sends/receives data to/from the corresponding EngineJSONServer
- - JSONDeviceConversionMechanism:
+ - JSONDeviceConversionMechanism: [TODO: deprecated]
 	 - A type of DeviceConversionMechanism. Will de-/serialize devices from/to JSON format
 
 ### Current Engines:

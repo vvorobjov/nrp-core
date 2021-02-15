@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class SingleTransceiverDevice
 		SingleTransceiverDevice(const std::string &keyword, const DeviceIdentifier &deviceID);
 		virtual ~SingleTransceiverDevice() override = default;
 
-		EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override;
+		EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override;
 
 		boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ const std::string &TestSimpleTransceiverDevice::linkedEngineName() const
 boost::python::object TestSimpleTransceiverDevice::runTf(python::tuple &args, python::dict &kwargs)
 {	return this->_fcn(*args, **kwargs);	}
 
-EngineInterface::device_identifiers_t TestSimpleTransceiverDevice::updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&deviceIDs) const
+EngineClientInterface::device_identifiers_set_t TestSimpleTransceiverDevice::updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs) const
 {	return std::move(deviceIDs);	}
 
 TestInputDevice::~TestInputDevice() = default;

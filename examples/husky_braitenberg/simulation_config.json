@@ -8,7 +8,7 @@
 			"EngineName": "gazebo",
 			"EngineProcCmd__Comment": "gazebo",
 			"ServerAddress": "localhost:9100",
-			"GazeboWorldFile": "husky_world_2.sdf"
+			"GazeboWorldFile": "husky_world.sdf"
 		},
 		{
 			"EngineType": "nest_json",

@@ -4,7 +4,7 @@
       <pose>7.485 -12.379 17.2198 0 -0 0</pose>
       <diffuse>0.7 0.7 0.7 1</diffuse>
       <specular>0.2 0.2 0.2 1</specular>
-      <direction>0 0 -1.0</direction>
+      <direction>0 0.1 -0.9</direction>
       <attenuation>
         <range>1000</range>
         <constant>0.9</constant>
@@ -423,7 +423,7 @@
           <material>
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/BlueGlow</name>
+              <name>Gazebo/RedGlow</name>
             </script>
           </material>
         </visual>
@@ -3441,7 +3441,6 @@
     <atmosphere type='adiabatic'/>
     <physics type='ode'>
       <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
     <scene>
@@ -3461,10 +3460,10 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>415 360000000</sim_time>
-      <real_time>74 86009695</real_time>
-      <wall_time>1600700788 942648746</wall_time>
-      <iterations>73179</iterations>
+      <sim_time>0</sim_time>
+      <real_time>0</real_time>
+      <wall_time>0</wall_time>
+      <iterations>0</iterations>
       <model name='bench_0'>
         <pose>-4.36935 1.01034 -0.280649 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -3846,43 +3845,43 @@
         </link>
       </model>
       <model name='husky'>
-        <pose>-0.076438 -0.010071 0.07875 0 -0 7.7e-05</pose>
+        <pose>-0.009853 0.086704 0.187752 1e-06 1e-06 1.66944</pose>
         <scale>1 1 1</scale>
         <link name='back_left_wheel'>
-          <pose>-0.33246 0.275385 0.11375 0 -0.000154 7.7e-05</pose>
-          <velocity>1.8e-05 -0.000919 0.009429 0.016487 -4e-06 -3.6e-05</velocity>
-          <acceleration>0.01366 -2.08412 18.9699 1.92223 0.002576 -0.05836</acceleration>
-          <wrench>0.036005 -5.4931 49.9989 0 -0 0</wrench>
+          <pose>-0.224073 0.404732 0.222752 3.14157 -1.20629 3.00337</pose>
+          <velocity>-0.00192 9.7e-05 0.005922 -0.000614 -0.010529 -0.000778</velocity>
+          <acceleration>-4.0758 0.086856 11.8753 2.23204 -1.55868 2.69209</acceleration>
+          <wrench>-10.7426 0.228926 31.2998 0 -0 0</wrench>
         </link>
         <link name='back_right_wheel'>
-          <pose>-0.332416 -0.295565 0.11375 0 -0.000116 7.7e-05</pose>
-          <velocity>0 -0.000922 1.7e-05 0.016484 -3e-06 -3.2e-05</velocity>
-          <acceleration>-0.0182 -2.0864 -0.063681 1.91908 0.002576 -0.055446</acceleration>
-          <wrench>-0.047969 -5.49911 -0.167843 0 -0 0</wrench>
+          <pose>-0.302748 -0.160771 0.222753 3.14157 -0.871266 3.00337</pose>
+          <velocity>-0.002023 1e-06 0.007254 -3.5e-05 -0.010991 -0.001197</velocity>
+          <acceleration>-3.74854 -0.059841 14.5366 -0.78767 0.017768 0.329315</acceleration>
+          <wrench>-9.88003 -0.157723 38.3142 0 -0 0</wrench>
         </link>
         <link name='base_link'>
-          <pose>-0.076438 -0.010071 0.07875 0 -0 7.7e-05</pose>
-          <velocity>-0 -0.000531 0.004723 0.016129 7e-06 2e-06</velocity>
-          <acceleration>-0.008772 -8.95915 9.42957 1.58173 -0.029513 0.002088</acceleration>
-          <wrench>-0.29697 -303.312 319.238 0 -0 0</wrench>
+          <pose>-0.009853 0.086704 0.187752 1e-06 1e-06 -0.138237</pose>
+          <velocity>-0.002421 -0.000245 0.003601 -0.000108 0.011871 -0.000176</velocity>
+          <acceleration>1.27912 -0.339522 8.87696 -1.83039 0.802357 1.28135</acceleration>
+          <wrench>43.3046 -11.4945 300.529 0 -0 0</wrench>
         </link>
         <link name='eye_vision_camera'>
-          <pose>-0.236438 -0.010083 0.30875 0 -0 7.7e-05</pose>
-          <velocity>7e-06 -0.004141 0.004723 0.016478 -6e-06 -3.5e-05</velocity>
-          <acceleration>-0.008213 -8.59425 9.45552 1.91322 -0.028256 -0.062891</acceleration>
-          <wrench>-0.008213 -8.59425 9.45552 0 -0 0</wrench>
+          <pose>-0.168327 0.108751 0.417752 1e-06 1e-06 -0.138237</pose>
+          <velocity>0.000314 -0.000203 0.005475 -6.5e-05 0.01191 -0.000166</velocity>
+          <acceleration>1.06258 -0.398759 10.766 0.187132 0.632256 0.574934</acceleration>
+          <wrench>1.06258 -0.398759 10.766 0 -0 0</wrench>
         </link>
         <link name='front_left_wheel'>
-          <pose>0.17954 0.275424 0.11375 0 -8.4e-05 7.7e-05</pose>
-          <velocity>1.8e-05 -0.000939 0.009431 0.016481 -2e-06 -2.9e-05</velocity>
-          <acceleration>0.013856 -2.11604 18.9839 1.91625 0.002576 -0.052568</acceleration>
-          <wrench>0.036521 -5.57724 50.0359 0 -0 0</wrench>
+          <pose>0.283042 0.334179 0.222753 -3.14159 1.03579 3.00336</pose>
+          <velocity>-0.001929 -5.9e-05 0.000205 0.000254 -0.01113 0.000927</velocity>
+          <acceleration>-4.0364 0.234963 -0.587698 1.80391 1.3742 0.56443</acceleration>
+          <wrench>-10.6388 0.619292 -1.549 0 -0 0</wrench>
         </link>
         <link name='front_right_wheel'>
-          <pose>0.179584 -0.295526 0.11375 0 -0.000142 7.7e-05</pose>
-          <velocity>-2e-06 -0.000942 2.1e-05 0.016479 -4e-06 -3.4e-05</velocity>
-          <acceleration>-0.020371 -2.1186 -0.04665 1.91454 0.002576 -0.055462</acceleration>
-          <wrench>-0.053692 -5.58399 -0.122955 0 -0 0</wrench>
+          <pose>0.204367 -0.231324 0.222751 3.14151 1.47247 3.00328</pose>
+          <velocity>-0.002102 -0.00044 0.001167 -0.002031 0.009774 -0.000266</velocity>
+          <acceleration>-3.77257 -0.189387 1.09754 -1.90123 0.264501 0.595392</acceleration>
+          <wrench>-9.94337 -0.499168 2.8928 0 -0 0</wrench>
         </link>
       </model>
       <model name='left_vr_screen'>
@@ -4261,7 +4260,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>3.56267 -0.510256 9.92398 -0 1.14579 -3.13099</pose>
+        <pose>4.75535 1.0035 2.91321 -0 0.54979 -3.02299</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -4683,8 +4682,7 @@
           <always_on>1</always_on>
           <update_rate>30</update_rate>
           <visualize>1</visualize>
-<!--          <plugin name='mouse_right_eye' filename='NRPGazeboGrpcCameraControllerPlugin.so'>
-          </plugin> -->
+          <plugin name='mouse_right_eye' filename='NRPGazeboGrpcCameraControllerPlugin.so'/>
         </sensor>
         <self_collide>0</self_collide>
         <inertial>
@@ -4717,24 +4715,13 @@
           </dynamics>
         </axis>
       </joint>
-<!--      <plugin name="husky" filename="NRPGazeboGrpcJointControllerPlugin.so">
-        <back_left_joint P=1 I=0 D=0 Type="velocity" Target=0 IMax=0 IMin=0 />
-        <back_right_joint P=1 I=0 D=0 Type="velocity" Target=0 IMax=0 IMin=0 />
-        <front_left_joint P=1 I=0 D=0 Type="velocity" Target=0 IMax=0 IMin=0 />
-        <front_right_joint P=1 I=0 D=0 Type="velocity" Target=0 IMax=0 IMin=0 />
-      </plugin>-->
-      <!--<plugin name='husky_diff_controller' filename='libhusky_gazebo_plugins.so'>
-        <alwaysOn>1</alwaysOn>
-        <updateRate>100.0</updateRate>
-        <backLeftJoint>back_left_joint</backLeftJoint>
-        <backRightJoint>back_right_joint</backRightJoint>
-        <frontLeftJoint>front_left_joint</frontLeftJoint>
-        <frontRightJoint>front_right_joint</frontRightJoint>
-        <wheelSeparation>0.5709</wheelSeparation>
-        <wheelDiameter>0.3555</wheelDiameter>
-        <torque>35</torque>
-      </plugin>-->
+      <plugin name='husky' filename='NRPGazeboGrpcJointControllerPlugin.so'>
+        <back_left_joint   P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
+        <back_right_joint  P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
+        <front_left_joint  P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
+        <front_right_joint P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
+      </plugin>
     </model>
-<!--    <plugin name='nrp_world' filename='NRPGazeboGrpcWorldPlugin.so'/> -->
+    <plugin name='nrp_world' filename='NRPGazeboGrpcWorldPlugin.so'/>
   </world>
 </sdf>

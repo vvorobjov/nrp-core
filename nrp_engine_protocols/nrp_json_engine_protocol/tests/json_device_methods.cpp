@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.h"
-#include "nrp_general_library/utils/serializers/json_property_serializer.h"
+#include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 
 using namespace testing;
 
-using dcm_t = DeviceConversionMechanism<nlohmann::json, nlohmann::json::const_iterator>;
 using std::string_view_literals::operator""sv;
 
 struct TestJSONDevice
@@ -49,21 +49,21 @@ TEST(JSONDeviceMethodsTest, IDFunctions)
 	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice>(TestJSONDevice::createID("dev2", "engine"), data.begin());
 
 	// Test serialization
-	const nlohmann::json serializedData = dcm_t::serializeID(dev1.id());
+	const nlohmann::json serializedData = DeviceSerializerMethods<nlohmann::json>::serializeID(dev1.id());
 	ASSERT_EQ(serializedData.size(), 1);
 	ASSERT_EQ(serializedData.front().size(), 2);
 	ASSERT_STREQ(serializedData.begin().key().data(), dev1.name().data());
-	ASSERT_STREQ(serializedData.front().at(dcm_t::JSONTypeID.data()).get<std::string>().data(), dev1.type().data());
-	ASSERT_STREQ(serializedData.front().at(dcm_t::JSONEngineNameID.data()).get<std::string>().data(), dev1.engineName().data());
+	ASSERT_STREQ(serializedData.front().at(DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()).get<std::string>().data(), dev1.type().data());
+	ASSERT_STREQ(serializedData.front().at(DeviceSerializerMethods<nlohmann::json>::JSONEngineNameID.data()).get<std::string>().data(), dev1.engineName().data());
 
 	// Test deserialization
-	DeviceIdentifier deserializedID = dcm_t::getID(serializedData.begin());
+	DeviceIdentifier deserializedID = DeviceSerializerMethods<nlohmann::json>::deserializeID(serializedData.begin());
 	ASSERT_EQ(dev1.id(), deserializedID);
 
 	// Test exception throwing
 	nlohmann::json empty;
 	empty["test"] = nlohmann::json();
-	ASSERT_THROW(dcm_t::getID(empty.begin()), std::exception);
+	ASSERT_THROW(DeviceSerializerMethods<nlohmann::json>::deserializeID(empty.begin()), std::exception);
 }
 
 TEST(JSONDeviceMethodsTest, ConversionFunctions)
@@ -72,17 +72,18 @@ TEST(JSONDeviceMethodsTest, ConversionFunctions)
 	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice>(TestJSONDevice::createID("dev2", "engine"), data.begin());
 
 	// Test serialization
-	const nlohmann::json serializedData = dcm_t::serialize(dev1);
+	const nlohmann::json serializedData = DeviceSerializerMethods<nlohmann::json>::serialize(dev1);
 	ASSERT_EQ(serializedData.size(), 1);
 	ASSERT_EQ(serializedData.front().size(), 4);
 	ASSERT_STREQ(serializedData.begin().key().data(), dev1.name().data());
-	ASSERT_STREQ(serializedData.front().at(dcm_t::JSONTypeID.data()).get<std::string>().data(), dev1.type().data());
-	ASSERT_STREQ(serializedData.front().at(dcm_t::JSONEngineNameID.data()).get<std::string>().data(), dev1.engineName().data());
+	ASSERT_STREQ(serializedData.front().at(DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()).get<std::string>().data(), dev1.type().data());
+	ASSERT_STREQ(serializedData.front().at(DeviceSerializerMethods<nlohmann::json>::JSONEngineNameID.data()).get<std::string>().data(), dev1.engineName().data());
 	ASSERT_EQ(serializedData.front().at("int").get<int>(), (dev1.getPropertyByName<"int">()));
 	ASSERT_STREQ(serializedData.front().at("string").get<std::string>().data(), (dev1.getPropertyByName<"string">().data()));
 
-	auto deserializedDev = dcm_t::deserialize<TestJSONDevice>(serializedData.begin());
-	ASSERT_EQ(dev1.id(), deserializedDev.id());
+	auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(serializedData.begin());
+    auto deserializedDev = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice>(std::move(devid), serializedData.begin());
+    ASSERT_EQ(dev1.id(), deserializedDev.id());
 	ASSERT_EQ((dev1.getPropertyByName<"int">()), (deserializedDev.getPropertyByName<"int">()));
 	ASSERT_STREQ((dev1.getPropertyByName<"string">().data()), (deserializedDev.getPropertyByName<"string">().data()));
 }

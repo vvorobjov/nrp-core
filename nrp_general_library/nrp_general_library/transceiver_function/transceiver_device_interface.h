@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef TRANSCEIVER_DEVICE_INTERFACE_H
 #define TRANSCEIVER_DEVICE_INTERFACE_H
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 
 //#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
@@ -88,12 +88,12 @@ class TransceiverDeviceInterface
 		 *	\param deviceIDs Container with device IDs that gets expanded
 		 *	\return Returns deviceIDs, with own deviceIDs appended
 		 */
-		virtual EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&deviceIDs = EngineInterface::device_identifiers_t()) const;
+		virtual EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs = EngineClientInterface::device_identifiers_set_t()) const;
 
 		/*!
 		 * \brief Returns device IDs of this Device that should be requested from the engines. TODO: Make protected
 		 */
-		virtual EngineInterface::device_identifiers_t getRequestedDeviceIDs() const;
+		virtual EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const;
 
 		/*!
 		 * \brief Set global TF Interpreter. All Transceiver Functions will register themselves with it upon creation

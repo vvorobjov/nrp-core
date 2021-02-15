@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/device_interface/python_device.h"
+#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_nest_json_engine/config/cmake_constants.h"
 #include "nrp_nest_json_engine/devices/nest_device.h"
 #include "nrp_nest_json_engine/python/create_device_class.h"

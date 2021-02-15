@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/config/engine_config.h"
 
 #include "nrp_general_library/plugin_system/plugin.h"
@@ -36,11 +36,11 @@ struct TestEngineConfig
 };
 
 class TestEngine
-        : public Engine<TestEngine, TestEngineConfig>
+        : public EngineClient<TestEngine, TestEngineConfig>
 {
 	public:
 		TestEngine(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine(configHolder, std::move(launcher))
+		    : EngineClient(configHolder, std::move(launcher))
 		{}
 
 		virtual void initialize() override
@@ -58,13 +58,13 @@ class TestEngine
 		virtual void waitForStepCompletion(float) override
 		{}
 
-		virtual void handleInputDevices(const device_inputs_t &) override
+		virtual void sendDevicesToEngine(const devices_ptr_t &) override
 		{}
 
 	protected:
-		virtual device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override
+		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
 		{
-			device_outputs_set_t retVal;
+			devices_set_t retVal;
 			for(const auto &devID : deviceIdentifiers)
 			{
 				retVal.emplace(new DeviceInterface(devID));

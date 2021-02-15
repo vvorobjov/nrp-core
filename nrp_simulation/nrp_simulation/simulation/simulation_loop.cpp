@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,18 +57,20 @@ void SimulationLoop::initLoop()
 void SimulationLoop::runLoop(SimulationTime runLoopTime)
 {
 	const auto loopStopTime = this->_simTime + runLoopTime;
+	
 	if(this->_engineQueue.empty())
 	{
 		this->_simTime = loopStopTime;
 		return;
 	}
 
-	std::vector<EngineInterfaceSharedPtr> processedEngines;
+	// Compute all engines which should finish before loopStopTime
+	std::vector<EngineClientInterfaceSharedPtr> processedEngines;
 	while(this->_engineQueue.begin()->first < loopStopTime)
 	{
-		// Check which engines should finish
-		// simTime should contain the minimal completion time after the loop
-		const auto maxCompletionTime = this->_engineQueue.begin()->first;
+		// Get the next batch of engines which should finish next
+		// _engineQueue is sorted by completion time of engine last step
+		const auto nextCompletionTime = this->_engineQueue.begin()->first;
 		do
 		{
 			this->_simTime = this->_engineQueue.begin()->first;
@@ -76,9 +78,9 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 			this->_engineQueue.erase(this->_engineQueue.begin());
 		}
-		while(!this->_engineQueue.empty() && this->_engineQueue.begin()->first <= maxCompletionTime);
+		while(!this->_engineQueue.empty() && this->_engineQueue.begin()->first <= nextCompletionTime);
 
-		// Wait for engines to complete execution
+		// Wait for processed engines to complete execution
 		for(const auto &engine : processedEngines)
 		{
 			try
@@ -92,23 +94,22 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			}
 		}
 
-		// Retrive devices from processed engines
+		// Retrieve devices required by TFs from processed engines
 		const auto requestedDeviceIDs = this->_tfManager.updateRequestedDeviceIDs();
-		EngineInterface::device_outputs_t outputDevices;
 		try
 		{
 			for(auto &engine : processedEngines)
 			{
-				engine->requestOutputDevices(requestedDeviceIDs);
+				engine->updateDevicesFromEngine(requestedDeviceIDs);
 			}
 		}
 		catch(std::exception &)
 		{
-			// TODO: Handle failure on output device retrieval
+			// TODO: Handle failure on device retrieval
 			throw;
 		}
 
-		// Execute all TFs, and sort results according to engine
+		// Execute TFs, and sort results according to engine
 		TransceiverFunctionSortedResults results;
 		for(const auto &engine : processedEngines)
 		{
@@ -116,12 +117,12 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			results.addResults(curResults);
 		}
 
-		// Send engine inputs to corresponding interfaces
+		// Send tf output devices to corresponding engines
 		for(const auto &engine : processedEngines)
 		{
 			try
 			{
-				this->handleInputDevices(engine, results);
+				this->sendDevicesToEngine(engine, results);
 			}
 			catch(std::exception &e)
 			{
@@ -129,7 +130,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			}
 		}
 
-		// Restart engines loops
+		// Restart engines
 		for(auto &engine : processedEngines)
 		{
 			const auto trueRunTime = this->_simTime - engine->getEngineTime() + engine->getEngineTimestep();
@@ -175,7 +176,7 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const SimulationConfigS
 	{
 		TransceiverFunctionInterpreter::engines_devices_t engineDevs;
 		for(const auto &engine : engines)
-			engineDevs.emplace(engine->engineName(), &(engine->getOutputDevices()));
+			engineDevs.emplace(engine->engineName(), &(engine->getCachedDevices()));
 
 		newManager.getInterpreter().setEngineDevices(std::move(engineDevs));
 	}
@@ -189,15 +190,16 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const SimulationConfigS
 	return newManager;
 }
 
-void SimulationLoop::handleInputDevices(const EngineInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results)
+void SimulationLoop::sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results)
 {
-	// Find corresponding device inputs
+	// Find corresponding devices
 	const auto interfaceResultIterator = results.find(engine->engineName());
 	if(interfaceResultIterator != results.end())
-		engine->handleInputDevices(interfaceResultIterator->second);
+		engine->sendDevicesToEngine(interfaceResultIterator->second);
 
-	// If no inputs are available, have interface handle empty device input list
-	engine->handleInputDevices(typename EngineInterface::device_inputs_t());
+	// If no devices are available, have interface handle empty device input list
+	// TODO: be sure that this is right
+	engine->sendDevicesToEngine(typename EngineClientInterface::devices_ptr_t());
 }
 
 /*! \page simulation_loop Simulation Loop

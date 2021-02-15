@@ -142,7 +142,7 @@ add_subdirectory(nrp_python_json_engine)
 ##########################################
 ## NRP Simulation
 set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPGazeboGrpcEngine.so;NRPNestJSONEngine.so"
-	CACHE STRING "Default engines which will always be available in the NRP server")
+	CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
@@ -178,7 +178,6 @@ doxygen_add_docs(doxygen
 	"docs/installation.dox"
 	"docs/main_page.dox"
 	"docs/simulation_config.dox"
-	"docs/todos.dox"
 	"docs/transceiver_functions_and_devices.dox"
 	"docs/tutorials/engine_creation.dox"
 	"docs/tutorials/grpc_engine_creation.dox"

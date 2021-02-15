@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ class TransceiverFunctionManager
 		 * \brief Return list of devices that the TFs request
 		 * \return Returns container with all requested device IDs
 		 */
-		EngineInterface::device_identifiers_t updateRequestedDeviceIDs() const;
+		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs() const;
 
 		/*!
 		 * \brief Load TF from given configuration

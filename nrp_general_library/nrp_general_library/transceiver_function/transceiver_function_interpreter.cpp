@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 
 #include <iostream>
 
-TransceiverFunctionInterpreter::TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineInterface::device_identifiers_t &_deviceIDs, const boost::python::object &_localVariables)
+TransceiverFunctionInterpreter::TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables)
     : Name(_name),
       TransceiverFunction(_transceiverFunction),
       DeviceIDs(_deviceIDs),
@@ -74,9 +74,9 @@ const TransceiverFunctionInterpreter::transceiver_function_datas_t &TransceiverF
 	return this->_transceiverFunctions;
 }
 
-EngineInterface::device_identifiers_t TransceiverFunctionInterpreter::updateRequestedDeviceIDs() const
+EngineClientInterface::device_identifiers_set_t TransceiverFunctionInterpreter::updateRequestedDeviceIDs() const
 {
-	EngineInterface::device_identifiers_t devIDs;
+	EngineClientInterface::device_identifiers_set_t devIDs;
 	for(const auto &curData : this->_transceiverFunctions)
 	{
 		auto newDevIDs = curData.second.TransceiverFunction->updateRequestedDeviceIDs();
@@ -161,7 +161,7 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 		throw NRPException::logCreate("No TF found for " + transceiverFunction.name());
 
 	// Update transfer function params
-	this->_newTFIt->second.DeviceIDs      = this->_newTFIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineInterface::device_identifiers_t());
+	this->_newTFIt->second.DeviceIDs      = this->_newTFIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t());
 	this->_newTFIt->second.LocalVariables = localVars;
 	this->_newTFIt->second.Name           = transceiverFunction.name();
 

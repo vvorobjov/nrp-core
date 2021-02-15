@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,10 +110,10 @@ void EngineMPIServer::handleClientCmd(const EngineMPIControl &cmd)
 			return this->runLoopStepHandler(SimulationTime(std::get<int64_t>(cmd.info())));
 
 		case EngineMPIControlConst::GET_DEVICES:
-			return this->requestOutputDevicesHandler(std::get<int64_t>(cmd.info()));
+			return this->updateDevicesFromEngineHandler(std::get<int64_t>(cmd.info()));
 
 		case EngineMPIControlConst::SEND_DEVICES:
-			return this->handleInputDevicesHandler(std::get<int64_t>(cmd.info()));
+			return this->sendDevicesToEngineHandler(std::get<int64_t>(cmd.info()));
 
 		default:
 			throw NRPException::logCreate("Unexpected command received by EngineMPIServer");
@@ -164,7 +164,7 @@ void EngineMPIServer::runLoopStepHandler(SimulationTime timeStep)
 	MPICommunication::sendMPI(&engineTime, 1, MPI_INT64_T, 0, EngineMPIControlConst::WAIT_LOOP_COMM_TAG, this->_comm);
 }
 
-void EngineMPIServer::requestOutputDevicesHandler(const int numDevices)
+void EngineMPIServer::updateDevicesFromEngineHandler(const int numDevices)
 {
 	if(this->_state != PAUSED)
 		throw NRPException::logCreate("Get device data request was sent to unpaused MPI engine. Aborting...");
@@ -204,7 +204,7 @@ void EngineMPIServer::requestOutputDevicesHandler(const int numDevices)
 	}
 }
 
-void EngineMPIServer::handleInputDevicesHandler(const int numDevices)
+void EngineMPIServer::sendDevicesToEngineHandler(const int numDevices)
 {
 	if(this->_state != PAUSED)
 		throw NRPException::logCreate("Handle device data request was sent to unpaused MPI engine. Aborting...");

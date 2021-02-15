@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 	world->SetPaused(true);
 
 	// Tell simulation to go as fast as possible
-	world->Physics()->SetRealTimeUpdateRate(0);
+//	world->Physics()->SetRealTimeUpdateRate(0);
 
 	std::cout << "NRPWorldPlugin: Registering world controller with communicator...\n";
 	NRPCommunicationController::getInstance().registerStepController(this);
@@ -81,15 +81,15 @@ SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
 
 bool gazebo::NRPWorldPlugin::finishWorldLoading()
 {
-	//std::cout << "Finalizing gazebo loading... Time:" <<  this->_world->SimTime().Double() << "\n";
+	std::cout << "Finalizing gazebo loading... Time:" <<  this->_world->SimTime().Double() << "\n";
 
 	// Force loading of all plugins
-	const auto prevStepSize = this->_world->Physics()->GetMaxStepSize();
-	this->_world->Physics()->SetMaxStepSize(0);
-	this->startLoop(1);
-	this->_world->Physics()->SetMaxStepSize(prevStepSize);
+//	const auto prevStepSize = this->_world->Physics()->GetMaxStepSize();
+//	this->_world->Physics()->SetMaxStepSize(0);
+//	this->startLoop(1);
+//	this->_world->Physics()->SetMaxStepSize(prevStepSize);
 
-	//std::cout << "Gazebo loading finalized Time:" <<  this->_world->SimTime().Double() << "\n";
+	std::cout << "Gazebo loading finalized Time:" <<  this->_world->SimTime().Double() << "\n";
 
 	return true;
 }

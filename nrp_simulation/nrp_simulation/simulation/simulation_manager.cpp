@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,9 +74,8 @@ nlohmann::json SimulationParams::parseJSONFile(const std::string &fileName)
 }
 
 
-SimulationManager::SimulationManager(const ServerConfigConstSharedPtr &serverConfig, const SimulationConfigSharedPtr &simulationConfig)
-    : _simConfig(simulationConfig),
-      _serverConfig(serverConfig)
+SimulationManager::SimulationManager(const SimulationConfigSharedPtr &simulationConfig)
+    : _simConfig(simulationConfig)
 {}
 
 SimulationManager::~SimulationManager()
@@ -98,26 +97,10 @@ SimulationManager::~SimulationManager()
 
 SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult &args)
 {
-	ServerConfigConstSharedPtr serverConfig = nullptr;
 	SimulationConfigSharedPtr simConfig = nullptr;
 
 	// Get file names from start params
-	std::string servCfgFileName;
 	std::string simCfgFileName;
-
-	try
-	{	servCfgFileName = args[SimulationParams::ParamServCfgFile.data()].as<SimulationParams::ParamServCfgFileT>();	}
-	catch(std::domain_error&)
-	{
-		servCfgFileName = FileFinder::findFile(NRP_SERVER_CONFIG_FILE_NAME, NRP_SERVER_CONFIG_DIRS);
-		if(servCfgFileName.empty())
-			throw std::runtime_error("Could not find server config file");
-	}
-
-	// Parse JSON config from file
-	nlohmann::json servCfgJSON = SimulationParams::parseJSONFile(servCfgFileName);
-	serverConfig.reset(new ServerConfig(servCfgJSON));
-
 
 	try
 	{
@@ -126,14 +109,14 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	catch(std::domain_error&)
 	{
 		// If no simulation file name is present, return empty config
-		return SimulationManager(serverConfig, simConfig);
+		return SimulationManager(simConfig);
 	}
 
 	nlohmann::json simCfgJSON = SimulationParams::parseJSONFile(simCfgFileName);
 	simConfig.reset(new SimulationConfig(simCfgJSON));
 
 
-	return SimulationManager(serverConfig, simConfig);
+	return SimulationManager(simConfig);
 }
 
 SimulationLoopConstSharedPtr SimulationManager::simulationLoop() const
@@ -211,7 +194,7 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 		if(!this->isRunning() || hasTimedOut)
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_serverConfig->serverTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
 
 		this->_loop->runLoop(timeStep);
 
@@ -243,7 +226,7 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 		if(!this->isRunning() || endTime < this->_loop->getSimTime())
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_serverConfig->serverTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
 
 		this->_loop->runLoop(timeStep);
 
@@ -300,7 +283,7 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 		// Create and launch engine
 		try
 		{
-			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_serverConfig->processLauncherType())));
+			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_simConfig->processLauncherType())));
 		}
 		catch(std::exception &e)
 		{

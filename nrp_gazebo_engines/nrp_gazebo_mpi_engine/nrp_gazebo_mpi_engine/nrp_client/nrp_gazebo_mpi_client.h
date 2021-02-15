@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #define NRP_GAZEBO_MPI_CLIENT_H
 
 #include "nrp_general_library/engine_interfaces/engine_mpi_interface/nrp_client/nrp_mpi_client.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
 #include "nrp_gazebo_mpi_engine/devices/physics_camera.h"

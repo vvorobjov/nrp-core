@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@
 #define DEVICE_INTERFACE_H
 
 #include "nrp_general_library/utils/concepts.h"
-#include "nrp_general_library/utils/property_template.h"
+#include "nrp_general_library/property_template/property_template.h"
 #include "nrp_general_library/utils/ptr_templates.h"
-#include "nrp_general_library/utils/serializers/property_serializer.h"
+#include "nrp_general_library/property_template/serializers/property_serializer.h"
 
 #include <concepts>
 #include <string>

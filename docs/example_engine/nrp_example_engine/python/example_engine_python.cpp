@@ -1,7 +1,7 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/device_interface/python_device.h"
+#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_example_engine/config/cmake_constants.h"
 #include "nrp_example_engine/devices/example_device.h"
 

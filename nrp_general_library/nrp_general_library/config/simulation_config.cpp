@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ const SimulationConfig::tf_configs_t SimulationConfigConst::DefEngineSimulatorsC
 SimulationConfig::SimulationConfig(const nlohmann::json &configuration)
     : JSONConfigProperties(configuration,
                            DefSimulationTimeout,
+                           DefSimulationTimestep,
+                           DefProcessLauncherType.data(),
                            DefEngineSimulatorsConfig,
 						   DefTFArrayConfig)
 {}
@@ -55,6 +57,18 @@ unsigned int &SimulationConfig::simulationTimeOut()
 {
 	return this->getPropertyByName<SimulationConfig::SimulationTimeout, unsigned int>();
 }
+
+float &SimulationConfig::simulationTimestep()
+{	return this->getPropertyByName<SimulationTimestep>();	}
+
+float SimulationConfig::simulationTimestep() const
+{	return this->getPropertyByName<SimulationTimestep>();	}
+
+std::string &SimulationConfig::processLauncherType()
+{	return this->getPropertyByName<ProcessLauncherType>();	}
+
+const std::string &SimulationConfig::processLauncherType() const
+{	return this->getPropertyByName<ProcessLauncherType>();	}
 
 const SimulationConfig::tf_configs_t &SimulationConfig::engineConfigs() const
 {

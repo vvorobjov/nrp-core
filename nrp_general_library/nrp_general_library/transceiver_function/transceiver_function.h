@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/config/transceiver_function_config.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <string>
 #include <boost/python.hpp>
@@ -65,9 +65,9 @@ class TransceiverFunction
 		boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 
 	protected:
-		EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override;
+		EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override;
 
-		EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&deviceIDs) const override;
+		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs) const override;
 
 	private:
 		/*!
@@ -143,7 +143,7 @@ To make this process easy for users, we have wrapped the setup inside python dec
 in C++. First, the constructor of each decorator is called consecutively. This is where the arguments given in brackets are passed on. Then, in reverse order, the
 __call__() functions of each decorator are executed. These take as argument the previously executed decorator object, or the function object in the case of the bottom-most
 decorator. The __call__() function is mirrored with the pySetup function of the corresponding C++ class. Note that all C++ decorator classes must be made available to python
-via the NRPPythonModule library, specified in nrp_general_library/nrp_python_device/python_module.cpp. For an explanation of how this is performed via Boost::Python, take a
+via the NRPPythonModule library, specified in nrp_general_library/nrp_python_device/python/python_module.cpp. For an explanation of how this is performed via Boost::Python, take a
 look at \ref boost_python "this section".
 
 Every decorator may perform any action within its operations. Nevertheless, they must all follow one instruction: At the end of its __call__() function, it must have moved itself

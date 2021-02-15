@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 #include "nrp_general_library/config/transceiver_function_config.h"
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
 
 #include <vector>
@@ -56,7 +56,7 @@ class TransceiverFunctionInterpreter
 			/*!
 			 * \brief Devices requested by TF
 			 */
-			EngineInterface::device_identifiers_t DeviceIDs;
+			EngineClientInterface::device_identifiers_set_t DeviceIDs;
 
 			/*!
 			 * \brief Local variables used by this TransceiverFunction
@@ -64,7 +64,7 @@ class TransceiverFunctionInterpreter
 			boost::python::object LocalVariables;
 
 			TransceiverFunctionData() = default;
-			TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineInterface::device_identifiers_t &_deviceIDs, const boost::python::object &_localVariables);
+			TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables);
 		};
 
 		using local_dict_objects_t = std::map<std::string, boost::python::dict>;
@@ -72,7 +72,7 @@ class TransceiverFunctionInterpreter
 
 	public:
 		using device_list_t = boost::python::list;
-		using engines_devices_t = std::map<std::string, const EngineInterface::device_outputs_t*>;
+		using engines_devices_t = std::map<std::string, const EngineClientInterface::devices_t*>;
 
 		/*!
 		 * \brief Result of a single TF run
@@ -117,10 +117,10 @@ class TransceiverFunctionInterpreter
 		 * \brief Get Device IDs requested by TFs
 		 * \return
 		 */
-		EngineInterface::device_identifiers_t updateRequestedDeviceIDs() const;
+		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs() const;
 
 		/*!
-		 * \brief Set EngineInterface pointers. Used by TransceiverFunctions to access devices
+		 * \brief Set EngineClientInterface pointers. Used by TransceiverFunctions to access devices
 		 * \param engines Mapping from engine name to engine ptr
 		 */
 		void setEngineDevices(engines_devices_t &&engineDevices);

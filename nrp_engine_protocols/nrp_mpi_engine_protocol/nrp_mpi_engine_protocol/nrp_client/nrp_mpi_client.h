@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef NRP_MPI_CLIENT_H
 #define NRP_MPI_CLIENT_H
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/engine_interfaces/engine_mpi_interface/device_interfaces/mpi_device_conversion_mechanism.h"
 #include "nrp_general_library/engine_interfaces/engine_mpi_interface/engine_server/engine_mpi_server.h"
 
@@ -37,13 +37,13 @@
  */
 template<class CLIENT, class CONFIG, DEVICE_C ...DEVICES>
 class NRPMPIClient
-        : public Engine<CLIENT, CONFIG>
+        : public EngineClient<CLIENT, CONFIG>
 {
 		using dcm_t = MPIDeviceConversionMechanism<DEVICES...>;
 
 	public:
 		NRPMPIClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine<CLIENT, CONFIG>(config, std::move(launcher))
+		    : EngineClient<CLIENT, CONFIG>(config, std::move(launcher))
 		{}
 
 		void initialize() override
@@ -92,13 +92,13 @@ class NRPMPIClient
 			this->_engineTime += retEngineTime;
 		}
 
-		void handleInputDevices(const EngineInterface::device_inputs_t &inputDevices) override
+		void sendDevicesToEngine(const EngineClientInterface::devices_ptr_t &devicesArray) override
 		{
-			EngineMPIControl devCmd(EngineMPIControl::SEND_DEVICES, (int64_t)inputDevices.size());
+			EngineMPIControl devCmd(EngineMPIControl::SEND_DEVICES, (int64_t)devicesArray.size());
 			MPICommunication::sendPropertyTemplate(this->_comm, EngineMPIControlConst::GENERAL_COMM_TAG, devCmd);
 
 			// Send device data with IDs
-			for(auto *const inDev : inputDevices)
+			for(auto *const inDev : devicesArray)
 			{
 				if(inDev->engineName() == this->engineName())
 				{
@@ -133,7 +133,7 @@ class NRPMPIClient
 			return dynamic_cast<const MPISpawn*>(this->_process->launchCommand())->getIntercomm();
 		}
 
-		EngineInterface::device_outputs_set_t requestOutputDeviceCallback(const EngineInterface::device_identifiers_t &deviceIdentifiers) override
+		EngineClientInterface::devices_set_t getDevicesFromEngine(const EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			EngineMPIControl devCmd(EngineMPIControl::GET_DEVICES, (int64_t)deviceIdentifiers.size());
 			MPICommunication::sendPropertyTemplate(this->_comm, EngineMPIControlConst::GENERAL_COMM_TAG, devCmd);
@@ -153,7 +153,7 @@ class NRPMPIClient
 			}
 
 			// Receive device data
-			EngineInterface::device_outputs_set_t retVal;
+			EngineClientInterface::devices_set_t retVal;
 			for(auto &deserializer : mpiDeserializers)
 			{
 				retVal.emplace(MPICommunication::template recvDeviceByType<false, DEVICES...>(this->_comm, (int)EngineMPIControlConst::DEVICE_TAG, deserializer));

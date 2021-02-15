@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 #include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -36,7 +36,7 @@ class SimulationLoop
         : public PtrTemplates<SimulationLoop>
 {
 	public:
-		using engine_interfaces_t = std::vector<EngineInterfaceSharedPtr>;
+		using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
 		SimulationLoop() = default;
 		SimulationLoop(SimulationConfigSharedPtr config, engine_interfaces_t engines);
@@ -76,10 +76,10 @@ class SimulationLoop
 		 */
 		engine_interfaces_t _engines;
 
-		using engine_queue_t = std::multimap<SimulationTime, EngineInterfaceSharedPtr>;
+		using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
 		/*!
-		 * \brief Engine Queue. Contains all engines, sorted by time until completion
+		 * \brief Engine Queue. Contains all engines, sorted by completion time of their last step
 		 */
 		engine_queue_t _engineQueue;
 
@@ -107,7 +107,7 @@ class SimulationLoop
 		 * \param results Results to be processes
 		 * \return Returns result of device handling inputs
 		 */
-		void handleInputDevices(const EngineInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results);
+		void sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results);
 
 		friend class SimulationLoopTest_InitTFManager_Test;
 };

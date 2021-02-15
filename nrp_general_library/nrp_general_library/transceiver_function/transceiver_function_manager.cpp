@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ bool TransceiverFunctionManager::TransceiverFunctionSettings::operator<(const Tr
 	return (*this)->name() < rhs->name();
 }
 
-EngineInterface::device_identifiers_t TransceiverFunctionManager::updateRequestedDeviceIDs() const
+EngineClientInterface::device_identifiers_set_t TransceiverFunctionManager::updateRequestedDeviceIDs() const
 {
 	return this->_tfInterpreter.updateRequestedDeviceIDs();
 }

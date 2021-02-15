@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef BASE_CONFIG_H
 #define BASE_CONFIG_H
 
-#include "nrp_general_library/utils/property_template.h"
+#include "nrp_general_library/property_template/property_template.h"
 
 #include <concepts>
 #include <string>

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef NEST_ENGINE_SERVER_NRP_CLIENT_H
 #define NEST_ENGINE_SERVER_NRP_CLIENT_H
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
 #include "nrp_nest_server_engine/devices/nest_server_device.h"
@@ -36,7 +36,7 @@
  * \brief NRP - Nest Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  */
 class NestEngineServerNRPClient
-        : public Engine<NestEngineServerNRPClient, NestServerConfig>
+        : public EngineClient<NestEngineServerNRPClient, NestServerConfig>
 {
 		struct CompNestDevs
 		{
@@ -75,10 +75,10 @@ class NestEngineServerNRPClient
 		virtual void runLoopStep(SimulationTime timeStep) override;
 		virtual void waitForStepCompletion(float timeOut) override;
 
-		virtual void handleInputDevices(const device_inputs_t &inputDevices) override;
+		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
 
 	protected:
-		virtual device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override;
+		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
 	private:
 		std::future<bool> _runStepThread;

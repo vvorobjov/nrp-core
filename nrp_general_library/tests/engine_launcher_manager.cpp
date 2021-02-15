@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@
 using namespace testing;
 
 struct TestEngine1
-        : public EngineInterface
+        : public EngineClientInterface
 {
 	TestEngine1()
-	    : EngineInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
+	    : EngineClientInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
 	{
 		this->engineName() = "engine1";
 	}
@@ -59,13 +59,13 @@ struct TestEngine1
 	void waitForStepCompletion(float) override
 	{}
 
-	void handleInputDevices(const device_inputs_t&) override
+	void sendDevicesToEngine(const devices_ptr_t&) override
 	{}
 
 	protected:
-	    device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override
+	    devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
 		{
-			device_outputs_set_t retVal;
+			devices_set_t retVal;
 			for(const auto &devID : deviceIdentifiers)
 			{
 				retVal.emplace(new DeviceInterface(devID));
@@ -83,17 +83,17 @@ struct TestLauncher1
 	{}
 	~TestLauncher1() override = default;
 
-	EngineInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
+	EngineClientInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
 	{
-		return EngineInterface::shared_ptr(new TestEngine1());
+		return EngineClientInterface::shared_ptr(new TestEngine1());
 	}
 };
 
 struct TestEngine2
-        : public EngineInterface
+        : public EngineClientInterface
 {
 	TestEngine2()
-	    : EngineInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
+	    : EngineClientInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
 	{
 		this->engineName() = "engine2";
 	}
@@ -121,12 +121,12 @@ struct TestEngine2
 	void waitForStepCompletion(float) override
 	{}
 
-	void handleInputDevices(const device_inputs_t&) override
+	void sendDevicesToEngine(const devices_ptr_t&) override
 	{}
 
 	protected:
-	    device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t&) override
-		{	return device_outputs_set_t();	}
+	    devices_set_t getDevicesFromEngine(const device_identifiers_set_t&) override
+		{	return devices_set_t();	}
 };
 
 struct TestLauncher2
@@ -138,9 +138,9 @@ struct TestLauncher2
 
 	virtual ~TestLauncher2() override = default;
 
-	EngineInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
+	EngineClientInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
 	{
-		return EngineInterface::shared_ptr(new TestEngine2());
+		return EngineClientInterface::shared_ptr(new TestEngine2());
 	}
 };
 

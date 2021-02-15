@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -165,8 +165,8 @@ TEST(EngineJSONNRPClientTest, ServerCalls)
 	ASSERT_EQ(client.getEngineTime(), server.curTime);
 
 	// Test device retrieval
-	TestEngineJSONNRPClient::device_identifiers_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
-	auto devices = client.requestOutputDevices(devIDs);
+	TestEngineJSONNRPClient::device_identifiers_set_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
+	auto devices = client.updateDevicesFromEngine(devIDs);
 
 	// Only two devices (dev1, dev2) should be retrieved, as they are associated with the correct EngineName
 	ASSERT_EQ(devices.size(), 2);
@@ -200,11 +200,11 @@ TEST(EngineJSONNRPClientTest, ServerCalls)
 	dev2.data() = -1;
 
 	// Test device sending
-	TestEngineJSONNRPClient::device_inputs_t inputs;
+	TestEngineJSONNRPClient::devices_ptr_t inputs;
 	inputs.push_back(&inputDev1);
 	inputs.push_back(&inputDev2);
 	inputs.push_back(&inputDevThrow);
-	ASSERT_NO_THROW(client.handleInputDevices(inputs));
+	ASSERT_NO_THROW(client.sendDevicesToEngine(inputs));
 
 	ASSERT_EQ(inputDev1.data(), dev1Ctrl.data().data());
 	ASSERT_EQ(inputDev2.data(), dev2Ctrl.data().data());

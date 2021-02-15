@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ struct TestSimpleTransceiverDevice
 	TestSimpleTransceiverDevice(python::object fcn);
 	virtual ~TestSimpleTransceiverDevice() override;
 
-	EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override
-	{	return EngineInterface::device_identifiers_t();	}
+	EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override
+	{	return EngineClientInterface::device_identifiers_set_t();	}
 
 	TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override;
 
@@ -41,7 +41,7 @@ struct TestSimpleTransceiverDevice
 
 	boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 
-	EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&deviceIDs = EngineInterface::device_identifiers_t()) const override;
+	EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs = EngineClientInterface::device_identifiers_set_t()) const override;
 
 	TransceiverDeviceInterface::shared_ptr *_tfInterpreterRegistry = nullptr;
 	python::object _fcn;
@@ -89,10 +89,10 @@ struct TestTransceiverDevice
 
 	virtual ~TestTransceiverDevice() override;
 
-	EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&) const override
+	EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&) const override
 	{	return this->getRequestedDeviceIDs();	}
 
-	EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override
+	EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override
 	{	return {TestOutputDevice::ID()};	}
 
 	TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override

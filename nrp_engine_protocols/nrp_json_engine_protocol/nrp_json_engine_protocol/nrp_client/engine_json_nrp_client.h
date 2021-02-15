@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@
 #define ENGINE_JSON_NRP_CLIENT_H
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
@@ -42,11 +42,11 @@
 /*!
  *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  *  \tparam ENGINE_INTERFACE Class derived from GeneralInterface. Currently either PhysicsInterface or BrainInterface
- *  \tparam DEVICES Classes derived from DeviceInterface that should be communicated to/from the engine. Each of these classes must be convertible via a DeviceConversionMechanism.
+ *  \tparam DEVICES Classes derived from DeviceInterface that should be communicated to/from the engine.
  */
 template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG, DEVICE_C ...DEVICES>
 class EngineJSONNRPClient
-        : public Engine<ENGINE, ENGINE_CONFIG>
+        : public EngineClient<ENGINE, ENGINE_CONFIG>
 {
 	public:
 		/*!
@@ -55,7 +55,7 @@ class EngineJSONNRPClient
 		 * \param launcher Process launcher
 		 */
 		EngineJSONNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
+		    : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
 		      _serverAddress(this->engineConfig()->engineServerAddress()),
 			  _engineTime(0)
 		{	RestClientSetup::ensureInstance();	}
@@ -67,7 +67,7 @@ class EngineJSONNRPClient
 		 * \param launcher Process launcher
 		 */
 		EngineJSONNRPClient(const std::string &serverAddress, EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
+		    : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
 		      _serverAddress(serverAddress),
 			  _engineTime(0)
 		{
@@ -80,7 +80,7 @@ class EngineJSONNRPClient
 		virtual pid_t launchEngine() override
 		{
 			// Launch engine process
-			auto enginePID = this->EngineInterface::launchEngine();
+			auto enginePID = this->EngineClientInterface::launchEngine();
 
 			// Wait for engine to register itself
 			if(!this->engineConfig()->engineRegistrationServerAddress().empty())
@@ -96,11 +96,11 @@ class EngineJSONNRPClient
 			return enginePID;
 		}
 
-		virtual void handleInputDevices(const typename EngineInterface::device_inputs_t &inputDevices) override
+		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
 		{
 			// Convert devices to JSON format
 			nlohmann::json request;
-			for(const auto &curDevice : inputDevices)
+			for(const auto &curDevice : devicesArray)
 			{
 				if(curDevice->engineName().compare(this->engineName()) == 0)
 					request.update(this->getJSONFromSingleDeviceInterface<DEVICES...>(*curDevice));
@@ -141,13 +141,13 @@ class EngineJSONNRPClient
 		}
 
 	protected:
-		virtual typename EngineInterface::device_outputs_set_t requestOutputDeviceCallback(const typename EngineInterface::device_identifiers_t &deviceIdentifiers) override
+		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			nlohmann::json request;
 			for(const auto &devID : deviceIdentifiers)
 			{
 				if(this->engineName().compare(devID.EngineName) == 0)
-					request.update(this->_dcm.serializeID(devID));
+					request.update(JSONDeviceSerializerMethods::serializeID(devID));
 			}
 
 			// Post request to Engine JSON server
@@ -216,9 +216,6 @@ class EngineJSONNRPClient
 
 			return engineAddr;
 		}
-
-		using dcm_t = DeviceConversionMechanism<nlohmann::json, nlohmann::json::const_iterator, DEVICES...>;
-		dcm_t _dcm;
 
 	private:
 		/*!
@@ -300,9 +297,9 @@ class EngineJSONNRPClient
 		 * \param devices JSON data of devices
 		 * \return Returns list of devices
 		 */
-		typename EngineInterface::device_outputs_set_t getDeviceInterfacesFromJSON(const nlohmann::json &devices) const
+		typename EngineClientInterface::devices_set_t getDeviceInterfacesFromJSON(const nlohmann::json &devices) const
 		{
-			typename EngineInterface::device_outputs_set_t interfaces;
+			typename EngineClientInterface::devices_set_t interfaces;
 
 			for(auto curDeviceIterator = devices.begin(); curDeviceIterator != devices.end(); ++curDeviceIterator)
 			{
@@ -314,7 +311,7 @@ class EngineJSONNRPClient
 
 				try
 				{
-					auto deviceID = this->_dcm.getID(curDeviceIterator);
+					auto deviceID = JSONDeviceSerializerMethods::deserializeID(curDeviceIterator);
 					deviceID.EngineName = this->engineName();
 					interfaces.insert(this->getSingleDeviceInterfaceFromJSON<DEVICES...>(curDeviceIterator, deviceID));
 				}
@@ -337,19 +334,14 @@ class EngineJSONNRPClient
 		 * \return Returns pointer to created device
 		 */
 		template<class DEVICE, class ...REMAINING_DEVICES>
-		inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromJSON(const nlohmann::json::const_iterator &deviceData, const DeviceIdentifier &deviceID) const
+		inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromJSON(const nlohmann::json::const_iterator &deviceData, DeviceIdentifier &deviceID) const
 		{
-			// Only check DEVICE classes with an existing conversion function
-			if constexpr (dcm_t::template IsDeserializable<DEVICE>)
-			{
-				if(DEVICE::TypeName.compare(deviceID.Type) == 0)
-				{
-					DeviceInterfaceSharedPtr newDevice(new DEVICE(this->_dcm.template deserialize<DEVICE>(deviceData)));
-					newDevice->setEngineName(this->engineName());
-
-					return newDevice;
-				}
-			}
+            if(DEVICE::TypeName.compare(deviceID.Type) == 0)
+            {
+                DeviceInterfaceSharedPtr newDevice(new DEVICE(JSONDeviceSerializerMethods::template deserialize<DEVICE>(std::move(deviceID), deviceData)));
+                newDevice->setEngineName(this->engineName());
+                return newDevice;
+            }
 
 			// If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
 			if constexpr (sizeof...(REMAINING_DEVICES) > 0)
@@ -368,12 +360,8 @@ class EngineJSONNRPClient
 		template<class DEVICE, class ...REMAINING_DEVICES>
 		inline nlohmann::json getJSONFromSingleDeviceInterface(const DeviceInterface &device) const
 		{
-			// Only check DEVICE classes with an existing conversion function
-			if constexpr (dcm_t::template IsSerializable<DEVICE>)
-			{
-				if(DEVICE::TypeName.compare(device.type()) == 0)
-					return this->_dcm.template serialize<DEVICE>(dynamic_cast<const DEVICE&>(device));
-			}
+            if(DEVICE::TypeName.compare(device.type()) == 0)
+                return JSONDeviceSerializerMethods::template serialize<DEVICE>(dynamic_cast<const DEVICE&>(device));
 
 			// If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
 			if constexpr (sizeof...(REMAINING_DEVICES) > 0)
