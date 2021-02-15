@@ -128,9 +128,6 @@ add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
 ## Gazebo gRPC Engine
 add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
 
-## Gazebo MPI Engine
-#add_subdirectory(nrp_gazebo_mpi_engine)
-
 ## Nest Engine
 add_subdirectory(nrp_nest_json_engine)
 add_subdirectory(nrp_nest_server_engine)
@@ -144,15 +141,6 @@ add_subdirectory(nrp_python_json_engine)
 set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPGazeboGrpcEngine.so;NRPNestJSONEngine.so"
 	CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
-
-##########################################
-## NRP Server
-#add_subdirectory(nrp_server)
-
-##########################################
-## NRP Client
-#add_subdirectory(nrp_client)
-
 
 ##########################################
 ## Doxygen
