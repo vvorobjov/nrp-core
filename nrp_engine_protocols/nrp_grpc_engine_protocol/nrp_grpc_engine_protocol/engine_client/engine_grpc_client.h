@@ -40,10 +40,13 @@ class EngineGrpcClient
 {
     void prepareRpcContext(grpc::ClientContext * context)
     {
-        // let client wait for server ready
-        context->set_wait_for_ready(true);
-
+        // Let client wait for server ready
+        // TODO It happens that gRPC call is performed before the server is fully initialized.
+        // This line was supposed to fix it, but it's breaking some of the tests. The issue will be addressed in NRRPLT-8187.
+        // context->set_wait_for_ready(true);
+            
         // Set RPC timeout (in absolute time), if it has been specified by the user
+
         if(this->_rpcTimeout > SimulationTime::zero())
         {
             context->set_deadline(std::chrono::system_clock::now() + this->_rpcTimeout);
