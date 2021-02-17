@@ -112,6 +112,13 @@ TEST(TestGazeboEngine, CameraPlugin)
 
 	ASSERT_NO_THROW(engine->initialize());
 
+	// Run a single simulation step. This is to ensure that the camera data has been updated.
+	// The data is updated asynchronously, on every new frame, so it may happen that on first
+	// acquisition, there's no camera image yet.
+
+	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
+	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+
 	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
