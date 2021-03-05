@@ -57,11 +57,11 @@ class TestEngineJSONServer
 
 	virtual ~TestEngineJSONServer() override = default;
 
-	nrpTimeUtils::SimulationTime curTime = nrpTimeUtils::SimulationTime::zero();
+	SimulationTime curTime = SimulationTime::zero();
 
-	nrpTimeUtils::SimulationTime runLoopStep(nrpTimeUtils::SimulationTime timeStep) override
+	SimulationTime runLoopStep(SimulationTime timeStep) override
 	{
-		if(timeStep < nrpTimeUtils::SimulationTime::zero())
+		if(timeStep < SimulationTime::zero())
 			throw std::invalid_argument("error");
 
 		curTime += timeStep;
@@ -112,12 +112,12 @@ class TestEngineJSONNRPClient
 			throw NRPExceptionNonRecoverable("Test shutdown failed");
 	}
 
-	nrpTimeUtils::SimulationTime curTime = nrpTimeUtils::SimulationTime::zero();
+	SimulationTime curTime = SimulationTime::zero();
 };
 
-static nrpTimeUtils::SimulationTime floatToSimulationTime(float time)
+static SimulationTime floatToSimulationTime(float time)
 {
-    return nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(time);
+    return toSimulationTime<float, std::ratio<1>>(time);
 }
 
 TEST(EngineJSONNRPClientTest, ServerCalls)

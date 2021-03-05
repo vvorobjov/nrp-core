@@ -37,7 +37,7 @@ void PyEngineScript::initialize()
 void PyEngineScript::shutdown()
 {}
 
-nrpTimeUtils::SimulationTime PyEngineScript::simTime() const
+SimulationTime PyEngineScript::simTime() const
 {	return this->_time;	}
 
 void PyEngineScript::registerDevice(std::string deviceName)

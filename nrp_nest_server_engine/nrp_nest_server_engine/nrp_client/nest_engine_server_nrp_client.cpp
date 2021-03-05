@@ -99,13 +99,13 @@ namespace
 	 *
 	 * \return Command execution timeout for this engine
 	 */
-	nrpTimeUtils::SimulationTime processCommandTimeout(const float commandTimeout)
+	SimulationTime processCommandTimeout(const float commandTimeout)
 	{
-		auto timeout = nrpTimeUtils::SimulationTime::max();
+		auto timeout = SimulationTime::max();
 
 		if(commandTimeout > 0.0f)
 		{
-			timeout = nrpTimeUtils::toSimulationTime<float, std::ratio<1,1> >(commandTimeout);
+			timeout = toSimulationTime<float, std::ratio<1,1> >(commandTimeout);
 		}
 
 		return timeout;
@@ -311,12 +311,12 @@ void NestEngineServerNRPClient::shutdown()
 	nestCleanup(this->serverAddress());
 }
 
-nrpTimeUtils::SimulationTime NestEngineServerNRPClient::getEngineTime() const
+SimulationTime NestEngineServerNRPClient::getEngineTime() const
 {
-	return nrpTimeUtils::toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"time\"]")));
+	return toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"time\"]")));
 }
 
-void NestEngineServerNRPClient::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
+void NestEngineServerNRPClient::runLoopStep(SimulationTime timeStep)
 {
 	this->_runStepThread = std::async(std::launch::async, &NestEngineServerNRPClient::runStepFcn, this, timeStep);
 }
@@ -418,11 +418,11 @@ void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devices
 	}
 }
 
-bool NestEngineServerNRPClient::runStepFcn(nrpTimeUtils::SimulationTime timeStep)
+bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
 {
 	// According to the NEST API documentation, Run accepts time to simulate in milliseconds and floating-point format
 
-	const double runTimeMsRounded = nrpTimeUtils::getRoundedRunTimeMs(timeStep, this->_simulationResolution);
+	const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, this->_simulationResolution);
 
 	try
 	{

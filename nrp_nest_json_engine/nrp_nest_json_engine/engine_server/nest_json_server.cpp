@@ -82,19 +82,19 @@ bool NestJSONServer::shutdownFlag() const
 	return this->_shutdownFlag;
 }
 
-nrpTimeUtils::SimulationTime NestJSONServer::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
+SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 {
 	PythonGILLock lock(this->_pyGILState, true);
 
 	try
 	{
-		const double runTimeMsRounded = nrpTimeUtils::getRoundedRunTimeMs(timeStep, python::extract<double>(this->_pyNest["GetKernelStatus"]("resolution")));
+		const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, python::extract<double>(this->_pyNest["GetKernelStatus"]("resolution")));
 
 		this->_pyNest["Run"](runTimeMsRounded);
 
 		// The time field of dictionary returned from GetKernelStatus contains time in milliseconds
 		
-		return nrpTimeUtils::toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("time")));
+		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("time")));
 	}
 	catch(python::error_already_set &)
 	{

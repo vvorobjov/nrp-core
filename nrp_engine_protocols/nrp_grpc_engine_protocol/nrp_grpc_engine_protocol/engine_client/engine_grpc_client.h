@@ -47,7 +47,7 @@ class EngineGrpcClient
             
         // Set RPC timeout (in absolute time), if it has been specified by the user
 
-        if(this->_rpcTimeout > nrpTimeUtils::SimulationTime::zero())
+        if(this->_rpcTimeout > SimulationTime::zero())
         {
             context->set_deadline(std::chrono::system_clock::now() + this->_rpcTimeout);
         }
@@ -62,15 +62,15 @@ class EngineGrpcClient
 
             // Timeouts of less than 1ms will be rounded up to 1ms
 
-            nrpTimeUtils::SimulationTime timeout = nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(this->engineConfig()->engineCommandTimeout());
+            SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig()->engineCommandTimeout());
 
-            if(timeout != nrpTimeUtils::SimulationTime::zero())
+            if(timeout != SimulationTime::zero())
             {
                 this->_rpcTimeout = (timeout > std::chrono::milliseconds(1)) ? timeout : std::chrono::milliseconds(1);
             }
             else
             {
-                this->_rpcTimeout = nrpTimeUtils::SimulationTime::zero();
+                this->_rpcTimeout = SimulationTime::zero();
             }
 
             _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
@@ -128,7 +128,7 @@ class EngineGrpcClient
             }
         }
 
-        nrpTimeUtils::SimulationTime sendRunLoopStepCommand(const nrpTimeUtils::SimulationTime timeStep)
+        SimulationTime sendRunLoopStepCommand(const SimulationTime timeStep)
         {
             EngineGrpc::RunLoopStepRequest request;
             EngineGrpc::RunLoopStepReply   reply;
@@ -146,9 +146,9 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
-            const nrpTimeUtils::SimulationTime engineTime(reply.enginetime());
+            const SimulationTime engineTime(reply.enginetime());
 
-            if(engineTime < nrpTimeUtils::SimulationTime::zero())
+            if(engineTime < SimulationTime::zero())
             {
                const auto errMsg = "Invalid engine time (should be greater than 0): " + std::to_string(engineTime.count());
                throw std::runtime_error(errMsg);
@@ -169,12 +169,12 @@ class EngineGrpcClient
             return engineTime;
         }
 
-        nrpTimeUtils::SimulationTime getEngineTime() const override
+        SimulationTime getEngineTime() const override
         {
             return this->_engineTime;
         }
 
-        virtual void runLoopStep(nrpTimeUtils::SimulationTime timeStep) override
+        virtual void runLoopStep(SimulationTime timeStep) override
         {
             this->_loopStepThread = std::async(std::launch::async, std::bind(&EngineGrpcClient::sendRunLoopStepCommand, this, timeStep));
         }
@@ -319,10 +319,10 @@ class EngineGrpcClient
         std::shared_ptr<grpc::Channel>                       _channel;
         std::unique_ptr<EngineGrpc::EngineGrpcService::Stub> _stub;
 
-        std::future<nrpTimeUtils::SimulationTime> _loopStepThread;
-        nrpTimeUtils::SimulationTime _prevEngineTime = nrpTimeUtils::SimulationTime::zero();
-        nrpTimeUtils::SimulationTime _engineTime     = nrpTimeUtils::SimulationTime::zero();
-        nrpTimeUtils::SimulationTime _rpcTimeout     = nrpTimeUtils::SimulationTime::zero();
+        std::future<SimulationTime> _loopStepThread;
+        SimulationTime _prevEngineTime = SimulationTime::zero();
+        SimulationTime _engineTime     = SimulationTime::zero();
+        SimulationTime _rpcTimeout     = SimulationTime::zero();
 };
 
 /*! \defgroup GRPC Engine Protocol

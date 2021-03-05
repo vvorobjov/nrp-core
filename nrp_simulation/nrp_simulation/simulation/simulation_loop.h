@@ -56,13 +56,13 @@ class SimulationLoop
 		 * \brief Runs simulation for a total of runTime (in s)
 		 * \param runTime Time (in s) to run simulation. At end, will run TransceiverFunctions
 		 */
-		void runLoop(nrpTimeUtils::SimulationTime runTime);
+		void runLoop(SimulationTime runTime);
 
 		/*!
 		 * \brief Get Simulation Time (in seconds)
 		 * \return Returns time passed in simulation (in seconds)
 		 */
-		inline nrpTimeUtils::SimulationTime getSimTime() const
+		inline SimulationTime getSimTime() const
 		{	return this->_simTime;	}
 
 	private:
@@ -76,7 +76,7 @@ class SimulationLoop
 		 */
 		engine_interfaces_t _engines;
 
-		using engine_queue_t = std::multimap<nrpTimeUtils::SimulationTime, EngineClientInterfaceSharedPtr>;
+		using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
 		/*!
 		 * \brief Engine Queue. Contains all engines, sorted by completion time of their last step
@@ -91,7 +91,7 @@ class SimulationLoop
 		/*!
 		 * \brief Simulated time (in seconds)
 		 */
-		nrpTimeUtils::SimulationTime _simTime = nrpTimeUtils::SimulationTime::zero();
+		SimulationTime _simTime = SimulationTime::zero();
 
 		/*!
 		 * \brief Initialize the TF Manager. Reads the TF Configurations from the Simulation Config, and registers the TFs

@@ -299,10 +299,10 @@ void EngineJSONServer::runLoopStepHandler(const Pistache::Rest::Request &req, Pi
 {
 	const json jrequest = this->parseRequest(req, res);
 
-	nrpTimeUtils::SimulationTime timeStep;
+	SimulationTime timeStep;
 	try
 	{
-		timeStep = nrpTimeUtils::SimulationTime(jrequest.at(EngineJSONConfigConst::EngineTimeStepName.data()));
+		timeStep = SimulationTime(jrequest.at(EngineJSONConfigConst::EngineTimeStepName.data()));
 	}
 	catch(std::exception &e)
 	{

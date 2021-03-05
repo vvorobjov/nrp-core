@@ -87,7 +87,7 @@ grpc::Status EngineGrpcServer::runLoopStep(grpc::ServerContext * , const EngineG
     {
         EngineGrpcServer::lock_t lock(this->_deviceLock);
 
-        int64_t engineTime = (this->runLoopStep(nrpTimeUtils::SimulationTime(request->timestep()))).count();
+        int64_t engineTime = (this->runLoopStep(SimulationTime(request->timestep()))).count();
 
         reply->set_enginetime(engineTime);
     }

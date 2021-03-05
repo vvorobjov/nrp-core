@@ -33,7 +33,7 @@ class GazeboStepController
 		GazeboStepController();
 		virtual ~GazeboStepController();
 
-		virtual nrpTimeUtils::SimulationTime runLoopStep(nrpTimeUtils::SimulationTime timeStep) = 0;
+		virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
 
 		virtual bool finishWorldLoading() = 0;
 };

@@ -47,13 +47,13 @@ struct TestEngine1
 	void shutdown() override
 	{}
 
-	nrpTimeUtils::SimulationTime getEngineTime() const override
-	{	return nrpTimeUtils::SimulationTime::zero();	}
+	SimulationTime getEngineTime() const override
+	{	return SimulationTime::zero();	}
 
-	nrpTimeUtils::SimulationTime getEngineTimestep() const override
-	{	return nrpTimeUtils::SimulationTime::zero();	}
+	SimulationTime getEngineTimestep() const override
+	{	return SimulationTime::zero();	}
 
-	void runLoopStep(nrpTimeUtils::SimulationTime) override
+	void runLoopStep(SimulationTime) override
 	{}
 
 	void waitForStepCompletion(float) override
@@ -109,13 +109,13 @@ struct TestEngine2
 	void shutdown() override
 	{}
 
-	nrpTimeUtils::SimulationTime getEngineTime() const override
-	{	return nrpTimeUtils::SimulationTime::zero();	}
+	SimulationTime getEngineTime() const override
+	{	return SimulationTime::zero();	}
 
-	nrpTimeUtils::SimulationTime getEngineTimestep() const override
-	{	return nrpTimeUtils::SimulationTime::zero();	}
+	SimulationTime getEngineTimestep() const override
+	{	return SimulationTime::zero();	}
 
-	void runLoopStep(nrpTimeUtils::SimulationTime) override
+	void runLoopStep(SimulationTime) override
 	{}
 
 	void waitForStepCompletion(float) override

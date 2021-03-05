@@ -52,7 +52,7 @@ void gazebo::NRPWorldPlugin::Reset()
 	this->_worldSDF.reset();
 }
 
-nrpTimeUtils::SimulationTime gazebo::NRPWorldPlugin::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
+SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
 {
 	std::scoped_lock lock(this->_lockLoop);
 
@@ -60,7 +60,7 @@ nrpTimeUtils::SimulationTime gazebo::NRPWorldPlugin::runLoopStep(nrpTimeUtils::S
 
 	try
 	{
-		const auto     maxStepSizeUs = nrpTimeUtils::toSimulationTime<double, std::ratio<1>>(this->_world->Physics()->GetMaxStepSize());
+		const auto     maxStepSizeUs = toSimulationTime<double, std::ratio<1>>(this->_world->Physics()->GetMaxStepSize());
 		const unsigned numIterations = std::max(static_cast<unsigned int>(static_cast<double>(timeStep.count()) / static_cast<double>(maxStepSizeUs.count())), 1u);
 
 		this->startLoop(numIterations);
@@ -77,7 +77,7 @@ nrpTimeUtils::SimulationTime gazebo::NRPWorldPlugin::runLoopStep(nrpTimeUtils::S
 
 	const auto simTime = this->_world->SimTime();
 
-	return nrpTimeUtils::toSimulationTime<int32_t, std::ratio<1>>(simTime.sec) + nrpTimeUtils::toSimulationTime<int32_t, std::nano>(simTime.nsec);
+	return toSimulationTime<int32_t, std::ratio<1>>(simTime.sec) + toSimulationTime<int32_t, std::nano>(simTime.nsec);
 }
 
 bool gazebo::NRPWorldPlugin::finishWorldLoading()
