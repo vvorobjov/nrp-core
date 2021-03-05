@@ -171,7 +171,7 @@ class SimulationManager
 		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns true if no error was encountered, false otherwise
 		 */
-		bool runSimulation(const SimulationTime secs, sim_lock_t &simLock);
+		bool runSimulation(const nrpTimeUtils::SimulationTime secs, sim_lock_t &simLock);
 
 		/*!
 		 * \brief Shuts down simulation loop. Will shutdown any running engines and transceiver functions after any currently running steps are completed
@@ -224,9 +224,9 @@ class SimulationManager
 		 * \param simTimeout Simulation timeout (in seconds)
 		 * \return Returns true if simulation has timed out, false otherwise
 		 */
-		static inline bool hasSimTimedOut(const SimulationTime &simTime, const SimulationTime &simTimeout)
+		static inline bool hasSimTimedOut(const nrpTimeUtils::SimulationTime &simTime, const nrpTimeUtils::SimulationTime &simTimeout)
 		{
-			return (simTimeout >= SimulationTime::zero() && simTime >= simTimeout);
+			return (simTimeout >= nrpTimeUtils::SimulationTime::zero() && simTime >= simTimeout);
 		}
 };
 

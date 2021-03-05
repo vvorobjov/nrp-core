@@ -64,6 +64,7 @@ set(LIB_SRC_FILES
 	nrp_general_library/utils/python_interpreter_state.cpp
 	nrp_general_library/utils/restclient_setup.cpp
 	nrp_general_library/utils/spdlog_setup.cpp
+	nrp_general_library/utils/time_utils.cpp
 	nrp_general_library/utils/wchar_t_converter.cpp
 	nrp_general_library/utils/zip_container.cpp
 	nrp_general_library/utils/pipe_communication.cpp

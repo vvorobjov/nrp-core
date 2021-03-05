@@ -81,7 +81,7 @@ TEST(TestNestExecutable, TestNest)
 	argv.push_back(serverAddr.data());
 	int argc = static_cast<int>(argv.size());
 
-	SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
+	nrpTimeUtils::SimulationTime timeStep = nrpTimeUtils::toSimulationTime<int, std::milli>(1);
 
 	// Create pipe
 	PipeCommunication commCtP, commPtC;

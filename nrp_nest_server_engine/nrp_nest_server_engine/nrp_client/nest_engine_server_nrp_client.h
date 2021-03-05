@@ -38,26 +38,6 @@
 class NestEngineServerNRPClient
         : public EngineClient<NestEngineServerNRPClient, NestServerConfig>
 {
-		struct CompNestDevs
-		{
-			bool operator()(const NestServerDevice::shared_ptr &lhs, const NestServerDevice::shared_ptr &rhs) const
-			{	return lhs->id().Name.compare(rhs->id().Name) < 0;	}
-		};
-
-		struct nest_devices_t : public std::set<NestServerDevice::shared_ptr, CompNestDevs>
-		{
-			iterator find(const std::string &name)
-			{
-				for(auto nestDevIt = this->begin(); nestDevIt != this->end(); ++nestDevIt)
-				{
-					if(nestDevIt->get()->id().Name == name)
-						return nestDevIt;
-				}
-
-				return this->end();
-			}
-		};
-
 		/*!
 		 * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
 		 */
@@ -70,26 +50,62 @@ class NestEngineServerNRPClient
 		virtual void initialize() override;
 		virtual void shutdown() override;
 
-		virtual SimulationTime getEngineTime() const override;
+		virtual nrpTimeUtils::SimulationTime getEngineTime() const override;
 
-		virtual void runLoopStep(SimulationTime timeStep) override;
+		virtual void runLoopStep(nrpTimeUtils::SimulationTime timeStep) override;
 		virtual void waitForStepCompletion(float timeOut) override;
 
 		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
+
+		using population_mapping_t = std::map<std::string, std::string>;
 
 	protected:
 		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
 	private:
-		std::future<bool> _runStepThread;
-		nest_devices_t _nestDevs;
 
-		bool runStepFcn(SimulationTime timestep);
+		/*!
+		 * \brief Future used during asynchronous execution of the runStep function
+		 */
+		std::future<bool> _runStepThread;
+
+		/*!
+		 * \brief Contains populations returned by server after loading the brain file
+		 *
+		 * The structure contains (population_name, [IDs]) pairs, which are returned
+		 * by the NEST server during initialization. The mapping may be used to access
+		 * populations of neurons by their name, rather than by specifying their IDs.
+		 *
+		 * The list of IDs is stored as string, formatted as JSON array.
+		 */
+		population_mapping_t _populations;
+
+		/*!
+		 * \brief NEST simulation resolution cached at engine initialization
+		 */
+		float _simulationResolution = 0.0f;
+
+		/*!
+		 * \brief Address of NEST server
+		 */
+		std::string _serverAddress;
+
+		bool runStepFcn(nrpTimeUtils::SimulationTime timestep);
+
+		/*!
+		 * \brief Returns NEST server address
+		 *
+		 * \return Address of NEST server
+		 */
 		std::string serverAddress() const;
 
-		boost::python::object _parseFcn;
-
-		std::tuple<std::string, std::string> parseName(const std::string &devName) const;
+		/*!
+		 * \brief Returns a JSON array of device IDs mapped to specified device name
+		 *
+		 * \param deviceName Name of the device
+		 * \return Reference to JSON array of device IDs, as string
+		 */
+		const std::string & getDeviceIdList(const std::string & deviceName) const;
 };
 
 using NestEngineServerNRPClientLauncher = NestEngineServerNRPClient::EngineLauncher<NestServerConfig::DefEngineType>;

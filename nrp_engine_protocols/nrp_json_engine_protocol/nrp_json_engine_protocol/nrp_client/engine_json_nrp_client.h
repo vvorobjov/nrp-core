@@ -114,10 +114,10 @@ class EngineJSONNRPClient
 			// TODO: Check if engine has processed all sent devices
 		}
 
-		SimulationTime getEngineTime() const override
+		nrpTimeUtils::SimulationTime getEngineTime() const override
 		{	return this->_engineTime;	}
 
-		virtual void runLoopStep(SimulationTime timeStep) override
+		virtual void runLoopStep(nrpTimeUtils::SimulationTime timeStep) override
 		{
 			this->_loopStepThread = std::async(std::launch::async, std::bind(&EngineJSONNRPClient::loopFcn, this, timeStep));
 		}
@@ -221,7 +221,7 @@ class EngineJSONNRPClient
 		/*!
 		 * \brief Future of thread running a single loop. Used by runLoopStep and waitForStepCompletion to execute the thread
 		 */
-		std::future<SimulationTime> _loopStepThread;
+		std::future<nrpTimeUtils::SimulationTime> _loopStepThread;
 
 		/*!
 		 * \brief Server Address to send requests to
@@ -231,7 +231,7 @@ class EngineJSONNRPClient
 		/*!
 		 * \brief Engine Time
 		 */
-		SimulationTime _engineTime;
+		nrpTimeUtils::SimulationTime _engineTime;
 
 		/*!
 		 * \brief Send a request to the Server
@@ -265,7 +265,7 @@ class EngineJSONNRPClient
 		 * \param timeStep Time (in seconds) to execute the engine
 		 * \return Returns current time of engine
 		 */
-		SimulationTime loopFcn(SimulationTime timeStep)
+		nrpTimeUtils::SimulationTime loopFcn(nrpTimeUtils::SimulationTime timeStep)
 		{
 			nlohmann::json request;
 			request[EngineJSONConfigConst::EngineTimeStepName.data()] = timeStep.count();
@@ -276,17 +276,17 @@ class EngineJSONNRPClient
 			                                                     "Engine Server failed during loop execution"));
 
 			// Get engine time from response
-			SimulationTime engineTime;
+			nrpTimeUtils::SimulationTime engineTime;
 			try
 			{
-				engineTime = SimulationTime(resp[EngineJSONConfigConst::EngineTimeName.data()]);
+				engineTime = nrpTimeUtils::SimulationTime(resp[EngineJSONConfigConst::EngineTimeName.data()]);
 			}
 			catch(std::exception &e)
 			{
 				throw NRPException::logCreate(e, "Error while parsing the return value of the run_step of \"" + this->engineName() + "\"");
 			}
 
-			if(engineTime < SimulationTime::zero())
+			if(engineTime < nrpTimeUtils::SimulationTime::zero())
 				throw NRPException::logCreate("Error during execution of engine \"" + this->engineName() + "\"");
 
 			return engineTime;

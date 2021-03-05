@@ -54,7 +54,7 @@ void SimulationLoop::initLoop()
 	}
 }
 
-void SimulationLoop::runLoop(SimulationTime runLoopTime)
+void SimulationLoop::runLoop(nrpTimeUtils::SimulationTime runLoopTime)
 {
 	const auto loopStopTime = this->_simTime + runLoopTime;
 	
@@ -135,7 +135,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		{
 			const auto trueRunTime = this->_simTime - engine->getEngineTime() + engine->getEngineTimestep();
 
-			if(trueRunTime >= SimulationTime::zero())
+			if(trueRunTime >= nrpTimeUtils::SimulationTime::zero())
 			{
 				try
 				{
@@ -151,7 +151,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			}
 			else
 			{
-				const auto timeDiff = fromSimulationTime<float, std::ratio<1>>(engine->getEngineTime() - this->_simTime);
+				const auto timeDiff = nrpTimeUtils::fromSimulationTime<float, std::ratio<1>>(engine->getEngineTime() - this->_simTime);
 
 				NRPLogger::SPDWarnLogDefault("Engine \"" + engine->engineName() + "\" is ahead of simulation time by " +
 				                             std::to_string(timeDiff) + "s\n");

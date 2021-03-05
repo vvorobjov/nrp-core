@@ -26,20 +26,220 @@
 #include "nrp_general_library/utils/restclient_setup.h"
 #include "nrp_nest_server_engine/config/cmake_constants.h"
 
-#include <boost/tokenizer.hpp>
 #include <chrono>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/prctl.h>
 
+/*!
+ * \brief Anonymous namespace containing helper functions
+ */
+namespace
+{
+	/*!
+	 * \brief Returns source of the brain file as string
+	 *
+	 * The source is supposed to be send to the NEST server, which will execute it.
+	 *
+	 * This is a helper function of initialize().
+	 *
+	 * \param brainFileName Name of the initialization file
+	 * \return Source code of brain file as string
+	 */
+	std::string readBrainFile(const std::string & brainFileName)
+	{
+		std::string initCode;
+		{
+			std::ifstream initFile(brainFileName);
+			initCode.assign((std::istreambuf_iterator<char>(initFile) ),
+							(std::istreambuf_iterator<char>()		) );
+		}
+
+		return initCode;
+	}
+
+	/*!
+	 * \brief Checks if engine process is still alive
+	 *
+	 * This is a helper function of initialize().
+	 *
+	 * \param process Pointer to process object
+	 * \throws NRPException When process has stopped
+	 */
+	void checkProcessStatus(const ProcessLauncherInterface::unique_ptr & process)
+	{
+		if(process->getProcessStatus() == ProcessLauncherInterface::ENGINE_RUNNING_STATUS::STOPPED)
+		{
+			throw NRPException::logCreate("Nest Engine process stopped unexpectedly before the init file could be sent");
+		}
+	}
+
+	/*!
+	 * \brief Checks if device can be processed by the engine
+	 *
+	 * \param[in] device     Device ID structure to be verified
+	 * \param[in] engineName Name of the current engine
+	 *
+	 * \return True if device may be processed by the engine, false otherwise
+	 */
+	bool isDeviceTypeValid(const DeviceIdentifier & device, const std::string & engineName)
+	{
+		// Check if type matches the NestServerDevice type
+		// Skip the check if type was not set
+
+		const bool isTypeValid = (device.Type.empty() ||
+								device.Type == NestServerDevice::TypeName.m_data);
+
+		return (isTypeValid && device.EngineName == engineName);
+	}
+
+	/*!
+ 	 * \brief Returns command execution timeout as SimulationTime
+     *
+	 * This is a helper function of initialize().
+	 *
+	 * \return Command execution timeout for this engine
+	 */
+	nrpTimeUtils::SimulationTime processCommandTimeout(const float commandTimeout)
+	{
+		auto timeout = nrpTimeUtils::SimulationTime::max();
+
+		if(commandTimeout > 0.0f)
+		{
+			timeout = nrpTimeUtils::toSimulationTime<float, std::ratio<1,1> >(commandTimeout);
+		}
+
+		return timeout;
+	}
+
+	/*!
+	 * \brief Extracts populations from NEST server response to brain file execution
+	 *
+	 * The NEST server is supposed to return a dictionary names 'populations'. The dictionary
+	 * should contain a mapping of population (device) names to lists of IDs.
+	 *
+	 * This is a helper function of initialize().
+	 *
+	 * \param[in]  data  	   Body part of the response from NEST server
+	 * \param[out] populations Populations mapping structure that will be filled by the function
+	 */
+	void extractPopulations(const std::string & data, NestEngineServerNRPClient::population_mapping_t * populations)
+	{
+		auto respJson = nlohmann::json::parse(data);
+
+		for (nlohmann::json::iterator it = respJson["data"]["populations"].begin(); it != respJson["data"]["populations"].end(); ++it)
+		{
+			populations->insert({it.key(), it.value().dump()});
+		}
+	}
+
+	/*!
+	 * \brief Generic REST call function
+	 *
+	 * \param url   URL to query
+	 * \param ctype Content type as string
+	 * \param data  HTTP POST body
+	 * \throws NRPException On response code different from 200
+	 * \return Response body as string
+	 */
+	std::string nestGenericCall(const std::string & url, const std::string & ctype, const std::string & data)
+	{
+		auto resp = RestClient::post(url, ctype, data);
+
+		if(resp.code != 200)
+		{
+			throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code));
+		}
+
+		return resp.body;
+	}
+
+	/*!
+	 * \brief Sends SetStatus request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param data Arguments for SetStatus
+	 */
+	void nestSetStatus(const std::string & serverAddress, const std::string & data)
+	{
+		nestGenericCall(serverAddress + "/api/SetStatus", "application/json", data);
+	}
+
+	/*!
+	 * \brief Sends GetStatus request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param data Arguments to GetStatus
+	 * \return Response from GetStatus as string
+	 */
+	std::string nestGetStatus(const std::string & serverAddress, const std::string & data)
+	{
+		return nestGenericCall(serverAddress + "/api/GetStatus", "application/json", data);
+	}
+
+	/*!
+	 * \brief Sends Run request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param timeStep Step of the simulation in milliseconds
+	 */
+	void nestRun(const std::string & serverAddress, const float timeStep)
+	{
+		nestGenericCall(serverAddress + "/api/Run", "application/json", "[" + std::to_string(timeStep) + "]");
+	}
+
+	/*!
+	 * \brief Sends SetStatus request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param data Arguments to SetStatus
+	 */
+	void nestCleanup(const std::string & serverAddress)
+	{
+		nestGenericCall(serverAddress + "/api/Cleanup", "text/plain", "");
+	}
+
+	/*!
+	 * \brief Sends GetKernelStatus request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param data Arguments for GetKernelStatus
+	 * \return Response from GetKernelStatus as string
+	 */
+	std::string nestGetKernelStatus(const std::string & serverAddress, const std::string & data)
+	{
+		return nestGenericCall(serverAddress + "/api/GetKernelStatus", "application/json", data);
+	}
+
+	/*!
+	 * \brief Sends Prepare request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 */
+	void nestPrepare(const std::string & serverAddress)
+	{
+		nestGenericCall(serverAddress + "/api/Prepare", "text/plain", "");
+	}
+
+	/*!
+	 * \brief Sends exec request to NEST server
+	 *
+	 * \param serverAddress Address of the NEST server
+	 * \param data Python code to be executed by the server
+	 */
+	std::string nestExec(const std::string & serverAddress, const std::string & data)
+	{
+		return nestGenericCall(serverAddress + "/exec", "application/json", data);
+	}
+}
 
 NestEngineServerNRPClient::NestEngineServerNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineClient(config, std::move(launcher))
 {
 	RestClientSetup::ensureInstance();
+
+	// Cache server address
+
+	this->_serverAddress = this->engineConfig()->nestServerHost() + ":" + std::to_string(this->engineConfig()->nestServerPort());
 }
 
 NestEngineServerNRPClient::~NestEngineServerNRPClient()
@@ -47,97 +247,76 @@ NestEngineServerNRPClient::~NestEngineServerNRPClient()
 
 void NestEngineServerNRPClient::initialize()
 {
-	const auto servAddr = this->serverAddress();
-
-	// Read initFile into string
-	std::string initCode;
-	{
-		std::ifstream initFile(this->engineConfig()->nestInitFileName());
-		initCode.assign((std::istreambuf_iterator<char>(initFile) ),
-		                (std::istreambuf_iterator<char>()		) );
-	}
-
-	try
-	{
-		this->_parseFcn = boost::python::import(NRP_NEST_PYTHON_MODULE_STR).attr("__dict__")["__fcnParse"];
-	}
-	catch(const boost::python::error_already_set &)
-	{
-		NRPException::logCreate("Couldn't load param parse fcn: " + handle_pyerror());
-	}
-
-	auto timeout = SimulationTime::max();
-	if(this->engineConfigGeneral()->engineCommandTimeout() > 0.f)
-		timeout = toSimulationTime<float, std::ratio<1,1> >(this->engineConfigGeneral()->engineCommandTimeout());
+	const auto initCode    = readBrainFile(this->engineConfig()->nestInitFileName());
+	const auto timeout     = processCommandTimeout(this->engineConfigGeneral()->engineCommandTimeout());
+	const auto startTime   = std::chrono::system_clock::now();
+	bool 	   initSuccess = false;
 
 	// Try sending data to given address. Continue until timeout
-	const auto startTime = std::chrono::system_clock::now();
-	bool initSuccess = false;
+
 	do
 	{
 		// Check that process is still running
-		if(this->_process->getProcessStatus() == ProcessLauncherInterface::ENGINE_RUNNING_STATUS::STOPPED)
-			throw NRPException::logCreate("Nest Engine process stopped unexpectedly before the init file could be sent");
+
+		checkProcessStatus(this->_process);
 
 		// Try sending and executing initFile contents
-		RestClient::Response resp;
+
+		std::string response;
 		try
 		{
-			resp = RestClient::post(servAddr + "/exec", "application/json", nlohmann::json({{"source", initCode}}).dump());
+			response = nestExec(this->serverAddress(), nlohmann::json({{"source", initCode}, {"return", {"populations"}}}).dump());
 		}
-		catch(std::exception &)
+		catch(NRPException &e)
 		{
-			// Server unreachable
-			resp.code = 7;
+			throw NRPException::logCreate(e, "Failed to execute init file \"" + this->engineConfig()->nestInitFileName() + "\": " + response);
 		}
+		catch(std::exception &e)
+		{
+			// Server unreachable, retry if server still starting up
 
-		// Retry if server still starting up
-		if(resp.code == 7)
-		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;
 		}
 
-		// Check received status
-		if(resp.code != 200)
-			throw NRPException::logCreate("Failed to execute init file \"" + this->engineConfig()->nestInitFileName() + "\": " + resp.body);
-		else
-		{
-			initSuccess = true;
-			break;
-		}
+		// Extract all populations from the response and cache them in the populations map
+
+		extractPopulations(response, &this->_populations);
+
+		// Exit the loop
+
+		initSuccess = true;
+		break;
 	}
 	while(std::chrono::system_clock::now() - startTime > timeout);
 
 	// Check if timeout reached
+
 	if(!initSuccess)
+	{
 		throw NRPException::logCreate("Failed to initialize Nest server. Received no response before timeout reached");
+	}
 
 	// Run Prepare(). runLoopStep() can now use Run() for stepping
-	const auto resp = RestClient::post(servAddr + "/api/Prepare", "text/plain", "");
-	if(resp.code != 200)
-		throw NRPException::logCreate("Failed to run nest.Prepare()");
+
+	nestPrepare(this->serverAddress());
+
+	// Get simulation resolution and cache it
+
+	this->_simulationResolution = std::stof(nestGetKernelStatus(this->serverAddress(), "[\"resolution\"]"));
 }
 
 void NestEngineServerNRPClient::shutdown()
 {
-	// Run Cleanup() to mirror Prepare() of initialize() call
-	auto resp = RestClient::post(this->serverAddress() + "/api/Cleanup", "text/plain", "");
-	if(resp.code != 200)
-		throw NRPException::logCreate("Failed to run nest.Cleanup()");
+	nestCleanup(this->serverAddress());
 }
 
-SimulationTime NestEngineServerNRPClient::getEngineTime() const
+nrpTimeUtils::SimulationTime NestEngineServerNRPClient::getEngineTime() const
 {
-	// Get Engine Time from Nest Kernel
-	auto resp = RestClient::post(this->serverAddress() + "/api/GetKernelStatus", "application/json", "[\"time\"]");
-	if(resp.code != 200)
-		throw NRPException::logCreate("Failed to get Nest Kernel Status");
-
-	return toSimulationTime<float, std::milli>(std::stof(resp.body));
+	return nrpTimeUtils::toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"time\"]")));
 }
 
-void NestEngineServerNRPClient::runLoopStep(SimulationTime timeStep)
+void NestEngineServerNRPClient::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
 {
 	this->_runStepThread = std::async(std::launch::async, &NestEngineServerNRPClient::runStepFcn, this, timeStep);
 }
@@ -148,87 +327,118 @@ void NestEngineServerNRPClient::waitForStepCompletion(float timeOut)
 	if(!this->_runStepThread.valid())
 		return;
 
-	if(this->_runStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-		throw NRPException::logCreate("Nest loop still running after timeout reached");
+	if(timeOut > 0)
+	{
+		if(this->_runStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
+			throw NRPException::logCreate("Nest loop still running after timeout reached");
+	}
+	else
+	{
+		this->_runStepThread.wait();
+	}
+
+	// runStepFcn doesn't return engine time, like in other engines. Only status of REST call is returned
 
 	if(!this->_runStepThread.get())
+	{
 		throw NRPException::logCreate("Nest loop failed unexpectedly");
+	}
 }
 
-EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEngine(const EngineClientInterface::device_identifiers_set_t &deviceIdentifiers)
+const std::string & NestEngineServerNRPClient::getDeviceIdList(const std::string & deviceName) const
 {
-	const auto serverAddr = this->serverAddress();
+	// Check if the device is in the populations map
 
+	if(this->_populations.count(deviceName) == 0)
+	{
+		throw NRPException::logCreate("Device \"" + deviceName + "\" not in populations map");
+	}
+
+	// Get list of device IDs mapped to this device name
+
+	return this->_populations.at(deviceName);
+}
+
+EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers)
+{
 	EngineClientInterface::devices_set_t retVals;
-	//retVals.reserve(deviceIdentifiers.size());
 
 	for(const auto &devID : deviceIdentifiers)
 	{
-		if(devID.EngineName == this->engineName())
+		if(isDeviceTypeValid(devID, this->engineName()))
 		{
-			const auto [call, params] = this->parseName(devID.Name);
+			const auto deviceName = devID.Name;
+			std::string response;
 
-			auto resp = RestClient::post(serverAddr + "/api/" + call, "application/json", params);
-			if(resp.code != 200)
-			    throw std::runtime_error("Failed to get data for device \"" + devID.Name + "\"");
+			// Request status of the IDs from the list
 
-			retVals.emplace(new NestServerDevice(DeviceIdentifier(devID), resp.body));
+			try
+			{
+				response = nestGetStatus(this->serverAddress(), "{\"nodes\":" + getDeviceIdList(deviceName) + "}");
+			}
+			catch(std::exception& e)
+			{
+				throw NRPException::logCreate(e, "Failed to get NEST status for device \"" + deviceName + "\"");
+			}
+
+			// Extract device details from the body
+			// Response from GetStatus is an array of JSON objects, which contains device parameters
+
+			const auto respJson = nlohmann::json::parse(response)[0];
+
+			retVals.emplace(new NestServerDevice(DeviceIdentifier(devID), respJson.dump()));
 		}
 	}
 
 	return retVals;
 }
 
-void NestEngineServerNRPClient::sendDevicesToEngine(const EngineClientInterface::devices_ptr_t &devicesArray)
+void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devicesArray)
 {
-	const auto serverAddr = this->serverAddress();
-
-	for(DeviceInterface *const inDev : devicesArray)
+	for(DeviceInterface * const device : devicesArray)
 	{
-		// If type cannot be processed, skip it
-		if(inDev->id().Type != NestServerDevice::TypeName.m_data)
-			continue;
+		if(isDeviceTypeValid(device->id(), this->engineName()))
+		{
+			// Send command along with parameters to nest
 
-		// Only process devices for this engine
-		if(inDev->engineName() != this->engineName())
-			continue;
+			const auto deviceName = device->name();
 
-		// Send command along with parameters to nest
-		const auto [call, params] = this->parseName(inDev->name());
+			std::string setStatusStr = "{\"nodes\":" + getDeviceIdList(deviceName) + ","
+			                           "\"params\":" + ((NestServerDevice const *)device)->data().serialize() + "}";
 
-		auto resp = RestClient::post(serverAddr + "/api/" + call, "application/json", params);
-		if(resp.code != 200)
-		    throw std::runtime_error("Failed to get data for device \"" + inDev->name() + "\"");
+			try
+			{
+				nestSetStatus(this->serverAddress(), setStatusStr);
+			}
+			catch(std::exception& e)
+			{
+				throw NRPException::logCreate(e, "Failed to set NEST status for device\"" + deviceName + "\"");
+			}
+		}
 	}
 }
 
-bool NestEngineServerNRPClient::runStepFcn(SimulationTime timestep)
+bool NestEngineServerNRPClient::runStepFcn(nrpTimeUtils::SimulationTime timeStep)
 {
 	// According to the NEST API documentation, Run accepts time to simulate in milliseconds and floating-point format
 
-	auto timestepFloatMs = fromSimulationTime<float, std::milli>(timestep);
+	const double runTimeMsRounded = nrpTimeUtils::getRoundedRunTimeMs(timeStep, this->_simulationResolution);
 
-	auto resp = RestClient::post(this->serverAddress() + "/api/Run", "application/json", "[" + std::to_string(timestepFloatMs) + "]");
-	if(resp.code != 200)
+	try
+	{
+		nestRun(this->serverAddress(), runTimeMsRounded);
+	}
+	catch(const std::exception& e)
+	{
 		return false;
+	}
 
 	return true;
 }
 
 std::string NestEngineServerNRPClient::serverAddress() const
 {
-	return this->engineConfig()->nestServerHost() + ":" + std::to_string(this->engineConfig()->nestServerPort());
+	return this->_serverAddress;
 }
 
-std::tuple<std::string, std::string> NestEngineServerNRPClient::parseName(const std::string &devName) const
-{
-	// The Nest command to execute is stored in the DeviceIdentifier's name
-	// in the format Command(arg1, arg2, ..., kwarg1=dat1, kwarg2=dat2, ...). Extract the command
-	// and parameters, and serialize in JSON format for transmit
-	const auto cmdPos = devName.find_first_of('(');
-	if(devName.empty() || devName.back() != ')' || cmdPos >= devName.npos)
-		throw NRPException::logCreate("Invalid device Name. Misconfigured parentheses in device \"" + devName + "\"");
-
-	boost::python::str pyArgJson(this->_parseFcn(devName));
-	return std::make_tuple(devName.substr(0, cmdPos), (std::string)boost::python::extract<std::string>(pyArgJson));
-}
+// EOF

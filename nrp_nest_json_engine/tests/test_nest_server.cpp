@@ -60,7 +60,7 @@ TEST(TestNestJSONServer, TestFunc)
 	ASSERT_EQ(server.initRunFlag(), true);
 
 	// Test runStep REST call
-	SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
+	nrpTimeUtils::SimulationTime timeStep = nrpTimeUtils::toSimulationTime<int, std::milli>(1);
 	ASSERT_EQ(server.runLoopStep(timeStep).count(), timeStep.count());
 
 	// Test getDevice REST call EngineServerGetDevicesRoute

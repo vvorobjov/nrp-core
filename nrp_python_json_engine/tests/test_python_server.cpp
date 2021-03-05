@@ -62,7 +62,7 @@ TEST(TestPythonJSONServer, TestFunc)
 	ASSERT_EQ(server.initRunFlag(), true);
 
 	// Test runStep REST call
-	const SimulationTime timeStep(1000);
+	const nrpTimeUtils::SimulationTime timeStep(1000);
 	ASSERT_EQ(server.runLoopStep(timeStep), timeStep);
 
 	// Test getDevice REST call EngineServerGetDevicesRoute

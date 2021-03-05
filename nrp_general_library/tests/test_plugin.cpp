@@ -49,10 +49,10 @@ class TestEngine
 		virtual void shutdown() override
 		{}
 
-		virtual SimulationTime getEngineTime() const override
-		{	return SimulationTime::zero();	}
+		virtual nrpTimeUtils::SimulationTime getEngineTime() const override
+		{	return nrpTimeUtils::SimulationTime::zero();	}
 
-		virtual void runLoopStep(SimulationTime) override
+		virtual void runLoopStep(nrpTimeUtils::SimulationTime) override
 		{}
 
 		virtual void waitForStepCompletion(float) override

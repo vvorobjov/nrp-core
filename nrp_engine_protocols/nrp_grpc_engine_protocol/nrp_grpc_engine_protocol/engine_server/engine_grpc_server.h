@@ -159,7 +159,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return Engine time after running the step
          */
-        virtual SimulationTime runLoopStep(const SimulationTime timeStep) = 0;
+        virtual nrpTimeUtils::SimulationTime runLoopStep(const nrpTimeUtils::SimulationTime timeStep) = 0;
 
         /*!
          * \brief Initializes the simulation

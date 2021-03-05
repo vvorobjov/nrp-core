@@ -57,7 +57,7 @@ void NRPCommunicationController::registerStepController(GazeboStepController *st
 	this->_stepController = stepController;
 }
 
-SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
+nrpTimeUtils::SimulationTime NRPCommunicationController::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
 {
 	if(this->_stepController == nullptr)
 	{

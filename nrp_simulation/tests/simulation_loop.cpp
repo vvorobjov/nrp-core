@@ -74,7 +74,7 @@ TEST(SimulationLoopTest, RunLoop)
 	const char *procName = "test";
 	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
-	const SimulationTime timestep(10);
+	const nrpTimeUtils::SimulationTime timestep(10);
 	const float timeStepFloat = 0.01f;
 
 	SimulationConfigSharedPtr config(new SimulationConfig(simConfig));
@@ -106,7 +106,7 @@ TEST(SimulationLoopTest, RunLoop)
 
 	ASSERT_NO_THROW(simLoop.initLoop());
 
-	ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
+	ASSERT_EQ(simLoop.getSimTime(), nrpTimeUtils::SimulationTime::zero());
 	ASSERT_NO_THROW(simLoop.runLoop(timestep));
 	ASSERT_EQ(simLoop.getSimTime(), timestep);
 	ASSERT_NO_THROW(simLoop.runLoop(timestep));

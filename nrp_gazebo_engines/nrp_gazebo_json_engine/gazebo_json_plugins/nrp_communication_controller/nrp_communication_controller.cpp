@@ -60,7 +60,7 @@ void NRPCommunicationController::registerStepController(GazeboStepController *st
 	this->_stepController = stepController;
 }
 
-SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
+nrpTimeUtils::SimulationTime NRPCommunicationController::runLoopStep(nrpTimeUtils::SimulationTime timeStep)
 {
 	if(this->_stepController == nullptr)
 		throw NRPException::logCreate("Tried to run loop while the controller has not yet been initialized");

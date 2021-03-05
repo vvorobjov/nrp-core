@@ -108,7 +108,7 @@ class NRPCommunicationController
 		 */
 		GazeboStepController *_stepController = nullptr;
 
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+		virtual nrpTimeUtils::SimulationTime runLoopStep(nrpTimeUtils::SimulationTime timeStep) override;
 
 		virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &deviceLock) override;
 

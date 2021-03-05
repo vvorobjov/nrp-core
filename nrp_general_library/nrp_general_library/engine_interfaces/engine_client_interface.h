@@ -112,14 +112,14 @@ class EngineClientInterface
 		 * \brief Get engine timestep (in seconds)
 		 * \throw Throws on error
 		 */
-		virtual SimulationTime getEngineTimestep() const = 0;
+		virtual nrpTimeUtils::SimulationTime getEngineTimestep() const = 0;
 
 		/*!
 		 * \brief Get current engine time (in seconds)
 		 * \return Returns engine time
 		 * \throw Throws on error
 		 */
-		virtual SimulationTime getEngineTime() const = 0;
+		virtual nrpTimeUtils::SimulationTime getEngineTime() const = 0;
 
 		/*!
 		 * \brief Starts a single loop step in a separate thread.
@@ -127,7 +127,7 @@ class EngineClientInterface
 		 * \param timeStep Time (in seconds) of a single step
 		 * \throw Throws on error
 		 */
-		virtual void runLoopStep(SimulationTime timeStep) = 0;
+		virtual void runLoopStep(nrpTimeUtils::SimulationTime timeStep) = 0;
 
 		/*!
 		 * \brief Wait until step has been completed, at most timeOut seconds
@@ -277,11 +277,11 @@ class EngineClient
 
 		~EngineClient() override = default;
 
-		SimulationTime getEngineTimestep() const override final
+		nrpTimeUtils::SimulationTime getEngineTimestep() const override final
 		{
 			// We need to cast floating-point seconds to integers with units of SimulationTime type
 
-			return toSimulationTime<float, std::ratio<1>>(this->engineConfigGeneral()->engineTimestep());
+			return nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(this->engineConfigGeneral()->engineTimestep());
 		}
 
 		/*!

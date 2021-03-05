@@ -81,7 +81,7 @@ TEST(TestGazeboEngine, WorldPlugin)
 	sleep(1);
 
 	ASSERT_NO_THROW(engine->initialize());
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
+	ASSERT_NO_THROW(engine->runLoopStep(nrpTimeUtils::toSimulationTime<int, std::milli>(100)));
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 }
 
@@ -114,7 +114,7 @@ TEST(TestGazeboEngine, CameraPlugin)
 	// The data is updated asynchronously, on every new frame, so it may happen that on first
 	// acquisition, there's no camera image yet.
 
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
+	ASSERT_NO_THROW(engine->runLoopStep(nrpTimeUtils::toSimulationTime<int, std::milli>(100)));
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 
 	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});

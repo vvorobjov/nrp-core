@@ -189,12 +189,12 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 		// Check whether the simLoop was stopped by any server threads
 		simLock.lock();
 
-		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->simulationTimeOut()));
+		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), nrpTimeUtils::toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->simulationTimeOut()));
 
 		if(!this->isRunning() || hasTimedOut)
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
+		nrpTimeUtils::SimulationTime timeStep = nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
 
 		this->_loop->runLoop(timeStep);
 
@@ -207,7 +207,7 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 	return hasTimedOut;
 }
 
-bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &simLock)
+bool SimulationManager::runSimulation(const nrpTimeUtils::SimulationTime secs, sim_lock_t &simLock)
 {
 	if(this->_loop == nullptr)
 		return false;
@@ -226,7 +226,7 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 		if(!this->isRunning() || endTime < this->_loop->getSimTime())
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
+		nrpTimeUtils::SimulationTime timeStep = nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
 
 		this->_loop->runLoop(timeStep);
 

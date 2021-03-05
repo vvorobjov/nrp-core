@@ -35,7 +35,7 @@ struct PyEngineScriptWrapper
 
 	void defaultInitialize();
 
-	void runLoopFcn(SimulationTime timestep) override;
+	void runLoopFcn(nrpTimeUtils::SimulationTime timestep) override;
 
 	void shutdown() override;
 

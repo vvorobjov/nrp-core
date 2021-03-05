@@ -178,5 +178,5 @@ TEST(SimulationManagerTest, SimulationManagerLoop)
 
 	manager.initSimulationLoop(engines, processManager, simLock);
 
-	ASSERT_TRUE(manager.runSimulation(SimulationTime(1000000), simLock));
+	ASSERT_TRUE(manager.runSimulation(nrpTimeUtils::SimulationTime(1000000), simLock));
 }

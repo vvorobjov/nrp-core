@@ -43,11 +43,11 @@ class TestEngineJSONServer
 
 	virtual ~TestEngineJSONServer() override = default;
 
-	SimulationTime curTime = SimulationTime::zero();
+	nrpTimeUtils::SimulationTime curTime = nrpTimeUtils::SimulationTime::zero();
 
-	SimulationTime runLoopStep(SimulationTime timeStep) override
+	nrpTimeUtils::SimulationTime runLoopStep(nrpTimeUtils::SimulationTime timeStep) override
 	{
-		if(timeStep < SimulationTime::zero())
+		if(timeStep < nrpTimeUtils::SimulationTime::zero())
 			throw std::invalid_argument("error");
 
 		curTime += timeStep;
@@ -168,7 +168,7 @@ TEST(EngineJSONServerTest, HttpRequests)
 	nlohmann::json retData = nlohmann::json::parse(resp.body);
 	ASSERT_STREQ(retData["status"].get<std::string>().data(), "success");
 
-	SimulationTime runTime = toSimulationTime<int, std::milli>(1);
+	nrpTimeUtils::SimulationTime runTime = nrpTimeUtils::toSimulationTime<int, std::milli>(1);
 	// Run step command
 	data.clear();
 	data[EngineJSONConfigConst::EngineTimeStepName.data()] = runTime.count();

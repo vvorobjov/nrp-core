@@ -180,7 +180,7 @@ class TestEngineGrpcServer
             this->_sleepTimeMs = sleepTimeMs;
         }
 
-        SimulationTime runLoopStep(const SimulationTime timeStep) override
+        nrpTimeUtils::SimulationTime runLoopStep(const nrpTimeUtils::SimulationTime timeStep) override
         {
             specialBehaviour();
 
@@ -191,7 +191,7 @@ class TestEngineGrpcServer
 
         void resetEngineTime()
         {
-            this->_time = SimulationTime::zero();
+            this->_time = nrpTimeUtils::SimulationTime::zero();
         }
 
     private:
@@ -205,7 +205,7 @@ class TestEngineGrpcServer
             }
         }
 
-        SimulationTime _time        = SimulationTime::zero();
+        nrpTimeUtils::SimulationTime _time = nrpTimeUtils::SimulationTime::zero();
         int            _sleepTimeMs = 0;
 };
 
@@ -316,9 +316,9 @@ TEST(EngineGrpc, ShutdownCommandTimeout)
     ASSERT_THROW(client.sendShutdownCommand(jsonMessage), std::runtime_error);
 }
 
-static SimulationTime floatToSimulationTime(float time)
+static nrpTimeUtils::SimulationTime floatToSimulationTime(float time)
 {
-    return toSimulationTime<float, std::ratio<1>>(time);
+    return nrpTimeUtils::toSimulationTime<float, std::ratio<1>>(time);
 }
 
 TEST(EngineGrpc, RunLoopStepCommand)
@@ -329,7 +329,7 @@ TEST(EngineGrpc, RunLoopStepCommand)
 
     // The gRPC server isn't running, so the runLoopStep command should fail
 
-    SimulationTime timeStep = floatToSimulationTime(0.1f);
+    nrpTimeUtils::SimulationTime timeStep = floatToSimulationTime(0.1f);
     ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
 
     server.startServer();
@@ -367,7 +367,7 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
 
     server.startServer();
     server.timeoutOnNextCommand();
-    SimulationTime timeStep = floatToSimulationTime(2.0f);
+    nrpTimeUtils::SimulationTime timeStep = floatToSimulationTime(2.0f);
     ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
 }
 

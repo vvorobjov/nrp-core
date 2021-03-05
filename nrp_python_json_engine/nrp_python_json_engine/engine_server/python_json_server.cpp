@@ -57,7 +57,7 @@ bool PythonJSONServer::shutdownFlag() const
 	return this->_shutdownFlag;
 }
 
-SimulationTime PythonJSONServer::runLoopStep(SimulationTime timestep)
+nrpTimeUtils::SimulationTime PythonJSONServer::runLoopStep(nrpTimeUtils::SimulationTime timestep)
 {
 	PythonGILLock lock(this->_pyGILState, true);
 
