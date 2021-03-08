@@ -76,7 +76,8 @@ class TestEngineJSONServer
 
 TEST(EngineJSONServerTest, Functions)
 {
-	TestEngineJSONServer server;
+    const std::string address = "localhost:5434";
+	TestEngineJSONServer server(address);
 
 	auto data = nlohmann::json({{"", {{"data", 1}}}});
 	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
@@ -139,7 +140,7 @@ TEST(EngineJSONServerTest, Functions)
 
 TEST(EngineJSONServerTest, HttpRequests)
 {
-	const std::string address = "localhost:5432";
+	const std::string address = "localhost:5434";
 	TestEngineJSONServer server(address);
 
 	auto data = nlohmann::json({{"", {{"data", 1}}}});

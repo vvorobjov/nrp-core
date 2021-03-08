@@ -25,6 +25,8 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
 #include "nrp_nest_server_engine/config/cmake_constants.h"
+#include "nrp_general_library/config/cmake_constants.h"
+#include "nrp_general_library/utils/utils.h"
 
 #include <chrono>
 #include <fstream>
@@ -232,14 +234,17 @@ namespace
 	}
 }
 
-NestEngineServerNRPClient::NestEngineServerNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
+NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineClient(config, std::move(launcher))
 {
-	RestClientSetup::ensureInstance();
+    setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_SERVER_EXECUTABLE_PATH);
+    if(!this->engineConfig().contains("NestServerPort"))
+        setDefaultProperty<int>("NestServerPort", findUnboundPort(this->PortSearchStart));
 
-	// Cache server address
+    RestClientSetup::ensureInstance();
 
-	this->_serverAddress = this->engineConfig()->nestServerHost() + ":" + std::to_string(this->engineConfig()->nestServerPort());
+	this->_serverAddress = this->engineConfig().at("NestServerHost").get<std::string>() + ":" +
+	        std::to_string(this->engineConfig().at("NestServerPort").get<int>());
 }
 
 NestEngineServerNRPClient::~NestEngineServerNRPClient()
@@ -247,13 +252,12 @@ NestEngineServerNRPClient::~NestEngineServerNRPClient()
 
 void NestEngineServerNRPClient::initialize()
 {
-	const auto initCode    = readBrainFile(this->engineConfig()->nestInitFileName());
-	const auto timeout     = processCommandTimeout(this->engineConfigGeneral()->engineCommandTimeout());
+	const auto initCode    = readBrainFile(this->engineConfig().at("NestInitFileName"));
+	const auto timeout     = processCommandTimeout(this->engineConfig().at("EngineCommandTimeout"));
 	const auto startTime   = std::chrono::system_clock::now();
 	bool 	   initSuccess = false;
 
 	// Try sending data to given address. Continue until timeout
-
 	do
 	{
 		// Check that process is still running
@@ -269,7 +273,8 @@ void NestEngineServerNRPClient::initialize()
 		}
 		catch(NRPException &e)
 		{
-			throw NRPException::logCreate(e, "Failed to execute init file \"" + this->engineConfig()->nestInitFileName() + "\": " + response);
+			throw NRPException::logCreate(e, "Failed to execute init file \"" + this->engineConfig().at("NestInitFileName").get<std::string>() +
+			        "\": " + response);
 		}
 		catch(std::exception &e)
 		{
@@ -439,6 +444,33 @@ bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
 std::string NestEngineServerNRPClient::serverAddress() const
 {
 	return this->_serverAddress;
+}
+
+const std::vector<std::string> NestEngineServerNRPClient::engineProcEnvParams() const
+{
+    std::vector<std::string> envVars = this->engineConfig().at("EngineEnvParams");
+
+    // Add NRP library path
+    envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":$LD_LIBRARY_PATH");
+
+    // Disable RestrictedPython
+    envVars.push_back("NEST_SERVER_RESTRICTION_OFF=1");
+
+    return envVars;
+}
+
+const std::vector<std::string> NestEngineServerNRPClient::engineProcStartParams() const
+{
+    std::vector<std::string> startParams;
+
+    // Add Server address
+    int port = this->engineConfig().at("NestServerPort");
+    startParams.push_back("start");
+    startParams.push_back("-o");
+    startParams.push_back("-h"); startParams.push_back(this->engineConfig().at("NestServerHost"));
+    startParams.push_back("-p"); startParams.push_back(std::to_string(port));
+
+    return startParams;
 }
 
 // EOF

@@ -22,12 +22,12 @@
 #ifndef ENGINE_CLIENT_INTERFACE_H
 #define ENGINE_CLIENT_INTERFACE_H
 
-#include "nrp_general_library/config/engine_config.h"
 #include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/process_launchers/process_launcher.h"
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 #include "nrp_general_library/utils/time_utils.h"
+#include "nrp_general_library/utils/json_schema_utils.h"
 
 #include <concepts>
 #include <set>
@@ -37,10 +37,10 @@ class EngineClientInterface;
 class EngineLauncherInterface;
 
 template<class T>
-concept ENGINE_C = requires (EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher) {
+concept ENGINE_C = requires (nlohmann::json  &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) {
     std::derived_from<T, EngineClientInterface>;
-    //std::constructible_from<T, EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&>;
-    //{ T(config, std::move(launcher)) };
+    //std::constructible_from<T, nlohmann::json&, ProcessLauncherInterface::unique_ptr&&>;
+    //{ T(engineConfig, std::move(launcher)) };
 };
 
 /*!
@@ -75,18 +75,27 @@ class EngineClientInterface
 		 * \brief Get Engine Name
 		 * \return Returns engine name
 		 */
-		const std::string &engineName() const;
+		virtual const std::string engineName() const = 0;
 
 		/*!
-		 * \brief Get Engine Name
-		 * \return Returns engine name
+		 * \brief Get engine config data
 		 */
-		std::string &engineName();
+		virtual const nlohmann::json &engineConfig() const = 0;
 
 		/*!
-		 * \brief Get engine config general data
-		 */
-		virtual std::shared_ptr<EngineConfigGeneral> engineConfigGeneral() const = 0;
+        * \brief Get engine config data
+        */
+        virtual nlohmann::json &engineConfig() = 0;
+
+        /*!
+         * \brief Get all Engine Process Startup parameters.
+         */
+        virtual const std::vector<std::string> engineProcStartParams() const = 0;
+
+        /*!
+         * \brief Get all Engine Process Environment variables.
+         */
+        virtual const std::vector<std::string> engineProcEnvParams() const = 0;
 
 		/*!
 		 * \brief Launch the engine
@@ -120,6 +129,13 @@ class EngineClientInterface
 		 * \throw Throws on error
 		 */
 		virtual SimulationTime getEngineTime() const = 0;
+
+        /*!
+         * \brief Get json schema for this specific engine type.
+         * \return Returns URI of engine schema
+         * \throw Throws on error
+         */
+        virtual const std::string engineSchema() const = 0;
 
 		/*!
 		 * \brief Starts a single loop step in a separate thread.
@@ -199,7 +215,7 @@ class EngineLauncherInterface
 		virtual ~EngineLauncherInterface() = default;
 
 		const engine_type_t &engineType() const;
-		virtual EngineClientInterfaceSharedPtr launchEngine(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher) = 0;
+		virtual EngineClientInterfaceSharedPtr launchEngine(nlohmann::json  &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) = 0;
 
 		/*!
 		 *	\brief Compare EngineLaunchers according to _engineType
@@ -219,16 +235,13 @@ using EngineLauncherInterfaceConstSharedPtr = EngineLauncherInterface::const_sha
 /*!
  *	\brief Base class for all Engines
  *	\tparam ENGINE Final derived engine class
- *	\tparam ENGINE_CONFIG Config class corresponding to ENGINE
  */
-template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG>
+template<class ENGINE, FixedString SCHEMA>
 class EngineClient
-        : private std::shared_ptr<ENGINE_CONFIG>,
-          public EngineClientInterface
+        : public EngineClientInterface
 {
 	public:
 		using engine_t = ENGINE;
-		using engine_config_t = ENGINE_CONFIG;
 
 		/*!
 		 * \brief Class for launching engine
@@ -251,13 +264,13 @@ class EngineClient
 
 				/*!
 				 * \brief Launches an engine. Configures config and forks a new child process for the engine
-				 * \param configHolder Engine Configuration
+				 * \param engineConfig Engine Configuration
 				 * \param launcher Process Forker
 				 * \return Returns pointer to EngineClientInterface
 				 */
-				EngineClientInterfaceSharedPtr launchEngine(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher) override
+				EngineClientInterfaceSharedPtr launchEngine(nlohmann::json &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) override
 				{
-					EngineClientInterfaceSharedPtr engine(new ENGINE(configHolder, std::move(launcher)));
+					EngineClientInterfaceSharedPtr engine(new ENGINE(engineConfig, std::move(launcher)));
 					if(engine->launchEngine() == 0)
 					{	/*TODO: Handle process forking error*/	}
 
@@ -267,34 +280,67 @@ class EngineClient
 
 		/*!
 		 * \brief Constructor
-		 * \param configHolder Engine Configuration
+		 * \param engineConfig Engine Configuration
 		 * \param launcher Process Forker
 		 */
-		EngineClient(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : std::shared_ptr<ENGINE_CONFIG>(new ENGINE_CONFIG(configHolder)),
-		      EngineClientInterface(std::move(launcher))
-		{}
+		EngineClient(nlohmann::json  &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher)
+		    : EngineClientInterface(std::move(launcher)),
+		      engineConfig_(engineConfig)
+		{
+		    // validate engine config
+            json_utils::validate_json(this->engineConfig(), this->engineSchema());
+
+		    // setting process start and env params to an empty vector since this can't be done from json schema
+		    setDefaultProperty<std::vector<std::string>>("EngineProcStartParams", std::vector<std::string>());
+            setDefaultProperty<std::vector<std::string>>("EngineEnvParams", std::vector<std::string>());
+		}
 
 		~EngineClient() override = default;
+
+        const std::string engineName() const override final
+        { return this->engineConfig().at("EngineName"); }
 
 		SimulationTime getEngineTimestep() const override final
 		{
 			// We need to cast floating-point seconds to integers with units of SimulationTime type
-
-			return toSimulationTime<float, std::ratio<1>>(this->engineConfigGeneral()->engineTimestep());
+			return toSimulationTime<float, std::ratio<1>>(this->engineConfig().at("EngineTimestep"));
 		}
-
-		/*!
-		 * \brief Get General Engine Configuration
-		 */
-		std::shared_ptr<EngineConfigGeneral> engineConfigGeneral() const override
-		{	return this->engineConfig();	}
 
 		/*!
 		 * \brief Get Engine Configuration
 		 */
-		const std::shared_ptr<ENGINE_CONFIG> &engineConfig() const
-		{	return static_cast<const std::shared_ptr<ENGINE_CONFIG> &>(*this);	}
+		const nlohmann::json &engineConfig() const override final
+		{	return engineConfig_;	}
+
+        /*!
+         * \brief Get Engine Configuration
+         */
+        nlohmann::json &engineConfig() override final
+        {	return engineConfig_;	}
+
+        /*!
+         * \brief Get json schema for this engine type
+         */
+        const std::string engineSchema() const override final
+        {   return SCHEMA.m_data;   }
+
+    protected:
+
+        /*!
+        * \brief Attempts to set a default value for a property in the engine configuration. If the property has been already
+         * set either in the engine configuration file or from the engine schema, its value is not overwritten.
+        * \param key Name of the property to be set
+        * \param value Default value to set
+        */
+        template<class T>
+        void setDefaultProperty(std::string key, T value)
+        {
+            json_utils::set_default<T>(this->engineConfig(), key, value);
+        }
+
+    private:
+
+        nlohmann::json engineConfig_;
 };
 
 

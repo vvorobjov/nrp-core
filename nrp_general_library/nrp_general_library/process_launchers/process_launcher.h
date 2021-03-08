@@ -22,7 +22,6 @@
 #ifndef PROCESS_LAUNCHER_H
 #define PROCESS_LAUNCHER_H
 
-#include "nrp_general_library/config/engine_config.h"
 #include "nrp_general_library/process_launchers/launch_commands/launch_command.h"
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
@@ -56,14 +55,14 @@ class ProcessLauncherInterface
 
 		/*!
 		 * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
-		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over additionalEnvParams and additionalStartParams
-		 * \param additionalEnvParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-		 * \param additionalStartParams Additional Start parameters
+		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+		 * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
+		 * \param startParams Additional Start parameters
 		 * \param appendParentEnv Should parent env variables be appended to child process
 		 * \return Returns Process ID of child process on success
 		 */
-		virtual pid_t launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-		                                  const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv = true) = 0;
+		virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+		                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
 		/*!
 		 * \brief Stop a running engine process
 		 * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinetly
@@ -130,14 +129,14 @@ class ProcessLauncher
 		std::string launcherName() const override final
 		{	return std::string(LauncherType);	}
 
-		pid_t launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-		                                  const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv = true) override final
+		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+		                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override final
 		{
 			if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
-			{	throw noLauncherFound(engineConfig.engineLaunchCmd());	}
+			{	throw noLauncherFound(engineConfig.at("EngineLaunchCommand"));	}
 
-			this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(engineConfig.engineLaunchCmd());
-			return this->_launchCmd->launchEngineProcess(engineConfig, additionalEnvParams, additionalStartParams,appendParentEnv);
+			this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(engineConfig.at("EngineLaunchCommand"));
+			return this->_launchCmd->launchEngineProcess(engineConfig, envParams, startParams,appendParentEnv);
 		}
 
 		pid_t stopEngineProcess(unsigned int killWait) override final

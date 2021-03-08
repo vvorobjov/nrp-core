@@ -38,7 +38,6 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/engine_json_config.cpp
 	tests/engine_json_server.cpp
 	tests/engine_json_nrp_client.cpp
 	tests/json_device_methods.cpp

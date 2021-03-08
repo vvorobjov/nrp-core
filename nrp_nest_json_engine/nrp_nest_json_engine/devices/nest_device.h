@@ -36,7 +36,7 @@ class NestDevice
         : public Device<NestDevice, "NestDevice", PropNames<"data">, PyObjectDeviceConst::PyObjData>
 {
 		static PyObjectDeviceConst::PyObjData defaultPyObject(const boost::python::object &data = boost::python::dict())
-		{	return PyObjectDeviceConst::PyObjData(data, boost::python::import(NRP_NEST_PYTHON_MODULE_STR).attr("__dict__")["NumpyEncoder"]);	}
+		{ return PyObjectDeviceConst::PyObjData(data, boost::python::import(NRP_NEST_PYTHON_MODULE_STR).attr("__dict__")["NumpyEncoder"]); }
 
 	public:
 		NestDevice(DeviceIdentifier &&devID, const boost::python::object &data = boost::python::dict());

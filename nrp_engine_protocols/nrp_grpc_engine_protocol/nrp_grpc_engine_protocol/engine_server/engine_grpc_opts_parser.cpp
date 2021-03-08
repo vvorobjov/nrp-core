@@ -30,8 +30,8 @@ cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised
 		options.allow_unrecognised_options();
 
 	options.add_options()
-	        (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>()->default_value(EngineGRPCConfigConst::DefEngineServerAddress.data()))
-	        (EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>()->default_value(EngineGRPCConfigConst::DefEngineRegistrationServerAddress.data()))
+	        (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
+	        (EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>())
 	        (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
 
 	return options;

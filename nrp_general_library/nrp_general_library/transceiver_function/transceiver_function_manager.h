@@ -22,7 +22,6 @@
 #ifndef TRANSCeivER_FUNCTION_MANAGER_H
 #define TRANSCeivER_FUNCTION_MANAGER_H
 
-#include "nrp_general_library/config/transceiver_function_config.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 
 #include "nrp_general_library/utils/ptr_templates.h"
@@ -36,23 +35,17 @@
 class TransceiverFunctionManager
 {
 		/*!
-		 * \brief Contains settings for a single TF
+		 * \brief Custom comparator function for json objects representing TF configurations
 		 */
-		struct TransceiverFunctionSettings
-		        : public TransceiverFunctionConfigSharedPtr
-		{
-			TransceiverFunctionSettings(const TransceiverFunctionConfigSharedPtr &config);
-
-			/*!
-			 * \brief Less comparison. Only used for set container sorting. Compares names of both transfer functions, ensuring uniqueness of names
-			 * \param rhs
-			 * \return Returns true if name of this object is less than the name of rhs
-			 */
-			bool operator<(const TransceiverFunctionSettings &rhs) const;
-		};
+        struct less_tf_settings {
+            bool operator() (const nlohmann::json &a, const nlohmann::json &b) const {
+                return a.at("Name") < b.at("Name");
+            }
+        };
 
 	public:
-		using tf_settings_t = std::set<TransceiverFunctionSettings>;
+
+		using tf_settings_t = std::set<nlohmann::json, less_tf_settings>;
 		using tf_results_t = std::list<TransceiverFunctionInterpreter::TFExecutionResult>;
 
 		TransceiverFunctionManager() = default;
@@ -69,14 +62,14 @@ class TransceiverFunctionManager
 		 * \param tfConfig TF Configuration
 		 * \exception Throws an exception if a TF with the same name is already loaded. Use updateTF to change loaded TFs
 		 */
-		void loadTF(const TransceiverFunctionConfigSharedPtr &tfConfig);
+		void loadTF(const nlohmann::json &tfConfig);
 
 		/*!
 		 * \brief Updates an existing TF or creates a new one
 		 * \param Name of old TF
 		 * \param tfConfig TF Configuration
 		 */
-		void updateTF(const TransceiverFunctionConfigSharedPtr &tfConfig);
+		void updateTF(const nlohmann::json &tfConfig);
 
 		/*!
 		 * \brief Executes all active TFs and records the results

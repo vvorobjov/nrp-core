@@ -20,6 +20,8 @@ We use CMake to manage project compilation. A detailed explanation of our setup 
 
 \subsection tutorial_engine_creation_engine_config Creating an EngineConfig
 
+TODO: rewrite
+
 Engines must be configurable by users. This is accomplished via the EngineConfig class. Should your engine require no configuration, we suggest using the already provided SimpleEngineConfig class. This offers only minimal configuration options:
 
     using EngineConfigExample = SimpleEngineConfig<"example_engine">;

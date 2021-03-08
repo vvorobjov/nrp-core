@@ -24,6 +24,7 @@
 
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_nest_json_engine/engine_server/nest_json_server.h"
+#include "nrp_nest_json_engine/config/nest_config.h"
 #include "tests/test_env_cmake.h"
 
 #include <boost/python.hpp>
@@ -41,21 +42,23 @@ TEST(TestNestJSONServer, TestFunc)
 	python::dict pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
 	python::object pyLocals;
 
-	auto cfg = NestConfig(nlohmann::json());
-	cfg.nestInitFileName() = TEST_NEST_DEVICE_FILE_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_nest";
+    config["NestInitFileName"] = TEST_NEST_DEVICE_FILE_NAME;
+    std::string server_address = "localhost:5434";
+    config["ServerAddress"] = server_address;
 
-	NestJSONServer server(cfg.engineServerAddress(), pyGlobals, pyLocals);
+	NestJSONServer server(server_address, pyGlobals, pyLocals);
 
 	// Test Init
-	nlohmann::json req = nlohmann::json({{NestConfig::ConfigType.m_data, cfg.writeConfig()}});
 	pyState.allowThreads();
 
 	EngineJSONServer::mutex_t fakeMutex;
 	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(req, fakeLock);
+	nlohmann::json respParse = server.initialize(config, fakeLock);
 
-	const auto execResult = respParse[NestConfig::InitFileExecStatus.data()].get<bool>();
+	const auto execResult = respParse[NestConfigConst::InitFileExecStatus.data()].get<bool>();
 	ASSERT_EQ(execResult, true);
 	ASSERT_EQ(server.initRunFlag(), true);
 
@@ -66,8 +69,8 @@ TEST(TestNestJSONServer, TestFunc)
 	// Test getDevice REST call EngineServerGetDevicesRoute
 	server.startServerAsync();
 
-	req = nlohmann::json({{"voltmeter", 0}});
-	auto resp = RestClient::post(cfg.engineServerAddress() + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
+	auto req = nlohmann::json({{"voltmeter", 0}});
+	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
 	respParse = nlohmann::json::parse(resp.body);
 
 	const std::string jsonDat = respParse["voltmeter"][PyObjectDeviceConst::Object.m_data]["element_type"].get<std::string>();
@@ -98,18 +101,20 @@ TEST(TestNestJSONServer, TestInitError)
 	auto pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
 	python::object pyLocals;
 
-	auto cfg = NestConfig(nlohmann::json());
-	cfg.nestInitFileName() = TEST_NEST_INIT_ERROR_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_nest";
+    config["NestInitFileName"] = TEST_NEST_INIT_ERROR_NAME;
+    std::string server_address = "localhost:5434";
+    config["ServerAddress"] = server_address;
 
-	NestJSONServer server(cfg.engineServerAddress(), pyGlobals, pyLocals);
+	NestJSONServer server(server_address, pyGlobals, pyLocals);
 
-	nlohmann::json req = nlohmann::json({{NestConfig::ConfigType.m_data, cfg.writeConfig()}});
 	pyState.allowThreads();
 
 	EngineJSONServer::mutex_t fakeMutex;
 	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(req, fakeLock);
+	nlohmann::json respParse = server.initialize(config, fakeLock);
 
 	pyState.endAllowThreads();
 }

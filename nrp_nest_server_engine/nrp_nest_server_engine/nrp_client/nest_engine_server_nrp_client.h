@@ -22,12 +22,11 @@
 #ifndef NEST_ENGINE_SERVER_NRP_CLIENT_H
 #define NEST_ENGINE_SERVER_NRP_CLIENT_H
 
+#include "nrp_nest_server_engine/config/nest_server_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
 #include "nrp_nest_server_engine/devices/nest_server_device.h"
-
-#include "nrp_nest_server_engine/config/nest_server_config.h"
 
 #include <future>
 #include <unistd.h>
@@ -36,15 +35,20 @@
  * \brief NRP - Nest Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  */
 class NestEngineServerNRPClient
-        : public EngineClient<NestEngineServerNRPClient, NestServerConfig>
+        : public EngineClient<NestEngineServerNRPClient, NestServerConfigConst::EngineSchema>
 {
 		/*!
 		 * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
 		 */
 		static constexpr size_t _killWait = 10;
 
+        /*!
+         * \brief NestEngineServerNRPClient will look for an unbound port as default. This is the port number at which to start the search
+         */
+        static constexpr uint16_t PortSearchStart = 5000;
+
 	public:
-		NestEngineServerNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher);
+		NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
 		virtual ~NestEngineServerNRPClient() override;
 
 		virtual void initialize() override;
@@ -56,6 +60,10 @@ class NestEngineServerNRPClient
 		virtual void waitForStepCompletion(float timeOut) override;
 
 		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
+
+        virtual const std::vector<std::string> engineProcStartParams() const override;
+
+        virtual const std::vector<std::string> engineProcEnvParams() const override;
 
 		using population_mapping_t = std::map<std::string, std::string>;
 
@@ -108,7 +116,7 @@ class NestEngineServerNRPClient
 		const std::string & getDeviceIdList(const std::string & deviceName) const;
 };
 
-using NestEngineServerNRPClientLauncher = NestEngineServerNRPClient::EngineLauncher<NestServerConfig::DefEngineType>;
+using NestEngineServerNRPClientLauncher = NestEngineServerNRPClient::EngineLauncher<NestServerConfigConst::EngineType>;
 
 
 CREATE_NRP_ENGINE_LAUNCHER(NestEngineServerNRPClientLauncher);

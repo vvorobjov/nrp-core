@@ -15,7 +15,7 @@
 			"PythonFileName": "engine_2.py"
 		}
 	],
-	"TransceiverFunctions":
+	"TransceiverFunctionConfigs":
 	[
 		{
 			"Name": "tf_1",

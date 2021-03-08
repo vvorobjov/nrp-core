@@ -22,6 +22,10 @@
 
 #include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.h"
 
+#include "nrp_python_json_engine/config/cmake_constants.h"
+#include "nrp_python_json_engine/config/python_config.h"
+#include "nrp_json_engine_protocol/config/engine_json_config.h"
+
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -29,21 +33,22 @@
 
 #include <chrono>
 
-PythonEngineJSONNRPClient::PythonEngineJSONNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
+PythonEngineJSONNRPClient::PythonEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineJSONNRPClient(config, std::move(launcher))
-{}
+{
+    setDefaultProperty<std::string>("EngineProcCmd", NRP_PYTHON_EXECUTABLE_PATH);
+}
 
 PythonEngineJSONNRPClient::~PythonEngineJSONNRPClient()
 {}
 
 void PythonEngineJSONNRPClient::initialize()
 {
-	const auto &pythonConfig = this->engineConfig();
-	nlohmann::json resp = this->sendInitCommand(nlohmann::json({{PythonConfig::ConfigType.m_data, pythonConfig->writeConfig()}}));
-	if(!resp.at(PythonConfig::InitFileExecStatus.data()).get<bool>())
+	nlohmann::json resp = this->sendInitCommand(this->engineConfig());
+	if(!resp.at(PythonConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
-		this->_initErrMsg = resp.at(PythonConfig::InitFileErrorMsg.data());
+		this->_initErrMsg = resp.at(PythonConfigConst::InitFileErrorMsg.data());
 		NRPLogger::SPDErrLogDefault(this->_initErrMsg);
 
 		throw NRPException::logCreate("Initialization failed: " + this->_initErrMsg);
@@ -53,4 +58,15 @@ void PythonEngineJSONNRPClient::initialize()
 void PythonEngineJSONNRPClient::shutdown()
 {
 	this->sendShutdownCommand(nlohmann::json());
+}
+
+const std::vector<std::string> PythonEngineJSONNRPClient::engineProcStartParams() const
+{
+    std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
+
+    // Add JSON Server address (will be used by plugin)
+    std::string server_address = this->engineConfig().at("ServerAddress");
+    startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address);
+
+    return startParams;
 }

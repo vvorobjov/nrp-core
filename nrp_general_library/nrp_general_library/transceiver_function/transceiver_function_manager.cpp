@@ -27,34 +27,26 @@
 
 #include <iostream>
 
-TransceiverFunctionManager::TransceiverFunctionSettings::TransceiverFunctionSettings(const TransceiverFunctionConfigSharedPtr &config)
-    : TransceiverFunctionConfigSharedPtr(config)
-{}
-
-bool TransceiverFunctionManager::TransceiverFunctionSettings::operator<(const TransceiverFunctionManager::TransceiverFunctionSettings &rhs) const
-{
-	return (*this)->name() < rhs->name();
-}
-
 EngineClientInterface::device_identifiers_set_t TransceiverFunctionManager::updateRequestedDeviceIDs() const
 {
 	return this->_tfInterpreter.updateRequestedDeviceIDs();
 }
 
-void TransceiverFunctionManager::loadTF(const TransceiverFunctionConfigSharedPtr &tfConfig)
+void TransceiverFunctionManager::loadTF(const nlohmann::json &tfConfig)
 {
-	auto storedConfigIterator = this->_tfSettings.find(tfConfig);
-	auto loadedTF = this->_tfInterpreter.findTF(tfConfig->name());
+    auto storedConfigIterator = this->_tfSettings.find(tfConfig);
+	std::string tf_name = tfConfig.at("Name");
+	auto loadedTF = this->_tfInterpreter.findTF(tf_name);
 	if(loadedTF != this->_tfInterpreter.loadedTFs().end() || storedConfigIterator != this->_tfSettings.end())
-		throw NRPException::logCreate("TF with name " + tfConfig->name() + "already loaded");
+		throw NRPException::logCreate("TF with name " + tf_name + "already loaded");
 
 	this->_tfSettings.insert(tfConfig);
-	this->_tfInterpreter.loadTransceiverFunction(*tfConfig);
+	this->_tfInterpreter.loadTransceiverFunction(tfConfig);
 }
 
-void TransceiverFunctionManager::updateTF(const TransceiverFunctionConfigSharedPtr &tfConfig)
+void TransceiverFunctionManager::updateTF(const nlohmann::json &tfConfig)
 {
-	this->_tfInterpreter.updateTransceiverFunction(*tfConfig);
+	this->_tfInterpreter.updateTransceiverFunction(tfConfig);
 	this->_tfSettings.insert(tfConfig);
 }
 
@@ -64,10 +56,10 @@ TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActi
 
 	for(const auto &setting : this->_tfSettings)
 	{
-		if(setting->isActive())
+		if(setting.at("IsActive"))
 		{
 			// Get device outputs from transceiver function
-			TransceiverFunctionInterpreter::device_list_t pyResult(this->_tfInterpreter.runSingleTransceiverFunction(setting->name()));
+			TransceiverFunctionInterpreter::device_list_t pyResult(this->_tfInterpreter.runSingleTransceiverFunction(setting.at("Name")));
 			TransceiverFunctionInterpreter::TFExecutionResult result(std::move(pyResult));
 
 			// Extract pointers to retrieved devices
@@ -108,8 +100,8 @@ bool TransceiverFunctionManager::isActive(const std::string &tfName)
 {
 	for(const auto &curSetting : this->_tfSettings)
 	{
-		if(curSetting->name() == tfName)
-			return curSetting->isActive();
+		if(curSetting.at("Name") == tfName)
+			return curSetting.at("IsActive");
 	}
 
 	return false;

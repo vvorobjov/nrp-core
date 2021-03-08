@@ -43,6 +43,9 @@ LEAKY_PARAMS = {
         'I_e': 0.0
 }
 
+nest.set_verbosity("M_WARNING")
+nest.ResetKernel()
+
 population = nest.Create('iaf_cond_alpha', 8)
 nest.SetStatus(population[0:5], SENSORPARAMS)
 nest.SetStatus(population[5:6], GO_ON_PARAMS)

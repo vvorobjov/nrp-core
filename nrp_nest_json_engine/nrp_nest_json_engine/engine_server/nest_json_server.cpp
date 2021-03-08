@@ -29,6 +29,8 @@
 #include "nrp_nest_json_engine/engine_server/nest_engine_device_controller.h"
 #include "nrp_nest_json_engine/python/create_device_class.h"
 
+#include "nrp_nest_json_engine/config/nest_config.h"
+
 #include <fstream>
 
 namespace python = boost::python;
@@ -129,14 +131,11 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 		return this->formatInitErrorMessage(msg);
 	}
 
-	// Read received configuration
-	const NestConfig config(data.at(NestConfig::ConfigType.m_data));
-
 	// Empty device mapping
 	this->_devMap.clear();
 
 	// Read init file if present
-	const auto &initFileName = config.nestInitFileName();
+	const std::string &initFileName = data.at("NestInitFileName");
 	if(!initFileName.empty())
 	{
 		std::fstream initFile(initFileName, std::ios_base::in);
@@ -181,7 +180,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 			python::object devNodes = this->_devMap[devKey];
 
 			auto devController = std::shared_ptr<NestEngineJSONDeviceController<NestDevice> >(new
-			            NestEngineJSONDeviceController<NestDevice>(DeviceIdentifier(devName, config.engineName(), NestDevice::TypeName.data()),
+			            NestEngineJSONDeviceController<NestDevice>(DeviceIdentifier(devName, data.at("EngineName"), NestDevice::TypeName.data()),
 												 devNodes, this->_pyNest));
 
 			this->_deviceControllerPtrs.push_back(devController);
@@ -204,7 +203,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 	this->_initRunFlag = true;
 
 	// Return success and parsed devmap
-	return nlohmann::json({{NestConfig::InitFileExecStatus, true}, {NestConfig::InitFileParseDevMap, jsonDevMap}});
+	return nlohmann::json({{NestConfigConst::InitFileExecStatus, true}, {NestConfigConst::InitFileParseDevMap, jsonDevMap}});
 }
 
 nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
@@ -228,7 +227,7 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
 
 nlohmann::json NestJSONServer::formatInitErrorMessage(const std::string &errMsg)
 {
-	return nlohmann::json({{NestConfig::InitFileExecStatus, 0}, {NestConfig::InitFileErrorMsg, errMsg}});
+	return nlohmann::json({{NestConfigConst::InitFileExecStatus, 0}, {NestConfigConst::InitFileErrorMsg, errMsg}});
 }
 
 nlohmann::json NestJSONServer::getDeviceData(const nlohmann::json &reqData)

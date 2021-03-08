@@ -22,12 +22,13 @@
 #ifndef SIMULATION_LOOP_H
 #define SIMULATION_LOOP_H
 
-#include "nrp_general_library/config/simulation_config.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+
+#include "nrp_general_library/utils/json_schema_utils.h"
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -39,7 +40,7 @@ class SimulationLoop
 		using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
 		SimulationLoop() = default;
-		SimulationLoop(SimulationConfigSharedPtr config, engine_interfaces_t engines);
+		SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines);
 
 		/*!
 		 * \brief Initialize engines before running loop
@@ -69,7 +70,7 @@ class SimulationLoop
 		/*!
 		 * \brief Configuration of simulation
 		 */
-		SimulationConfigSharedPtr _config;
+        jsonSharedPtr _config;
 
 		/*!
 		 * \brief Engines
@@ -99,7 +100,7 @@ class SimulationLoop
 		 * \param engines Loaded Engines
 		 * \return Returns initialized TransceiverFunctionManager
 		 */
-		static TransceiverFunctionManager initTFManager(const SimulationConfigSharedPtr &simConfig, const engine_interfaces_t &engines);
+		static TransceiverFunctionManager initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines);
 
 		/*!
 		 * \brief Handle device intputs of specified interface

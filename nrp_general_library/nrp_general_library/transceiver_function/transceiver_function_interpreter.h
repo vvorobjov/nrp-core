@@ -22,7 +22,6 @@
 #ifndef TRANSCEIVER_FUNCTION_INTERPRETER_H
 #define TRANSCEIVER_FUNCTION_INTERPRETER_H
 
-#include "nrp_general_library/config/transceiver_function_config.h"
 #include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
@@ -157,7 +156,7 @@ class TransceiverFunctionInterpreter
 		 * \param transceiverFunction Pointer to TF configuration
 		 * \return Returns iterator to loaded TF
 		 */
-		transceiver_function_datas_t::iterator loadTransceiverFunction(const TransceiverFunctionConfig &transceiverFunction);
+		transceiver_function_datas_t::iterator loadTransceiverFunction(const nlohmann::json &transceiverFunction);
 
 		/*!
 		 * \brief Prepares a TF for execution. Loads code into storage
@@ -174,7 +173,7 @@ class TransceiverFunctionInterpreter
 		 * \param transceiverFunction New TF configuration
 		 * \return Returns iterator to updated TF
 		 */
-		transceiver_function_datas_t::iterator updateTransceiverFunction(const TransceiverFunctionConfig &transceiverFunction);
+		transceiver_function_datas_t::iterator updateTransceiverFunction(const nlohmann::json &transceiverFunction);
 
 	protected:
 		/*!

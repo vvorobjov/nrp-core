@@ -144,10 +144,7 @@ TEST(TransceiverFunctionInterpreterTest, TestTransceiverFunction)
 
 	const std::string tfName = "testTF";
 
-	TransceiverFunctionConfig tfCfg;
-	tfCfg.setName(tfName);
-	tfCfg.setFileName(TEST_TRANSCEIVER_FCN_FILE_NAME);
-	tfCfg.setIsActive(true);
+	nlohmann::json tfCfg = {{"Name", tfName}, {"FileName", TEST_TRANSCEIVER_FCN_FILE_NAME}, {"IsActive", true}};
 
 	std::shared_ptr<TestOutputDevice> dev(new TestOutputDevice(TestOutputDevice::ID()));
 	dev->TestValue = 4;

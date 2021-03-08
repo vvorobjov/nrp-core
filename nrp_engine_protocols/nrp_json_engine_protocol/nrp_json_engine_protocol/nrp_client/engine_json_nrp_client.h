@@ -44,9 +44,9 @@
  *  \tparam ENGINE_INTERFACE Class derived from GeneralInterface. Currently either PhysicsInterface or BrainInterface
  *  \tparam DEVICES Classes derived from DeviceInterface that should be communicated to/from the engine.
  */
-template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG, DEVICE_C ...DEVICES>
+template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
 class EngineJSONNRPClient
-        : public EngineClient<ENGINE, ENGINE_CONFIG>
+        : public EngineClient<ENGINE, SCHEMA>
 {
 	public:
 		/*!
@@ -54,9 +54,9 @@ class EngineJSONNRPClient
 		 * \param config Engine Config
 		 * \param launcher Process launcher
 		 */
-		EngineJSONNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
-		      _serverAddress(this->engineConfig()->engineServerAddress()),
+		EngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
+		      _serverAddress(this->engineConfig().at("ServerAddress")),
 			  _engineTime(0)
 		{	RestClientSetup::ensureInstance();	}
 
@@ -66,12 +66,12 @@ class EngineJSONNRPClient
 		 * \param config Engine Config
 		 * \param launcher Process launcher
 		 */
-		EngineJSONNRPClient(const std::string &serverAddress, EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher)),
+		EngineJSONNRPClient(const std::string &serverAddress, nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
 		      _serverAddress(serverAddress),
 			  _engineTime(0)
 		{
-			this->engineConfig()->engineServerAddress() = this->_serverAddress;
+            this->engineConfig()["ServerAddress"] = this->_serverAddress;
 			RestClientSetup::ensureInstance();
 		}
 
@@ -83,13 +83,13 @@ class EngineJSONNRPClient
 			auto enginePID = this->EngineClientInterface::launchEngine();
 
 			// Wait for engine to register itself
-			if(!this->engineConfig()->engineRegistrationServerAddress().empty())
+			if(!this->engineConfig().at("RegistrationServerAddress").empty())
 			{
 				const auto serverAddr = this->waitForRegistration(20, 1);
 				if(serverAddr.empty())
 					throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
 
-				this->engineConfig()->engineServerAddress() = serverAddr;
+                this->engineConfig()["ServerAddress"] = serverAddr;
 				this->_serverAddress = serverAddr;
 			}
 
@@ -139,6 +139,29 @@ class EngineJSONNRPClient
 
 			this->_engineTime = this->_loopStepThread.get();
 		}
+
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        {
+            std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
+
+            std::string name = this->engineConfig().at("EngineName");
+            startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineNameArg.data() + "=" + name);
+
+            // Add JSON Server address (will be used by EngineJSONServer)
+            std::string address = this->engineConfig().at("ServerAddress");
+            startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + address);
+
+            // Add JSON registration Server address (will be used by EngineJSONServer)
+            std::string reg_address = this->engineConfig().at("RegistrationServerAddress");
+            startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineRegistrationServerAddrArg.data() + "=" + reg_address);
+
+            return startParams;
+        }
+
+        virtual const std::vector<std::string> engineProcEnvParams() const override
+        {
+            return this->engineConfig().at("EngineEnvParams");
+        }
 
 	protected:
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
@@ -194,7 +217,7 @@ class EngineJSONNRPClient
 		{
 			auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
 			if(pRegistrationServer == nullptr)
-				pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig()->engineRegistrationServerAddress());
+				pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig().at("RegistrationServerAddress"));
 
 			if(!pRegistrationServer->isRunning())
 				pRegistrationServer->startServerAsync();

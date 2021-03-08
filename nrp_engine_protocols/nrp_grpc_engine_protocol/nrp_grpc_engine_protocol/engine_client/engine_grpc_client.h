@@ -28,15 +28,15 @@
 #include <grpcpp/support/time.h>
 #include <nlohmann/json.hpp>
 
-#include "nrp_general_library/config/engine_config.h"
+#include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 
-template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG, DEVICE_C ...DEVICES>
+template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
 class EngineGrpcClient
-    : public EngineClient<ENGINE, ENGINE_CONFIG>
+    : public EngineClient<ENGINE, SCHEMA>
 {
     void prepareRpcContext(grpc::ClientContext * context)
     {
@@ -55,14 +55,14 @@ class EngineGrpcClient
 
     public:
 
-        EngineGrpcClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-            : EngineClient<ENGINE, ENGINE_CONFIG>(config, std::move(launcher))
+        EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher))
         {
-            std::string serverAddress = this->engineConfig()->engineServerAddress();
+            std::string serverAddress = this->engineConfig().at("ServerAddress");
 
             // Timeouts of less than 1ms will be rounded up to 1ms
 
-            SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig()->engineCommandTimeout());
+            SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig().at("EngineCommandTimeout"));
 
             if(timeout != SimulationTime::zero())
             {
@@ -282,6 +282,29 @@ class EngineGrpcClient
             {
 				throw std::logic_error("Could not deserialize given device of type \"" + deviceData.deviceid().devicetype() + "\"");
             }
+        }
+
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        {
+            std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
+
+            std::string name = this->engineConfig().at("EngineName");
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineNameArg.data() + "=" + name);
+    
+            // Add JSON Server address (will be used by EngineGrpcServer)
+            std::string address = this->engineConfig().at("ServerAddress");
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
+    
+            // Add JSON registration Server address (will be used by EngineGrpcServer)
+            std::string reg_address = this->engineConfig().at("RegistrationServerAddress");
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data() + "=" + reg_address);
+    
+            return startParams;
+        }
+    
+        virtual const std::vector<std::string> engineProcEnvParams() const override
+        {
+            return this->engineConfig().at("EngineEnvParams");
         }
 
 	protected:

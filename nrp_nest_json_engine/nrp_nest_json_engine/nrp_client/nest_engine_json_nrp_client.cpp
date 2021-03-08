@@ -21,6 +21,7 @@
 //
 
 #include "nrp_nest_json_engine/nrp_client/nest_engine_json_nrp_client.h"
+#include "nrp_json_engine_protocol/config/engine_json_config.h"
 
 #include <signal.h>
 #include <sys/types.h>
@@ -29,21 +30,22 @@
 
 #include <chrono>
 
-NestEngineJSONNRPClient::NestEngineJSONNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
+NestEngineJSONNRPClient::NestEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineJSONNRPClient(config, std::move(launcher))
-{}
+{
+    setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_EXECUTABLE_PATH);
+}
 
 NestEngineJSONNRPClient::~NestEngineJSONNRPClient()
 {}
 
 void NestEngineJSONNRPClient::initialize()
 {
-	const auto &nestConfig = this->engineConfig();
-	nlohmann::json resp = this->sendInitCommand(nlohmann::json({{NestConfig::ConfigType.m_data, nestConfig->writeConfig()}}));
-	if(!resp.at(NestConfig::InitFileExecStatus.data()).get<bool>())
+	nlohmann::json resp = this->sendInitCommand(this->engineConfig());
+	if(!resp.at(NestConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
-		this->_initErrMsg = resp.at(NestConfig::InitFileErrorMsg.data());
+		this->_initErrMsg = resp.at(NestConfigConst::InitFileErrorMsg.data());
 		NRPLogger::SPDErrLogDefault(this->_initErrMsg);
 
 		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" initialization failed: " + this->_initErrMsg);
@@ -53,4 +55,25 @@ void NestEngineJSONNRPClient::initialize()
 void NestEngineJSONNRPClient::shutdown()
 {
 	this->sendShutdownCommand(nlohmann::json());
+}
+
+const std::vector<std::string> NestEngineJSONNRPClient::engineProcEnvParams() const
+{
+    std::vector<std::string> envVars = this->EngineJSONNRPClient::engineProcEnvParams();;
+
+    // Add NRP library path
+    envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":$LD_LIBRARY_PATH");
+
+    return envVars;
+}
+
+const std::vector<std::string> NestEngineJSONNRPClient::engineProcStartParams() const
+{
+    std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
+
+    // Add JSON Server address (will be used by plugin)
+    std::string address = this->engineConfig().at("ServerAddress");
+    startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + address);
+
+    return startParams;
 }

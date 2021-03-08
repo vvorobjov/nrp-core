@@ -37,24 +37,17 @@
 TEST(TestGazeboEngine, Start)
 {
 	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboJSONConfigConst::GazeboWorldFile, ""}});
-
-	GazeboJSONConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_EMPTY_WORLD_FILE;
-	conf.maxWorldLoadTime() = 1;
-
-	conf.userProcStartParams().push_back("--verbose");
-
-	confHolder.Data = conf.writeConfig();
-
-	std::cout << confHolder.Data.dump(4, ' ') << std::endl;
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_json";
+	config["GazeboWorldFile"] = TEST_EMPTY_WORLD_FILE;
+	config["WorldLoadTime"] = 1;
+	config["GazeboRNGSeed"] = 12345;
 
 	// Launch gazebo server
 	GazeboEngineJSONLauncher launcher;
 	PtrTemplates<GazeboEngineJSONNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineJSONNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	        launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NE(engine, nullptr);
 
@@ -64,21 +57,16 @@ TEST(TestGazeboEngine, Start)
 TEST(TestGazeboEngine, WorldPlugin)
 {
 	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboJSONConfigConst::GazeboWorldFile, ""}});
-
-	GazeboJSONConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_WORLD_PLUGIN_FILE;
-
-	conf.userProcStartParams().push_back("--verbose");
-
-	confHolder.Data = conf.writeConfig();
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_json";
+    config["GazeboWorldFile"] = TEST_WORLD_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
 
 	// Launch gazebo server
 	GazeboEngineJSONLauncher launcher;
 	PtrTemplates<GazeboEngineJSONNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineJSONNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	        launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NE(engine, nullptr);
 
@@ -90,23 +78,18 @@ TEST(TestGazeboEngine, WorldPlugin)
 TEST(TestGazeboEngine, CameraPlugin)
 {
 	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboJSONConfigConst::GazeboWorldFile, ""}});
-
-	GazeboJSONConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_CAMERA_PLUGIN_FILE;
-
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
-
-	conf.userProcStartParams().push_back("--verbose");
-
-	confHolder.Data = conf.writeConfig();
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_json";
+    config["GazeboWorldFile"] = TEST_CAMERA_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
 	// Launch gazebo server
 	GazeboEngineJSONLauncher launcher;
 	PtrTemplates<GazeboEngineJSONNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineJSONNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	        launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NE(engine, nullptr);
 
@@ -119,7 +102,7 @@ TEST(TestGazeboEngine, CameraPlugin)
 	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
@@ -148,30 +131,25 @@ TEST(TestGazeboEngine, CameraPlugin)
 TEST(TestGazeboEngine, JointPlugin)
 {
 	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboJSONConfigConst::GazeboWorldFile, ""}});
-
-	GazeboJSONConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_JOINT_PLUGIN_FILE;
-
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
-
-	conf.userProcStartParams().push_back("--verbose");
-
-	confHolder.Data = conf.writeConfig();
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_json";
+    config["GazeboWorldFile"] = TEST_JOINT_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
 	// Launch gazebo server
 	GazeboEngineJSONLauncher launcher;
 	PtrTemplates<GazeboEngineJSONNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineJSONNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	        launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NE(engine, nullptr);
 
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", conf.engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), PhysicsJoint::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
@@ -191,30 +169,25 @@ TEST(TestGazeboEngine, JointPlugin)
 TEST(TestGazeboEngine, LinkPlugin)
 {
 	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboJSONConfigConst::GazeboWorldFile, ""}});
-
-	GazeboJSONConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_LINK_PLUGIN_FILE;
-
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
-
-	conf.userProcStartParams().push_back("--verbose");
-
-	confHolder.Data = conf.writeConfig();
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_json";
+    config["GazeboWorldFile"] = TEST_LINK_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
 	// Launch gazebo server
 	GazeboEngineJSONLauncher launcher;
 	PtrTemplates<GazeboEngineJSONNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineJSONNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	        launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NE(engine, nullptr);
 
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", conf.engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), PhysicsJoint::TypeName.data())});
 	ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());

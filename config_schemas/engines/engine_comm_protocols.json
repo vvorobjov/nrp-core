@@ -1,0 +1,47 @@
+{"engine_json" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Engine Json",
+    "description": "Base Json Engine configuration schema",
+    "$id": "#EngineJSON",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      {
+        "properties" : {
+          "ServerAddress": {
+            "type": "string",
+            "default": "localhost:9002",
+            "description": "Address from which the engine server sends/receives data"
+          },
+          "RegistrationServerAddress": {
+            "type": "string",
+            "default": "localhost:9001",
+            "description": "Address to which servers should register to"
+          }
+        }
+      }
+    ]
+  },
+  "engine_grpc" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Engine Grpc",
+    "description": "Base Grpc Engine configuration schema",
+    "$id": "#EngineGRPC",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      {
+        "properties" : {
+          "ServerAddress": {
+            "type": "string",
+            "default": "localhost:9004",
+            "description": "Address from which the engine server sends/receives data"
+          },
+          "RegistrationServerAddress": {
+            "type": "string",
+            "default": "localhost:9001",
+            "description": "Address to which servers should register to"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -66,19 +66,22 @@ void handle_signal(int signal)
 }
 
 TEST(TestNestExecutable, TestNest)
-{	
-	auto cfg = NestConfig(nlohmann::json());
-	cfg.nestInitFileName() = TEST_SIMPLE_NEST_FILE_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
-
-	const auto serverAddr = cfg.engineServerAddress();
+{
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_nest";
+    config["NestInitFileName"] = TEST_SIMPLE_NEST_FILE_NAME;
+    std::string server_address = "localhost:5445";
+    config["ServerAddress"] = server_address;
 
 	std::vector<const char*> argv;
-	const std::string processID = "TestProcess";
-	const std::string engineAddrArg = std::string("--") + NestConfig::EngineServerAddrArg.data();
-	argv.push_back(processID.data());
+	const std::string engineAddrArg = std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address;
+    const std::string engineRegArg = std::string("--") + EngineJSONConfigConst::EngineRegistrationServerAddrArg.data() + "= localhost:9001";
+
+	argv.push_back("--engine=engine");
 	argv.push_back(engineAddrArg.data());
-	argv.push_back(serverAddr.data());
+    argv.push_back(engineRegArg.data());
+    argv.push_back("--quiet");
 	int argc = static_cast<int>(argv.size());
 
 	SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
@@ -108,22 +111,22 @@ TEST(TestNestExecutable, TestNest)
 		sleep(2);
 
 		// Send init call
-		RestClient::Response resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{NestConfig::ConfigType.m_data, cfg.writeConfig()}}).dump());
+		RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
 		ASSERT_EQ(resp.code, 200);
 
 		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
 		ASSERT_EQ(rec, 2);
 
 		// Send runstep call
-		resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{NestConfig::EngineTimeStepName.data(), timeStep.count()}}).dump());
+		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep.count()}}).dump());
 		auto respParse = nlohmann::json::parse(resp.body);
-		ASSERT_EQ(respParse[NestConfig::EngineTimeName.data()].get<float>(), timeStep.count());
+		ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep.count());
 
 		char send = 3;
 		ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
 
 		// Test shutdown
-		resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
+		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
 
 		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
 		ASSERT_EQ(rec, 4);

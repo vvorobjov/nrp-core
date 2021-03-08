@@ -25,7 +25,6 @@
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
-#include "nrp_general_library/config/transceiver_function_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <string>

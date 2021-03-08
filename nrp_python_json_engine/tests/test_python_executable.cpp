@@ -65,20 +65,22 @@ void handle_signal(int signal)
 }
 
 TEST(TestPythonExecutable, TestPython)
-{	
-	auto cfg = PythonConfig(nlohmann::json());
-	cfg.pythonFileName() = TEST_SIMPLE_PYTHON_FILE_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
+{
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_python";
+    config["PythonFileName"] = TEST_SIMPLE_PYTHON_FILE_NAME;
+    std::string server_address = "localhost:5434";;
+    config["ServerAddress"] = server_address;
 
-	const auto serverAddr = cfg.engineServerAddress();
+    std::vector<const char*> argv;
+    const std::string engineAddrArg = std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address;
+    const std::string engineRegArg = std::string("--") + EngineJSONConfigConst::EngineRegistrationServerAddrArg.data() + "= localhost:9001";
 
-	std::vector<const char*> argv;
-	const std::string processID = "TestProcess";
-	const std::string engineAddrArg = std::string("--") + PythonConfig::EngineServerAddrArg.data();
-	argv.push_back(processID.data());
-	argv.push_back(engineAddrArg.data());
-	argv.push_back(serverAddr.data());
-	int argc = static_cast<int>(argv.size());
+    argv.push_back("--engine=engine");
+    argv.push_back(engineAddrArg.data());
+    argv.push_back(engineRegArg.data());
+    int argc = static_cast<int>(argv.size());
 
 	const float timeStep = 1000; // microseconds
 
@@ -107,22 +109,22 @@ TEST(TestPythonExecutable, TestPython)
 		sleep(2);
 
 		// Send init call
-		RestClient::Response resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{PythonConfig::ConfigType.m_data, cfg.writeConfig()}}).dump());
+		RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
 		ASSERT_EQ(resp.code, 200);
 
 		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
 		ASSERT_EQ(rec, 2);
 
 		// Send runstep call
-		resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{PythonConfig::EngineTimeStepName.data(), timeStep}}).dump());
+		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep}}).dump());
 		auto respParse = nlohmann::json::parse(resp.body);
-		ASSERT_EQ(respParse[PythonConfig::EngineTimeName.data()].get<float>(), timeStep);
+		ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep);
 
 		char send = 3;
 		ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
 
 		// Test shutdown
-		resp = RestClient::post(serverAddr + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
+		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
 
 		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
 		ASSERT_EQ(rec, 4);

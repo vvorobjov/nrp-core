@@ -21,25 +21,20 @@
 //
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-#include "nrp_general_library/config/engine_config.h"
 
 #include "nrp_general_library/plugin_system/plugin.h"
 
-struct TestEngineConfig
-        : public EngineConfig<TestEngineConfig, PropNames<> >
+struct TestEngineConfigConst
 {
-	static constexpr FixedString ConfigType = "TestConf";
-
-	TestEngineConfig(EngineConfigConst::config_storage_t &config)
-	    : EngineConfig(config)
-	{}
+	static constexpr FixedString EngineType = "test_engine";
+    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
 };
 
 class TestEngine
-        : public EngineClient<TestEngine, TestEngineConfig>
+        : public EngineClient<TestEngine, TestEngineConfigConst::EngineSchema>
 {
 	public:
-		TestEngine(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
+		TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
 		    : EngineClient(configHolder, std::move(launcher))
 		{}
 
@@ -48,6 +43,12 @@ class TestEngine
 
 		virtual void shutdown() override
 		{}
+
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        { return std::vector<std::string>(); }
+
+        virtual const std::vector<std::string> engineProcEnvParams() const override
+        { return std::vector<std::string>(); }
 
 		virtual SimulationTime getEngineTime() const override
 		{	return SimulationTime::zero();	}
@@ -74,4 +75,4 @@ class TestEngine
 		}
 };
 
-CREATE_NRP_ENGINE_LAUNCHER(TestEngine::EngineLauncher<"TestEngine">);
+CREATE_NRP_ENGINE_LAUNCHER(TestEngine::EngineLauncher<TestEngineConfigConst::EngineType>);

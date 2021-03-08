@@ -47,6 +47,11 @@
 #define NRP_LIB_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@"
 
 /*!
+ *	\brief Library Install location
+ */
+#define NRP_CONFIG_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@/@NRP_CONFIG_DIR@"
+
+/*!
  *	\brief NRP Plugin install directory
  */
 #define NRP_PLUGIN_INSTALL_DIR "@NRP_PLUGIN_INSTALL_DIR@"

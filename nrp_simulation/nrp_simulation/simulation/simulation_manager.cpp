@@ -74,7 +74,7 @@ nlohmann::json SimulationParams::parseJSONFile(const std::string &fileName)
 }
 
 
-SimulationManager::SimulationManager(const SimulationConfigSharedPtr &simulationConfig)
+SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     : _simConfig(simulationConfig)
 {}
 
@@ -97,7 +97,7 @@ SimulationManager::~SimulationManager()
 
 SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult &args)
 {
-	SimulationConfigSharedPtr simConfig = nullptr;
+    jsonSharedPtr simConfig = nullptr;
 
 	// Get file names from start params
 	std::string simCfgFileName;
@@ -112,10 +112,10 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 		return SimulationManager(simConfig);
 	}
 
-	nlohmann::json simCfgJSON = SimulationParams::parseJSONFile(simCfgFileName);
-	simConfig.reset(new SimulationConfig(simCfgJSON));
 
+	simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
 
+	json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
 	return SimulationManager(simConfig);
 }
 
@@ -130,12 +130,12 @@ SimulationManager::sim_lock_t SimulationManager::acquireSimLock()
 	return retval;
 }
 
-SimulationConfigSharedPtr SimulationManager::simulationConfig(const sim_lock_t&)
+jsonSharedPtr SimulationManager::simulationConfig(const sim_lock_t&)
 {
 	return this->_simConfig;
 }
 
-SimulationConfigConstSharedPtr SimulationManager::simulationConfig() const
+jsonConstSharedPtr SimulationManager::simulationConfig() const
 {
 	return this->_simConfig;
 }
@@ -189,12 +189,12 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 		// Check whether the simLoop was stopped by any server threads
 		simLock.lock();
 
-		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->simulationTimeOut()));
+		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->at("SimulationTimeout")));
 
 		if(!this->isRunning() || hasTimedOut)
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
 		this->_loop->runLoop(timeStep);
 
@@ -226,7 +226,7 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 		if(!this->isRunning() || endTime < this->_loop->getSimTime())
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->simulationTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
 		this->_loop->runLoop(timeStep);
 
@@ -257,20 +257,14 @@ bool SimulationManager::isSimInitializing()
 SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
 	SimulationLoop::engine_interfaces_t engines;
-	auto &engineConfigs = this->_simConfig->engineConfigs();
+	auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
 	// Create all engines required by simConfig
 	engines.reserve(engineConfigs.size());
 	for(auto &engineConfig : engineConfigs)
 	{
-		// Get engine type
-		nlohmann::json engineData = static_cast<const nlohmann::json &>(engineConfig);
-		auto engineTypeIterator = engineData.find(EngineConfigConst::EngineType.m_data);
-		if(engineTypeIterator == engineData.end())
-			throw NRPException::logCreate("Improperly formatted engine config. Couldn't find EngineType specification");
-
 		// Get engine launcher associated with type
-		const std::string engineType = *engineTypeIterator;
+		const std::string engineType = engineConfig.at("EngineType");
 		auto engineLauncher = engineManager->findLauncher(engineType);
 		if(engineLauncher == nullptr)
 		{
@@ -283,7 +277,7 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 		// Create and launch engine
 		try
 		{
-			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_simConfig->processLauncherType())));
+			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_simConfig->at("ProcessLauncherType"))));
 		}
 		catch(std::exception &e)
 		{

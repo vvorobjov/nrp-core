@@ -130,7 +130,7 @@ TransceiverFunctionInterpreter::getLinkedTFs(const std::string &engineName)
 	return this->_transceiverFunctions.equal_range(engineName);
 }
 
-TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const TransceiverFunctionConfig &transceiverFunction)
+TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const nlohmann::json &transceiverFunction)
 {
 	// Make sure no previously loaded TFs have not been handled
 	assert(this->_newTFIt == this->_transceiverFunctions.end());
@@ -139,13 +139,15 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 	boost::python::dict localVars;
 
 	// Load TF code
+    const std::string tf_name = transceiverFunction.at("Name");
+    const std::string tf_file = transceiverFunction.at("FileName");
 	try
 	{
-		boost::python::exec_file(transceiverFunction.fileName().data(), this->_globalDict, this->_globalDict);
+		boost::python::exec_file(tf_file.c_str(), this->_globalDict, this->_globalDict);
 	}
 	catch(boost::python::error_already_set &)
 	{
-		const auto err = NRPException::logCreate("Loading of TransceiverFunction file \"" + transceiverFunction.fileName() + "\" failed: " + handle_pyerror());
+		const auto err = NRPException::logCreate("Loading of TransceiverFunction file \"" + tf_name + "\" failed: " + handle_pyerror());
 
 		if(this->_newTFIt != this->_transceiverFunctions.end())
 		{
@@ -158,12 +160,12 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 
 	// Check that load resulted in a TF
 	if(this->_newTFIt == this->_transceiverFunctions.end())
-		throw NRPException::logCreate("No TF found for " + transceiverFunction.name());
+		throw NRPException::logCreate("No TF found for " + tf_name);
 
 	// Update transfer function params
 	this->_newTFIt->second.DeviceIDs      = this->_newTFIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t());
 	this->_newTFIt->second.LocalVariables = localVars;
-	this->_newTFIt->second.Name           = transceiverFunction.name();
+	this->_newTFIt->second.Name           = tf_name;
 
 	const auto retVal = this->_newTFIt;
 	this->_newTFIt = this->_transceiverFunctions.end();
@@ -176,10 +178,10 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 	return this->_transceiverFunctions.emplace(transceiverFunction->linkedEngineName(), TransceiverFunctionData(tfName, transceiverFunction, transceiverFunction->updateRequestedDeviceIDs(), std::move(localVars))).first;
 }
 
-TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::updateTransceiverFunction(const TransceiverFunctionConfig &transceiverFunction)
+TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::updateTransceiverFunction(const nlohmann::json &transceiverFunction)
 {
 	// Erase existing TF if found
-	auto tfIterator = this->findTF(transceiverFunction.name());
+	auto tfIterator = this->findTF(transceiverFunction.at("Name"));
 	if(tfIterator != this->_transceiverFunctions.end())
 		this->_transceiverFunctions.erase(tfIterator);
 

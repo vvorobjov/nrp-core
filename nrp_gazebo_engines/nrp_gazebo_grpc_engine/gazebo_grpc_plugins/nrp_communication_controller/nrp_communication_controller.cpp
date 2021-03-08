@@ -83,11 +83,8 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 
 void NRPCommunicationController::initialize(const json &data, EngineGrpcServer::lock_t &lock)
 {
-	ConfigStorage confDat(data);
-	GazeboGrpcConfig conf(confDat);
-
-	double waitTime = conf.maxWorldLoadTime();
-	if(conf.maxWorldLoadTime() <= 0)
+    double waitTime = data.at("WorldLoadTime");
+	if(waitTime <= 0)
 		waitTime = std::numeric_limits<double>::max();
 
 	// Allow devices to register

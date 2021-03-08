@@ -22,7 +22,6 @@
 #ifndef SIMULATION_MANAGER_H
 #define SIMULATION_MANAGER_H
 
-#include "nrp_general_library/config/simulation_config.h"
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
@@ -98,7 +97,7 @@ class SimulationManager
 		 * \param serverConfig Server configuration
 		 * \param simulationConfig Simulation configuration
 		 */
-		SimulationManager(const SimulationConfigSharedPtr &simulationConfig);
+		SimulationManager(const jsonSharedPtr &simulationConfig);
 
 		/*!
 		 * \brief Destructor. Will stop any currently running threads
@@ -128,13 +127,13 @@ class SimulationManager
 		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns pointer to simulation config as well as simulation lock. If no config is loaded, return nullptr
 		 */
-		SimulationConfigSharedPtr simulationConfig(const sim_lock_t &simLock);
+        jsonSharedPtr simulationConfig(const sim_lock_t &simLock);
 
 		/*!
 		 * \brief Get simulation config
 		 * \return Returns pointer to simulation config. If no config is loaded, return nullptr
 		 */
-		SimulationConfigConstSharedPtr simulationConfig() const;
+        jsonConstSharedPtr simulationConfig() const;
 
 		/*!
 		 * \brief Initialize the simulation
@@ -204,7 +203,7 @@ class SimulationManager
 		/*!
 		 * \brief Simulation Configuration
 		 */
-		SimulationConfigSharedPtr _simConfig;
+        jsonSharedPtr _simConfig;
 
 		/*!
 		 * \brief Simulation loop

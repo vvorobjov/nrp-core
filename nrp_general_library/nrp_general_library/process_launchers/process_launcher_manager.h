@@ -154,11 +154,11 @@ class NewLaunchCommand
 {
 	public:
 		// Launch a new engine. The function should take the environment parameters and start parameters defined in engineConfig,
-		// and append any additional strings defined in additionalEnvParams and additionalStartParams before starting the
+		// and append any additional strings defined in envParams and startParams before starting the
 		// Engine specified in engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child.
 		// If set to false, scrub it before continuing
-		pid_t launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-								  const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv) override;
+		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const EngineConfigConst::string_vector_t &envParams,
+								  const EngineConfigConst::string_vector_t &startParams, bool appendParentEnv) override;
 
 		// Stop the engine. Note that this command should be run after the Engine's shutdown routinges have already been called.
 		// It should try to gracefully quit the engine process. Should the Engine process not have shut down after killWait seconds,

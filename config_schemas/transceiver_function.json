@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Transceiver Function",
+  "description": "Transceiver Function configuration schema",
+  "$id": "#TransceiverFunction",
+  "type": "object",
+  "properties" : {
+    "Name" : {
+      "type" : "string",
+      "description": "Name of TF"
+    },
+    "FileName" : {
+      "type" : "string",
+      "description": "Name of file containing transceiver function python script"
+    },
+    "IsActive" : {
+      "type" : "boolean",
+      "default": true,
+      "description": "Is this TF active? Only active TFs will be executed"
+    }
+  },
+  "required" : ["Name", "FileName"]
+}

@@ -23,6 +23,7 @@
 #define PLUGIN_MANAGER_H
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include <filesystem>
 
 #include <map>
 

@@ -21,14 +21,11 @@
 //
 
 #include "nrp_simulation/simulation/simulation_loop.h"
-
-#include "nrp_general_library/config/engine_config.h"
-#include "nrp_general_library/config/transceiver_function_config.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include <iostream>
 
-SimulationLoop::SimulationLoop(SimulationConfigSharedPtr config, engine_interfaces_t engines)
+SimulationLoop::SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines)
     : _config(config),
       _engines(engines),
       _tfManager(SimulationLoop::initTFManager(config, _engines))
@@ -83,14 +80,15 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		// Wait for processed engines to complete execution
 		for(const auto &engine : processedEngines)
 		{
+            float timeout = engine->engineConfig().at("EngineCommandTimeout");
 			try
 			{
-				engine->waitForStepCompletion(engine->engineConfigGeneral()->engineCommandTimeout());
+				engine->waitForStepCompletion(timeout);
 			}
 			catch(std::exception &e)
 			{
 				throw NRPException::logCreate(e, "Engine \"" + engine->engineName() +"\" loop exceeded timeout of " +
-				                              std::to_string(engine->engineConfigGeneral()->engineCommandTimeout()) + "s");
+				                              std::to_string(timeout) + "s");
 			}
 		}
 
@@ -169,7 +167,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 	this->_simTime = loopStopTime;
 }
 
-TransceiverFunctionManager SimulationLoop::initTFManager(const SimulationConfigSharedPtr &simConfig, const engine_interfaces_t &engines)
+TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines)
 {
 	TransceiverFunctionManager newManager;
 
@@ -183,9 +181,9 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const SimulationConfigS
 
 	TransceiverDeviceInterface::setTFInterpreter(&newManager.getInterpreter());
 
-	const auto &transceiverFunctions = simConfig->transceiverFunctionConfigs();
+	const auto &transceiverFunctions = simConfig->at("TransceiverFunctionConfigs");
 	for(const auto &tf : transceiverFunctions)
-		newManager.loadTF(TransceiverFunctionConfigSharedPtr(new TransceiverFunctionConfig(tf)));
+        newManager.loadTF(tf);
 
 	return newManager;
 }

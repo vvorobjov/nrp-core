@@ -24,9 +24,9 @@
 
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/config/cmake_constants.h"
-#include "nrp_gazebo_grpc_engine/devices/grpc_physics_camera.h"
-#include "nrp_gazebo_grpc_engine/devices/grpc_physics_joint.h"
-#include "nrp_gazebo_grpc_engine/devices/grpc_physics_link.h"
+#include "nrp_gazebo_devices/physics_camera.h"
+#include "nrp_gazebo_devices/physics_joint.h"
+#include "nrp_gazebo_devices/physics_link.h"
 #include "nrp_gazebo_grpc_engine/nrp_client/gazebo_engine_grpc_nrp_client.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
@@ -36,79 +36,67 @@
 
 TEST(TestGazeboEngine, Start)
 {
-	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
+    // Setup config
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_grpc";
+    config["GazeboWorldFile"] = TEST_EMPTY_WORLD_FILE;
+    config["WorldLoadTime"] = 1;
+    config["GazeboRNGSeed"] = 12345;
 
-	GazeboGrpcConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_EMPTY_WORLD_FILE;
-	conf.maxWorldLoadTime() = 1;
+    // Launch gazebo server
+    GazeboEngineGrpcLauncher launcher;
+    PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
+            launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	confHolder.Data = conf.writeConfig();
+    ASSERT_NE(engine, nullptr);
+    sleep(1);
 
-	std::cout << confHolder.Data.dump(4, ' ') << std::endl;
-
-	// Launch gazebo server
-	GazeboEngineGrpcLauncher launcher;
-	PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-
-	ASSERT_NE(engine, nullptr);
-
-	ASSERT_ANY_THROW(engine->initialize());
+    ASSERT_ANY_THROW(engine->initialize());
 }
 
 TEST(TestGazeboEngine, WorldPlugin)
 {
-	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
+    // Setup config
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_grpc";
+    config["GazeboWorldFile"] = TEST_WORLD_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
 
-	GazeboGrpcConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_WORLD_PLUGIN_FILE;
+    // Launch gazebo server
+    GazeboEngineGrpcLauncher launcher;
+    PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
+            launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	confHolder.Data = conf.writeConfig();
+    ASSERT_NE(engine, nullptr);
+    sleep(1);
 
-	// Launch gazebo server
-	GazeboEngineGrpcLauncher launcher;
-	PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-
-	ASSERT_NE(engine, nullptr);
-
-	sleep(1);
-
-	ASSERT_NO_THROW(engine->initialize());
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    ASSERT_NO_THROW(engine->initialize());
+    ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
+    ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 }
 
 TEST(TestGazeboEngine, CameraPlugin)
 {
-	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
+    // Setup config
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_grpc";
+    config["GazeboWorldFile"] = TEST_CAMERA_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
-	GazeboGrpcConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_CAMERA_PLUGIN_FILE;
+    // Launch gazebo server
+    GazeboEngineGrpcLauncher launcher;
+    PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
+            launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
+    ASSERT_NE(engine, nullptr);
+    sleep(1);
 
-	confHolder.Data = conf.writeConfig();
-
-	// Launch gazebo server
-	GazeboEngineGrpcLauncher launcher;
-	PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-
-	ASSERT_NE(engine, nullptr);
-
-	sleep(1);
-
-	ASSERT_NO_THROW(engine->initialize());
+    ASSERT_NO_THROW(engine->initialize());
 
 	// Run a single simulation step. This is to ensure that the camera data has been updated.
 	// The data is updated asynchronously, on every new frame, so it may happen that on first
@@ -117,8 +105,8 @@ TEST(TestGazeboEngine, CameraPlugin)
 	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", conf.engineName(), PhysicsCamera::TypeName.data())});
-	ASSERT_EQ(devices.size(), 1);
+    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
+    ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
 //	std::cout << "Image Height:" << camDat.imageHeight() << std::endl;
@@ -126,97 +114,89 @@ TEST(TestGazeboEngine, CameraPlugin)
 //	std::cout << "Image Pixel Size:" << std::to_string(camDat.imagePixelSize()) << std::endl;
 //	std::cout << "Image Pixel Num:" << camDat.imageData().size() << std::endl;
 
-	ASSERT_EQ(camDat.imageHeight(), 240);
-	ASSERT_EQ(camDat.imageWidth(),  320);
-	ASSERT_EQ(camDat.imagePixelSize(),  3);
-	ASSERT_EQ(camDat.imageData().size(), 320*240*3);
+    ASSERT_EQ(camDat.imageHeight(), 240);
+    ASSERT_EQ(camDat.imageWidth(),  320);
+    ASSERT_EQ(camDat.imagePixelSize(),  3);
+    ASSERT_EQ(camDat.imageData().size(), 320*240*3);
 
-	// Check if cam data is correct (WARNING: Data might be incorrect due to non-determinism. Should be checked)
-	//std::fstream compareCamDat(TEST_CAMERA_DATA_FILE, std::ios_base::in);
-	//for(const auto dat : camDat.imageData())
-	//{
-	//	unsigned int val;
-	//	compareCamDat >> val;
-	//	ASSERT_EQ(dat, val);
-	//}
-	//compareCamDat.close();
+    // Check if cam data is correct (WARNING: Data might be incorrect due to non-determinism. Should be checked)
+    //std::fstream compareCamDat(TEST_CAMERA_DATA_FILE, std::ios_base::in);
+    //for(const auto dat : camDat.imageData())
+    //{
+    //	unsigned int val;
+    //	compareCamDat >> val;
+    //	ASSERT_EQ(dat, val);
+    //}
+    //compareCamDat.close();
 }
 
 
 TEST(TestGazeboEngine, JointPlugin)
 {
-	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
+    // Setup config
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_grpc";
+    config["GazeboWorldFile"] = TEST_JOINT_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
-	GazeboGrpcConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_JOINT_PLUGIN_FILE;
+    // Launch gazebo server
+    GazeboEngineGrpcLauncher launcher;
+    PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
+            launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
+    ASSERT_NE(engine, nullptr);
+    sleep(1);
 
-	confHolder.Data = conf.writeConfig();
+    ASSERT_NO_THROW(engine->initialize());
 
-	// Launch gazebo server
-	GazeboEngineGrpcLauncher launcher;
-	PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    // Test device data getting
+    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), PhysicsJoint::TypeName.data())});
+    ASSERT_EQ(devices.size(), 1);
 
-	ASSERT_NE(engine, nullptr);
+    const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
+    ASSERT_EQ(pJointDev->position(), 0);
 
-	sleep(1);
+    // Test device data setting
+    const auto newTargetPos = 2.0f;
 
-	ASSERT_NO_THROW(engine->initialize());
+    PhysicsJoint newJointDev(DeviceIdentifier(pJointDev->id()));
+    newJointDev.setEffort(NAN);
+    newJointDev.setVelocity(NAN);
+    newJointDev.setPosition(newTargetPos);
 
-	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", conf.engineName(), PhysicsJoint::TypeName.data())});
-	ASSERT_EQ(devices.size(), 1);
-
-	const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
-	ASSERT_EQ(pJointDev->position(), 0);
-
-	// Test device data setting
-	const auto newTargetPos = 2.0f;
-
-	PhysicsJoint newJointDev((DeviceIdentifier(pJointDev->id())));
-	newJointDev.setEffort(NAN);
-	newJointDev.setVelocity(NAN);
-	newJointDev.setPosition(newTargetPos);
-
-	ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
+    ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
 }
 
 TEST(TestGazeboEngine, LinkPlugin)
 {
-	// Setup config
-	ConfigStorage<nlohmann::json> confHolder;
-	confHolder.Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
+    // Setup config
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "gazebo_grpc";
+    config["GazeboWorldFile"] = TEST_LINK_PLUGIN_FILE;
+    config["GazeboRNGSeed"] = 12345;
+    std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
+    config["EngineEnvParams"] = env_params;
 
-	GazeboGrpcConfig conf(confHolder);
-	conf.gazeboRNGSeed() = 12345;
-	conf.gazeboWorldFile() = TEST_LINK_PLUGIN_FILE;
+    // Launch gazebo server
+    GazeboEngineGrpcLauncher launcher;
+    PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
+            launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	conf.userProcEnvParams().push_back("GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH");
+    ASSERT_NE(engine, nullptr);
+    sleep(1);
 
-	confHolder.Data = conf.writeConfig();
+    ASSERT_NO_THROW(engine->initialize());
 
-	// Launch gazebo server
-	GazeboEngineGrpcLauncher launcher;
-	PtrTemplates<GazeboEngineGrpcNRPClient>::shared_ptr engine = std::dynamic_pointer_cast<GazeboEngineGrpcNRPClient>(
-	        launcher.launchEngine(confHolder, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    // Test device data getting
+    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), PhysicsJoint::TypeName.data())});
+    ASSERT_EQ(devices.size(), 1);
 
-	ASSERT_NE(engine, nullptr);
+    const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());
+    ASSERT_NE(pLinkDev, nullptr);
 
-	sleep(1);
-
-	ASSERT_NO_THROW(engine->initialize());
-
-	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", conf.engineName(), PhysicsJoint::TypeName.data())});
-	ASSERT_EQ(devices.size(), 1);
-
-	const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());
-	ASSERT_NE(pLinkDev, nullptr);
-
-	// TODO: Check that link state is correct
+    // TODO: Check that link state is correct
 }

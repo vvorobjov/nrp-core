@@ -27,8 +27,9 @@
 #include "nrp_general_library/plugin_system/plugin.h"
 
 #include "nrp_nest_json_engine/devices/nest_device.h"
-
 #include "nrp_nest_json_engine/config/nest_config.h"
+
+#include "nrp_general_library/config/cmake_constants.h"
 
 #include <unistd.h>
 
@@ -36,7 +37,7 @@
  * \brief NRP - Nest Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  */
 class NestEngineJSONNRPClient
-        : public EngineJSONNRPClient<NestEngineJSONNRPClient, NestConfig, NestDevice>
+: public EngineJSONNRPClient<NestEngineJSONNRPClient, NestConfigConst::EngineSchema, NestDevice>
 {
 		/*!
 		 * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
@@ -44,12 +45,16 @@ class NestEngineJSONNRPClient
 		static constexpr size_t _killWait = 10;
 
 	public:
-		NestEngineJSONNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher);
+		NestEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
 		virtual ~NestEngineJSONNRPClient() override;
 
 		virtual void initialize() override;
 
 		virtual void shutdown() override;
+
+        virtual const std::vector<std::string> engineProcStartParams() const override;
+
+        virtual const std::vector<std::string> engineProcEnvParams() const override;
 
 	private:
 		/*!
@@ -58,7 +63,7 @@ class NestEngineJSONNRPClient
 		std::string _initErrMsg = "";
 };
 
-using NestEngineJSONLauncher = NestEngineJSONNRPClient::EngineLauncher<NestConfig::DefEngineType>;
+using NestEngineJSONLauncher = NestEngineJSONNRPClient::EngineLauncher<NestConfigConst::EngineType>;
 
 
 CREATE_NRP_ENGINE_LAUNCHER(NestEngineJSONLauncher);

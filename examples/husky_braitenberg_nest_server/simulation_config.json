@@ -6,17 +6,17 @@
 		{
 			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
-			"EngineProcCmd__Comment": "gazebo",
-			"ServerAddress": "localhost:9100",
-			"GazeboWorldFile": "husky_world.sdf"
+			"GazeboWorldFile": "husky_world.sdf",
+			"EngineProcStartParams": ["--verbose"]
 		},
 		{
 			"EngineType": "nest_server",
 			"EngineName": "nest",
-			"NestInitFileName": "braitenberg.py"
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"TransceiverFunctions": [
+	"TransceiverFunctionConfigs": [
 		{
 			"Name": "cam_tf",
 			"FileName": "cam_tf.py"

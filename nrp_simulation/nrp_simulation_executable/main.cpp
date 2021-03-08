@@ -129,7 +129,6 @@ is divided into the following steps:
   - Store all engines in an EngineLauncherManager
 - Use input parameters to generate a new instance of SimulationManager. This will also launch all engine processes defined in the SimulationConfig passed to NRPSimulation
 - If a SimulationConfig file was given as an input parameter, initialize a SimulationLoop and run until timeout
-- TODO: If no SimulationConfig was given, wait for communication from the NRPServer
 
 To launch an experiment with NRPSimulation, the user must specify the simulation configuration file. The file format is specified under \ref simulation_config "SimulationConfig".
 \code{.sh}

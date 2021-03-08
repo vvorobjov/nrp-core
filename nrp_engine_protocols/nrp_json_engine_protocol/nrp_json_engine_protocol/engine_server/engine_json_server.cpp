@@ -87,7 +87,7 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress)
 }
 
 EngineJSONServer::EngineJSONServer()
-    : EngineJSONServer(EngineJSONConfigConst::DefEngineServerAddress.data())
+    : EngineJSONServer("")
 {}
 
 EngineJSONServer::~EngineJSONServer()

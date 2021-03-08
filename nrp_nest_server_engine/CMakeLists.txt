@@ -20,10 +20,10 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_nest_server_engine/config/nest_server_config.cpp
 	nrp_nest_server_engine/devices/nest_server_device.cpp
 	nrp_nest_server_engine/nrp_client/nest_engine_server_nrp_client.cpp
 	nrp_nest_server_engine/python/create_device_class.cpp
+	nrp_nest_server_engine/config/nest_server_config.cpp
 )
 
 # List of python module build files

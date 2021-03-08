@@ -34,16 +34,10 @@
 
 using namespace testing;
 
-class TestEngineJSONConfig
-        : public EngineJSONConfig<TestEngineJSONConfig, PropNames<> >
+struct TestEngineJSONConfigConst
 {
-	public:
-		static constexpr FixedString ConfigType = "TestEngineConfig";
-
-
-		TestEngineJSONConfig(EngineConfigConst::config_storage_t &config)
-		    : EngineJSONConfig(config)
-		{}
+    static constexpr FixedString EngineType = "test_engine";
+    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json";
 };
 
 class TestEngineJSONServer
@@ -88,7 +82,7 @@ class TestEngineJSONServer
 };
 
 class TestEngineJSONNRPClient
-        : public EngineJSONNRPClient<TestEngineJSONNRPClient, TestEngineJSONConfig, TestJSONDevice1, TestJSONDevice2, TestJSONDeviceThrow>
+: public EngineJSONNRPClient<TestEngineJSONNRPClient, TestEngineJSONConfigConst::EngineSchema, TestJSONDevice1, TestJSONDevice2, TestJSONDeviceThrow>
 {
 	public:
 	template<class ...T>
@@ -148,15 +142,17 @@ TEST(EngineJSONNRPClientTest, ServerCalls)
 	auto dev2Ctrl = TestJSONDevice2Controller(DeviceIdentifier(dev2.id()));
 	server.registerDevice(dev2.name(), &dev2Ctrl);
 
-	// Check timeout if no server is running
-	SimulationConfig::config_storage_t config;
+	nlohmann::json config;
+	config["EngineName"] = engineName;
+	config["EngineType"] = "test_engine_json";
+
+    // Check timeout if no server is running
 	TestEngineJSONNRPClient fakeClient("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 	ASSERT_THROW(fakeClient.initialize(), NRPExceptionNonRecoverable);
 
 	// Start server, test init
 	server.startServerAsync();
 	TestEngineJSONNRPClient client("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-	client.engineName() = engineName;
 	ASSERT_NO_THROW(client.initialize());
 
 	ASSERT_NO_THROW(client.runLoopStep(floatToSimulationTime(10)));

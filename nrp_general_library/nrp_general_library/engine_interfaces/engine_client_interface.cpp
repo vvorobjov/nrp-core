@@ -28,20 +28,10 @@ EngineClientInterface::EngineClientInterface(std::unique_ptr<ProcessLauncherInte
 
 EngineClientInterface::~EngineClientInterface() = default;
 
-const std::string &EngineClientInterface::engineName() const
-{
-	return this->engineConfigGeneral()->engineName();
-}
-
-std::string &EngineClientInterface::engineName()
-{
-	return this->engineConfigGeneral()->engineName();
-}
-
 pid_t EngineClientInterface::launchEngine()
 {
 	// Launch engine
-	return this->_process->launchEngineProcess(*this->engineConfigGeneral(), EngineConfigConst::string_vector_t(), EngineConfigConst::string_vector_t());
+	return this->_process->launchEngineProcess(this->engineConfig(), this->engineProcEnvParams(), this->engineProcStartParams());
 }
 
 const EngineClientInterface::devices_t &EngineClientInterface::updateDevicesFromEngine(const EngineClientInterface::device_identifiers_set_t &deviceIdentifiers)

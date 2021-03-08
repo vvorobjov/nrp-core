@@ -26,7 +26,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 
 grpc::Status EngineGrpcServer::handleGrpcError(const std::string & contextMessage, const std::string & errorMessage)
@@ -129,7 +128,7 @@ grpc::Status EngineGrpcServer::getDevice(grpc::ServerContext * , const EngineGrp
 
 EngineGrpcServer::EngineGrpcServer()
 {
-	this->_serverAddress   = EngineGRPCConfigConst::DefEngineServerAddress;
+	this->_serverAddress   = "";
     this->_isServerRunning = false;
 
     grpc::EnableDefaultHealthCheckService(true);

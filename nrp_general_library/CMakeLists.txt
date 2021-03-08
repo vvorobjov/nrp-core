@@ -19,13 +19,6 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_general_library/config/base_config.cpp
-	nrp_general_library/config/config_formats/json_config_properties.cpp
-	nrp_general_library/config/config_storage.cpp
-	nrp_general_library/config/engine_config.cpp
-	nrp_general_library/config/simple_engine_config.cpp
-	nrp_general_library/config/simulation_config.cpp
-	nrp_general_library/config/transceiver_function_config.cpp
 	nrp_general_library/property_template/property_template.cpp
 	nrp_general_library/property_template/serializers/json_property_serializer.cpp
 	nrp_general_library/property_template/serializers/property_serializer.cpp
@@ -81,9 +74,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/base_config.cpp
 	tests/device_interface.cpp
-	tests/config_storage.cpp
 	tests/engine_launcher_manager.cpp
 	tests/json_property_serializer.cpp
 	tests/plugin_manager.cpp
@@ -155,6 +146,21 @@ if(NOT ${nlohmann_json_FOUND})
 	endif()
 endif()
 
+# nlohmann_json schema validator
+find_package(nlohmann_json_schema_validator 2.1.0 QUIET)
+if(NOT ${nlohmann_json_schema_validator_FOUND})
+	message("Please wait. Downloading nlohmann_json_schema_validator...")
+	FetchContent_Declare(json_schema
+			GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
+			GIT_TAG 2.1.0)
+
+#	FetchContent_MakeAvailable(json_schema)
+	if(NOT json_schema_POPULATED)
+		FetchContent_Populate(json_schema)
+		add_subdirectory(${json_schema_SOURCE_DIR} ${json_schema_BINARY_DIR})
+	endif()
+endif()
+
 # libzip: ZIP Manipulation
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
@@ -164,6 +170,8 @@ pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
 ## Header configuration
 
 set(NRP_CLEAR_ENV "NRP_CLEAR_ENV")
+
+set(NRP_CONFIG_DIR "config_schemas")
 
 # General Header defines
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
@@ -189,6 +197,7 @@ target_link_libraries(${LIBRARY_NAME}
 	    ${BOOST_PYTHON}
 		cxxopts::cxxopts
 		nlohmann_json::nlohmann_json
+		nlohmann_json_schema_validator
 		pistache
 		PkgConfig::LibZip
 		Python3::Module
@@ -294,6 +303,8 @@ set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 # Install library files
 install(TARGETS
 		${LIBRARY_NAME}
+		# TODO: move to its own install command
+		nlohmann_json_schema_validator
 	EXPORT
 		${LIB_EXPORT_NAME}
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -321,6 +332,14 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 	    PATTERN "*.h"
 		PATTERN "*.hpp"
 )
+
+# Install configuration schemas
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/${NRP_CONFIG_DIR}"
+		DESTINATION
+		${CMAKE_INSTALL_LIBDIR}
+		FILES_MATCHING
+		PATTERN "*.json"
+		)
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
@@ -361,3 +380,4 @@ install(
 # Install env set script
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh"
 	DESTINATION ${CMAKE_INSTALL_SBINDIR})
+
