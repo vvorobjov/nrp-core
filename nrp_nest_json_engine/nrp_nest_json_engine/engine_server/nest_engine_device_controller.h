@@ -70,7 +70,7 @@ class NestEngineJSONDeviceController<NestDevice>
 		 * \brief Retrieves device status from Nest
 		 * \return Returns dictionary containing device status
 		 */
-		boost::python::dict getStatusFromNest();
+		boost::python::list getStatusFromNest();
 
 		/*!
 		 * \brief Retrieves device status from Nest
@@ -78,7 +78,7 @@ class NestEngineJSONDeviceController<NestDevice>
 		 * \param nodeCollection Nodes of device
 		 * \return Returns dictionary with data
 		 */
-		static boost::python::dict getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection);
+		static boost::python::list getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection);
 };
 
 #endif // NEST_ENGINE_DEVICE_CONTROLLER_H

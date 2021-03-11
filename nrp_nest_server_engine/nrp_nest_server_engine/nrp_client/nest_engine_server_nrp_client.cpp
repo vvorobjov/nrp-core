@@ -127,7 +127,6 @@ namespace
 	void extractPopulations(const std::string & data, NestEngineServerNRPClient::population_mapping_t * populations)
 	{
 		auto respJson = nlohmann::json::parse(data);
-
 		for (nlohmann::json::iterator it = respJson["data"]["populations"].begin(); it != respJson["data"]["populations"].end(); ++it)
 		{
 			populations->insert({it.key(), it.value().dump()});
@@ -389,8 +388,7 @@ EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEn
 			// Extract device details from the body
 			// Response from GetStatus is an array of JSON objects, which contains device parameters
 
-			const auto respJson = nlohmann::json::parse(response)[0];
-
+			const auto respJson = nlohmann::json::parse(response);
 			retVals.emplace(new NestServerDevice(DeviceIdentifier(devID), respJson.dump()));
 		}
 	}

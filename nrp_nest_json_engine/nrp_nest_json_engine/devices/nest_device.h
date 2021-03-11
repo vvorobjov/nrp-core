@@ -39,7 +39,7 @@ class NestDevice
 		{ return PyObjectDeviceConst::PyObjData(data, boost::python::import(NRP_NEST_PYTHON_MODULE_STR).attr("__dict__")["NumpyEncoder"]); }
 
 	public:
-		NestDevice(DeviceIdentifier &&devID, const boost::python::object &data = boost::python::dict());
+		NestDevice(DeviceIdentifier &&devID, const boost::python::object &data = boost::python::list());
 		NestDevice(DeviceIdentifier &&devID, property_template_t &&props);
 
 		template<class DESERIALIZE_T>

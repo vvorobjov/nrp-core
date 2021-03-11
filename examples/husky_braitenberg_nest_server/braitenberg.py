@@ -112,8 +112,7 @@ populations = {
         'lpg' : lpg,
         'rpg' : rpg,
         'gpg' : gpg,
-        'lwn' : leaky_cells[0],
-        'rwn' : leaky_cells[1]
+        'actors' : leaky_cells
 }
 
 # EOF

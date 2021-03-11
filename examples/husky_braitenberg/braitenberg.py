@@ -108,8 +108,7 @@ nest.Connect(CIRCUIT[7],
              syn_spec={'synapse_model': 'static_synapse', 'weight': 10.0, 'delay': 0.1})
 
 # Register wheel outputs
-RegisterDevice('lwn', leaky_cells[0])
-RegisterDevice('rwn', leaky_cells[1])
+RegisterDevice('actors', leaky_cells)
 
 # TODO: without setting rate values here, setting them from TF seems to have no effect
 lpg.set({'rate': 2000.0*0.0721875})
