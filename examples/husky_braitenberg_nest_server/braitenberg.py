@@ -102,11 +102,6 @@ nest.Connect(CIRCUIT[7],
              conn_spec='all_to_all',
              syn_spec={'synapse_model': 'static_synapse', 'weight': 10.0, 'delay': 0.1})
 
-# TODO: without setting rate values here, setting them from TF seems to have no effect
-lpg.set({'rate': 2000.0*0.0721875})
-rpg.set({'rate': 2000.0*0.1422135416})
-gpg.set({'rate': 75.0*0.8927994791666667})
-
 populations = {
         'circuit' : population,
         'lpg' : lpg,

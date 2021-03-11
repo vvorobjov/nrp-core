@@ -177,6 +177,16 @@ namespace
 		return nestGenericCall(serverAddress + "/api/GetStatus", "application/json", data);
 	}
 
+    /*!
+     * \brief Sends Prepare request to NEST server
+     *
+     * \param serverAddress Address of the NEST server
+     */
+    void nestPrepare(const std::string & serverAddress)
+    {
+        nestGenericCall(serverAddress + "/api/Prepare", "text/plain", "");
+    }
+
 	/*!
 	 * \brief Sends Run request to NEST server
 	 *
@@ -199,6 +209,17 @@ namespace
 		nestGenericCall(serverAddress + "/api/Cleanup", "text/plain", "");
 	}
 
+    /*!
+     * \brief Sends Run request to NEST server
+     *
+     * \param serverAddress Address of the NEST server
+     * \param timeStep Step of the simulation in milliseconds
+     */
+    void nestSimulate(const std::string & serverAddress, const float timeStep)
+    {
+        nestGenericCall(serverAddress + "/api/Simulate", "application/json", "[" + std::to_string(timeStep) + "]");
+    }
+
 	/*!
 	 * \brief Sends GetKernelStatus request to NEST server
 	 *
@@ -209,16 +230,6 @@ namespace
 	std::string nestGetKernelStatus(const std::string & serverAddress, const std::string & data)
 	{
 		return nestGenericCall(serverAddress + "/api/GetKernelStatus", "application/json", data);
-	}
-
-	/*!
-	 * \brief Sends Prepare request to NEST server
-	 *
-	 * \param serverAddress Address of the NEST server
-	 */
-	void nestPrepare(const std::string & serverAddress)
-	{
-		nestGenericCall(serverAddress + "/api/Prepare", "text/plain", "");
 	}
 
 	/*!
@@ -301,9 +312,9 @@ void NestEngineServerNRPClient::initialize()
 		throw NRPException::logCreate("Failed to initialize Nest server. Received no response before timeout reached");
 	}
 
+    // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
 	// Run Prepare(). runLoopStep() can now use Run() for stepping
-
-	nestPrepare(this->serverAddress());
+	// nestPrepare(this->serverAddress());
 
 	// Get simulation resolution and cache it
 
@@ -312,7 +323,8 @@ void NestEngineServerNRPClient::initialize()
 
 void NestEngineServerNRPClient::shutdown()
 {
-	nestCleanup(this->serverAddress());
+    // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
+	// nestCleanup(this->serverAddress());
 }
 
 SimulationTime NestEngineServerNRPClient::getEngineTime() const
@@ -429,7 +441,9 @@ bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
 
 	try
 	{
-		nestRun(this->serverAddress(), runTimeMsRounded);
+        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
+		// nestRun(this->serverAddress(), runTimeMsRounded);
+		nestSimulate(this->serverAddress(), runTimeMsRounded);
 	}
 	catch(const std::exception& e)
 	{

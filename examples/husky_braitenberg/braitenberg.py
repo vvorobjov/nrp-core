@@ -110,11 +110,6 @@ nest.Connect(CIRCUIT[7],
 # Register wheel outputs
 RegisterDevice('actors', leaky_cells)
 
-# TODO: without setting rate values here, setting them from TF seems to have no effect
-lpg.set({'rate': 2000.0*0.0721875})
-rpg.set({'rate': 2000.0*0.1422135416})
-gpg.set({'rate': 75.0*0.8927994791666667})
-
 # Simulate
 # sd = nest.Create('spike_recorder')
 # nest.Connect(CIRCUIT[6], sd)

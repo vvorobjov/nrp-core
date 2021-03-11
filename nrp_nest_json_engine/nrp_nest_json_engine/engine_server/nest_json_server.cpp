@@ -91,11 +91,11 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 	try
 	{
 		const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, python::extract<double>(this->_pyNest["GetKernelStatus"]("resolution")));
-
-		this->_pyNest["Run"](runTimeMsRounded);
+        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
+		// this->_pyNest["Run"](runTimeMsRounded);
+        this->_pyNest["Simulate"](runTimeMsRounded);
 
 		// The time field of dictionary returned from GetKernelStatus contains time in milliseconds
-		
 		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("time")));
 	}
 	catch(python::error_already_set &)
@@ -119,9 +119,6 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 
 		this->_pyGlobals["nest"] = nestModule;
 		this->_pyGlobals[NRP_NEST_PYTHON_MODULE_STR] = nrpNestModule;
-
-		// Set Nest to silent
-		nestModule.attr("set_verbosity")(0);
 	}
 	catch(python::error_already_set &)
 	{
@@ -188,8 +185,9 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 		}
 
 		// Prepare Nest for execution
-		this->_pyNest["Prepare"]();
-		this->_nestPreparedFlag = true;
+        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
+		// this->_pyNest["Prepare"]();
+		// this->_nestPreparedFlag = true;
 	}
 	catch(python::error_already_set &)
 	{
