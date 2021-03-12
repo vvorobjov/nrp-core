@@ -12,5 +12,6 @@
 			"NestInitFileName": "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/nest_simple.py"
 		}
 	],
-	"TransceiverFunctionConfigs" : []
+	"TransceiverFunctionConfigs" : [],
+	"PreprocessingFunctionConfigs" : []
 }

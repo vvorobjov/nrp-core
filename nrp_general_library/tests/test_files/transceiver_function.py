@@ -22,7 +22,7 @@
 from NRPPythonModule import *
 from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
 
-@SingleTransceiverDevice(keyword='device', id=DeviceIdentifier('out', 'engine', 'type'))
+@FromEngineDevice(keyword='device', id=DeviceIdentifier('tf_input', 'engine', 'type'))
 @TransceiverFunction("engine")
 def transceiver_function(device):
     test_val = device.test_value

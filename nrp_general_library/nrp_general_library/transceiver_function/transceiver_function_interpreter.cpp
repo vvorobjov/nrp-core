@@ -28,7 +28,7 @@
 
 #include <iostream>
 
-TransceiverFunctionInterpreter::TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables)
+TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables)
     : Name(_name),
       TransceiverFunction(_transceiverFunction),
       DeviceIDs(_deviceIDs),
@@ -58,7 +58,7 @@ TransceiverFunctionInterpreter::TransceiverFunctionInterpreter(const boost::pyth
     : _globalDict(tfGlobals)
 {}
 
-TransceiverFunctionInterpreter::transceiver_function_datas_t::const_iterator TransceiverFunctionInterpreter::findTF(const std::string &name) const
+TransceiverFunctionInterpreter::transceiver_function_datas_t::const_iterator TransceiverFunctionInterpreter::findTransceiverFunction(const std::string &name) const
 {
 	for(auto curTFIterator = this->_transceiverFunctions.begin(); curTFIterator != this->_transceiverFunctions.end(); ++curTFIterator)
 	{
@@ -69,7 +69,7 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::const_iterator Tra
 	return this->_transceiverFunctions.end();
 }
 
-const TransceiverFunctionInterpreter::transceiver_function_datas_t &TransceiverFunctionInterpreter::loadedTFs() const
+const TransceiverFunctionInterpreter::transceiver_function_datas_t &TransceiverFunctionInterpreter::getLoadedTransceiverFunctions() const
 {
 	return this->_transceiverFunctions;
 }
@@ -77,6 +77,9 @@ const TransceiverFunctionInterpreter::transceiver_function_datas_t &TransceiverF
 EngineClientInterface::device_identifiers_set_t TransceiverFunctionInterpreter::updateRequestedDeviceIDs() const
 {
 	EngineClientInterface::device_identifiers_set_t devIDs;
+
+	// Scan all transceiver functions for requested devices
+
 	for(const auto &curData : this->_transceiverFunctions)
 	{
 		auto newDevIDs = curData.second.TransceiverFunction->updateRequestedDeviceIDs();
@@ -94,7 +97,7 @@ void TransceiverFunctionInterpreter::setEngineDevices(TransceiverFunctionInterpr
 boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFunction(const std::string &tfName)
 {
 	// Find associated TF
-	auto tfDataIterator = this->findTF(tfName);
+	auto tfDataIterator = this->findTransceiverFunction(tfName);
 
 	// If TF doesn't exist yet, throw error
 	if(tfDataIterator == this->_transceiverFunctions.end())
@@ -103,7 +106,7 @@ boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFuncti
 	return this->runSingleTransceiverFunction(tfDataIterator->second);
 }
 
-boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFunction(const TransceiverFunctionInterpreter::TransceiverFunctionData &tfData)
+boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFunction(const TransceiverFunctionData &tfData)
 {
 	try
 	{
@@ -124,8 +127,7 @@ boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFuncti
 	}
 }
 
-std::pair<TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator, TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator>
-TransceiverFunctionInterpreter::getLinkedTFs(const std::string &engineName)
+TransceiverFunctionInterpreter::linked_tfs_t TransceiverFunctionInterpreter::getLinkedTransceiverFunctions(const std::string &engineName)
 {
 	return this->_transceiverFunctions.equal_range(engineName);
 }
@@ -133,7 +135,7 @@ TransceiverFunctionInterpreter::getLinkedTFs(const std::string &engineName)
 TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const nlohmann::json &transceiverFunction)
 {
 	// Make sure no previously loaded TFs have not been handled
-	assert(this->_newTFIt == this->_transceiverFunctions.end());
+	assert(this->_newTransceiverFunctionIt == this->_transceiverFunctions.end());
 
 	// Create dict for new module
 	boost::python::dict localVars;
@@ -147,41 +149,47 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 	}
 	catch(boost::python::error_already_set &)
 	{
-		const auto err = NRPException::logCreate("Loading of TransceiverFunction file \"" + tf_name + "\" failed: " + handle_pyerror());
+		const auto err = NRPException::logCreate("Loading of TransceiverFunction file \"" + tf_file + "\" failed: " + handle_pyerror());
 
-		if(this->_newTFIt != this->_transceiverFunctions.end())
+		if(this->_newTransceiverFunctionIt != this->_transceiverFunctions.end())
 		{
-			this->_transceiverFunctions.erase(this->_newTFIt);
-			this->_newTFIt = this->_transceiverFunctions.end();
+			this->_transceiverFunctions.erase(this->_newTransceiverFunctionIt);
+			this->_newTransceiverFunctionIt = this->_transceiverFunctions.end();
 		}
 
 		throw err;
 	}
 
 	// Check that load resulted in a TF
-	if(this->_newTFIt == this->_transceiverFunctions.end())
+	if(this->_newTransceiverFunctionIt == this->_transceiverFunctions.end())
 		throw NRPException::logCreate("No TF found for " + tf_name);
 
 	// Update transfer function params
-	this->_newTFIt->second.DeviceIDs      = this->_newTFIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t());
-	this->_newTFIt->second.LocalVariables = localVars;
-	this->_newTFIt->second.Name           = tf_name;
+	this->_newTransceiverFunctionIt->second.DeviceIDs      = this->_newTransceiverFunctionIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t());
+	this->_newTransceiverFunctionIt->second.LocalVariables = localVars;
+	this->_newTransceiverFunctionIt->second.Name           = tf_name;
 
-	const auto retVal = this->_newTFIt;
-	this->_newTFIt = this->_transceiverFunctions.end();
+	const auto retVal = this->_newTransceiverFunctionIt;
+	this->_newTransceiverFunctionIt = this->_transceiverFunctions.end();
 
 	return retVal;
 }
 
-TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const std::string &tfName, const TransceiverDeviceInterfaceSharedPtr &transceiverFunction, boost::python::object &&localVars)
+TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const std::string &tfName,
+																																const TransceiverDeviceInterfaceSharedPtr &transceiverFunction,
+																																boost::python::object &&localVars)
 {
-	return this->_transceiverFunctions.emplace(transceiverFunction->linkedEngineName(), TransceiverFunctionData(tfName, transceiverFunction, transceiverFunction->updateRequestedDeviceIDs(), std::move(localVars))).first;
+	return this->_transceiverFunctions.emplace(transceiverFunction->linkedEngineName(),
+												TransceiverFunctionData(tfName,
+																		transceiverFunction,
+																		transceiverFunction->updateRequestedDeviceIDs(),
+																		std::move(localVars)));
 }
 
 TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::updateTransceiverFunction(const nlohmann::json &transceiverFunction)
 {
 	// Erase existing TF if found
-	auto tfIterator = this->findTF(transceiverFunction.at("Name"));
+	auto tfIterator = this->findTransceiverFunction(transceiverFunction.at("Name"));
 	if(tfIterator != this->_transceiverFunctions.end())
 		this->_transceiverFunctions.erase(tfIterator);
 
@@ -189,13 +197,15 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 	return this->loadTransceiverFunction(transceiverFunction);
 }
 
-TransceiverDeviceInterface::shared_ptr *TransceiverFunctionInterpreter::registerNewTF(const std::string &linkedEngine, const TransceiverDeviceInterface::shared_ptr &transceiverFunction)
+TransceiverDeviceInterface::shared_ptr *TransceiverFunctionInterpreter::registerNewTransceiverFunction(const std::string &linkedEngine, const TransceiverDeviceInterface::shared_ptr &transceiverFunction)
 {
 	// Check that no previous TF has not been processed
-	assert(this->_newTFIt == this->_transceiverFunctions.end());
+	assert(this->_newTransceiverFunctionIt == this->_transceiverFunctions.end());
 
-	auto newTFIt = this->_transceiverFunctions.emplace(linkedEngine, TransceiverFunctionData("", transceiverFunction, {}, boost::python::dict())).first;
-	this->_newTFIt = newTFIt;
+	auto newTFIt = this->_transceiverFunctions.emplace(linkedEngine, TransceiverFunctionData("", transceiverFunction, {}, boost::python::dict()));
+	this->_newTransceiverFunctionIt = newTFIt;
 
 	return &(newTFIt->second.TransceiverFunction);
 }
+
+// EOF

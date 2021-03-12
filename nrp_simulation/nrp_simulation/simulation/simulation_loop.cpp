@@ -22,8 +22,36 @@
 
 #include "nrp_simulation/simulation/simulation_loop.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
+#include "nrp_general_library/device_interface/device.h"
 
 #include <iostream>
+
+static void executePreprocessingFunctions(TransceiverFunctionManager & tfManager, const std::vector<EngineClientInterfaceSharedPtr> & engines)
+{
+	for(auto &engine : engines)
+	{
+		// Execute all preprocessing functions for this engine
+
+		auto results = tfManager.executeActiveLinkedPreprocessingTFs(engine->engineName());
+
+		// Extract devices from the function results
+		// The devices are stack objects, but we want to store pointers to them in engines cache
+		// We have to convert them into heap-allocated objects
+
+		EngineClientInterface::devices_set_t devicesHeap;
+		for(const auto & result : results)
+		{
+			for(const auto &device : result.Devices)
+			{
+				devicesHeap.emplace(device->moveToSharedPtr());
+			}
+		}
+
+		// Store pointers to devices from preprocessing functions in the engines cache
+
+		engine->updateCachedDevices(std::move(devicesHeap));
+	}
+}
 
 SimulationLoop::SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines)
     : _config(config),
@@ -107,6 +135,10 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			throw;
 		}
 
+		// Execute preprocessing TFs
+
+		executePreprocessingFunctions(this->_tfManager, processedEngines);
+
 		// Execute TFs, and sort results according to engine
 		TransceiverFunctionSortedResults results;
 		for(const auto &engine : processedEngines)
@@ -181,9 +213,21 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &si
 
 	TransceiverDeviceInterface::setTFInterpreter(&newManager.getInterpreter());
 
+	// Load all preprocessing functions specified in the config
+
+	const auto &preprocessingFunctions = simConfig->at("PreprocessingFunctionConfigs");
+	for(const auto &tf : preprocessingFunctions)
+	{
+		newManager.loadTF(tf, true);
+	}
+
+	// Load all transceiver functions specified in the config
+
 	const auto &transceiverFunctions = simConfig->at("TransceiverFunctionConfigs");
 	for(const auto &tf : transceiverFunctions)
-        newManager.loadTF(tf);
+	{
+        newManager.loadTF(tf, false);
+	}
 
 	return newManager;
 }

@@ -37,7 +37,7 @@ TransceiverDeviceInterface::shared_ptr TransceiverFunction::pySetup(boost::pytho
 
 	assert(tf->_tfInterpreterRegistryPtr == nullptr);
 	if(tf->_tfInterpreterRegistryPtr == nullptr)
-		tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewTF(this->linkedEngineName(), tf);
+		tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewTransceiverFunction(this->linkedEngineName(), tf);
 
 	return tf;
 }

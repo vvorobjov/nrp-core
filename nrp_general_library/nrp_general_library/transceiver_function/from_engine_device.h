@@ -24,12 +24,15 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
 
-class SingleTransceiverDevice
-        : public TransceiverDeviceInterface
+/*!
+ * \brief Class for input devices for transceiver functions, mapped to FromEngineDevice python decorator
+ */
+class FromEngineDevice
+    : public TransceiverDeviceInterface
 {
 	public:
-		SingleTransceiverDevice(const std::string &keyword, const DeviceIdentifier &deviceID);
-		virtual ~SingleTransceiverDevice() override = default;
+		FromEngineDevice(const std::string &keyword, const DeviceIdentifier &deviceID, bool isPreprocessed);
+		virtual ~FromEngineDevice() override = default;
 
 		EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override;
 
@@ -37,8 +40,9 @@ class SingleTransceiverDevice
 
 	private:
 
-		std::string _keyword;
+		std::string      _keyword;
 		DeviceIdentifier _deviceID;
+		bool             _isPreprocessed;
 };
 
 #endif // SINGLE_TRANSCEIVER_DEVICE_H

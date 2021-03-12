@@ -47,9 +47,9 @@ EngineClientInterface::device_identifiers_set_t TestSimpleTransceiverDevice::upd
 
 TestInputDevice::~TestInputDevice() = default;
 
-DeviceIdentifier TestOutputDevice::ID()
+DeviceIdentifier TestOutputDevice::ID(const std::string & name)
 {
-	return DeviceIdentifier("out", "engine", "type");
+	return DeviceIdentifier(name, "engine", "type");
 }
 
 TestOutputDevice::TestOutputDevice()

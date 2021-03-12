@@ -116,6 +116,11 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
 
 	json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
+
+	// Set default values
+
+	json_utils::set_default<std::vector<std::string>>(*simConfig, "PreprocessingFunctionConfigs", std::vector<std::string>());
+
 	return SimulationManager(simConfig);
 }
 

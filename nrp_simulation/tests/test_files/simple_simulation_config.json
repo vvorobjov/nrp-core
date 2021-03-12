@@ -6,5 +6,6 @@
 			"EngineName": "test"
 		}
 	],
-	"TransceiverFunctionConfigs" : []
+	"TransceiverFunctionConfigs" : [],
+	"PreprocessingFunctionConfigs" : []
 }

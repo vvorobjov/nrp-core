@@ -21,7 +21,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
-#include "nrp_general_library/transceiver_function/single_transceiver_device.h"
+#include "nrp_general_library/transceiver_function/from_engine_device.h"
 
 #include <boost/python.hpp>
 using namespace boost;
@@ -52,7 +52,7 @@ struct TestSimpleTransceiverDevice
 struct TestOutputDevice
         : public DeviceInterface
 {
-	static DeviceIdentifier ID();
+	static DeviceIdentifier ID(const std::string & name = "out");
 
 	TestOutputDevice();
 
@@ -102,7 +102,7 @@ struct TestTransceiverDevice
 
 	boost::python::object runTf(boost::python::tuple&, boost::python::dict&) override
 	{
-		const auto &outDev = TFInterpreter->engineDevices().begin()->second->front();
+		const auto &outDev = TFInterpreter->getEngineDevices().begin()->second->front();
 		TestInputDevice inDev(TestInputDevice::ID());
 		inDev.TestValue = std::to_string(dynamic_cast<const TestOutputDevice*>(outDev.get())->TestValue);
 

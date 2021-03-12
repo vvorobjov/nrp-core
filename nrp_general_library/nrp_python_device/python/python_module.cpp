@@ -29,7 +29,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
-#include "nrp_general_library/transceiver_function/single_transceiver_device.h"
+#include "nrp_general_library/transceiver_function/from_engine_device.h"
 
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
@@ -37,6 +37,40 @@
 namespace python = boost::python;
 
 using DeviceIdentifiers = EngineClientInterface::device_identifiers_set_t;
+
+/*!
+ * \brief Dummy alias class for FromEngineDevice, mapped to PreprocessedDevice python decorator
+ *
+ * boost::python doesn't allow to map two different names (FromEngineDevice and
+ * PreprocessedDevice in our case) to a single C++ class.
+ * This class acts as an 'alias' for FromEngineDevice and allows for two python decorators
+ * to be mapped to, effectively, a single class.
+ *
+ * Although FromEngineDevice and PreprocessedDevice are effectively the same class, they are
+ * initialized with different arguments in the python constructors.
+ */
+class PreprocessedDevice
+    : public FromEngineDevice
+{
+	using FromEngineDevice::FromEngineDevice;
+};
+
+/*!
+ * \brief Dummy alias class for TransceiverFunction, mapped to PreprocessingFunction python decorator
+ *
+ * boost::python doesn't allow to map two different names (TransceiverFunction and
+ * PreprocessingFunction in our case) to a single C++ class.
+ * This class acts as an 'alias' for TransceiverFunction and allows for two python decorators
+ * to be mapped to, effectively, a single class.
+ *
+ * There's no special behaviour of PreprocessingFunction with respect to the regular TransceiverFunction,
+ * but the decorator was created for semantical clarity and possible future developments.
+ */
+class PreprocessingFunction
+	: public TransceiverFunction
+{
+	using TransceiverFunction::TransceiverFunction;
+};
 
 struct TransceiverDeviceInterfaceWrapper
         : TransceiverDeviceInterface, python::wrapper<TransceiverDeviceInterface>
@@ -130,19 +164,30 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 	register_ptr_to_python<TransceiverDeviceInterface::const_shared_ptr>();
 
 
-	// SingleTransceiverDevice
-	class_<SingleTransceiverDevice, bases<TransceiverDeviceInterface> >("SingleTransceiverDevice", init<const std::string&, const DeviceIdentifier&>(args("keyword", "id")))
-	        .def("__call__", &TransceiverDeviceInterface::pySetup<SingleTransceiverDevice>);
+	// FromEngineDevice
+	class_<FromEngineDevice, bases<TransceiverDeviceInterface> >("FromEngineDevice", init<const std::string&, const DeviceIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
+	        .def("__call__", &TransceiverDeviceInterface::pySetup<FromEngineDevice>);
+
+	// PreprocessedDevice
+	class_<PreprocessedDevice, bases<FromEngineDevice> >("PreprocessedDevice", init<const std::string&, const DeviceIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
+	        .def("__call__", &TransceiverDeviceInterface::pySetup<PreprocessedDevice>);
 
 
 	// TransceiverFunction
-	class_<TransceiverFunction, bases<TransceiverDeviceInterface> >("TransceiverFunction", init<std::string>())
+	class_<TransceiverFunction, bases<TransceiverDeviceInterface> >("TransceiverFunction", init<std::string>( (arg("engineName")) ))
 	        .def("__call__", &TransceiverFunction::pySetup)
 	        .def("runTf", &TransceiverFunction::runTf);
 
 	register_ptr_to_python<PtrTemplates<TransceiverFunction>::shared_ptr>();
 	register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
 
+	// PreprocessingFunction
+	class_<PreprocessingFunction, bases<TransceiverDeviceInterface> >("PreprocessingFunction", init<std::string>( (arg("engineName")) ))
+	        .def("__call__", &PreprocessingFunction::pySetup)
+	        .def("runTf", &PreprocessingFunction::runTf);
+
+	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
+	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
 
 	// PyObjectDevice
 	python_property_device_class<PyObjectDevice>::create()

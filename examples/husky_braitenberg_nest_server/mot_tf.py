@@ -1,7 +1,7 @@
 from NRPPythonModule import *
 from NRPGazeboDevicesPython import PhysicsJoint
 
-@SingleTransceiverDevice(keyword='actors', id=DeviceIdentifier('actors', 'nest'))
+@FromEngineDevice(keyword='actors', id=DeviceIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")
 def transceiver_function(actors):
     back_left_j   = PhysicsJoint("husky::back_left_joint", "gazebo")

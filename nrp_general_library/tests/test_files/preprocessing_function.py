@@ -1,4 +1,3 @@
-
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -19,19 +18,17 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from libNRPPythonModule import *
-from testModule import TestInputDevice, TestOutputDevice
+from NRPPythonModule import *
+from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
 
-# Invalid syntax
-fsdavhufdsihjk = jfdaonv
-
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('dev', 'type', 'engine'))
-@TransceiverFunction()
+@FromEngineDevice(keyword='device', id=DeviceIdentifier('pf_input', 'engine', 'type'))
+@PreprocessingFunction("engine")
 def transceiver_function(device):
     test_val = device.test_value
     
-    ret_dev = TestInputDevice()
-    ret_dev.test_value = str(test_val)
+    ret_dev = PythonDevice("tf_input_preprocessing", "engine")
+    ret_dev.data = {"test_value" : str(test_val + 1)}
     
     return [ret_dev]
 
+# EOF

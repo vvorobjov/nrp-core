@@ -1,4 +1,3 @@
-
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -19,19 +18,20 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from libNRPPythonModule import *
-from testModule import TestInputDevice, TestOutputDevice
+from NRPPythonModule import *
+from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
 
-# Invalid syntax
-fsdavhufdsihjk = jfdaonv
-
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('dev', 'type', 'engine'))
-@TransceiverFunction()
-def transceiver_function(device):
-    test_val = device.test_value
+@FromEngineDevice(keyword='device1', id=DeviceIdentifier('pf_input1', 'engine', 'type'))
+@FromEngineDevice(keyword='device2', id=DeviceIdentifier('pf_input2', 'engine', 'type'))
+@FromEngineDevice(keyword='device3', id=DeviceIdentifier('pf_input3', 'engine', 'type'))
+@PreprocessingFunction("engine")
+def transceiver_function(device1, device2, device3):
+    ret_dev1 = PythonDevice()
+    ret_dev2 = TestInputDevice()
+    ret_dev1.data = {"test_value1" : str(device1.test_value),
+                     "test_value2" : str(device2.test_value),
+                     "test_value3" : str(device3.test_value)}
     
-    ret_dev = TestInputDevice()
-    ret_dev.test_value = str(test_val)
-    
-    return [ret_dev]
+    return [ret_dev1, ret_dev2]
 
+# EOF

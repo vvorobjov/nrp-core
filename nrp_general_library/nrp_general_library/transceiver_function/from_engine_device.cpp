@@ -20,24 +20,25 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_general_library/transceiver_function/single_transceiver_device.h"
+#include "nrp_general_library/transceiver_function/from_engine_device.h"
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
-SingleTransceiverDevice::SingleTransceiverDevice(const std::string &keyword, const DeviceIdentifier &deviceID)
+FromEngineDevice::FromEngineDevice(const std::string &keyword, const DeviceIdentifier &deviceID, bool isPreprocessed)
     : _keyword(keyword),
-      _deviceID(deviceID)
+      _deviceID(deviceID),
+	  _isPreprocessed(isPreprocessed)
 {}
 
-EngineClientInterface::device_identifiers_set_t SingleTransceiverDevice::getRequestedDeviceIDs() const
+EngineClientInterface::device_identifiers_set_t FromEngineDevice::getRequestedDeviceIDs() const
 {
-	return EngineClientInterface::device_identifiers_set_t({this->_deviceID});
+	return _isPreprocessed ? EngineClientInterface::device_identifiers_set_t() : EngineClientInterface::device_identifiers_set_t({this->_deviceID});
 }
 
-boost::python::object SingleTransceiverDevice::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
+boost::python::object FromEngineDevice::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
 {
-	const auto engineDevs = TransceiverDeviceInterface::TFInterpreter->engineDevices();
+	const auto engineDevs = TransceiverDeviceInterface::TFInterpreter->getEngineDevices();
 
 	bool foundDevID = false;
 	auto engDevicesIt = engineDevs.find(this->_deviceID.EngineName);

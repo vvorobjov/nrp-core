@@ -102,6 +102,11 @@ class DeviceInterface
 		const DeviceIdentifier &id() const;
 		void setID(const DeviceIdentifier &id);
 
+		virtual DeviceInterface::const_shared_ptr moveToSharedPtr() const
+		{
+			return DeviceInterface::const_shared_ptr(new DeviceInterface(this->_id));
+		}
+
 	private:
 		/*!
 		 * \brief Identifies Device. Contains name and type of this device

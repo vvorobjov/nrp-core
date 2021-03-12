@@ -40,7 +40,7 @@ set(LIB_SRC_FILES
 	nrp_general_library/process_launchers/process_launcher.cpp
 	nrp_general_library/process_launchers/process_launcher_basic.cpp
 	nrp_general_library/process_launchers/process_launcher_manager.cpp
-	nrp_general_library/transceiver_function/single_transceiver_device.cpp
+	nrp_general_library/transceiver_function/from_engine_device.cpp
 	nrp_general_library/transceiver_function/transceiver_function.cpp
 	nrp_general_library/transceiver_function/transceiver_device_interface.cpp
 	nrp_general_library/transceiver_function/transceiver_function_interpreter.cpp

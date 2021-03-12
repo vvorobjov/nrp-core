@@ -175,6 +175,16 @@ class EngineClientInterface
 		 */
 		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) = 0;
 
+		/*!
+		 * \brief Update _deviceCache from devices
+		 *
+		 * If the device with a particular name is already in the cache, the function will
+		 * replace it. If the device isn't in the cache, the function will insert it.
+		 *
+		 * \param devs Devices to insert
+		 */
+		void updateCachedDevices(devices_set_t &&devs);
+
 	protected:
 
 		/*!
@@ -194,12 +204,6 @@ class EngineClientInterface
 		 * \brief Engine device cache. Stores retrieved devices
 		 */
 		devices_t _deviceCache;
-
-		/*!
-		 * \brief Update _deviceCache from devices
-		 * \param devs Devices to insert
-		 */
-		void updateCachedDevices(devices_set_t &&devs);
 };
 
 using EngineClientInterfaceSharedPtr = EngineClientInterface::shared_ptr;

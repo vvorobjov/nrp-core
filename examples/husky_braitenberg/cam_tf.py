@@ -61,7 +61,7 @@ def detect_red(camDevice):
     return __results(red_left, red_right, green_blue)
 
 
-@SingleTransceiverDevice(keyword='camera', id=DeviceIdentifier('mouse_right_eye::camera', 'gazebo'))
+@FromEngineDevice(keyword='camera', id=DeviceIdentifier('mouse_right_eye::camera', 'gazebo'))
 @TransceiverFunction("nest")
 def transceiver_function(camera):
     print("Camera Depth: " + str(camera.image_depth))
