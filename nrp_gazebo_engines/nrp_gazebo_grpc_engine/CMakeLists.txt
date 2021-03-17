@@ -44,8 +44,6 @@ set(TEST_SRC_FILES
 
 ##########################################
 ## Dependencies
-find_package(Gazebo REQUIRED)
-
 
 ##########################################
 ## Header configuration
@@ -123,36 +121,45 @@ endif()
 add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} ${HEADER_DIRECTORY})
 
 
-##########################################
-## Gazebo plugins
-set(NRP_GAZEBO_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}")
-add_subdirectory(gazebo_grpc_plugins)
+## This section needs Gazebo libraries installed
+if(ENABLE_GAZEBO STREQUAL FULL)
 
+	find_package(Gazebo REQUIRED)
 
-##########################################
-## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-	# Create testing env files
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+	##########################################
+	## Gazebo plugins
+	set(NRP_GAZEBO_LIB_TARGETS
+			"${NAMESPACE_NAME}::${LIBRARY_NAME}"
+			NRPGazeboDeviceControllers::NRPGazeboDeviceControllers)
 
-	# Create testing executable
-	enable_testing()
-	add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-	target_link_libraries(${TEST_NAME}
-		PUBLIC
-		${NAMESPACE_NAME}::${LIBRARY_NAME}
-		GTest::GTest
-		GTest::Main
-		NRPGazeboGrpcPlugins::NRPGazeboGrpcJointControllerPlugin
-		NRPGazeboGrpcPlugins::NRPGazeboGrpcLinkControllerPlugin
-		NRPGazeboGrpcPlugins::NRPGazeboGrpcCameraControllerPlugin
-		NRPGazeboGrpcPlugins::NRPGazeboGrpcWorldPlugin
-		NRPGazeboGrpcPlugins::NRPGazeboGrpcCommunicationPlugin)
+	add_subdirectory(gazebo_grpc_plugins)
 
-	gtest_discover_tests(${TEST_NAME}
-		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-		EXTRA_ARGS -VV)
+	##########################################
+	## Tests
+	if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+		# Create testing env files
+		configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
+		configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+
+		# Create testing executable
+		enable_testing()
+		add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+		target_link_libraries(${TEST_NAME}
+			PUBLIC
+			${NAMESPACE_NAME}::${LIBRARY_NAME}
+			GTest::GTest
+			GTest::Main
+			NRPGazeboGrpcPlugins::NRPGazeboGrpcJointControllerPlugin
+			NRPGazeboGrpcPlugins::NRPGazeboGrpcLinkControllerPlugin
+			NRPGazeboGrpcPlugins::NRPGazeboGrpcCameraControllerPlugin
+			NRPGazeboGrpcPlugins::NRPGazeboGrpcWorldPlugin
+			NRPGazeboGrpcPlugins::NRPGazeboGrpcCommunicationPlugin)
+
+		gtest_discover_tests(${TEST_NAME}
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+			EXTRA_ARGS -VV)
+	endif()
+
 endif()
 
 

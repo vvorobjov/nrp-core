@@ -31,7 +31,7 @@ target_include_directories(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 
 target_link_libraries(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 		${NRP_GEN_LIB_TARGET}
@@ -52,7 +52,7 @@ target_include_directories(NRPGazeboJSONWorldPlugin
 
 target_link_libraries(NRPGazeboJSONWorldPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -75,7 +75,7 @@ target_include_directories(NRPGazeboJSONJointControllerPlugin
 
 target_link_libraries(NRPGazeboJSONJointControllerPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -99,7 +99,7 @@ target_include_directories(NRPGazeboJSONLinkControllerPlugin
 
 target_link_libraries(NRPGazeboJSONLinkControllerPlugin
 	PUBLIC
-		${NRP_GAZEBO_LIB_TARGET}
+		${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -122,7 +122,7 @@ target_include_directories(NRPGazeboJSONCameraControllerPlugin
 
 target_link_libraries(NRPGazeboJSONCameraControllerPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 		CameraPlugin
 
 	PRIVATE

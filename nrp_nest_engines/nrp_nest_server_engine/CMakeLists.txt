@@ -1,11 +1,11 @@
-set(PROJECT_NAME "NRPNestJSONEngine")
-set(HEADER_DIRECTORY "nrp_nest_json_engine")
+set(PROJECT_NAME "NRPNestServerEngine")
+set(HEADER_DIRECTORY "nrp_nest_server_engine")
 
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPNestJSONPythonModule")
-set(EXECUTABLE_NAME "NRPNestJSONExecutable")
+set(PYTHON_MODULE_NAME "NRPNestServerPythonModule")
+set(EXECUTABLE_NAME "NRPNestServerExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
@@ -20,69 +20,40 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-		nrp_nest_json_engine/config/nest_config.cpp
-	nrp_nest_json_engine/devices/nest_device.cpp
-	nrp_nest_json_engine/engine_server/nest_engine_device_controller.cpp
-	nrp_nest_json_engine/engine_server/nest_json_server.cpp
-	nrp_nest_json_engine/nrp_client/nest_engine_json_nrp_client.cpp
-	nrp_nest_json_engine/python/create_device_class.cpp
+	nrp_nest_server_engine/devices/nest_server_device.cpp
+	nrp_nest_server_engine/nrp_client/nest_engine_server_nrp_client.cpp
+	nrp_nest_server_engine/python/create_device_class.cpp
+	nrp_nest_server_engine/config/nest_server_config.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-	nrp_nest_json_engine/python/nrp_nest_python_module.cpp
+	nrp_nest_server_engine/python/nrp_nest_python_module.cpp
 )
 
 # List executable build files
 set(EXEC_SRC_FILES
-	nest_server_executable/main.cpp
-	nest_server_executable/nest_server_executable.cpp
 )
 
 # List testing build files
 set(TEST_SRC_FILES
-	nest_server_executable/nest_server_executable.cpp
-	tests/test_nest_executable.cpp
-	tests/test_nest_server.cpp
 )
 
 
 ##########################################
 ## Dependencies
 
-# NEST Simulator
-if("${NEST_BUILD_DIR}" STREQUAL "")
-	set(NEST_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/nest-simulator" CACHE INTERNAL "Nest build dir")
-endif()
-if(NOT TARGET nest-simulator)
-	set(NRP_NEST_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-	ExternalProject_Add(nest-simulator
-		GIT_REPOSITORY https://github.com/nest/nest-simulator.git
-		GIT_TAG c354d429e60ddb35a61ad02e3a070477e5026fa8
-		GIT_PROGRESS true
-
-		PREFIX ${NEST_BUILD_DIR}
-		INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
-
-		CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_NEST_INSTALL_PREFIX} -Dwith-mpi=ON -Dwith-python=ON
-
-		UPDATE_COMMAND ""
-	)
-endif()
-
-
 ##########################################
 ## Header configuration
 
 # General Nest Header defines
-set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_json_engine/config/cmake_constants.h.in")
+set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_server_engine/config/cmake_constants.h.in")
 set(NRP_NEST_CMAKE_INSTALL_BINDIR "${NRP_NEST_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
 set(NEST_CMAKE_INSTALL_PYNEST "${NEST_CMAKE_INSTALL_PREFIX}/lib/python3.6/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
-configure_file("nrp_nest_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+configure_file("nrp_nest_server_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 
 ##########################################
@@ -145,10 +116,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-	# Create testing env files
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 
 	# Create testing executable
 	enable_testing()
@@ -201,6 +169,10 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 		PATTERN "*.hpp"
 )
 
+# Fix nest-server to use package manager's uwsgi plugin system
+install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
+	WORKING_DIRECTORY '${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}')")
+
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
@@ -209,7 +181,7 @@ if(TARGET ${PYTHON_MODULE_NAME})
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
 		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 
-	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_nest_json_engine/python/numpy_json_serializer.py"
+	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_nest_server_engine/python/numpy_json_serializer.py"
 		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
 

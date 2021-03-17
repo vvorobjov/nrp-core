@@ -19,9 +19,6 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_gazebo_devices/engine_server/camera_device_controller.cpp
-	nrp_gazebo_devices/engine_server/joint_device_controller.cpp
-	nrp_gazebo_devices/engine_server/link_device_controller.cpp
 	nrp_gazebo_devices/physics_camera.cpp
 	nrp_gazebo_devices/physics_joint.cpp
 	nrp_gazebo_devices/physics_link.cpp
@@ -44,8 +41,6 @@ set(TEST_SRC_FILES
 ##########################################
 ## Dependencies
 
-find_package(Gazebo REQUIRED)
-
 
 ##########################################
 ## Header configuration
@@ -63,7 +58,6 @@ add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
-target_link_directories(${LIBRARY_NAME} PUBLIC ${GAZEBO_LIBRARY_DIRS})
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
 target_include_directories(${LIBRARY_NAME} BEFORE
@@ -71,13 +65,11 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 	    $<INSTALL_INTERFACE:include>
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
-		${GAZEBO_INCLUDE_DIRS}
 )
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
 	    ${NRP_GEN_LIB_TARGET}
-		${GAZEBO_LIBRARIES}
 )
 
 
@@ -112,20 +104,31 @@ endif()
 ## Append Doxygen files
 add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} ${HEADER_DIRECTORY})
 
+## This section needs Gazebo libraries installed
+if(ENABLE_GAZEBO STREQUAL FULL)
 
-##########################################
-## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-	# Create testing executable
-	enable_testing()
-	add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-	target_link_libraries(${TEST_NAME}
-		PUBLIC
-		${NAMESPACE_NAME}::${LIBRARY_NAME})
+	find_package(Gazebo REQUIRED)
 
-	gtest_discover_tests(${TEST_NAME}
-		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-		EXTRA_ARGS -VV)
+	##########################################
+	## Device Controllers
+	set(NRP_GAZEBO_DEVICES_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}")
+	add_subdirectory(nrp_gazebo_devices/engine_server)
+
+	##########################################
+	## Tests
+	if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+		# Create testing executable
+		enable_testing()
+		add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+		target_link_libraries(${TEST_NAME}
+			PUBLIC
+			${NAMESPACE_NAME}::${LIBRARY_NAME})
+
+		gtest_discover_tests(${TEST_NAME}
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+			EXTRA_ARGS -VV)
+	endif()
+
 endif()
 
 

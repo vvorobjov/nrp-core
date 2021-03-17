@@ -10,7 +10,13 @@
     wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
     sudo apt update
-    sudo apt install cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev libgazebo11-dev gazebo11 gazebo11-plugin-base cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3
+    sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil
+
+    # required by gazebo
+    sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
+
+    # required by nest-server 
+    sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3
     
     # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
     sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
@@ -31,14 +37,13 @@
 
 ## Installation
 
- 1. `git clone https://github.com/Mike2208/NewNRP.git`
- 2. `cd NewNRP`
+ 1. `git clone git@bitbucket.org:hbpneurorobotics/nrp-core.git`
+ 2. `cd nrp-core`
  3. `mkdir build`
  4. `cd build`
  5. `export C=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10`
- 6. `cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/nrp`
- 7. `sudo mkdir -p /usr/local/nrp`
- 8. `sudo chown $USER /usr/local/nrp`
+ 6. `cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp`
+ 7. `mkdir -p /home/${USER}/.local/nrp`
  9. `make -j8`
      Note that the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
  10. `make install`
@@ -55,9 +60,12 @@ documentation can be found in a new `doxygen` folder
 
  1. Set environment:
  
-		 export PYTHONPATH=/usr/local/nrp/lib/python3.8/site-packages:$PYTHONPATH
-		 export LD_LIBRARY_PATH=/usr/local/nrp/lib:$LD_LIBRARY_PATH
-		 export PATH=$PATH:/usr/local/nrp/bin
+ 		 export NRP=/home/${USER}/.local/nrp
+		 export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
+		 export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
+		 export PATH=$PATH:${NRP}/bin
+		 . /usr/share/gazebo-11/setup.sh
+		 
       	
  3. Start simulation:
 	`NRPSimulation -c <SIMULATION_CONFIG_FILE>`
