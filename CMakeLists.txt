@@ -135,8 +135,8 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential denpendency conflicts
 ## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
 
-set(ENABLE_NEST FULL)
-set(ENABLE_GAZEBO FULL)
+set(ENABLE_NEST OFF)
+set(ENABLE_GAZEBO OFF)
 
 ##########################################
 ## NRP Engines

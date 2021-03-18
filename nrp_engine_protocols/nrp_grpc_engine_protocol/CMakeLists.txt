@@ -37,7 +37,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/engine_grpc.cpp
+	#tests/engine_grpc.cpp
 )
 
 
@@ -67,14 +67,14 @@ message(STATUS "Using gRPC ${GRPC_VERSION}")
 ## GRPC Generation
 
 # List of protobuf proto files
-get_filename_component(hw_proto "grpc_server/engine_grpc.proto" ABSOLUTE)
+get_filename_component(hw_proto "grpc_server/service.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 
 # Generated sources
-set(proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.pb.cc")
-set(proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.pb.h")
-set(grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.grpc.pb.cc")
-set(grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.grpc.pb.h")
+set(proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/service.pb.cc")
+set(proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/service.pb.h")
+set(grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/service.grpc.pb.cc")
+set(grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/service.grpc.pb.h")
 add_custom_command(
 	OUTPUT "${proto_srcs}" "${proto_hdrs}" "${grpc_srcs}" "${grpc_hdrs}"
 	COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server"

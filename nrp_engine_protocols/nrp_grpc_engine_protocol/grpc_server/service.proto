@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+
+package communication;
+
+// The service definition.
+service CommunicationService 
+{
+  rpc initialize(InitializeRequest) returns (InitializeReply) {}
+  rpc shutdown(NoParams) returns (ShutdownReply) {}
+  rpc get_info(NoParams) returns (GetInfoReply) {}
+  rpc set_info(SetInfoRequest) returns (SetInfoReply) {}
+  rpc get_camera(NoParams) returns (GetCameraReply) {}
+  rpc run_game(RunGameRequest) returns (RunGameReply) {}
+}
+
+message InitializeRequest 
+{
+  string json = 1;
+}
+
+message InitializeReply 
+{
+  bytes success = 1;
+  uint32 imageWidth = 2;
+  uint32 imageHeight = 3;
+}
+
+
+message ShutdownReply 
+{
+  bytes success = 1;
+}
+
+message GetInfoReply 
+{
+  bytes success = 1;
+  repeated float boardPosition = 2;
+  repeated float boardRotation = 3;
+  repeated float boardCraneJointAngles = 4;
+}
+
+message SetInfoRequest 
+{
+  repeated float boardCraneJointAngles = 1;
+
+}
+
+message SetInfoReply 
+{
+  bytes success = 1;
+}
+
+message GetCameraReply 
+{
+  bytes success = 1;
+  bytes imageData = 2;
+}
+
+message RunGameRequest 
+{
+  float time = 1;
+}
+
+message RunGameReply 
+{
+  bytes success = 1;
+  float totalSimulatedTime = 2;
+}
+
+message NoParams {}
