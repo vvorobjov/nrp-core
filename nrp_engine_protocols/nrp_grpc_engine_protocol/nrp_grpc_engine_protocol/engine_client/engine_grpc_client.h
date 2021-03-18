@@ -31,7 +31,7 @@
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_grpc_engine_protocol/grpc_server/service.grpc.pb.h"
 
 
 template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
@@ -44,7 +44,7 @@ class EngineGrpcClient
         // TODO It happens that gRPC call is performed before the server is fully initialized.
         // This line was supposed to fix it, but it's breaking some of the tests. The issue will be addressed in NRRPLT-8187.
         // context->set_wait_for_ready(true);
-            
+
         // Set RPC timeout (in absolute time), if it has been specified by the user
 
         if(this->_rpcTimeout > SimulationTime::zero())
@@ -74,7 +74,7 @@ class EngineGrpcClient
             }
 
             _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
-            _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
+            _stub    = EngineGrpc::CommunicationService::NewStub(_channel);
         }
 
         grpc_connectivity_state getChannelStatus()
@@ -92,15 +92,15 @@ class EngineGrpcClient
 
         void sendInitCommand(const nlohmann::json & data)
         {
-            EngineGrpc::InitRequest  request;
-            EngineGrpc::InitReply    reply;
+            EngineGrpc::InitializeRequest  request;
+            EngineGrpc::InitializeReply    reply;
             grpc::ClientContext      context;
 
             prepareRpcContext(&context);
 
             request.set_json(data.dump());
 
-            grpc::Status status = _stub->init(&context, request, &reply);
+            grpc::Status status = _stub->initialize(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -109,15 +109,15 @@ class EngineGrpcClient
             }
         }
 
-        void sendShutdownCommand(const nlohmann::json & data)
+        void sendShutdownCommand(const nlohmann::json & )
         {
-            EngineGrpc::ShutdownRequest request;
+            EngineGrpc::NoParams request;
             EngineGrpc::ShutdownReply   reply;
             grpc::ClientContext         context;
 
             prepareRpcContext(&context);
 
-            request.set_json(data.dump());
+            //request.set_json(data.dump());
 
             grpc::Status status = _stub->shutdown(&context, request, &reply);
 
@@ -130,15 +130,15 @@ class EngineGrpcClient
 
         SimulationTime sendRunLoopStepCommand(const SimulationTime timeStep)
         {
-            EngineGrpc::RunLoopStepRequest request;
-            EngineGrpc::RunLoopStepReply   reply;
+            EngineGrpc::RunGameRequest request;
+            EngineGrpc::RunGameReply   reply;
             grpc::ClientContext            context;
 
             prepareRpcContext(&context);
 
-            request.set_timestep(timeStep.count());
+            request.set_time(timeStep.count());
 
-            grpc::Status status = _stub->runLoopStep(&context, request, &reply);
+            grpc::Status status = _stub->run_game(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -146,7 +146,7 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
-            const SimulationTime engineTime(reply.enginetime());
+            const SimulationTime engineTime = toSimulationTime<float, std::ratio<1, 1>>(reply.totalsimulatedtime());
 
             if(engineTime < SimulationTime::zero())
             {
@@ -201,8 +201,8 @@ class EngineGrpcClient
 
 		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
         {
-            EngineGrpc::SetDeviceRequest request;
-            EngineGrpc::SetDeviceReply   reply;
+            EngineGrpc::SetInfoRequest request;
+            EngineGrpc::SetInfoReply   reply;
             grpc::ClientContext          context;
 
             prepareRpcContext(&context);
@@ -211,12 +211,15 @@ class EngineGrpcClient
             {
                 if(device->engineName().compare(this->engineName()) == 0)
                 {
-                    auto r = request.add_request();
-                    this->getProtoFromSingleDeviceInterface<DEVICES...>(*device, r);
+
+                    EngineGrpc::DeviceMessage message;
+                    this->getProtoFromSingleDeviceInterface<DEVICES...>(*device, &message);
+
+                    request = message.setinfo();
                 }
             }
 
-            grpc::Status status = _stub->setDevice(&context, request, &reply);
+            grpc::Status status = _stub->set_info(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -245,20 +248,6 @@ class EngineGrpcClient
             {
 				throw std::logic_error("Could not serialize given device of type \"" + device.type() + "\"");
             }
-        }
-
-        typename EngineClientInterface::devices_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
-        {
-            typename EngineClientInterface::devices_set_t interfaces;
-
-            for(int i = 0; i < reply.reply_size(); i++)
-            {
-                // Check whether the requested device has new data
-				if(reply.reply(i).has_deviceid())
-					interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
-            }
-
-            return interfaces;
         }
 
         template<class DEVICE, class ...REMAINING_DEVICES>
@@ -290,31 +279,31 @@ class EngineGrpcClient
 
             std::string name = this->engineConfig().at("EngineName");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineNameArg.data() + "=" + name);
-    
+
             // Add JSON Server address (will be used by EngineGrpcServer)
             std::string address = this->engineConfig().at("ServerAddress");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
-    
+
             // Add JSON registration Server address (will be used by EngineGrpcServer)
             std::string reg_address = this->engineConfig().at("RegistrationServerAddress");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data() + "=" + reg_address);
-    
+
             return startParams;
         }
-    
+
         virtual const std::vector<std::string> engineProcEnvParams() const override
         {
             return this->engineConfig().at("EngineEnvParams");
         }
 
 	protected:
-		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
+		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &) override
 		{
-			EngineGrpc::GetDeviceRequest request;
-			EngineGrpc::GetDeviceReply   reply;
+			EngineGrpc::NoParams     request;
+			EngineGrpc::GetInfoReply reply;
 			grpc::ClientContext          context;
 
-			for(const auto &devID : deviceIdentifiers)
+			/*for(const auto &devID : deviceIdentifiers)
 			{
 				if(this->engineName().compare(devID.EngineName) == 0)
 				{
@@ -324,9 +313,9 @@ class EngineGrpcClient
 					r->set_devicetype(devID.Type);
 					r->set_enginename(devID.EngineName);
 				}
-			}
+			}*/
 
-			grpc::Status status = _stub->getDevice(&context, request, &reply);
+			grpc::Status status = _stub->get_info(&context, request, &reply);
 
 			if(!status.ok())
 			{
@@ -334,13 +323,22 @@ class EngineGrpcClient
 				throw std::runtime_error(errMsg);
 			}
 
-			return this->getDeviceInterfacesFromProto(reply);
+            typename EngineClientInterface::devices_set_t interfaces;
+
+            EngineGrpc::DeviceMessage infoMessage;
+            infoMessage.mutable_deviceid()->set_devicename("");
+            infoMessage.mutable_deviceid()->set_devicetype("");
+            infoMessage.mutable_deviceid()->set_enginename("");
+            infoMessage.mutable_getinfo()->CopyFrom(reply);
+            interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(infoMessage));
+
+            return interfaces;
 		}
 
     private:
 
         std::shared_ptr<grpc::Channel>                       _channel;
-        std::unique_ptr<EngineGrpc::EngineGrpcService::Stub> _stub;
+        std::unique_ptr<EngineGrpc::CommunicationService::Stub> _stub;
 
         std::future<SimulationTime> _loopStepThread;
         SimulationTime _prevEngineTime = SimulationTime::zero();

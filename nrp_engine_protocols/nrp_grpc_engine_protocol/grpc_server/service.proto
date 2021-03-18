@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 
-package communication;
+package EngineGrpc;
 
 // The service definition.
 service CommunicationService 
@@ -30,6 +30,25 @@ message InitializeReply
 message ShutdownReply 
 {
   bytes success = 1;
+}
+
+message DeviceMessage
+{
+  DeviceIdentifier deviceId = 1;
+
+  oneof data
+    {
+      SetInfoRequest setInfo   = 2;
+	    GetInfoReply   getInfo   = 3;
+		  GetCameraReply getCamera = 4;
+    }
+}
+
+message DeviceIdentifier
+{
+    string deviceName = 1;
+    string deviceType = 2;
+    string engineName = 3;
 }
 
 message GetInfoReply 

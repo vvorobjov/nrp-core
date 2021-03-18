@@ -21,9 +21,9 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
 	nrp_grpc_engine_protocol/config/engine_grpc_config.cpp
 	nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.cpp
-	nrp_grpc_engine_protocol/engine_server/engine_grpc_device_controller.cpp
-	nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
-	nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
+	#nrp_grpc_engine_protocol/engine_server/engine_grpc_device_controller.cpp
+	#nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
+	#nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
 	nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
 )
 

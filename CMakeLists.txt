@@ -136,7 +136,7 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
 
 set(ENABLE_NEST OFF)
-set(ENABLE_GAZEBO OFF)
+set(ENABLE_GAZEBO CLIENT)
 
 ##########################################
 ## NRP Engines
