@@ -136,7 +136,8 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
 
 set(ENABLE_NEST OFF)
-set(ENABLE_GAZEBO CLIENT)
+set(ENABLE_GAZEBO OFF)
+set(ENABLE_UNITY FULL)
 
 ##########################################
 ## NRP Engines
@@ -155,6 +156,13 @@ if(NOT ENABLE_NEST STREQUAL OFF)
 	add_subdirectory(nrp_nest_engines)
 else()
 	message(STATUS "Nest engines will not be built")
+endif()
+
+## Unity Engines
+if(NOT ENABLE_UNITY STREQUAL OFF)
+	add_subdirectory(nrp_unity_grpc_engine)
+else()
+	message(STATUS "Unity engines will not be built")
 endif()
 
 ## Python Engine
