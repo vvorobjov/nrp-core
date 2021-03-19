@@ -62,4 +62,40 @@ void SetInfo::setJointAngles(const vec3_t &jointAngles)
     this->getPropertyByName<JointAngles>() = jointAngles;
 }
 
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<GetInfo>(const GetInfo &dev)
+{
+	GRPCDevice msg = serializeID<GRPCDevice>(dev.id());
+	/*msg.dev().mutable_camera()->InitAsDefaultInstance();
+	msg.dev().mutable_camera()->set_imagedata(dev.imageData().data(), dev.imageData().size());
+	msg.dev().mutable_camera()->set_imagedepth(dev.imagePixelSize());
+	msg.dev().mutable_camera()->set_imageheight(dev.imageHeight());
+	msg.dev().mutable_camera()->set_imagewidth(dev.imageWidth());*/
+
+	return msg;
+}
+
+template<>
+GetInfo DeviceSerializerMethods<GRPCDevice>::deserialize<GetInfo>(DeviceIdentifier &&devID, deserialization_t data)
+{
+	return GetInfo(std::move(devID), GetInfo::property_template_t(GetInfo::vec3_t({data->getinfo().boardposition(0), data->getinfo().boardposition(1), data->getinfo().boardposition(2)}),
+                                                                GetInfo::vec3_t({data->getinfo().boardrotation(0), data->getinfo().boardrotation(1), data->getinfo().boardrotation(2)}),
+                                                                GetInfo::vec3_t({data->getinfo().boardcranejointangles(0), data->getinfo().boardcranejointangles(1), data->getinfo().boardcranejointangles(2)})));
+}
+
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<SetInfo>(const SetInfo &dev)
+{
+    GRPCDevice msg = serializeID<GRPCDevice>(dev.id());
+	msg.dev().mutable_setinfo()->InitAsDefaultInstance();
+
+    const auto angles = dev.getJointAngles();
+
+    msg.dev().mutable_setinfo()->add_boardcranejointangles(angles[0]);
+    msg.dev().mutable_setinfo()->add_boardcranejointangles(angles[1]);
+    msg.dev().mutable_setinfo()->add_boardcranejointangles(angles[2]);
+
+	return msg;
+}
+
 // EOF

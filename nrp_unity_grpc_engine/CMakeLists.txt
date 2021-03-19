@@ -23,11 +23,12 @@ set(LIB_SRC_FILES
 	devices/camera.cpp
 	nrp_unity_grpc_engine/config/unity_grpc_config.cpp
 	nrp_unity_grpc_engine/nrp_client/unity_engine_grpc_nrp_client.cpp
+#	nrp_unity_grpc_engine/python/python_module.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-#	nrp_gazebo_grpc_engine/python/python_module.cpp
+	nrp_unity_grpc_engine/python/python_module.cpp
 )
 
 # List executable build files

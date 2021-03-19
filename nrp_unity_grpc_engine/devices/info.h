@@ -23,6 +23,7 @@
 #define UNITY_INFO_H
 
 #include "nrp_general_library/device_interface/device.h"
+#include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 
 struct GetInfoConst
 {
@@ -63,6 +64,12 @@ class GetInfo
 		void setJointAngles(const vec3_t &jointAngles);
 };
 
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<GetInfo>(const GetInfo &dev);
+
+template<>
+GetInfo DeviceSerializerMethods<GRPCDevice>::deserialize<GetInfo>(DeviceIdentifier &&devID, deserialization_t data);
+
 struct SetInfoConst
 {
 		using vec3_t = std::array<float, 3>;
@@ -89,6 +96,9 @@ class SetInfo
         const vec3_t &getJointAngles() const;
 		void setJointAngles(const vec3_t &jointAngles);
 };
+
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<SetInfo>(const SetInfo &dev);
 
 #endif // UNITY_INFO_H
 

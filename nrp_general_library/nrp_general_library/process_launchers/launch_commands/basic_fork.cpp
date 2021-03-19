@@ -98,6 +98,9 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 		// Parameter end
 		startParamPtrs.push_back(nullptr);
 
+		for(const auto &curParam : startParams)
+			std::cout << curParam << std::endl;
+
 		std::cout << "Current engine PID: " <<getpid() << std::endl;
 
 		// Start engine, stop current execution

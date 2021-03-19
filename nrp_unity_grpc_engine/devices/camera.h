@@ -23,6 +23,7 @@
 #define UNITY_CAMERA_H
 
 #include "nrp_general_library/device_interface/device.h"
+#include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 
 #include <vector>
 
@@ -40,7 +41,7 @@ struct CameraConst
  */
 class Camera
         : public CameraConst,
-          public Device<Camera, "PhysicsCamera", CameraConst::JPropNames, CameraConst::cam_data_t>
+          public Device<Camera, "GetCamera", CameraConst::JPropNames, CameraConst::cam_data_t>
 {
 	public:
 		Camera(DeviceIdentifier &&devID, property_template_t &&props = property_template_t(std::vector<unsigned char>({})))
@@ -55,5 +56,11 @@ class Camera
 		cam_data_t &imageData();
 		void setImageData(const cam_data_t &imageData);
 };
+
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<Camera>(const Camera &dev);
+
+template<>
+Camera DeviceSerializerMethods<GRPCDevice>::deserialize<Camera>(DeviceIdentifier &&devID, deserialization_t data);
 
 #endif // UNITY_CAMERA_H

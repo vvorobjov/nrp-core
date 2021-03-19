@@ -36,3 +36,20 @@ void Camera::setImageData(const CameraConst::cam_data_t &imageData)
 {
 	this->getPropertyByName<ImageData>() = imageData;
 }
+
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<Camera>(const Camera &dev)
+{
+	GRPCDevice msg = serializeID<GRPCDevice>(dev.id());
+
+	return msg;
+}
+
+template<>
+Camera DeviceSerializerMethods<GRPCDevice>::deserialize<Camera>(DeviceIdentifier &&devID, deserialization_t data)
+{
+	return Camera(std::move(devID), Camera::property_template_t(Camera::cam_data_t(data->getcamera().imagedata().begin(),
+	                                                                                data->getcamera().imagedata().end())));
+}
+
+// EOF

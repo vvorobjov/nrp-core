@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 
-package EngineGrpc;
+package communication;
 
 // The service definition.
 service CommunicationService 

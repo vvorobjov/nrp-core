@@ -33,6 +33,7 @@
 #include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 #include "nrp_grpc_engine_protocol/grpc_server/service.grpc.pb.h"
 
+namespace EngineGrpc = communication;
 
 template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
 class EngineGrpcClient
@@ -98,7 +99,7 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            request.set_json(data.dump());
+            request.set_json("1");
 
             grpc::Status status = _stub->initialize(&context, request, &reply);
 
@@ -136,7 +137,7 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            request.set_time(timeStep.count());
+            request.set_time(fromSimulationTime<float, std::ratio<1,1>>(timeStep));
 
             grpc::Status status = _stub->run_game(&context, request, &reply);
 
@@ -203,7 +204,7 @@ class EngineGrpcClient
         {
             EngineGrpc::SetInfoRequest request;
             EngineGrpc::SetInfoReply   reply;
-            grpc::ClientContext          context;
+            grpc::ClientContext        context;
 
             prepareRpcContext(&context);
 
@@ -215,16 +216,16 @@ class EngineGrpcClient
                     EngineGrpc::DeviceMessage message;
                     this->getProtoFromSingleDeviceInterface<DEVICES...>(*device, &message);
 
-                    request = message.setinfo();
+                    request.CopyFrom(message.setinfo());
+
+                    grpc::Status status = _stub->set_info(&context, request, &reply);
+
+                    if(!status.ok())
+                    {
+                        const auto errMsg = "Engine server sendDevicesToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                        throw std::runtime_error(errMsg);
+                    }
                 }
-            }
-
-            grpc::Status status = _stub->set_info(&context, request, &reply);
-
-            if(!status.ok())
-            {
-                const auto errMsg = "Engine server sendDevicesToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
-                throw std::runtime_error(errMsg);
             }
         }
 
@@ -301,19 +302,7 @@ class EngineGrpcClient
 		{
 			EngineGrpc::NoParams     request;
 			EngineGrpc::GetInfoReply reply;
-			grpc::ClientContext          context;
-
-			/*for(const auto &devID : deviceIdentifiers)
-			{
-				if(this->engineName().compare(devID.EngineName) == 0)
-				{
-					auto r = request.add_deviceid();
-
-					r->set_devicename(devID.Name);
-					r->set_devicetype(devID.Type);
-					r->set_enginename(devID.EngineName);
-				}
-			}*/
+			grpc::ClientContext      context;
 
 			grpc::Status status = _stub->get_info(&context, request, &reply);
 
@@ -326,11 +315,30 @@ class EngineGrpcClient
             typename EngineClientInterface::devices_set_t interfaces;
 
             EngineGrpc::DeviceMessage infoMessage;
-            infoMessage.mutable_deviceid()->set_devicename("");
-            infoMessage.mutable_deviceid()->set_devicetype("");
-            infoMessage.mutable_deviceid()->set_enginename("");
+            infoMessage.mutable_deviceid()->set_devicename("GetInfo");
+            infoMessage.mutable_deviceid()->set_devicetype("GetInfo");
+            infoMessage.mutable_deviceid()->set_enginename("unity_grpc");
             infoMessage.mutable_getinfo()->CopyFrom(reply);
             interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(infoMessage));
+
+			EngineGrpc::GetCameraReply replyCamera;
+            EngineGrpc::NoParams       requestCamera;
+			grpc::ClientContext        contextCamera;
+
+            status = _stub->get_camera(&contextCamera, requestCamera, &replyCamera);
+
+			if(!status.ok())
+			{
+				const auto errMsg = "Engine client getDevicesFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+				throw std::runtime_error(errMsg);
+			}
+
+            EngineGrpc::DeviceMessage cameraMessage;
+            cameraMessage.mutable_deviceid()->set_devicename("GetCamera");
+            cameraMessage.mutable_deviceid()->set_devicetype("GetCamera");
+            cameraMessage.mutable_deviceid()->set_enginename("unity_grpc");
+            cameraMessage.mutable_getcamera()->CopyFrom(replyCamera);
+            interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(cameraMessage));
 
             return interfaces;
 		}

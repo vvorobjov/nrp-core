@@ -236,12 +236,11 @@ void SimulationLoop::sendDevicesToEngine(const EngineClientInterfaceSharedPtr &e
 {
 	// Find corresponding devices
 	const auto interfaceResultIterator = results.find(engine->engineName());
+
 	if(interfaceResultIterator != results.end())
 		engine->sendDevicesToEngine(interfaceResultIterator->second);
-
-	// If no devices are available, have interface handle empty device input list
-	// TODO: be sure that this is right
-	engine->sendDevicesToEngine(typename EngineClientInterface::devices_ptr_t());
+	else
+		engine->sendDevicesToEngine(typename EngineClientInterface::devices_ptr_t());
 }
 
 /*! \page simulation_loop Simulation Loop

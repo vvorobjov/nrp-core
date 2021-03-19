@@ -40,10 +40,12 @@ UnityEngineGrpcNRPClient::UnityEngineGrpcNRPClient(nlohmann::json &config, Proce
 
 void UnityEngineGrpcNRPClient::initialize()
 {
+    sleep(10);
+
 	// Wait for Gazebo to load world
 	try
 	{
-		this->sendInitCommand(this->engineConfig());
+		this->sendInitCommand(nlohmann::json::parse("{\"level\":1}"));
 	}
 	catch(std::exception& e)
 	{
@@ -79,28 +81,12 @@ void UnityEngineGrpcNRPClient::shutdown()
     return envVars;
 }*/
 
-/*const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcStartParams() const
+const std::vector<std::string> UnityEngineGrpcNRPClient::engineProcStartParams() const
 {
     std::vector<std::string> startParams = this->EngineGrpcClient::engineProcStartParams();
 
-    // Add gazebo plugins
-    for(const auto &curPlugin : this->engineConfig().at("GazeboPlugins"))
-    {
-        startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
-        startParams.push_back(curPlugin);
-    }
-
-    // Add gazebo communication system plugin
-    startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
-    startParams.push_back(NRP_GAZEBO_COMMUNICATION_PLUGIN);
-
-    // Add RNG Seed
-    int seed = this->engineConfig().at("GazeboRNGSeed");
-    startParams.push_back(GazeboGrpcConfigConst::GazeboRNGSeedArg.data());
-    startParams.push_back(std::to_string(seed));
-
-    // Add world file
-    startParams.push_back(this->engineConfig().at("GazeboWorldFile"));
+    //startParams.push_back("--serverurl");
+    //startParams.push_back("localhost:50051");
 
     return startParams;
-}*/
+}

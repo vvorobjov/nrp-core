@@ -171,7 +171,7 @@ add_subdirectory(nrp_python_json_engine)
 
 ##########################################
 ## NRP Simulation
-set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPGazeboGrpcEngine.so;NRPNestJSONEngine.so"
+set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPUnityGrpcEngine.so;NRPPythonJSONEngine.so"
 	CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 

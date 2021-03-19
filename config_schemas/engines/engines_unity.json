@@ -1,0 +1,23 @@
+{"engine_unity_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Unity Base",
+    "description": "Gazebo Base Engine configuration schema. Configuration for all gazebo engine implementations inherit from this one",
+    "$id": "#UnityBase"
+  },
+  "engine_unity_grpc" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Unity Grpc Engine",
+    "description": "Unity Grpc Engine",
+    "$id": "#UnityGRPCEngine",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc" },
+      { "$ref": "#/engine_unity_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["unity_grpc"] },
+          "EngineProcCmd": { "default": "NRPDummyBallGame.x86_64" }
+        }
+      }
+    ]
+  }
+}
