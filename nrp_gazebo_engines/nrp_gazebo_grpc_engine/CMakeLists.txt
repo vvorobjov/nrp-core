@@ -45,6 +45,10 @@ set(TEST_SRC_FILES
 ##########################################
 ## Dependencies
 
+if(ENABLE_GAZEBO STREQUAL FULL)
+	find_package(Gazebo REQUIRED)
+endif()
+
 ##########################################
 ## Header configuration
 
@@ -123,8 +127,6 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ## This section needs Gazebo libraries installed
 if(ENABLE_GAZEBO STREQUAL FULL)
-
-	find_package(Gazebo REQUIRED)
 
 	##########################################
 	## Gazebo plugins

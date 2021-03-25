@@ -25,7 +25,7 @@ def detect_red(camDevice):
     The lightest color that is recognized as red is (255,127,127).
     """
     red_left = red_right = green_blue = 0
-    if len(camDevice.image_data) > 0:
+    if not camDevice.isEmpty():
         lower_red = np.array([0, 30, 30])
         upper_red = np.array([0, 255, 255])
 
@@ -69,7 +69,7 @@ def transceiver_function(camera):
     res = detect_red(camera)
     
     # Set to True to display camera image data and pause for 10 s
-    if False and camera.image_height > 0 and camera.image_width > 0:
+    if False and not camera.isEmpty():
         img = Image.fromarray(camera.image_data.reshape((camera.image_height,camera.image_width,3)))
         img.show()
         time.sleep(10)

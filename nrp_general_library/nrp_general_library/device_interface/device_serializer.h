@@ -48,65 +48,6 @@ concept DEVICE_SERIALIZER_METHODS_C = requires (T &serializer, const DEVICE &dev
     {	serializer.deserializeID(std::declval<typename T::deserialization_t>())	} -> std::convertible_to<DeviceIdentifier>;
 };
 
-//template<class SERIALIZER>
-//class DeviceSerializerMethods
-//{
-//	public:
-//		using prop_deserialization_t = typename ObjectPropertySerializerMethods<SERIALIZER>::deserialization_t;
-//		using deserializtion_t = const SERIALIZER&;
-
-//		template<DEVICE_C DEVICE>
-//		static SERIALIZER serialize(const DEVICE &dev);
-
-//		static SERIALIZER serializeID(const DeviceIdentifier &devID);
-
-//		template<DEVICE_C DEVICE>
-//		static DEVICE deserialize(deserializtion_t data);
-
-//		static DeviceIdentifier deserializeID(deserializtion_t data);
-//};
-
-//template<class SERIALIZER, class DEVICE>
-//class DeviceSerializer
-//{
-//		template<class SERIALIZER_T = SERIALIZER, class DEVICE_T = DEVICE>
-//		static constexpr void check()
-//		{
-//			    static_assert (DEVICE_SERIALIZER_METHODS_C<DeviceSerializerMethods<SERIALIZER>, SERIALIZER, DEVICE>,
-//			        "SERIALIZER serialization type does not have a valid DeviceSerializerMethods struct available");
-//		}
-
-//	public:
-//		using prop_deserialization_t = typename DeviceSerializerMethods<SERIALIZER>::prop_deserialization_t;
-//		using deserialization_t = typename DeviceSerializerMethods<SERIALIZER>::deserialization_t;
-
-//		template<class DEVICE_T>
-//		requires(std::same_as<std::remove_cvref_t<DEVICE_T>, DEVICE>)
-//		static SERIALIZER serialize(DEVICE_T &&dev)
-//		{
-//			check();
-//			return DeviceSerializerMethods<SERIALIZER>::serialize(std::forward<DEVICE_T>(dev));
-//		}
-
-//		static SERIALIZER serializeID(const DeviceIdentifier &devID)
-//		{
-//			check();
-//			return DeviceSerializerMethods<SERIALIZER>::serializeID(devID);
-//		}
-
-//		static DEVICE deserialize(DeviceIdentifier &&devID, deserialization_t data)
-//		{
-//			check();
-//			return DeviceSerializerMethods<SERIALIZER>::template deserialize(std::move(devID), std::forward<deserialization_t>(data));
-//		}
-
-//		static DeviceIdentifier serializeID(deserialization_t data)
-//		{
-//			check();
-//			return DeviceSerializerMethods<SERIALIZER>::serializeID(std::forward<deserialization_t>(data));
-//		}
-//};
-
 /*! \page device_serializer
 DeviceSerializers contain static functions to de-/serialize \ref devices "Devices". They are all specializations of the DeviceSerializerMethods<> template class.
 Each specialization must conform to a set of requirements, defined in the DEVICE_SERIALIZER_METHODS_C concept.

@@ -126,19 +126,10 @@ grpc::Status EngineGrpcServer::getDevice(grpc::ServerContext * , const EngineGrp
     return grpc::Status::OK;
 }
 
-EngineGrpcServer::EngineGrpcServer()
-{
-	this->_serverAddress   = "";
-    this->_isServerRunning = false;
-
-    grpc::EnableDefaultHealthCheckService(true);
-}
-
 EngineGrpcServer::EngineGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &)
     : EngineGrpcServer(serverAddress)
 {
-    this->_engineName    = engineName;
-    this->_serverAddress = serverAddress;
+    this->_engineName = engineName;
 }
 
 EngineGrpcServer::EngineGrpcServer(const std::string address)

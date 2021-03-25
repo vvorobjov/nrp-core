@@ -80,7 +80,7 @@ class EngineDeviceController
 			if(pDevDat != nullptr)
 				return DeviceSerializerMethods<SERIALIZATION>::template serialize(*pDevDat);
 			else
-				return emptyValue();
+				return DeviceSerializerMethods<SERIALIZATION>::serializeID(DeviceIdentifier(this->Name, this->EngineName, this->Type));
 		}
 
 		virtual void handleDeviceData(deserialization_t data) override final
@@ -101,12 +101,6 @@ class EngineDeviceController
 		 * \return Returns a Device containing device information. If no new data available, return nullptr
 		 */
 		virtual const DEVICE *getDeviceInformationCallback() = 0;
-
-		/*!
-		 * \brief Get an empty value. This is used if getDeviceInformationCallback() has no new data available
-		 */
-		static SERIALIZATION emptyValue()
-		{	return SERIALIZATION();	}
 };
 
 

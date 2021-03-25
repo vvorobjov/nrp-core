@@ -107,11 +107,29 @@ class DeviceInterface
 			return DeviceInterface::const_shared_ptr(new DeviceInterface(this->_id));
 		}
 
+		/*!
+		 * \brief Indicates if the device contains any data aside from device ID
+		 *
+		 * The function will return true, if the device is of DeviceInterface type, which
+		 * contains only device ID. For any concrete implementation of Device class, it
+		 * should return false.
+		 */
+		bool isEmpty() const;
+
+	protected:
+
+		void setIsEmpty(bool value);
+
 	private:
 		/*!
 		 * \brief Identifies Device. Contains name and type of this device
 		 */
 		DeviceIdentifier _id;
+
+		/*!
+		 * \brief Indicates if the device contains any data aside from device ID
+		 */
+		bool _isEmpty = true;
 };
 
 using DeviceInterfaceSharedPtr      = DeviceInterface::shared_ptr;

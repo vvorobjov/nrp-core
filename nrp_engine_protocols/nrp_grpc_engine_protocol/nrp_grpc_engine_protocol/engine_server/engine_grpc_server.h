@@ -48,7 +48,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
         using mutex_t = std::timed_mutex;
         using lock_t  = std::unique_lock<EngineGrpcServer::mutex_t>;
 
-        EngineGrpcServer();
         EngineGrpcServer(const std::string address);
 
         /*!

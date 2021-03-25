@@ -114,6 +114,64 @@ static SimulationTime floatToSimulationTime(float time)
     return toSimulationTime<float, std::ratio<1>>(time);
 }
 
+TEST(EngineJSONNRPClientTest, EmptyDevice)
+{
+	TestEngineJSONServer server("localhost:5463");
+
+	const auto engineName = "engine1";
+
+	auto data = nlohmann::json({{"", {{"data", 1}}}});
+	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
+
+	dev1.setEngineName(engineName);
+
+	// Register device controllers
+	auto dev1Ctrl = TestJSONDevice1Controller(DeviceIdentifier(dev1.id()));
+	server.registerDevice(dev1.name(), &dev1Ctrl);
+
+	nlohmann::json config;
+	config["EngineName"] = engineName;
+	config["EngineType"] = "test_engine_json";
+
+	// Start server
+	server.startServerAsync();
+	TestEngineJSONNRPClient client("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+
+	TestEngineJSONNRPClient::device_identifiers_set_t devIDs({dev1.id()});
+
+	// Return an empty device from the controller, it should end up in the cache on clients side
+
+	dev1Ctrl.triggerEmptyDeviceReturn(true);
+
+	auto devices = client.updateDevicesFromEngine(devIDs);
+
+	ASSERT_EQ(devices.size(), 1);
+    ASSERT_EQ(devices.at(0)->isEmpty(), true);
+
+	// Return a regular device (with data) from the controller. It should replace the empty device
+
+	dev1Ctrl.triggerEmptyDeviceReturn(false);
+
+	devices = client.updateDevicesFromEngine(devIDs);
+
+	ASSERT_EQ(devices.size(), 1);
+    ASSERT_EQ(devices.at(0)->isEmpty(), false);
+
+	// Return another empty device from the controller, it should not overwrite the previous device
+
+	dev1Ctrl.triggerEmptyDeviceReturn(true);
+
+	devices = client.updateDevicesFromEngine(devIDs);
+
+	ASSERT_EQ(devices.size(), 1);
+    ASSERT_EQ(devices.at(0)->isEmpty(), false);
+
+	// It seems like the REST server needs some time to release resources before the next test can run...
+	// Without the sleep, it will complain about address already taken
+
+	sleep(1);
+}
+
 TEST(EngineJSONNRPClientTest, ServerCalls)
 {
 	// Setup test server

@@ -64,39 +64,14 @@ class Device
 		{
 			// Make sure DEVICE class is derived from DeviceInterface
 			static_assert(DEVICE_C<DEVICE>, "DEVICE does not fulfill concept requirements");
+
+			this->setIsEmpty(false);
 		};
 
 		template<class STRING1_T, class STRING2_T>
 		requires(std::constructible_from<std::string, STRING1_T> && std::constructible_from<std::string, STRING2_T>)
 		static DeviceIdentifier createID(STRING1_T &&name, STRING2_T &&engineName)
 		{	return DeviceIdentifier(std::forward<STRING1_T>(name), std::forward<STRING2_T>(engineName), DEVICE::TypeName);	}
-
-//		/*!
-//		 * \brief Deserialize data into new device
-//		 * \tparam DESERIALZER_T Type to deserialize
-//		 * \param id Device ID. Type must match device type
-//		 * \param data Data to deserialize
-//		 * \return Returns DEVICE
-//		 */
-//		template<class DESERIALIZER_T, class ...PROPS_T>
-//		static DEVICE deserialize(DeviceIdentifier &&id, DESERIALIZER_T &&data)
-//		{	return DeviceSerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template deserialize(std::move(id), std::forward<DESERIALIZER_T>(data));	}
-
-//		/*!
-//		 * \brief Update device by filling it with deserialized data
-//		 * \tparam PROP_DESERIALZER_T Type to deserialize
-//		 * \param data Data to deserialize
-//		 */
-//		template<class PROP_DESERIALIZER_T>
-//		void update(PROP_DESERIALIZER_T &&data)
-//		{	PropertySerializer<std::remove_cvref_t<PROP_DESERIALIZER_T>, DEVICE>::template updateProperties(*this, std::forward<PROP_DESERIALIZER_T>(data));	}
-
-//		/*!
-//		 * \brief Serialize device
-//		 */
-//		template<class SERIALIZER_T>
-//		SERIALIZER_T serialize() const
-//		{	return DeviceSerializer<std::remove_cvref_t<SERIALIZER_T>, DEVICE>::template serialize(*this);	}
 
 		/*!
 		 * \brief Deserialize property data into PropertyTemplate format

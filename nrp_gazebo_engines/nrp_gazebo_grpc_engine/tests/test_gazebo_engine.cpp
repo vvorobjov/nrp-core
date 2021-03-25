@@ -109,25 +109,11 @@ TEST(TestGazeboEngine, CameraPlugin)
     ASSERT_EQ(devices.size(), 1);
 
 	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
-//	std::cout << "Image Height:" << camDat.imageHeight() << std::endl;
-//	std::cout << "Image Width:" << camDat.imageWidth() << std::endl;
-//	std::cout << "Image Pixel Size:" << std::to_string(camDat.imagePixelSize()) << std::endl;
-//	std::cout << "Image Pixel Num:" << camDat.imageData().size() << std::endl;
 
     ASSERT_EQ(camDat.imageHeight(), 240);
     ASSERT_EQ(camDat.imageWidth(),  320);
     ASSERT_EQ(camDat.imagePixelSize(),  3);
     ASSERT_EQ(camDat.imageData().size(), 320*240*3);
-
-    // Check if cam data is correct (WARNING: Data might be incorrect due to non-determinism. Should be checked)
-    //std::fstream compareCamDat(TEST_CAMERA_DATA_FILE, std::ios_base::in);
-    //for(const auto dat : camDat.imageData())
-    //{
-    //	unsigned int val;
-    //	compareCamDat >> val;
-    //	ASSERT_EQ(dat, val);
-    //}
-    //compareCamDat.close();
 }
 
 

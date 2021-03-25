@@ -115,6 +115,7 @@ message GetDeviceReply
 	    GazeboCamera camera = 2;
 		GazeboLink   link   = 3;
 		GazeboJoint  joint  = 4;
+        TestPayload  test   = 5;
     }
 }
 
@@ -158,6 +159,14 @@ message GazeboJoint
     float position = 1;
     float velocity = 2;
     float effort   = 3;
+}
+
+/*
+ * Message used for testing
+ */
+message TestPayload
+{
+    uint32 integer = 1;
 }
 
 // EOF

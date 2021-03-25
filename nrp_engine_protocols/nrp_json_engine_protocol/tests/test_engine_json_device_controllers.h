@@ -58,14 +58,23 @@ struct TestJSONDevice1Controller
 		void handleDeviceDataCallback(TestJSONDevice1 &&data)
 		{	this->_dev = std::move(data);	}
 
-		const TestJSONDevice1 *getDeviceInformationCallback()
-		{	return &(this->_dev);	}
 
 		constexpr const auto &data() const
 		{	return this->_dev;	}
 
+		virtual const TestJSONDevice1 *getDeviceInformationCallback() override
+		{
+            return this->_returnEmptyDevice ? nullptr : &this->_dev;
+        }
+
+        void triggerEmptyDeviceReturn(bool value)
+        {
+            this->_returnEmptyDevice = value;
+        }
+
 	private:
 		TestJSONDevice1 _dev;
+		bool _returnEmptyDevice;
 };
 
 struct TestJSONDevice2

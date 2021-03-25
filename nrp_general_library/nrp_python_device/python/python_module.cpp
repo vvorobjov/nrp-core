@@ -145,6 +145,7 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 	// DeviceInterface
 	class_<DeviceInterface>("DeviceInterface", init<const std::string &, const std::string&, const std::string&>())
 	        .def("__init__", make_constructor(&genDevInterface))
+			.def("isEmpty", &DeviceInterface::isEmpty)
 	        .add_property("name", make_function(&DeviceInterface::name, return_value_policy<copy_const_reference>()), &DeviceInterface::setName)
 	        .add_property("type", make_function(&DeviceInterface::type, return_value_policy<copy_const_reference>()), &DeviceInterface::setType)
 	        .add_property("engine_name", make_function(&DeviceInterface::engineName, return_value_policy<copy_const_reference>()), &DeviceInterface::setEngineName)

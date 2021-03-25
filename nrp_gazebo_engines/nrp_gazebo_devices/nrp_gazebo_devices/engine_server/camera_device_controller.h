@@ -85,7 +85,7 @@ namespace gazebo
 
 			PhysicsCamera _data;
 
-			bool _newDataAvailable = true;
+			bool _newDataAvailable = false;
 	};
 }
 

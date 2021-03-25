@@ -326,12 +326,6 @@ class EngineJSONNRPClient
 
 			for(auto curDeviceIterator = devices.begin(); curDeviceIterator != devices.end(); ++curDeviceIterator)
 			{
-				if(curDeviceIterator.value().empty())
-				{
-					// TODO: Print warning that device was requested but not found
-					continue;
-				}
-
 				try
 				{
 					auto deviceID = JSONDeviceSerializerMethods::deserializeID(curDeviceIterator);
@@ -361,6 +355,16 @@ class EngineJSONNRPClient
 		{
             if(DEVICE::TypeName.compare(deviceID.Type) == 0)
             {
+				// Check whether the requested device has new data
+				// A device that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of device ID)
+
+				if(deviceData->size() == 2)
+				{
+					// There's no meaningful data in the device, so create an empty device with device ID only
+
+					return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(deviceID)));
+				}
+
                 DeviceInterfaceSharedPtr newDevice(new DEVICE(JSONDeviceSerializerMethods::template deserialize<DEVICE>(std::move(deviceID), deviceData)));
                 newDevice->setEngineName(this->engineName());
                 return newDevice;

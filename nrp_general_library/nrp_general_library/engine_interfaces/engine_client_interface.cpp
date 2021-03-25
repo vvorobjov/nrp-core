@@ -54,10 +54,13 @@ void EngineClientInterface::updateCachedDevices(EngineClientInterface::devices_s
 		while(i < this->_deviceCache.size() && setCmp(cmp, this->_deviceCache[i]->name().compare(dev->name())) < 0)
 			++i;
 
-		if(cmp == 0)
-			this->_deviceCache[i] = dev;
-		else
+		// If there's no device with the name in the cache - insert it
+		// It there already is one - replace it, but only with a non-empty device
+
+		if(cmp != 0)
 			this->_deviceCache.insert(this->_deviceCache.begin()+i, dev);
+		else if(!dev->isEmpty())
+			this->_deviceCache[i] = dev;
 
 		++i;
 	}

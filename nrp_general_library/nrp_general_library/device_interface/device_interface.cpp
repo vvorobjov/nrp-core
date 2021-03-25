@@ -70,3 +70,15 @@ void DeviceInterface::setID(const DeviceIdentifier &id)
 {
 	this->_id = id;
 }
+
+bool DeviceInterface::isEmpty() const
+{
+	return this->_isEmpty;
+}
+
+void DeviceInterface::setIsEmpty(bool value)
+{
+	this->_isEmpty = value;
+}
+
+// EOF

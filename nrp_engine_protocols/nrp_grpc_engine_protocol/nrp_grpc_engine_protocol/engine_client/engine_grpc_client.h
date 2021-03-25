@@ -253,9 +253,7 @@ class EngineGrpcClient
 
             for(int i = 0; i < reply.reply_size(); i++)
             {
-                // Check whether the requested device has new data
-				if(reply.reply(i).has_deviceid())
-					interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
+				interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
             }
 
             return interfaces;
@@ -269,6 +267,15 @@ class EngineGrpcClient
                 DeviceIdentifier devId(deviceData.deviceid().devicename(),
 				                       this->engineName(),
                                        deviceData.deviceid().devicetype());
+
+                // Check whether the requested device has new data
+
+                if(deviceData.data_case() == EngineGrpc::DeviceMessage::DataCase::DATA_NOT_SET)
+                {
+                    // There's no meaningful data in the device, so create an empty device with device ID only
+
+                    return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(devId)));
+                }
 
 				return DeviceInterfaceConstSharedPtr(new DEVICE(DeviceSerializerMethods<GRPCDevice>::template deserialize<DEVICE>(std::move(devId), &deviceData)));
             }

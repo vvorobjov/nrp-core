@@ -41,6 +41,10 @@ set(TEST_SRC_FILES
 ##########################################
 ## Dependencies
 
+if(ENABLE_GAZEBO STREQUAL FULL)
+	find_package(Gazebo REQUIRED)
+endif()
+
 ##########################################
 ## Header configuration
 set(NRP_GAZEBO_PLUGINS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/nrp_gazebo_plugins" CACHE PATH "Install location of gazebo plugins")
@@ -117,8 +121,6 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ## This section needs Gazebo libraries installed
 if(ENABLE_GAZEBO STREQUAL FULL)
-
-	find_package(Gazebo REQUIRED)
 
 	##########################################
 	## Gazebo plugins
