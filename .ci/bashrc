@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
-export LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:$NRP_INSTALL_DIR/bin
+export NRP=/home/${USER}/.local/nrp
+export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
+export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
+export PATH=$PATH:${NRP}/bin
+export PATH=$PATH:${HOME}/nrp-core/examples/unity:${HOME}/nrp-core/examples/roboskate
