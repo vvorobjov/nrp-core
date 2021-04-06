@@ -147,6 +147,8 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
+            // TODO totalsimulationtime contains delta time, NOT total time
+
             const SimulationTime engineTime = toSimulationTime<float, std::ratio<1, 1>>(reply.totalsimulatedtime());
 
             if(engineTime < SimulationTime::zero())
@@ -155,7 +157,7 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
-            if(engineTime < this->_prevEngineTime)
+            /*if(engineTime < this->_prevEngineTime)
             {
                 const auto errMsg = "Invalid engine time (should be greater than previous time): "
                                   + std::to_string(engineTime.count())
@@ -163,11 +165,11 @@ class EngineGrpcClient
                                   + std::to_string(this->_prevEngineTime.count());
 
                 throw std::runtime_error(errMsg);
-            }
+            }*/
 
-            this->_prevEngineTime = engineTime;
+            this->_prevEngineTime += engineTime;
 
-            return engineTime;
+            return this->_prevEngineTime;
         }
 
         SimulationTime getEngineTime() const override
