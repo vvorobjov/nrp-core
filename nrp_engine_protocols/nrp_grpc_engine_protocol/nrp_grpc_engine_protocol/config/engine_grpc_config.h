@@ -37,11 +37,6 @@ struct EngineGRPCConfigConst
 		static constexpr std::string_view EngineServerAddrArg = "serverurl";
 
 		/*!
-		 * \brief Parameter name that is used to pass along the server address
-		 */
-		static constexpr std::string_view EngineRegistrationServerAddrArg = "regservurl";
-
-		/*!
 		 * \brief Parameter name that is used to pass along the engine name
 		 */
 		static constexpr std::string_view EngineNameArg = "engine";

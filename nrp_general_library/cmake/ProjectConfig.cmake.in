@@ -1,6 +1,8 @@
 @PACKAGE_INIT@
 
-find_package(Pistache REQUIRED)
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
 find_package(nlohmann_json REQUIRED)
 
 set(NRP_GEN_LIB_TARGET @NRP_GEN_LIB_TARGET@)

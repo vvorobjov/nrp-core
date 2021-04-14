@@ -1,7 +1,7 @@
 set(NRP_VERSION 0.0.1)
 
 cmake_minimum_required(VERSION 3.16)
-project(NRProject VERSION ${NRP_VERSION})
+project("NRP Core" VERSION ${NRP_VERSION})
 
 set (CMAKE_CXX_STANDARD 20)
 
@@ -121,10 +121,9 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ## These flags allow to disable the compilation of those parts of nrp-core that depends on or install a specific simulator (eg. gazebo, nest)
 ##
 ## The expected behavior for each of these flags is as follows:
-## - the CLE is always built regardless of any of the flags values.
+## - the NRPSimulation is always built regardless of any of the flags values.
 ## - if a flag is set to OFF:
-##   - the related simulator won't be assumed to be installed in the system, ie. make won't fail if it isn't. 
-##     Also it won't be installed along the compilation process if this possibility is available (as in the case of nest)
+##   - the related simulator won't be assumed to be installed in the system, ie. make won't fail if it isn't. Also it won't be installed in the compilation process if this possibility is available (as in the case of nest)
 ##   - The engines connected with this simulator won't be built (nor client nor server components)
 ##   - tests that would fail if the related simulator is not available won't be built
 ## - if the flag is set to CLIENT: Same as above but:
@@ -163,36 +162,81 @@ add_subdirectory(nrp_python_json_engine)
 
 ##########################################
 ## NRP Simulation
-set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPGazeboGrpcEngine.so;NRPNestJSONEngine.so"
+set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
 	CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
 ## Doxygen
-set(DOXYGEN_GENERATE_LATEX YES)
-set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
-set(DOXYGEN_EXAMPLE_PATH
-	${DOXYGEN_EXAMPLE_PATH}
-	"CMakeLists.txt"
-	"docs/examples"
-	"docs/example_engine"
-	"nrp_general_library/CMakeLists.txt")
 
-add_subdirectory("docs/example_engine" EXCLUDE_FROM_ALL)
-add_subdirectory("docs/example_json_engine" EXCLUDE_FROM_ALL)
+set(DOXYGEN_GENERATE_LATEX YES)
+set(DOXYGEN_GENERATE_TREEVIEW YES)
+set(DOXYGEN_DISABLE_INDEX YES)
+set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+set(DOXYGEN_IMAGE_PATH "docs/images")
+set(DOXYGEN_EXAMPLE_PATH
+		${DOXYGEN_EXAMPLE_PATH}
+		"docs/example_engine"
+		"examples"
+		"config_schemas"
+		"nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
+		"nrp_general_library/CMakeLists.txt"
+		"nrp_general_library/nrp_general_library/property_template/serializers/property_serializer.h"
+		"CMakeLists.txt"
+		"README.md")
+
+## Example Engine. It is built to ensure the examples are not out of date in the documentation
+add_subdirectory("docs/example_engine")
 
 get_property(DOXYGEN_SOURCES GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
 doxygen_add_docs(doxygen
-	${DOXYGEN_SOURCES}
-	"docs/cmake_component.dox"
-	"docs/engine_config.dox"
-	"docs/engine_types.dox"
-	"docs/getting_started.dox"
-	"docs/installation.dox"
-	"docs/main_page.dox"
-	"docs/simulation_config.dox"
-	"docs/transceiver_functions_and_devices.dox"
-	"docs/tutorials/engine_creation.dox"
-	"docs/tutorials/grpc_engine_creation.dox"
-	"docs/tutorials/json_engine_creation.dox"
-	COMMENT "Generating documentation")
+		${DOXYGEN_SOURCES}
+		"docs/main_page.dox"
+
+		# TODO: review, complete and enable this section. Include information about the variable system to enable or
+		#  disable the compilation of engines
+		# "docs/architecture_overview/cmake_component.dox"
+
+		"docs/architecture_overview/architecture_overview.dox"
+		"docs/architecture_overview/device.dox"
+		"docs/architecture_overview/engine.dox"
+		"docs/architecture_overview/nrp_simulation.dox"
+		"docs/architecture_overview/plugin_system.dox"
+		"docs/architecture_overview/process_launcher.dox"
+		"docs/architecture_overview/property_serializer.dox"
+		"docs/architecture_overview/property_template.dox"
+		"docs/architecture_overview/simulation_loop.dox"
+		"docs/architecture_overview/sync_model_details.dox"
+		"docs/architecture_overview/transceiver_function.dox"
+        "docs/architecture_overview/preprocessing_function.dox"
+		"docs/architecture_overview/lifecycle_components.dox"
+
+		"docs/experiment_configuration/experiment_configuration.dox"
+		"docs/experiment_configuration/engine_schema.dox"
+		"docs/experiment_configuration/transceiver_function_schema.dox"
+		"docs/experiment_configuration/simulation_schema.dox"
+		"docs/experiment_configuration/json_schema.dox"
+
+		"docs/engines/engines.dox"
+		"docs/engines/engine_comm.dox"
+		"docs/engines/gazebo/gazebo_engine.dox"
+		"docs/engines/gazebo/gazebo_devices.dox"
+		"docs/engines/gazebo/gazebo_plugins.dox"
+		"docs/engines/nest/nest_engine.dox"
+		"docs/engines/nest/nest_json.dox"
+		"docs/engines/nest/nest_server.dox"
+		"docs/engines/python_json_engine.dox"
+
+		"docs/getting_started/getting_started.dox"
+		"docs/getting_started/installation.dox"
+		"docs/getting_started/running_example_exp.dox"
+
+		"docs/guides/guides.dox"
+		"docs/guides/helpful_info.dox"
+		"docs/guides/device_creation.dox"
+		"docs/guides/device_integration_gazebo_grpc.dox"
+		"docs/guides/engine_creation.dox"
+		"docs/guides/grpc_engine_creation.dox"
+		"docs/guides/json_engine_creation.dox"
+
+		COMMENT "Generating documentation")

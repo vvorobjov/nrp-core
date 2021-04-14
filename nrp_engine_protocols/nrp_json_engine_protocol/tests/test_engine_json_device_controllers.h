@@ -19,8 +19,8 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
-#define TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
+#ifndef TEST_ENGINE_JSON_DEVICE_INTERFACE_H
+#define TEST_ENGINE_JSON_DEVICE_INTERFACE_H
 
 #include "nrp_general_library/device_interface/device.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
@@ -159,4 +159,4 @@ struct TestJSONDeviceThrowController
 		TestJSONDeviceThrow _dev;
 };
 
-#endif // TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
+#endif // TEST_ENGINE_JSON_DEVICE_INTERFACE_H

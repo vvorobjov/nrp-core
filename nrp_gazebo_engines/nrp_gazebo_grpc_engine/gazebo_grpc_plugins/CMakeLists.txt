@@ -4,7 +4,10 @@ project(NRPGazeboGrpcPlugins VERSION ${NRP_VERSION} LANGUAGES CXX)
 include(GNUInstallDirs)
 
 find_package(Gazebo REQUIRED)
-find_package(Pistache REQUIRED)
+
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
 find_package(nlohmann_json REQUIRED)
 
 if(NOT DEFINED NRP_GAZEBO_COMMUNICATION_PLUGIN)

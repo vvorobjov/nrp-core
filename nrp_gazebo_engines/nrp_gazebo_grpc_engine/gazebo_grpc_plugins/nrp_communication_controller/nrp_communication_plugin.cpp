@@ -38,7 +38,9 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 		// Save given URL
 		serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
 		engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
-		registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
+        // TODO: remove registrationAddr parameter everywhere
+        // registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
+        registrationAddr = "";
 	}
 	catch(cxxopts::OptionException &e)
 	{

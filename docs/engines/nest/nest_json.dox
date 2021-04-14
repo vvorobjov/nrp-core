@@ -1,0 +1,74 @@
+/*! \page nest_json NEST JSON Engine
+
+This engine type enables the integration of the <a href="https://www.nest-simulator.org/">NEST</a> spiking neural network simulator in nrp-core. It is based on the \ref engine_json engine.
+
+At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling device data transfer.
+
+\section nest_json_devices Devices
+
+This engine supports a unique device type: NestDevice. The latter contains the status of a set of neurons, detectors or synapsis as a python dictionary or list of dictionaries. In fact, it can store the status of any NEST object which can be passed as argument to `nest.GetStatus()` and `nest.SetStatus()` functions.
+
+NRPNestJSONPythonModule contains two functions that can be used to register devices with a NEST Json Engine:
+
+- RegisterDevice: takes as arguments a string indicating the device name and a NEST object which status will be linked to the device
+- CreateDevice: convenience function that internally calls nest.Create() and then RegisterDevice(). Its first argument is the device name. The rest of the arguments the function is called with will be passed to nest.Create(). Both the device name and the return value of nest.Create() are then passed to RegisterDevice().
+
+After a device is registered using the functions described above, a NestEngineJSONDeviceController object is created to handle device I/O operations for this device in the Engine server. The NEST object passed to RegisterDevice() is linked to this device controller. When the device is sent to the engine, it is passed to the device controller which calls nest.SetStatus() with the device content. When the device is requested from the engine, the device controller calls nest.GetStatus() and stores the return value in the device data attribute.
+
+In `examples/nest_simple` can be found a simple experiment showing the use of NEST JSON Engine. First, in the script `nest_simple.py`, a NEST network is defined and two devices with names `noise` and `voltage` are registered:
+
+\include nest_simple/nest_simple.py
+
+Then, in `tf_1.py`, the `voltage` NestDevice is accessed and its content printed out. Finally it returns a `noise` device that will be used to set the status of its linked NEST object after it has been received by the engine server:
+
+\include nest_simple/tf_1.py
+
+  <table>
+  <caption id="nest_device_attributes_table">NestDevice Attributes</caption>
+  <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
+  <tr><td>data    <td>Contains the status of one or more NEST objects  <td>dict or list <td>boost::python::dict or boost::python::list
+  </table>
+
+\section nest_json_configuration Engine Configuration Parameters
+
+This Engine type parameters are defined in the NestJSONEngine schema (listed \ref nest_json_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineJSON" schemas and thus inherits all parameters from them.
+
+To use the NEST JSON engine in an experiment, set `EngineType` to <b>"nest_json"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from \ref engine_json "EngineJSON" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>EngineJSONServer address. Should this address already be in use, the server will continue trying ports higher up<td>string<td>localhost:9002<td><td>
+<tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>NestInitFileName<td>Path to the Python script that sets up the neural network for the simulation<td>string<td><td>X<td>
+<tr><td>NestRNGSeed<td>Nest RNG seed<td>integer<td>0<td><td>
+</table>
+
+\section nest_json_schema Schema
+
+Inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas.
+
+\include engines/engines_nest.json
+
+*/

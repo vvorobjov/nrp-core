@@ -1,0 +1,33 @@
+/*! \page preprocessing_function Preprocessing Functions
+
+Preprocessing Functions are introduced as a mean to optimize on expensive computations on devices attached to a single engine. In some cases there might be the need for applying the same operations on a particular device in multiple TFs. An example of this might be to apply a filter to an image device coming from a physics simulator. In order to allow to execute this operations just once and let other TFs to access the processed device data, \ref PreprocessingFunction "PreprocessingFunctions" (PFs) are introduced.
+
+They are similar to \ref transceiver_function both in implementation and behavior. Both are Python functions, their input and output are Devices and they are linked to an specific engine. PFs are also executed if and only if its linked Engine is synchronized. 
+
+They show two main differences with respect to TFs:
+- Their output devices are not sent to the corresponding Engines, they are kept in a local device cache and can be used as input in TFs
+- PFs just can take input devices from the Engine they are linked to
+
+The latter constraint is necessary to guarantee that new devices retrieved from a particular Engine will be always processed by its connected PFs as specified in the simulation configuration and the PFs definitions. In this way PFs can be thought as simple filters that read and transform devices coming from a certain Engine and store the processed data in the local device cache.
+
+To declare a function as PreprocessingFunction, the decorator:
+
+\code{.py}
+@PreprocessingFunction("engine_name")
+\endcode
+
+must be prepended to its definition.
+
+In order to use the devices returned by PFs in other TFs, a dedicated decorator is available and must be used:
+
+\code{.py}
+@PreprocessedDevice(keyword, id)
+\endcode
+
+The difference between this decorator and FromEngineDevice is that with the latter it is indicated that the specified device should be requested from its linked engine. While the use the PreprocessedDevice decorator tells that the device can be directly taken from the local device cache.
+
+Though PFs can return any type of Device, there is one type particularly well suited for this purpose: PythonDevice. This type of device stores a Python dictionary, and thus any type of data can be attached to it. Below is an example taking a camera image from \ref gazebo_engine "Gazebo" and returning the processed data as a PythonDevice object.
+
+\include husky_braitenberg_with_preprocessing/grayscale.py
+
+*/

@@ -30,7 +30,7 @@
 #include <boost/python.hpp>
 
 template<>
-class ObjectPropertySerializerMethods<boost::python::dict>
+class PropertySerializerMethods<boost::python::dict>
         : public PropertySerializerGeneral
 {
 	public:
@@ -56,7 +56,7 @@ class ObjectPropertySerializerMethods<boost::python::dict>
 			}
 		}
 
-		static void emplaceSingleObject(boost::python::dict &data, const std::string_view &name, boost::python::object &&singleObject)
+		static void emplaceSingleProperty(boost::python::dict &data, const std::string_view &name, boost::python::object &&singleObject)
 		{
 			data[name.data()] = std::move(singleObject);
 		}

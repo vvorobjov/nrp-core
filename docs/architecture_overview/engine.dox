@@ -1,0 +1,37 @@
+/*! \page engines Engines
+Engines are a core aspect of the nrp-core framework. They run the actual simulation software (which can be comprised of any number of heterogeneous modules), with the SimulationLoop and TransceiverFunctions merely being a way to synchronize and exchange data between them. The data exchange is carried out through an <b>engine client</b> (see paragraph below). An Engine can run any type of software, from physics engines to brain simulators. The only requirement is that they should be able to manage progressing through time with fixed-duration time steps.
+
+From the nrp-core perspective, the core component of the engine is its communication interface, which enables it to communicate with the SimulationLoop. Different engine types can have different communication protocols. Nevertheless, all protocols are envisioned as a server-client architecture, with the Engine server running as a separate process, and a client running inside the SimulationLoop process. As such, all \ref EngineClient "EngineClients" must at least support the following functionalities:
+
+- LaunchEngine: A function to launch the engine process. This will usually in some way use the ProcessLauncherInterface
+- Initialize: A function that initializes the engine after launch
+- RunLoopStep: A function that will advance the engine for a given time step
+- UpdateDevicesFromEngine: A function to retrieve Device data from the Engine
+- SendDevicesToEngine: A function to send Device data to the Engine
+- Shutdown: A function that gracefully stops the Engine
+
+This \ref nrp_engines "page" contains a list of currently supported Engines.
+
+The architecture has been designed in a modular way that allow to implement new engines with relative easiness. In \ref tutorial_engine_creation "this page" can be found a tutorial on how to implement a new engine from scratch. An easier approach is to base the implementation on one of the already implemented communication protocol. Tutorials are available  teaching how to accomplish that using \ref grpc_engine_creation "GRPC" and \ref json_engine_creation "JSON over REST".
+
+\section Python_json_engine_section Python JSON Engine
+
+Most of the engine implementations distributed alongside nrp-core are bound to a specific simulator, eg. NEST or Gazebo. There is one important exception, however: the \ref python_json_engine "Python JSON Engine".
+
+This versatile engine allows one to execute a user-defined Python script as an engine server, thus ensuring synchronization and enabling device data transfer with the Simulation loop process. It can be used as a quick way of integrating a not-yet supported simulator in a nrp-core experiment. In \ref python_json_engine "this page", interested users will find more information on how to use it.
+
+\section engine_launchers Engine Launchers
+
+An EngineLauncher is in charge of properly launching an engine using a given ProcessLauncher. EngineClient::EngineLauncher is provided for this purpose and can be used with any new EngineClient.
+
+\code{.cpp}
+// Define the EngineLauncher.
+using NewEngineLauncher = NewEngineClient::EngineLauncher<NewEngineConfigConst::EngineType>;
+\endcode
+
+A new Engine library can use then `NewEngineLauncher` to make it plugin compatible. Look under \ref plugin_system "plugin system" for additional details.
+
+Note that we assign this EngineLauncher the name specified in NewEngineConfigConst::EngineType. Afterwards, a user can select this engine in the main simulation configuration file by setting as EngineType parameter this value. For details about setting up a simulation configuration file, look \ref simulation_config "here".
+
+Should an engine require more complex startup routines, consider overriding EngineClientInterface::launchEngine() in the new EngineClient implementation. Do not modify the default EngineLauncher, as its only purpose is to construct the Engine class and then call the above function.
+ */

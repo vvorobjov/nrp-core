@@ -27,7 +27,7 @@
 
 
 template<class OBJECT>
-class ObjectPropertySerializerMethods;
+class PropertySerializerMethods;
 
 class ObjectDeserializerGeneral
 {};
@@ -35,7 +35,7 @@ class ObjectDeserializerGeneral
 /*!
  * \brief De-/Serialization class for PropertyTemplates.
  * Contains helper functions for PropertySerializer to use. To create de-/serializtion methods for a new OBJECT type,
- * implement a new ObjectPropertySerializerMethods<OBJECT>. The methods can then be accessed using PropertySerializer<OBJECT>
+ * implement a new PropertySerializerMethods<OBJECT>. The methods can then be accessed using PropertySerializer<OBJECT>
  */
 class PropertySerializerGeneral
 {
@@ -55,7 +55,7 @@ class PropertySerializerGeneral
 
 				template<class PROPERTY>
 				PROPERTY deserializeSingleProperty(const std::string_view &name)
-				{	return ObjectPropertySerializerMethods<OBJECT>::template deserializeSingleProperty<PROPERTY>(this->_data, name);	}
+				{	return PropertySerializerMethods<OBJECT>::template deserializeSingleProperty<PROPERTY>(this->_data, name);	}
 
 			private:
 				const OBJECT &_data;
@@ -101,7 +101,7 @@ class PropertySerializerGeneral
 		 */
 		template<class OBJECT, class PROPERTY_TEMPLATE, class OBJECT_T, class ...DEFAULT_PROPERTIES_T>
 		static PROPERTY_TEMPLATE deserializeObject(OBJECT_T &&data, DEFAULT_PROPERTIES_T &&...defaultProperties)
-		{	return PROPERTY_TEMPLATE(typename ObjectPropertySerializerMethods<OBJECT>::ObjectDeserializer(std::forward<OBJECT_T>(data)), std::forward<DEFAULT_PROPERTIES_T>(defaultProperties)...);	}
+		{	return PROPERTY_TEMPLATE(typename PropertySerializerMethods<OBJECT>::ObjectDeserializer(std::forward<OBJECT_T>(data)), std::forward<DEFAULT_PROPERTIES_T>(defaultProperties)...);	}
 
 	protected:
 
@@ -111,7 +111,7 @@ class PropertySerializerGeneral
 		 * \tparam PROPERTY Property type to serialize
 		 * \param property Property to serialize
 		 * \return Returns serialized data of a single object.
-		 * Must be in a type that ObjectPropertySerializerMethods<OBJECT>::emplaceSingleObject() can handle
+		 * Must be in a type that PropertySerializerMethods<OBJECT>::emplaceSingleProperty() can handle
 		 */
 		template<class OBJECT, class PROPERTY, class PROPERTY_T>
 		static auto serializeSingleProperty(PROPERTY_T &&property)
@@ -124,8 +124,8 @@ class PropertySerializerGeneral
 			else
 			{
 				// Call Property Serializer associated with this object
-				//static_assert (std::is_invocable_v<decltype(ObjectPropertySerializerMethods<OBJECT>::template serializeSingleProperty<PROPERTY>), decltype((property))>, "No ObjectPropertySerializerMethods found for this object type");
-				return ObjectPropertySerializerMethods<OBJECT>::serializeSingleProperty(std::forward<PROPERTY_T>(property));
+				//static_assert (std::is_invocable_v<decltype(PropertySerializerMethods<OBJECT>::template serializeSingleProperty<PROPERTY>), decltype((property))>, "No PropertySerializerMethods found for this object type");
+				return PropertySerializerMethods<OBJECT>::serializeSingleProperty(std::forward<PROPERTY_T>(property));
 			}
 		}
 
@@ -148,7 +148,7 @@ class PropertySerializerGeneral
 				// Check if default value should be serialized
 				if constexpr (PROPERTY_TEMPLATE::template isDefaultWritable<ID>())
 				{
-					ObjectPropertySerializerMethods<OBJECT>::emplaceSingleObject(data, properties.template getName<ID>(), PropertySerializerGeneral::serializeSingleProperty<OBJECT, typename PROPERTY_TEMPLATE::template property_t<ID> >(properties.template getProperty<ID>()));
+					PropertySerializerMethods<OBJECT>::emplaceSingleProperty(data, properties.template getName<ID>(), PropertySerializerGeneral::serializeSingleProperty<OBJECT, typename PROPERTY_TEMPLATE::template property_t<ID> >(properties.template getProperty<ID>()));
 				}
 				else
 				{
@@ -156,7 +156,7 @@ class PropertySerializerGeneral
 					const auto &defValue = properties.template getDefaultValue<ID>();
 					const auto &value = properties.template getProperty<ID, property_t>();
 					if(value != defValue)
-						ObjectPropertySerializerMethods<OBJECT>::emplaceSingleObject(data, properties.template getName<ID>(), PropertySerializerGeneral::serializeSingleProperty<OBJECT, typename PROPERTY_TEMPLATE::template property_t<ID> >(value));
+						PropertySerializerMethods<OBJECT>::emplaceSingleProperty(data, properties.template getName<ID>(), PropertySerializerGeneral::serializeSingleProperty<OBJECT, typename PROPERTY_TEMPLATE::template property_t<ID> >(value));
 				}
 
 				// Continue with next property
@@ -189,7 +189,7 @@ class PropertySerializerGeneral
 				{
 					using property_t = typename PROPERTY_TEMPLATE::template property_t<ID>;
 					properties.template getProperty<ID, property_t>() =
-					        ObjectPropertySerializerMethods<OBJECT>::template deserializeSingleProperty<property_t>(std::forward<OBJECT_T>(data),
+					        PropertySerializerMethods<OBJECT>::template deserializeSingleProperty<property_t>(std::forward<OBJECT_T>(data),
 					                                                                                                properties.template getName<ID>());
 				}
 				catch(std::exception &)

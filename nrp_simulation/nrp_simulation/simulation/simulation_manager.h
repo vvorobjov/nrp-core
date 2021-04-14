@@ -37,7 +37,7 @@
  */
 struct SimulationParams
 {
-	static constexpr std::string_view NRPProgramName = "Neurorobotics Platform";
+	static constexpr std::string_view NRPProgramName = "NRPSimulation";
 	static constexpr std::string_view ProgramDescription = "Brain and physics simulator";
 
 	// Simulation Executable parameters
@@ -51,21 +51,10 @@ struct SimulationParams
 	static constexpr std::string_view ParamSimCfgFileDesc = "Simulation config file";
 	using ParamSimCfgFileT = std::string;
 
-	static constexpr std::string_view ParamServCfgFile = "s";
-	static constexpr std::string_view ParamServCfgFileLong = "s,servcfg";
-	static constexpr std::string_view ParamServCfgFileDesc = "Server config file";
-	static constexpr std::string_view ParamServCfgFileDef = "";
-	using ParamServCfgFileT = std::string;
-
 	static constexpr std::string_view ParamPlugins = "p";
 	static constexpr std::string_view ParamPluginsLong = "p,plugins";
 	static constexpr std::string_view ParamPluginsDesc = "Additional engine plugins to load";
 	using ParamPluginsT = std::vector<std::string>;
-
-	static constexpr std::string_view ParamExpManPipe = "m";
-	static constexpr std::string_view ParamExpManPipeLong = "m,man_pipe_fd";
-	static constexpr std::string_view ParamExpManPipeDesc = "Experiment Manager Pipe File Descriptors (two integers, separated by a comma)";
-	using ParamExpManPipeT = std::vector<int>;
 
 	/*!
 	 * \brief Create a parser for start parameters
@@ -218,7 +207,7 @@ class SimulationManager
 		SimulationLoop createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
 
 		/*!
-		 * \brief Checks whether simulation has timed out. If simTimeout <= 0, continue running indefinetly
+		 * \brief Checks whether simulation has timed out. If simTimeout <= 0, continue running indefinitely
 		 * \param simTime Simulation time (in seconds)
 		 * \param simTimeout Simulation timeout (in seconds)
 		 * \return Returns true if simulation has timed out, false otherwise

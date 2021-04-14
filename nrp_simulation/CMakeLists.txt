@@ -43,8 +43,8 @@ set(TEST_SRC_FILES
 ## Dependencies
 
 # pistache: REST server library
-find_package(Pistache REQUIRED)
-
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 ##########################################
 ## Header configuration

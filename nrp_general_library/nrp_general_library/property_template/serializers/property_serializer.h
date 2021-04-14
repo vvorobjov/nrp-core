@@ -30,7 +30,7 @@
  * \brief OBJECT Type to de-/serialize
  */
 template<class OBJECT>
-class ObjectPropertySerializerMethods
+class PropertySerializerMethods
         : public PropertySerializerGeneral
 {
 	public:
@@ -44,14 +44,6 @@ class ObjectPropertySerializerMethods
 		static OBJECT serializeSingleProperty(const PROPERTY &property);
 
 		/*!
-		 * \brief Add a serialized property to an object
-		 * \param data All serialized data
-		 * \param name Name under which to store singleObject
-		 * \param singleObject Serialized Proerty data
-		 */
-		static void emplaceSingleObject(OBJECT &data, const std::string_view &name, OBJECT &&singleObject);
-
-		/*!
 		 * \brief Deserialize a single property
 		 * \tparam Deserialized property type
 		 * \param data All serialized data
@@ -61,6 +53,14 @@ class ObjectPropertySerializerMethods
 		 */
 		template<class PROPERTY>
 		static PROPERTY deserializeSingleProperty(const OBJECT &data, const std::string_view &name);
+
+        /*!
+         * \brief Add a serialized property to an object
+         * \param data All serialized data
+         * \param name Name under which to store singleObject
+         * \param singleObject Serialized Proerty data
+         */
+        static void emplaceSingleProperty(OBJECT &data, const std::string_view &name, OBJECT &&singleObject);
 };
 
 template<class T, class OBJECT>
@@ -69,7 +69,7 @@ concept PROPERTY_SERIALIZER_OBJECT_C = std::same_as<OBJECT, std::remove_cv_t<std
 /*!
  * \brief De-/Serialization Methods. This class can be used to convert PropertyTemplates to OBJECT type.
  * To create de-/serializtion methods for a new OBJECT type, do NOT modify PropertySerializer<OBJECT, ...>.
- * Instead, implement a new ObjectPropertySerializerMethods<OBJECT>. This will automatically adjust PropertySerializer<OBJECT, ...>
+ * Instead, implement a new PropertySerializerMethods<OBJECT>. This will automatically adjust PropertySerializer<OBJECT, ...>
  */
 template<class OBJECT, PROPERTY_TEMPLATE_C PROPERTY_TEMPLATE>
 struct PropertySerializer
@@ -86,14 +86,14 @@ struct PropertySerializer
 		{	PropertySerializerGeneral::template updateProperties<OBJECT, property_template_t, OBJECT_T>(properties, std::forward<OBJECT_T>(data));	}
 
 		/*!
-		 *	\brief Read properties from the given OBJECT
+		 *	\brief Deserialize properties from the given OBJECT
 		 *	\tparam OBJECT Data type to be deserialized
 		 *	\tparam T Classes associated with properties. Per property, it should be string_view and PROPERTY
 		 *	\param data OBJECT containing property data
 		 *	\param defaultProperties Will be used if no corresponding value was found in config
 		 */
 		template<PROPERTY_SERIALIZER_OBJECT_C<OBJECT> OBJECT_T, class ...T>
-		static property_template_t readProperties(OBJECT_T &&data, T &&... defaultProperties)
+		static property_template_t deserializeProperties(OBJECT_T &&data, T &&... defaultProperties)
 		{	return PropertySerializerGeneral::template deserializeObject<OBJECT, property_template_t, OBJECT_T, T...>(std::forward<OBJECT_T>(data), std::forward<T>(defaultProperties)...);	}
 
 		/*!
@@ -108,40 +108,4 @@ struct PropertySerializer
 		{	return PropertySerializerGeneral::template serializeObject<OBJECT, property_template_t>(std::forward<PROPERTY_TEMPLATE_T>(properties), std::move(data));	}
 };
 
-/*! \page property_serializer
-\ref PropertySerializer "PropertySerializers" perform de-/serialization actions on \ref property_template "PropertyTemplates". They can either take serialized data and create a
-TemplateProperty class from it, or vice-versa.
-
-At its core, the PropertySerializer is a template class, specialized for a unique serialization type. An example is the JSONPropertySerializer, which converts data to/from
-the nlohmann::json type.
-
-To aid developers in creating de-/serialization methods for new data types, a helper class called ObjectPropertySerializerMethods was introduced. PropertySerializers will find
-the ObjectPropertySerializerMethods template specialized for their data type, and use it to perform their de-/serialization actions. An example can be found in
-JSONPropertySerializerMethods.
-
-This is the base structure that must be specialized for a new de-/serialization data type:
-\code{.cpp}
-// Create a new ObjectPropertySerializerMethods and specialize it for the OBJECT type
-template<>
-class ObjectPropertySerializerMethods<OBJECT>
-		: public PropertySerializerGeneral
-{
-	public:
-		// Define storage type for a single element. Usually the same as OBJECT
-		using sub_object_t = OBJECT;
-
-		// Function to serialize a single property
-		template<class PROPERTY>
-		static sub_object_t serializeSingleProperty(const PROPERTY &property);
-
-		// Function to emplace a serialized property in the data buffer containing all serialized information
-		static void emplaceSingleObject(OBJECT &data, const std::string_view &name, sub_object_t singleObject);
-
-		// Deserialize a single property by extracting it from the data structure. name refers to the NAME#
-		// given to a property within the PropertyTemplate declaration
-		template<class PROPERTY>
-		static PROPERTY deserializeSingleProperty(const OBJECT &data, const std::string_view &name);
-};
-\endcode
- */
 #endif // PROPERTY_SERIALIZER_H

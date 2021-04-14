@@ -36,7 +36,7 @@ struct TestPythonDictPropertySerializer
 
 	template<class ...T>
 	TestPythonDictPropertySerializer(boost::python::dict data, T &&...properties)
-	    : PropertyTemplate(PythonDictPropertySerializer<PropertyTemplate>::readProperties(data, std::forward<T>(properties)...))
+	    : PropertyTemplate(PythonDictPropertySerializer<PropertyTemplate>::deserializeProperties(data, std::forward<T>(properties)...))
 	{}
 
 	template<class ...T>

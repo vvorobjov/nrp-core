@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Example config",
+    "description": "Base Json Engine configuration schema",
+    "$id": "#EngineExample",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      {
+        "properties" : {
+          "ServerAddress": {
+            "type": "string",
+            "default": "localhost:9002",
+            "description": "Address from which the engine server sends/receives data"
+          },
+          "RegistrationServerAddress": {
+            "type": "string",
+            "default": "localhost:9001",
+            "description": "Address to which servers should register to"
+          }
+        }
+      }
+    ]
+}

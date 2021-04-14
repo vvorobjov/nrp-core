@@ -23,7 +23,7 @@
 #define DEVICE_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_serializer_methods.h"
 
 /*!
  * \brief Device class. All devices must inherit from this one
@@ -84,7 +84,7 @@ class Device
 		template<class DESERIALIZER_T, class ...PROPERTIES_T>
 		static property_template_t deserializeProperties(DESERIALIZER_T &&data, PROPERTIES_T &&...props)
 		{
-			return PropertySerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template readProperties(std::forward<DESERIALIZER_T>(data),
+			return PropertySerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template deserializeProperties(std::forward<DESERIALIZER_T>(data),
 			                                                                                                std::forward<PROPERTIES_T>(props)...);
 		}
 
@@ -100,49 +100,5 @@ class Device
 			return typename PtrTemplates<DEVICE>::const_shared_ptr(new DEVICE(std::move(static_cast<const DEVICE&>(*this))));
 		}
 };
-
-
-/*! \page devices Devices
-
-\copydoc device_usage_section
-
-The Device base class is DeviceInterface, which contains the DeviceIdentifier necessary for identifying the corresponding engine. All devices must conform to the DEVICE_C concept.
-Additionally, they must be de-/serializable in a manner that makes communication with an Engine possible. See \ref device_serializer for details on implementing de-/serialization.
-
-To create new devices, developers can use the Device template as a base. It derives a DeviceInterface as well as a PropertyTemplate containing all requested properties.
-
-An example device class would be:
-\code{.cpp}
-class NewDevice
-	: public Device<NewDevice, "NewDevice", PropNames<"intValue", "stringValue">, int, std::string>
-{
-	public:
-		// Constructor. property_template_t refers to the PropertyTemplate<> base class.
-		// Note the default property values. If no property_template_t is specified, they will be used
-		NewDevice(DeviceIdentifier &&devID, property_template_t props = property_template_t(5, "empty")
-			: Device(std::move(devID), std::move(props))
-		{}
-
-		// Property Deserializer. The base Device::deserializeProperties references the DeviceSerializerMethods template specialized by DESERIALIZER_T
-		// Note the default property values. If no property_template_t is specified, they will be used. They should be the same as the ones in the constructor above
-		// Also note that this function override must only be provided if default property values should be set on instantiation
-		template<class DESERIALIZE_T>
-		static deserializeProperties(DESERIALIZE_T &&data)
-		{	return Device::deserializeProperties(std::forward<DESERIALIZE_T>(data), 5, "empty");	}
-
-		// Add functions to access property values easier
-		constexpr const int &intVal() const
-		{	return this->getPropertyByName<"intValue">();	}
-		constexpr int &intVal()
-		{	return this->getPropertyByName<"intValue">();	}
-
-		constexpr const std::string &strVal() const
-		{	return this->getPropertyByName<"stringValue">();	}
-		constexpr std::string &strVal()
-		{	return this->getPropertyByName<"stringValue">();	}
-}
-\endcode
-
- */
 
 #endif // DEVICE_H

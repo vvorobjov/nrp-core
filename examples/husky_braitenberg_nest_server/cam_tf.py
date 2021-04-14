@@ -61,10 +61,10 @@ def detect_red(camDevice):
     return __results(red_left, red_right, green_blue)
 
 
-@FromEngineDevice(keyword='camera', id=DeviceIdentifier('mouse_right_eye::camera', 'gazebo'))
+@FromEngineDevice(keyword='camera', id=DeviceIdentifier('husky_camera::camera', 'gazebo'))
 @TransceiverFunction("nest")
 def transceiver_function(camera):
-    print("Camera Depth: " + str(camera.image_depth))
+    #print("Camera Depth: " + str(camera.image_depth))
 
     res = detect_red(camera)
     

@@ -25,5 +25,6 @@
 			"Name": "mot_tf",
 			"FileName": "mot_tf.py"
 		}
-	]
+	],
+	"PreprocessingFunctionConfigs": []
 }

@@ -61,7 +61,7 @@ def detect_red(camDevice):
     return __results(red_left, red_right, green_blue)
 
 
-@FromEngineDevice(keyword='camera', id=DeviceIdentifier('mouse_right_eye::camera', 'gazebo'))
+@FromEngineDevice(keyword='camera', id=DeviceIdentifier('husky_camera::camera', 'gazebo'))
 @TransceiverFunction("nest")
 def transceiver_function(camera):
     #print("Camera Depth: " + str(camera.image_depth))
@@ -69,7 +69,7 @@ def transceiver_function(camera):
     res = detect_red(camera)
     
     # Set to True to display camera image data and pause for 10 s
-    if True and not camera.isEmpty():
+    if False and not camera.isEmpty():
         img = Image.fromarray(camera.image_data.reshape((camera.image_height,camera.image_width,3)))
         img.show()
         time.sleep(10)

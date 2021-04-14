@@ -38,8 +38,4 @@ class GazeboStepController
 		virtual bool finishWorldLoading() = 0;
 };
 
-/*! \addtogroup gazebo_json_engine
- *  The loop is controlled via GazeboStepController.
- */
-
 #endif // GAZEBO_STEP_CONTROLLER_H

@@ -48,16 +48,21 @@ class SimulationLoop
 		void initLoop();
 
 		/*!
+		 * \brief Shutdown engines
+		 */
+		void shutdownLoop();
+
+		/*!
 		 * \brief Runs a single loop step
 		 * \param timeStep How long the single components should run (in seconds)
 		 */
 		//void runLoopStep(float timeStep);
 
 		/*!
-		 * \brief Runs simulation for a total of runTime (in s)
-		 * \param runTime Time (in s) to run simulation. At end, will run TransceiverFunctions
+		 * \brief Runs simulation for a total of runLoopTime (in s)
+		 * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
 		 */
-		void runLoop(SimulationTime runTime);
+		void runLoop(SimulationTime runLoopTime);
 
 		/*!
 		 * \brief Get Simulation Time (in seconds)

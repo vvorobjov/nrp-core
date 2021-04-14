@@ -189,7 +189,7 @@ class EngineClientInterface
 
 		/*!
 		 * \brief Gets requested devices from engine
-		 * \param deviceNames All requested devince ids
+		 * \param deviceNames All requested device ids
 		 * \return Returns all requested devices
 		 * \throw Throws on error
 		 */
@@ -346,48 +346,5 @@ class EngineClient
 
         nlohmann::json engineConfig_;
 };
-
-
-/*! \page engines "Engines"
-Engines are the core aspect of NRP Simulation. They run the actual simulation software, with the SimulationLoop and TransceiverFunctions merely being a way to synchronize and
-exchange data between them. An Engine can run any type of software, from physics engines to brain simulators.
-
-From the NRP's perspective, the core component of the engine is its communication interface, which allows it to communicate with the SimulationLoop. Different engine types can
-have different communication protocols. Nevertheless, all protocols are envisioned as a server-client architecture, with the Engine server running as a separate process, and a
-client running inside the NRPSimulation. As such, all Engines must at least support the following functionality:
-
-- LaunchEngine: A function to launch the engine process. This will usually in some way use the ProcessLauncherInterface
-- Initialize: A function that initializes the engine after launch
-- RunLoopStep: A function that will advance the engine for a given timestep
-- RequestOutputDevices: A function to retrieve Device data from the Engine
-- HandleInputDevices: A function to handle incoming Device data
-- Shutdown: A function that gracefully stops the Engine
-
-The \ref index "Main Page" has a list of currently supported Engines.
-
-Creating new engines is a process that requires multiple components to work together. Should you be interested in implementing your own engine, a good starting point is
-\ref tutorial_engine_creation "this tutorial". An easiser approach is to use one of our already implemented Grpc communication protocol and adapt it to your simulator.
-The tutorial can be found \ref grpc_engine_creation "here".
-
-\subsection Engine Launchers
-
-An EngineLauncher is in charge of properly launching an engine using a given ProcessLauncher and Engine Configuration. we have provided an already prepared class that
-can be used out-of-the-box, with any new Engine.
-\code{.cpp}
-// Define the EngineLauncher.
-using NewEngineLauncher = NewEngine::EngineLauncher<NewEngineConfig::DefEngineType>;
-\endcode
-
-A new Engine library can use such a `NewEngineLauncher` to make it plugin compatible. Look under \ref plugin_system for additional details.
-
-Note that we assign this EngineLauncher the name specified in NewEngineConfig::DefEngineType. Thus, a user can select this engine in the main simulation configuration file by
-setting an Engine's EngineType parameter to the string specified in `NewEngineConfig::DefEngineType`. For details about setting up a simulation configuration file, look
-\ref simulation_config "here".
-
-For details about how to create a `NewEngineConfig` class, see section \ref config.
-
-\bold Should an engine require more complex startup routines, consider overriding the EngineClient's EngineClientInterface::launchEngine() function. Do not modify the default
-\bold EngineLauncher, as its only purpose is to construct the Engine class and then call the above function.
- */
 
 #endif // ENGINE_CLIENT_INTERFACE_H

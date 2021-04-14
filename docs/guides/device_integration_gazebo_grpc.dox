@@ -1,0 +1,89 @@
+/*! \page tutorial_device_integration_gazebo_grpc Integrating new device class with Gazebo gRPC engine
+
+This page uses the example device developed in \ref tutorial_device_creation "Creating a new device" tutorial.
+
+\section device_integration_serialization Devices
+
+Devices as data containers are used by both client and server. The client retrieves device objects from transceiver functions.
+They are serialized into protobuf messages and sent to the server. The server deserializes them back into device objects, which
+may be consumed by the simulator.
+
+The server produces new data as a result of running runLoopStep command. The data is then packed into device objects.
+The devices are serialized into protobuf messages, when the client requests the data. On the client side, they are
+deserialized back into devices, which may be passed to transceiver functions.
+
+In order to be able to use the gRPC engine, each Device type must have a serialize method and a deserialize methods.
+
+Declarations in the header file:
+
+\dontinclude example_engine/grpc_devices/my_device_grpc.h
+\skip template<>
+\until MyDevice DeviceSerializerMethods
+
+Definitions in the source file:
+
+\dontinclude example_engine/grpc_devices/my_device_grpc.cpp
+\skip template<>
+\until }
+\until }
+\until }
+\until }
+
+The source files may be put in the `devices` folder of your \ref tutorial_engine_creation_directories "engine directory".
+
+
+\section device_integration_proto Protobuf messages
+
+Add a new message to `nrp_engine_protocols/nrp_grpc_engine_protocol/grpc_server/engine_grpc.proto` file.
+Please refer to <a href="https://developers.google.com/protocol-buffers/docs/proto3">proto3 language guide</a> to check available protobuf types.
+
+We propose that structure of your proto messages correspond to
+structure of device classes that you are going to use in your simulation. This will make device (de-)serialization
+much easier.
+
+\dontinclude example_engine/proto/messages.proto
+\until }
+
+Add the newly created message to `DeviceMessage` proto message (in the same file), in the `oneof data` section. The aggregate `DeviceMessage`
+structure is used internally by the engine, and it must be aware of all new message types, that are serializable into devices.
+
+\until }
+\until }
+
+
+\section device_integration_registration Registration in engine
+
+We need to register the new device type in the engine. To do that, add MyDevice as template argument to GazeboEngineGrpcNRPClient class
+
+\code
+class GazeboEngineGrpcNRPClient
+    : public EngineGrpcClient<GazeboEngineGrpcNRPClient, GazeboGrpcConfig, PhysicsCamera, PhysicsJoint, PhysicsLink, MyDevice>
+\endcode
+
+
+\section device_integration_controller Device controller
+
+We need a device controller class on the server side. The purpose of this class is
+to handle incoming and outgoing data for the new device type.
+
+Create a controller class associated with the new device type (`MyDeviceController`).
+It should inherit from EngineDeviceController. Add a MyDevice object as a member.
+MyDeviceController needs to implement two methods: handleDeviceDataCallback to receive data
+and getDeviceInformationCallback to send data.
+
+\include example_engine/grpc_engine/grpc_controller.cpp
+
+Add the device controller as a member to your gazebo plugin class:
+
+\code
+std::unique_ptr<GrpcDeviceControlSerializer<MyDeviceController> > _myDevice;
+\endcode
+
+Register the controller in the NRPCommunicationController from the Load function of the plugin.
+
+\code
+this->_myDevice.reset(new GrpcDeviceControlSerializer<MyDeviceController>("myDevice"));
+NRPCommunicationController::getInstance().registerDevice("myDevice", this->_myDevice.get());
+\endcode
+
+*/

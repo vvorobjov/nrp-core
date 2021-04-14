@@ -23,7 +23,7 @@
 #define JSON_DEVICE_SERIALIZER_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_serializer_methods.h"
 #include "nrp_general_library/property_template/serializers/json_property_serializer.h"
 
 #include <nlohmann/json.hpp>
@@ -35,7 +35,7 @@ class DeviceSerializerMethods<nlohmann::json>
 		static constexpr std::string_view JSONTypeID = "type";
 		static constexpr std::string_view JSONEngineNameID = "engine_name";
 
-		using prop_deserialization_t = typename ObjectPropertySerializerMethods<nlohmann::json>::deserialization_t;
+		using prop_deserialization_t = typename PropertySerializerMethods<nlohmann::json>::deserialization_t;
 		using deserialization_t = const nlohmann::json::const_iterator&;
 
 		template<DEVICE_C DEVICE>

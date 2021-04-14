@@ -79,7 +79,7 @@ TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActi
 	return tfResults;
 }
 
-TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActiveLinkedPreprocessingTFs(const std::string &engineName)
+TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActiveLinkedPFs(const std::string &engineName)
 {
 	return executeActiveLinkedTFsGeneric(engineName, true);
 }

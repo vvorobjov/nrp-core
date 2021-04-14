@@ -1,0 +1,141 @@
+/*! \page tutorial_device_creation Creating a new device
+
+Devices are object that facilitate exchange of data between transceiver functions and simulators.
+Results from a simulation loop step should be wrapped in a device object, so that transceiver functions be able to understand them.
+The opposite is also true - transceiver functions produce devices, which must then be consumed by the simulator.
+
+Devices use so-called properties, which can be acquired and manipulated with getters and setters in C++ code, and
+used as attributes in Python code. Properties need to be defined in a specific way inside the device class.
+They allow for automatic generation of Python code (using boost::python under the hood) from the C++ code,
+so that devices can be accessed by transceiver functions or python engines. Properties may also be useful
+while (de-)serializing devices to structures used by the chosen communication protocol.
+
+In this example we are going to define a device with 3 properties:
+a scalar float, an array of two floats, and a vector.
+
+
+\section tutorial_device_creation_device Creating new device class
+
+Create new source and header files in your
+\ref tutorial_engine_creation_directories "engine directory"
+, preferably in the `devices` folder, and add the source file to LIB_SRC_FILES variable in the `CMakeLists.txt` file used to compile your engine.
+
+In the header file, create a new structure called `MyDeviceConsts`,
+The structure is going to contain property names and their default values.
+While optional, this structure is going to help keep the code clean.
+In the code below we have defined four property names.
+They were aggregated into a single structure (let's call it MyDevicePropertyNames), which will be needed in the next step.
+
+\dontinclude nrp_example_engine/devices/example_device.h
+
+\skip struct MyDeviceConsts
+\until }; //
+
+Create a new device class, let's call it MyDevice. All devices should derive from the generic Device class,
+which in turn derives from PropertyTemplates. The device class expects several template arguments:
+- derived class
+- type of the derived class as string
+- PropNames structure containing names of all properties of the new device type (in our case it's `MyDevicePropertyNames`
+defined in the helper structure)
+- types of all properties. Their order must match order of property names
+
+\until public Device
+
+Add a constructor to the new class. It should expect a DeviceIdentifier and property_template_t
+objects as arguments. You can specify default values of all properties by passing them
+as the default argument.
+
+\until }
+
+Add getters and setters for the properties. You should use overloaded 'getPropertyByName<>' function provided
+by PropertyTemplate
+
+\until };
+
+
+\section tutorial_device_creation_serialization Device (de-)serialization
+
+In order to transmit a device over the wire, it needs to be serialized into a structure
+used by the communication protocol of your engine, and then deserialized at the other end.
+
+If your engine is based on JSON/REST, device (de-)serialization is done automatically and you
+don't have to worry about it.
+
+If your engine is using gRPC as the communication protocol, you need to provide (de-)serialization
+functions for your devices, as explained \ref grpc_engine_creation_devices "here".
+
+
+\section tutorial_device_creation_python Accessing device in transceiver functions
+
+To make the device accessible to transceiver functions, you need to register it in
+\ref tutorial_engine_creation_python "python_module.cpp" of your engine.
+You can use the `create` method provided by python_property_device_class, which registers all
+device properties in the corresponding Python class. Additionally, you will need to use
+vector_indexing_suite class of boost::python to wrap your vector in a list-like object
+(more info <a href="https://www.boost.org/doc/libs/1_46_1/libs/python/doc/v2/indexing.html">here</a>):
+
+\include nrp_example_engine/python/example_engine_python.cpp
+
+
+\section tutorial_device_creation_tf_set Setting device data in a transceiver function
+
+Import MyDevice from your engines Python module in your transceiver function source file
+
+\code
+from NRPExamplePythonModule import MyDevice
+\endcode
+
+Create a device object and set the data
+
+\code
+    # Create device object
+    myDevice = MyDevice('myDevice', 'gazebo')
+
+    # Set a scalar value
+    myDevice.scalar = 1.5
+
+    # Set values of an array
+    myDevice.array[0] = 2.5
+    myDevice.array[1] = 3.5
+
+    # Set values of a vector
+    # You can use methods of python list
+    myVector = MyVec()
+    myVector.append(1)
+    myVector.append(2)
+    myDevice.vector = myVector
+\endcode
+
+Return the object from your transceiver function:
+
+\code
+return [ myDevice ]
+\endcode
+
+\section tutorial_device_creation_tf_access Accessing device data in a transceiver function
+
+Import MyDevice from your engines Python module in your transceiver function source file
+
+\code
+import NRPExamplePythonModule
+\endcode
+
+Mark the device as input argument by using the FromEngineDevice decorator and add it as a parameter to the transceiver function.
+
+\code
+@SingleTransceiverDevice(keyword='myDevice', id=DeviceIdentifier('myDevice', 'gazebo'))
+\endcode
+
+You can access the data now
+
+\code
+    print("myDevice scalar: " + str(myDevice.scalar))
+
+    print("myDevice array length: " + str(len(myDevice.array)))
+    print("myDevice array: " + str(myDevice.array))
+
+    print("myDevice vector length: " + str(len(myDevice.vector)))
+    print("myDevice vector: " + str(myDevice.vector))
+\endcode
+
+*/

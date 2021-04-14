@@ -79,17 +79,5 @@ nlohmann::json JSONPropertySerializerMethods::serializeSingleProperty(const Phys
 template<>
 PhysicsLinkConst::vec3_t JSONPropertySerializerMethods::deserializeSingleProperty(const nlohmann::json &data, const std::string_view &name);
 
-/*! \addtogroup gazebo_devices
- * The PhysicsJoint Device consists of the following attributes:
- * <table>
- * <caption id="physics_joint_attributes_table">Physics Joint Attributes</caption>
- * <tr><th>Attribute  <th>Description                                 <th>Python Type                   <th>C type
- * <tr><td>pos        <td>Joint Position                              <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * <tr><td>rot        <td>Joint Rotation as quaternion                <td>numpy.array(4, numpy.float32) <td>std::array<float,4>
- * <tr><td>lin_vel    <td>Joint Linear Velocity                       <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * <tr><td>ang_vel    <td>Joint Angular Velocity                      <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * </table>
- */
-
 
 #endif // JSON_PHYSICS_LINK_H

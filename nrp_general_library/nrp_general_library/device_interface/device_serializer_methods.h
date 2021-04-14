@@ -22,6 +22,50 @@
 #ifndef DEVICE_SERIALIZER_METHODS_H
 #define DEVICE_SERIALIZER_METHODS_H
 
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_interface.h"
+#include "nrp_general_library/property_template/serializers/property_serializer.h"
+
+#include <concepts>
+
+
+//TODO: Currently this is an empty template, specializations are not constraint in any way. DEVICE_SERIALIZER_METHODS_C is not in use either.
+template<class OBJECT>
+class DeviceSerializerMethods;
+
+/*!
+ *  \brief Device serializer concept. Defines necessary functions to de-/serialize devices. Uses PropertySerializers in the background
+ */
+template<class T, class OBJECT_T, class DEVICE>
+concept DEVICE_SERIALIZER_METHODS_C = requires (T &serializer, const DEVICE &device, DeviceIdentifier &&id)
+{
+    DEVICE_C<DEVICE>;
+
+    typename T::prop_deserialization_t;
+    typename T::deserialization_t;
+
+    {	serializer.serialize(device)	} -> std::convertible_to<OBJECT_T>;
+    {	serializer.serializeID(std::declval<const DeviceIdentifier&>())	} -> std::convertible_to<OBJECT_T>;
+
+    {	serializer.template deserialize<DEVICE>(std::move(id), std::declval<typename T::deserialization_t>())	} -> std::same_as<DEVICE>;
+    {	serializer.deserializeID(std::declval<typename T::deserialization_t>())	} -> std::convertible_to<DeviceIdentifier>;
+};
+
+//template<class OBJECT>
+//class DeviceSerializerMethods
+//{
+//	public:
+//		using prop_deserialization_t = typename PropertySerializerMethods<OBJECT>::deserialization_t;
+//		using deserialization_t = const OBJECT&;
+
+//		template<DEVICE_C DEVICE>
+//		static OBJECT serialize(const DEVICE &dev);
+
+//		static OBJECT serializeID(const DeviceIdentifier &devID);
+
+//		template<DEVICE_C DEVICE>
+//		static DEVICE deserialize(deserialization_t data);
+
+//		static DeviceIdentifier deserializeID(deserialization_t data);
+//};
 
 #endif // DEVICE_SERIALIZER_METHODS_H

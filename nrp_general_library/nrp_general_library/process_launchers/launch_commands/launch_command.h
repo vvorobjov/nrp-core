@@ -52,7 +52,7 @@ class LaunchCommandInterface
 		 * The function should take the environment parameters and start parameters defined in engineConfig, and append any
 		 * additional strings defined in envParams and startParams before starting the Engine specified in
 		 * engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child. If set to false, scrub the
-		 * environmet before continuing
+		 * environment before continuing
 		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
 		 * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
 		 * \param startParams Additional Start parameters

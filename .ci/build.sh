@@ -11,7 +11,7 @@ cd $repo_root/build
 
 # Use gcc 10
 
-export C=/usr/bin/gcc-10
+export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
 
 # Run cmake and make

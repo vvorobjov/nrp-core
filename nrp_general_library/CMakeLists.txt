@@ -26,7 +26,6 @@ set(LIB_SRC_FILES
 	nrp_general_library/property_template/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/device_interface/device_interface.cpp
 	nrp_general_library/device_interface/device.cpp
-	nrp_general_library/device_interface/device_serializer.cpp
 	nrp_general_library/device_interface/device_serializer_methods.cpp
 	nrp_python_device/devices/pyobject_device.cpp
 	nrp_general_library/device_interface/device_python_wrappers.cpp
@@ -129,7 +128,8 @@ if(NOT ${restclient-cpp_FOUND})
 endif()
 
 # pistache: REST server library
-find_package(Pistache REQUIRED)
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 # nlohmann_json: JSON library
 find_package(nlohmann_json 3.9.0 QUIET)
@@ -198,7 +198,7 @@ target_link_libraries(${LIBRARY_NAME}
 		cxxopts::cxxopts
 		nlohmann_json::nlohmann_json
 		nlohmann_json_schema_validator
-		pistache
+		PkgConfig::Pistache
 		PkgConfig::LibZip
 		Python3::Module
 		Python3::Python

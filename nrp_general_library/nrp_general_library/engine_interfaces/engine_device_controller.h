@@ -23,7 +23,6 @@
 #define ENGINE_DEVICE_CONTROLLER_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
 #include "nrp_general_library/device_interface/device_serializer_methods.h"
 #include "nrp_general_library/utils/function_traits.h"
 #include "nrp_general_library/utils/ptr_templates.h"

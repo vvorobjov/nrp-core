@@ -9,7 +9,6 @@ def transceiver_function(actors):
     front_left_j  = PhysicsJoint("husky::front_left_joint", "gazebo")
     front_right_j = PhysicsJoint("husky::front_right_joint", "gazebo")
 
-    print(actors.data)
     left_voltage = actors.data[0]['V_m']
     right_voltage = actors.data[1]['V_m']
     

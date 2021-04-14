@@ -83,7 +83,7 @@ boost::python::object PyObjectDeviceConst::PyObjData::defaultDecoder()
 }
 
 PyObjectDevice::PyObjectDevice(const DeviceIdentifier &id, const nlohmann::json &data)
-    : Device(id, JSONPropertySerializer<PyObjectDevice>::readProperties(data, PyObjData()))
+    : Device(id, JSONPropertySerializer<PyObjectDevice>::deserializeProperties(data, PyObjData()))
 {}
 
 const PyObjectDeviceConst::PyObjData &PyObjectDevice::data() const

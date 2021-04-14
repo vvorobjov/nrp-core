@@ -13,3 +13,4 @@ test_env_cmake.h
 .vscode
 .orig
 .idea
+.cache

@@ -1,0 +1,60 @@
+/*! \page json_schema General notes about the use of JSON schema
+
+\section json_schema_in_nrp Use of JSON Schema in nrp-core
+
+JSON Schema is a highly readable, JSON-based schema language which offers similar capabilities for JSON as the XML Schema does for XML. In nrp-core it is used to define the structure of the experiment configuration as well as constraints and default values of the different parameters. At run-time, it is used to validate the simulation configuration file and to set default values for those parameters which are not present in this configuration file.
+
+JSON Schema allows for composability and inheritance. Taking advantage of this capability, the simulation configuration schema is distributed in different sub-schemas, which are then composed or inherited as needed. <b>Composition</b> can be achieved using the <a href="https://json-schema.org/understanding-json-schema/structuring.html#reuse">ref</a> keyword, which allows to reference other schemas. <b>Inheritance</b> is achieved by using <a href="https://json-schema.org/understanding-json-schema/reference/combining.html#allof">allOf</a>, which allows to validate against all the schemas referenced or defined inside of the allOf section. In this way an inherited schema can include a reference to its base schema and its own definition overriding, extending or over-constraining the defined parameters. An example of inheritance can be found in each of the engine schemas.
+
+All JSON schemas in the framework are contained in the folder `config_schemas` at the root of the project. Given the readability of json-schema, these schemas can be used directly as a source of documentation to look up each of the parameters in the configuration.
+
+As an example, the schema corresponding to \ref simulation_schema "simulation", the top level schema which is used to validate a simulation configuration file (e.g. such as the one provided above) is given below.
+
+\include simulation.json
+
+Each JSON schema can have an <a href="https://json-schema.org/understanding-json-schema/structuring.html#the-id-property">id</a> which enables one to reference them in other schemas. The `properties` dictionary contains the definition of all the parameters in the schema. Each of these parameters has a `type`, a `description` (used only for documentation purposes) and optionally a default value.
+
+\section schema_reference Referencing schemas
+
+The `type` of a parameter can be a simple type or a reference to another schema, which is precisely the case of the elements of the arrays `EngineConfigs` and `TransceiverFunctionConfigs` in the schema given above. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
+
+- authority: identifying the institution responsible for the schema. For the schemas developed by the <a href="https://neurorobotics.net/who-we-are.html">NRP Team</a> this will always be https://neurorobotics.net
+- path: this is the path to the file containing the referenced schema from `config_schemas` folder
+- fragment: the id of the referenced schema
+
+For example `"https://neurorobotics.net/engines/engine_base.json#EngineBase"` references a schema with id `EngineBase` which is stored in `config_schemas/engines/engine_base.json` file and was implemented by the NRP Team. It must be noticed that even though the reference looks like a URL it is actually a URI, meaning that it might not (and usually won't) point to a resource that can be found online.
+
+There is one limitation when referencing a schema by its `id`. json-schema allows to define multiple schemas in a single file. In this case, the top-level JSON object can be a dictionary storing all the defined schemas. For an example see `config_schemas/engines/engines_nest.json`. In this case in which the schema is not define at the top-level of the JSON object referencing it by `id` doesn't work. The alternative is to reference it by the path to the schema in the JSON object. For example, if the schema below is stored in a file named `example.json`:
+
+\code{.json}
+{"engine_1" : {
+    "$id": "#Engine1",
+  },
+  "engine_2" : {
+    "$id": "#Engine2",
+  }
+}
+\endcode
+
+`Engine1` could be referenced as:
+
+\code{.json}
+https://example.net/example.json#/engine_1
+\endcode
+
+For a more in-depth explanation of the json-schema format details, https://json-schema.org is full of <a href="https://json-schema.org/learn/getting-started-step-by-step.html">guides</a> and information.
+
+\section default_parameters Parameter Default Values
+
+Default values of schema parameters are used to automatically set a value for the corresponding parameter if it has not been explicitly set in the configuration file. In this way, if a parameter is not present in the configuration file but it has a default value in the schema, it will be automatically added. This step is performed after validating the configuration file.
+
+Those parameters which can't be left unset in the configuration file must be marked as required in the schema. For that they must be included in the `required` list in the schema JSON object, as it is done in the simulation schema listed above. Usually, required parameters don't have a default value and vice versa, i.e. if a parameter is not required, a default value is defined for it in the schema. There are two exceptions to this rule:
+
+- Due to limitations in the  <a href="https://github.com/pboettch/json-schema-validator">library</a> we use for schema validation, default values set to an empty array (`[]`) are disregarded.
+- Sometimes the default value of a parameter cannot be set to a fixed value in the schema. This is for example the case when default values want to be set to an environment variable. Another example could be if the default value for a parameter needs some computations.
+
+To overcome these exceptions, default values can also be set in-code using the convenience method \ref nrp_general_library/utils/json_schema_utils.h "json_utils::set_default". If a default value for a certain parameter is to be set in-code using this method, it should not be set as required in the corresponding schema and a default value should not be defined for it in this schema.
+
+Finally, when using `allOf` to define schema hierarchies (e.g. in engine schemas), all the schemas specified within the `allOf` section will be traversed in order. An important implication of this behavior is that the first default value found for a parameter will be used. Therefore, in case of wanting to override default values in an inherited schema, the reference to the base schema should be place at the end of the `allOf` list.
+
+*/

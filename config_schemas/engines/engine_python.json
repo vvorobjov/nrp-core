@@ -10,7 +10,7 @@
         "EngineType": { "enum": ["python_json"] },
         "PythonFileName" : {
           "type": "string",
-          "description": "Python File (contains the python engine script)"
+          "description": "Path to the python script containing the engine definition"
         }
       },
       "required": ["PythonFileName"]

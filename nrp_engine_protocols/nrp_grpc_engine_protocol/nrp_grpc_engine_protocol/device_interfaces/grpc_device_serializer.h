@@ -23,7 +23,7 @@
 #define GRPC_DEVICE_SERIALIZER_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_serializer_methods.h"
 
 //#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.pb.h"

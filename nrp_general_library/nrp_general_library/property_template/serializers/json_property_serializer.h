@@ -33,7 +33,7 @@
  *	\brief De/-Serializer methods for JSON objects
  */
 template<>
-class ObjectPropertySerializerMethods<nlohmann::json>
+class PropertySerializerMethods<nlohmann::json>
         : public PropertySerializerGeneral
 {
 	public:
@@ -54,14 +54,14 @@ class ObjectPropertySerializerMethods<nlohmann::json>
 				throw NRPExceptionMissingProperty(std::string("Couldn't find JSON attribute \"") + name.data() + "\" during deserialization");
 		}
 
-		static void emplaceSingleObject(nlohmann::json &data, const std::string_view &name, nlohmann::json &&singleObject)
+		static void emplaceSingleProperty(nlohmann::json &data, const std::string_view &name, nlohmann::json &&singleObject)
 		{
 			data.emplace(name.data(), std::move(singleObject));
 			//data[name.data()] = std::move(singleObject);
 		}
 };
 
-using JSONPropertySerializerMethods = ObjectPropertySerializerMethods<nlohmann::json>;
+using JSONPropertySerializerMethods = PropertySerializerMethods<nlohmann::json>;
 
 /*!
  *	\brief JSON object de/-serialization functions

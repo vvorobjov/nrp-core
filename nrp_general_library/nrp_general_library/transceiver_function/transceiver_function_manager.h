@@ -77,7 +77,7 @@ class TransceiverFunctionManager
 		 * \param engineName Name of engine
 		 * \return Returns results of linked preprocessing TFs
 		 */
-		tf_results_t executeActiveLinkedPreprocessingTFs(const std::string &engineName);
+		tf_results_t executeActiveLinkedPFs(const std::string &engineName);
 
 		/*!
 		 * \brief Execute all TFs linked to an engine

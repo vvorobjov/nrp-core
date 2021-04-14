@@ -1,0 +1,18 @@
+/*! \page installation Installation Instructions
+
+The instructions required to install nrp-core from source (the only option currently available) are listed below.
+
+\section installation_requirements Requirements
+
+nrp-core has only been tested on Ubuntu 20.04 at the moment, and therefore this OS and version are recommended. Installation in other environments might be possible but has not been tested yet.
+
+\dontinclude README.md
+
+\section installation_dependencies Dependency Installation
+\skip Pistache
+\until sed
+\section installation_procedure Installation
+\skip git clone
+\until make doxygen
+
+*/

@@ -302,10 +302,6 @@ class EngineGrpcClient
             std::string address = this->engineConfig().at("ServerAddress");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
     
-            // Add JSON registration Server address (will be used by EngineGrpcServer)
-            std::string reg_address = this->engineConfig().at("RegistrationServerAddress");
-            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data() + "=" + reg_address);
-    
             return startParams;
         }
     
@@ -354,22 +350,6 @@ class EngineGrpcClient
         SimulationTime _engineTime     = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();
 };
-
-/*! \defgroup GRPC Engine Protocol
-
-\section engine_grpc_config_section Engine Configuration Options
-
-Engines constructed on this protocol have the following additional configuration options available to them:
-
-<table>
-<caption id="grpc_engine_config_table">GRPC Engine Configuration Options</caption>
-<tr><th>Name                       <th>Description                                                                <th>Type                <th>Default
-<tr><td>ServerAddress              <td>GRPC Server address. Should this address already be in use, simulation initialization will fail   <td>string    <td>"localhost:9004"
-</table>
-
-
-
- */
 
 
 #endif // ENGINE_GRPC_CLIENT_H

@@ -11,12 +11,12 @@
     },
     "FileName" : {
       "type" : "string",
-      "description": "Name of file containing transceiver function python script"
+      "description": "Name of file containing the transceiver function python script"
     },
     "IsActive" : {
       "type" : "boolean",
       "default": true,
-      "description": "Is this TF active? Only active TFs will be executed"
+      "description": "Tells if this TF is active. Only active TFs will be executed"
     }
   },
   "required" : ["Name", "FileName"]

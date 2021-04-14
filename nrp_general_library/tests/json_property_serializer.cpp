@@ -38,7 +38,7 @@ struct TestJSONPropertySerializer
 
 	template<class ...T>
 	TestJSONPropertySerializer(const nlohmann::json &data, T &&...properties)
-	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::readProperties(data, std::forward<T>(properties)...))
+	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::deserializeProperties(data, std::forward<T>(properties)...))
 	{}
 };
 
@@ -52,7 +52,7 @@ struct TestJSONPropertySerializerDefaults
 
 	template<class ...T>
 	TestJSONPropertySerializerDefaults(const nlohmann::json &data, T &&...properties)
-	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::readProperties(data, std::forward<T>(properties)...))
+	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::deserializeProperties(data, std::forward<T>(properties)...))
 	{}
 };
 

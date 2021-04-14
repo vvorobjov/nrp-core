@@ -32,7 +32,7 @@ static void executePreprocessingFunctions(TransceiverFunctionManager & tfManager
 	{
 		// Execute all preprocessing functions for this engine
 
-		auto results = tfManager.executeActiveLinkedPreprocessingTFs(engine->engineName());
+		auto results = tfManager.executeActiveLinkedPFs(engine->engineName());
 
 		// Extract devices from the function results
 		// The devices are stack objects, but we want to store pointers to them in engines cache
@@ -79,34 +79,49 @@ void SimulationLoop::initLoop()
 	}
 }
 
+void SimulationLoop::shutdownLoop()
+{
+	for(const auto &engine : this->_engines)
+	{
+		try
+		{
+			engine->shutdown();
+		}
+		catch(std::exception &e)
+		{
+			throw NRPException::logCreate(e, "Failed to shutdown engine \"" + engine->engineName() + "\"");
+		}
+	}
+}
+
 void SimulationLoop::runLoop(SimulationTime runLoopTime)
 {
 	const auto loopStopTime = this->_simTime + runLoopTime;
-	
+
 	if(this->_engineQueue.empty())
 	{
 		this->_simTime = loopStopTime;
 		return;
 	}
 
-	// Compute all engines which should finish before loopStopTime
-	std::vector<EngineClientInterfaceSharedPtr> processedEngines;
+	// Continue processing engines until all engines next step completion time is greater than loopStopTime
+    // _engineQueue is sorted by completion time of engine last step
 	while(this->_engineQueue.begin()->first < loopStopTime)
 	{
 		// Get the next batch of engines which should finish next
-		// _engineQueue is sorted by completion time of engine last step
+        std::vector<EngineClientInterfaceSharedPtr> idleEngines;
 		const auto nextCompletionTime = this->_engineQueue.begin()->first;
 		do
 		{
 			this->_simTime = this->_engineQueue.begin()->first;
-			processedEngines.push_back(this->_engineQueue.begin()->second);
+			idleEngines.push_back(this->_engineQueue.begin()->second);
 
 			this->_engineQueue.erase(this->_engineQueue.begin());
 		}
 		while(!this->_engineQueue.empty() && this->_engineQueue.begin()->first <= nextCompletionTime);
 
-		// Wait for processed engines to complete execution
-		for(const auto &engine : processedEngines)
+		// Wait for engines which will be processed to complete execution
+		for(const auto &engine : idleEngines)
 		{
             float timeout = engine->engineConfig().at("EngineCommandTimeout");
 			try
@@ -120,11 +135,11 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			}
 		}
 
-		// Retrieve devices required by TFs from processed engines
+		// Retrieve devices required by TFs from completed engines
 		const auto requestedDeviceIDs = this->_tfManager.updateRequestedDeviceIDs();
 		try
 		{
-			for(auto &engine : processedEngines)
+			for(auto &engine : idleEngines)
 			{
 				engine->updateDevicesFromEngine(requestedDeviceIDs);
 			}
@@ -137,18 +152,18 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 		// Execute preprocessing TFs
 
-		executePreprocessingFunctions(this->_tfManager, processedEngines);
+		executePreprocessingFunctions(this->_tfManager, idleEngines);
 
 		// Execute TFs, and sort results according to engine
 		TransceiverFunctionSortedResults results;
-		for(const auto &engine : processedEngines)
+		for(const auto &engine : idleEngines)
 		{
 			auto curResults = this->_tfManager.executeActiveLinkedTFs(engine->engineName());
 			results.addResults(curResults);
 		}
 
 		// Send tf output devices to corresponding engines
-		for(const auto &engine : processedEngines)
+		for(const auto &engine : idleEngines)
 		{
 			try
 			{
@@ -161,7 +176,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		}
 
 		// Restart engines
-		for(auto &engine : processedEngines)
+		for(auto &engine : idleEngines)
 		{
 			const auto trueRunTime = this->_simTime - engine->getEngineTime() + engine->getEngineTimestep();
 
@@ -192,8 +207,6 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 			engine = nullptr;
 		}
-
-		processedEngines.clear();
 	}
 
 	this->_simTime = loopStopTime;
@@ -243,25 +256,3 @@ void SimulationLoop::sendDevicesToEngine(const EngineClientInterfaceSharedPtr &e
 	// TODO: be sure that this is right
 	engine->sendDevicesToEngine(typename EngineClientInterface::devices_ptr_t());
 }
-
-/*! \page simulation_loop Simulation Loop
-The SimulationLoop is the class responsible for managing the execution of a simulation.
-
-On initialization, it creates a TransceiverFunctionManager to manage all user-generated TransceiverFunctions. Additionally, it runs the initialization routines of all engines.
-
-During the simulation, several components are managed by the SimulationLoop:
-- The timestep of each engine is checked, and execution is ordered accordingly
-- The loop waits for the engines with the next expected completion time. Should mulitple Engines complete at the same time, wait for all of them
-- All TransceiverFunctions linked to these engines are identified
-- The devices requested by these TFs are identified. Only those devices linked to newly completed engines are requested. For all others, use the data available in the buffer
-- Newly received devices are stored in engine-local buffers
-- Devices are retrieved from the local buffers, the linked TFs are executed
-- The TFs return arrays with devices that should be sent to engines
-- Received devices are sent to all engines
-- Should this NRP instance be running as a server, the NRPClient can now communicate with the SimulationLoop and request updates/changes to the simulation
-- A timeout is checked. Should it have occured or should the NRPClient requests a shutdown, the SimulationLoop is stopped. Otherwise, continue from the top
-
-On shutdown, each engine is issued a shutdown command to close gracefully.
-
-The entire loop is executed within one function, SimulationLoop::runLoop. Should any of the above steps fail, an exception is thrown.
- */
