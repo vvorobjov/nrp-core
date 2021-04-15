@@ -1,6 +1,6 @@
 /*! \page nest_server NEST Server Engine
 
-This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with Nest 3 together with nrp-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting device data to nest-server using its REST API.
+This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with NEST 3 together with nrp-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting device data to nest-server using its REST API.
 
 From a user point of view, this engine is very similar to \ref nest_json. At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling device data transfer.
 

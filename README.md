@@ -9,7 +9,7 @@ This README file contains information on how to get nrp-core installed in your s
 sudo add-apt-repository ppa:pistache+team/unstable
     
 # Gazebo
-sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable lsb_release -cs main" > /etc/apt/sources.list.d/gazebo-stable.list'
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
 wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
 sudo apt update
@@ -54,7 +54,7 @@ export PATH=$PATH:${NRP}/bin
 . /usr/share/gazebo-11/setup.sh
 ```
  * Start the simulation:
-	`NRPSimulation -c <SIMULATION_CONFIG_FILE>`
+	`NRPSimulation -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
 
 ## Basic Information
 

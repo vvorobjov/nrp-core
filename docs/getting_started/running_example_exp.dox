@@ -3,7 +3,7 @@
 In this section we are going to show how to run some of the example experiments. Different experiments utilize different
 features of the NRP, and their use will be highlighted.
 
-Experiments are run using the provided application \ref nrp_simulation. It takes as arguments the \ref simulation_configuration "simulation configuration file" used in the experiment and, optinally, a list of \ref plugin_system "engine plugins" to be loaded at run time. Please notice that by default only \ref python_json_engine is loaded. Any other plugin required to execute an experiment must be
+Experiments are run using the provided application \ref nrp_simulation. It takes as arguments the \ref simulation_configuration "simulation configuration file" used to configure the experiment and, optionally, a list of \ref plugin_system "engine plugins" to be loaded at run time. Please notice that by default only \ref python_json_engine is loaded. Any other plugin required to execute an experiment must be explicitly added with the "-p" parameter. See examples below.
 
 \section getting_started_experiment_husky Husky braitenberg
 
@@ -15,7 +15,7 @@ Both Gazebo and NEST are wrapped into so-called \ref engines "engines", which al
 
 The Gazebo engine starts Gazebo server (gzserver), so you should be able to peek into the simulation by connecting with Gazebo client (`gzclient`) from a separate terminal.
 
-To run the example, switch to the proper directory and run the NRP simulation executable:
+To run the example, if you haven't done it yet, you have to install first some additional gazebo models. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
 
 \code{.sh}
 cd examples/husky_braitenberg

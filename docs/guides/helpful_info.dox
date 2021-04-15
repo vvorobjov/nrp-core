@@ -4,37 +4,25 @@
 
 The Husky examples, examples/husky_braitenberg and examples/husky_braitenberg_nest_server, require additional gazebo models that are not included in the nrp-core repository. These assets can be found in other NRP repositories, and the instructions below show how to download and make them available to gazebo.
 
-Create a new directory, for example in your home directory:
-
 \code
+# Create a new directory, for example in your home directory:
 mkdir ${HOME}/nrp
 cd ${HOME}/nrp
-\endcode
 
-Clone our repositories that contain the necessary assets:
-
-\code
+# Clone our repositories that contain the necessary assets:
 git clone https://@bitbucket.org/hbpneurorobotics/models.git
 git clone https://@bitbucket.org/hbpneurorobotics/gzweb.git
-\endcode
 
-Export your nrp-core installation directory as HBP. This variable will be needed to create symlinks to gazebo models:
-
-\code
+#Export your nrp-core installation directory as HBP. This variable will be needed to create symlinks to gazebo models
 export HBP=/home/${USER}/.local/nrp
-\endcode
 
-Create necessary directories for gazebo models and gzweb assets:
-
-\code
+# Create necessary directories for gazebo models and gzweb assets:
 mkdir -p ${HBP}/gzweb/http/client/assets
 mkdir ${HOME}/.gazebo/models
-\endcode
 
-Run the create-symlinks.sh script from the models repository. This will create necessary symlinks
-to the models in .gazebo/models, and to the assets in ${HBP}/gzweb/http/client/assets:
+# Run the create-symlinks.sh script from the models repository. This will create necessary symlinks 
+# to the models in .gazebo/models, and to the assets in ${HBP}/gzweb/http/client/assets
 
-\code
 cd models
 ./create-symlinks.sh
 \endcode
