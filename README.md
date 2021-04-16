@@ -28,7 +28,7 @@ sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/
 ## Installation
 
 ```
-git clone git@bitbucket.org:hbpneurorobotics/nrp-core.git
+git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
 cd nrp-core
 mkdir build
 cd build
