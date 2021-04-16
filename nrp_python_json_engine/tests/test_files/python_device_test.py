@@ -1,7 +1,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020 Michael Zechmair
+# Copyright 2020-2021 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ class Script(EngineScript):
 
     """Simple script function"""
     def runLoop(self, timestep):
-        self._setDevice("device1", { "time" : self._time })
+        self._setDevice("device1", { "time" : self._time.count() })
         dev = self._getDevice("device1")
-        print("Engine 1 at time " + str(self._time))
+        print("Engine 1 at time " + str(self._time.count()))
         print("Device 1 data is " + str(dev))

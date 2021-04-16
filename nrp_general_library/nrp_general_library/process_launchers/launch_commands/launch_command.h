@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@
 #ifndef LAUNCH_COMMAND_H
 #define LAUNCH_COMMAND_H
 
-#include "nrp_general_library/config/engine_config.h"
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
+#include <nlohmann/json.hpp>
 
 #include <concepts>
 #include <string>
@@ -50,17 +50,17 @@ class LaunchCommandInterface
 		/*!
 		 * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
 		 * The function should take the environment parameters and start parameters defined in engineConfig, and append any
-		 * additional strings defined in additionalEnvParams and additionalStartParams before starting the Engine specified in
+		 * additional strings defined in envParams and startParams before starting the Engine specified in
 		 * engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child. If set to false, scrub the
-		 * environmet before continuing
-		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over additionalEnvParams and additionalStartParams
-		 * \param additionalEnvParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-		 * \param additionalStartParams Additional Start parameters
+		 * environment before continuing
+		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+		 * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
+		 * \param startParams Additional Start parameters
 		 * \param appendParentEnv Should parent env variables be appended to child process
 		 * \return Returns PID of child process on success
 		 */
-		virtual pid_t launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-		                                  const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv = true) = 0;
+		virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+		                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
 
 
 		/*!

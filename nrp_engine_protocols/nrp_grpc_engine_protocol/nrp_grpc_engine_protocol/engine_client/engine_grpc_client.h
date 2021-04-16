@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,19 +28,24 @@
 #include <grpcpp/support/time.h>
 #include <nlohmann/json.hpp>
 
-#include "nrp_general_library/config/engine_config.h"
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 
-template<class ENGINE, ENGINE_CONFIG_C ENGINE_CONFIG, DEVICE_C ...DEVICES>
+template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
 class EngineGrpcClient
-    : public Engine<ENGINE, ENGINE_CONFIG>
+    : public EngineClient<ENGINE, SCHEMA>
 {
     void prepareRpcContext(grpc::ClientContext * context)
     {
-        // Set RPC timeout, if it has been specified by the user
+        // Let client wait for server ready
+        // TODO It happens that gRPC call is performed before the server is fully initialized.
+        // This line was supposed to fix it, but it's breaking some of the tests. The issue will be addressed in NRRPLT-8187.
+        // context->set_wait_for_ready(true);
+            
+        // Set RPC timeout (in absolute time), if it has been specified by the user
 
         if(this->_rpcTimeout > SimulationTime::zero())
         {
@@ -50,15 +55,23 @@ class EngineGrpcClient
 
     public:
 
-        EngineGrpcClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-            : Engine<ENGINE, ENGINE_CONFIG>(config, std::move(launcher))
+        EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher))
         {
-            std::string serverAddress = this->engineConfig()->engineServerAddress();
+            std::string serverAddress = this->engineConfig().at("ServerAddress");
 
             // Timeouts of less than 1ms will be rounded up to 1ms
 
-            SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig()->engineCommandTimeout());
-            this->_rpcTimeout      = (timeout > std::chrono::milliseconds(1)) ? timeout : std::chrono::milliseconds(1);
+            SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig().at("EngineCommandTimeout"));
+
+            if(timeout != SimulationTime::zero())
+            {
+                this->_rpcTimeout = (timeout > std::chrono::milliseconds(1)) ? timeout : std::chrono::milliseconds(1);
+            }
+            else
+            {
+                this->_rpcTimeout = SimulationTime::zero();
+            }
 
             _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
             _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
@@ -186,7 +199,7 @@ class EngineGrpcClient
             this->_engineTime = this->_loopStepThread.get();
         }
 
-		virtual void handleInputDevices(const typename EngineInterface::device_inputs_t &inputDevices) override
+		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
         {
             EngineGrpc::SetDeviceRequest request;
             EngineGrpc::SetDeviceReply   reply;
@@ -194,7 +207,7 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            for(const auto &device : inputDevices)
+            for(const auto &device : devicesArray)
             {
                 if(device->engineName().compare(this->engineName()) == 0)
                 {
@@ -207,7 +220,7 @@ class EngineGrpcClient
 
             if(!status.ok())
             {
-                const auto errMsg = "Engine server handleInputDevices failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                const auto errMsg = "Engine server sendDevicesToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
             }
         }
@@ -234,15 +247,13 @@ class EngineGrpcClient
             }
         }
 
-        typename EngineInterface::device_outputs_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
+        typename EngineClientInterface::devices_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
         {
-            typename EngineInterface::device_outputs_set_t interfaces;
+            typename EngineClientInterface::devices_set_t interfaces;
 
             for(int i = 0; i < reply.reply_size(); i++)
             {
-                // Check whether the requested device has new data
-				if(reply.reply(i).has_deviceid())
-					interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
+				interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
             }
 
             return interfaces;
@@ -256,6 +267,15 @@ class EngineGrpcClient
                 DeviceIdentifier devId(deviceData.deviceid().devicename(),
 				                       this->engineName(),
                                        deviceData.deviceid().devicetype());
+
+                // Check whether the requested device has new data
+
+                if(deviceData.data_case() == EngineGrpc::DeviceMessage::DataCase::DATA_NOT_SET)
+                {
+                    // There's no meaningful data in the device, so create an empty device with device ID only
+
+                    return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(devId)));
+                }
 
 				return DeviceInterfaceConstSharedPtr(new DEVICE(DeviceSerializerMethods<GRPCDevice>::template deserialize<DEVICE>(std::move(devId), &deviceData)));
             }
@@ -271,8 +291,27 @@ class EngineGrpcClient
             }
         }
 
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        {
+            std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
+
+            std::string name = this->engineConfig().at("EngineName");
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineNameArg.data() + "=" + name);
+    
+            // Add JSON Server address (will be used by EngineGrpcServer)
+            std::string address = this->engineConfig().at("ServerAddress");
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
+    
+            return startParams;
+        }
+    
+        virtual const std::vector<std::string> engineProcEnvParams() const override
+        {
+            return this->engineConfig().at("EngineEnvParams");
+        }
+
 	protected:
-		virtual typename EngineInterface::device_outputs_set_t requestOutputDeviceCallback(const typename EngineInterface::device_identifiers_t &deviceIdentifiers) override
+		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			EngineGrpc::GetDeviceRequest request;
 			EngineGrpc::GetDeviceReply   reply;
@@ -294,7 +333,7 @@ class EngineGrpcClient
 
 			if(!status.ok())
 			{
-				const auto errMsg = "Engine server getOutputDevices failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+				const auto errMsg = "Engine client getDevicesFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
 				throw std::runtime_error(errMsg);
 			}
 
@@ -311,22 +350,6 @@ class EngineGrpcClient
         SimulationTime _engineTime     = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();
 };
-
-/*! \defgroup GRPC Engine Protocol
-
-\section engine_grpc_config_section Engine Configuration Options
-
-Engines constructed on this protocol have the following additional configuration options available to them:
-
-<table>
-<caption id="grpc_engine_config_table">GRPC Engine Configuration Options</caption>
-<tr><th>Name                       <th>Description                                                                <th>Type                <th>Default
-<tr><td>ServerAddress              <td>GRPC Server address. Should this address already be in use, simulation initialization will fail   <td>string    <td>"localhost:9004"
-</table>
-
-
-
- */
 
 
 #endif // ENGINE_GRPC_CLIENT_H

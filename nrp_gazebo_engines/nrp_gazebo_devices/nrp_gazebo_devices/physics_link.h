@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #define PHYSICS_LINK_H
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/utils/serializers/json_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
 
 class PhysicsLink;
 
@@ -73,17 +73,11 @@ class PhysicsLink
 		void setAngVel(const vec3_t &angVel);
 };
 
-/*! \addtogroup gazebo_devices
- * The PhysicsJoint Device consists of the following attributes:
- * <table>
- * <caption id="physics_joint_attributes_table">Physics Joint Attributes</caption>
- * <tr><th>Attribute  <th>Description                                 <th>Python Type                   <th>C type
- * <tr><td>pos        <td>Joint Position                              <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * <tr><td>rot        <td>Joint Rotation as quaternion                <td>numpy.array(4, numpy.float32) <td>std::array<float,4>
- * <tr><td>lin_vel    <td>Joint Linear Velocity                       <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * <tr><td>ang_vel    <td>Joint Angular Velocity                      <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
- * </table>
- */
+template<>
+nlohmann::json JSONPropertySerializerMethods::serializeSingleProperty(const PhysicsLinkConst::vec3_t &property);
+
+template<>
+PhysicsLinkConst::vec3_t JSONPropertySerializerMethods::deserializeSingleProperty(const nlohmann::json &data, const std::string_view &name);
 
 
 #endif // JSON_PHYSICS_LINK_H

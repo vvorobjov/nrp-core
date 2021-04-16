@@ -20,7 +20,6 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_json_engine_protocol/config/engine_json_config.cpp
-	nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.cpp
 	nrp_json_engine_protocol/device_interfaces/json_device_serializer.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_device_controller.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_server.cpp
@@ -39,7 +38,6 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/engine_json_config.cpp
 	tests/engine_json_server.cpp
 	tests/engine_json_nrp_client.cpp
 	tests/json_device_methods.cpp
@@ -118,8 +116,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 	target_link_libraries(${TEST_NAME}
 		PUBLIC
 		${NAMESPACE_NAME}::${LIBRARY_NAME}
-		GTest::gtest
-		GTest::gtest_main)
+		GTest::GTest
+		GTest::Main)
 
 	gtest_discover_tests(${TEST_NAME}
 		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 #include "nrp_python_json_engine/python/py_engine_script.h"
 
 #include <fstream>
+#include <filesystem>
 
 namespace python = boost::python;
 
@@ -87,11 +88,8 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 		return this->formatInitErrorMessage(handle_pyerror());
 	}
 
-	// Read received configuration
-	const PythonConfig config(data.at(PythonConfig::ConfigType.m_data));
-
 	// Read python script file if present
-	const std::filesystem::path fileName = config.pythonFileName();
+	const std::filesystem::path fileName = data.at("PythonFileName");
 	if(fileName.empty())
 	{
 		const auto errMsg = "No python filename given. Aborting...";
@@ -150,7 +148,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	this->_initRunFlag = true;
 
 	// Return success and parsed devmap
-	return nlohmann::json({{PythonConfig::InitFileExecStatus, true}});
+	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, true}});
 }
 
 nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
@@ -199,7 +197,7 @@ PyEngineScript *PythonJSONServer::registerScript(const boost::python::object &py
 
 nlohmann::json PythonJSONServer::formatInitErrorMessage(const std::string &errMsg)
 {
-	return nlohmann::json({{PythonConfig::InitFileExecStatus, 0}, {PythonConfig::InitFileErrorMsg, errMsg}});
+	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::InitFileErrorMsg, errMsg}});
 }
 
 nlohmann::json PythonJSONServer::getDeviceData(const nlohmann::json &reqData)

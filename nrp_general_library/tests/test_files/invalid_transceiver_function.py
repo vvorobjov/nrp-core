@@ -1,7 +1,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020 Michael Zechmair
+# Copyright 2020-2021 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ from testModule import TestInputDevice, TestOutputDevice
 # Invalid syntax
 fsdavhufdsihjk = jfdaonv
 
-@SingleTransceiverDevice(keyword='device', id=DeviceIdentifier('dev', 'type', 'engine'))
+@FromEngineDevice(keyword='device', id=DeviceIdentifier('dev', 'type', 'engine'))
 @TransceiverFunction()
 def transceiver_function(device):
     test_val = device.test_value

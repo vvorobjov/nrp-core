@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef GAZEBO_STEP_CONTROLLER_H
 #define GAZEBO_STEP_CONTROLLER_H
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 /*!
  *  \brief Controlls execution of Gazebo steps. Will be inherited by a Gazebo WorldPlugin
@@ -37,9 +37,5 @@ class GazeboStepController
 
 		virtual bool finishWorldLoading() = 0;
 };
-
-/*! \addtogroup gazebo_json_engine
- *  The loop is controlled via GazeboStepController.
- */
 
 #endif // GAZEBO_STEP_CONTROLLER_H

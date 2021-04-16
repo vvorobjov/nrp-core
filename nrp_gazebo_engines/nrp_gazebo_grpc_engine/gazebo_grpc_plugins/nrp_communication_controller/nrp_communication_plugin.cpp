@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,9 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 		// Save given URL
 		serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
 		engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
-		registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
+        // TODO: remove registrationAddr parameter everywhere
+        // registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
+        registrationAddr = "";
 	}
 	catch(cxxopts::OptionException &e)
 	{

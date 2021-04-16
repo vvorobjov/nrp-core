@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 
 grpc::Status EngineGrpcServer::handleGrpcError(const std::string & contextMessage, const std::string & errorMessage)
@@ -127,19 +126,10 @@ grpc::Status EngineGrpcServer::getDevice(grpc::ServerContext * , const EngineGrp
     return grpc::Status::OK;
 }
 
-EngineGrpcServer::EngineGrpcServer()
-{
-	this->_serverAddress   = EngineGRPCConfigConst::DefEngineServerAddress;
-    this->_isServerRunning = false;
-
-    grpc::EnableDefaultHealthCheckService(true);
-}
-
 EngineGrpcServer::EngineGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &)
     : EngineGrpcServer(serverAddress)
 {
-    this->_engineName    = engineName;
-    this->_serverAddress = serverAddress;
+    this->_engineName = engineName;
 }
 
 EngineGrpcServer::EngineGrpcServer(const std::string address)

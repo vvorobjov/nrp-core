@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
-#define TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
+#ifndef TEST_ENGINE_JSON_DEVICE_INTERFACE_H
+#define TEST_ENGINE_JSON_DEVICE_INTERFACE_H
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_conversion_mechanism.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
-#include "nrp_general_library/utils/serializers/json_property_serializer.h"
-
-using dcm_t = DeviceConversionMechanism<nlohmann::json, nlohmann::json::const_iterator>;
+#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
 
 struct TestJSONDevice1
     : public Device<TestJSONDevice1, "test_type1", PropNames<"data">, int>
@@ -61,14 +58,23 @@ struct TestJSONDevice1Controller
 		void handleDeviceDataCallback(TestJSONDevice1 &&data)
 		{	this->_dev = std::move(data);	}
 
-		const TestJSONDevice1 *getDeviceInformationCallback()
-		{	return &(this->_dev);	}
 
 		constexpr const auto &data() const
 		{	return this->_dev;	}
 
+		virtual const TestJSONDevice1 *getDeviceInformationCallback() override
+		{
+            return this->_returnEmptyDevice ? nullptr : &this->_dev;
+        }
+
+        void triggerEmptyDeviceReturn(bool value)
+        {
+            this->_returnEmptyDevice = value;
+        }
+
 	private:
 		TestJSONDevice1 _dev;
+		bool _returnEmptyDevice;
 };
 
 struct TestJSONDevice2
@@ -153,4 +159,4 @@ struct TestJSONDeviceThrowController
 		TestJSONDeviceThrow _dev;
 };
 
-#endif // TEST_ENGINGE_JSON_DEVICE_INTERFACE_H
+#endif // TEST_ENGINE_JSON_DEVICE_INTERFACE_H

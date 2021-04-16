@@ -1,0 +1,14 @@
+/*! \page property_serializer Property Serializer
+PropertySerializer performs de-/serialization actions on \ref property_template "PropertyTemplates". It can either take serialized data and create a PropertyTemplate class from it, or vice-versa.
+PropertySerializer is a template class specialized for each serialization type. An example is the JSONPropertySerializer, which converts data to and from the nlohmann::json type.
+
+To aid developers in creating de-/serialization methods for new data types, a helper class called PropertySerializerMethods was introduced. A PropertySerializer<OBJECT> will internally use the corresponding PropertySerializerMethods<OBJECT> to perform PropertyTemplate de-/serialization actions. An example can be found in \ref nrp_general_library/property_template/serializers/json_property_serializer.h, where PropertySerializerMethods<nlohmann::json> is implemented.
+
+Below is listed the PropertySerializerMethods template that must be specialized for each de-/serialization data type that needs to be supported.
+
+\dontinclude property_serializer.h
+\skip template<class OBJECT>
+\until };
+
+OBJECT is the serialization data type the template is specialized for. The methods deserializeSingleProperty and serializeSingleProperty implement the de-/serialization of a property of type PROPERTY from and to OBJECT type. They can be specialized for data types which require a specific implementation. Finally, the method emplaceSingleProperty implements the emplacement of a serialized property in the data buffer containing all serialized information. These methods are internally used by PropertySerializer in PropertyTemplate de-/serialization operations.
+ */

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #define GRPC_DEVICE_SERIALIZER_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_serializer_methods.h"
 
 //#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.pb.h"

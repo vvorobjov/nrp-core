@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Python Json Engine",
+  "description": "Python Json Engine Configuration",
+  "$id": "#PythonJSONEngine",
+  "allOf": [
+    { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+    {
+      "properties": {
+        "EngineType": { "enum": ["python_json"] },
+        "PythonFileName" : {
+          "type": "string",
+          "description": "Path to the python script containing the engine definition"
+        }
+      },
+      "required": ["PythonFileName"]
+    }
+  ]
+}

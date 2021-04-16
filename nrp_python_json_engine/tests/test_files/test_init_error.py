@@ -1,7 +1,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020 Michael Zechmair
+# Copyright 2020-2021 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 """Init File. Imports nest and sets up a poisson generator, neuron, and voltmeter"""
-
-from NRPNestPythonModule import CreateDevice
 
 fdsafff
 

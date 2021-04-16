@@ -1,0 +1,58 @@
+{"engine_nest_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Nest Base",
+    "description": "Nest Base Engine configuration schema. Configuration for all nest engine implementations inherit from this one",
+    "$id": "#NestBase",
+    "properties" : {
+      "NestInitFileName": {
+        "type": "string",
+        "description": "Path to the python script that sets up the neural network for the simulation"
+      },
+      "NestRNGSeed": {
+        "type": "integer",
+        "default": 0,
+        "description": "Nest RNG seed"
+      }
+    },
+    "required": ["NestInitFileName"]
+  },
+  "engine_nest_json" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Nest Json Engine",
+    "description": "Nest Json Engine",
+    "$id": "#NestJSONEngine",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "#/engine_nest_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["nest_json"] }
+        }
+      }
+    ]
+  },
+  "engine_nest_server" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Nest Server Engine",
+    "description": "Nest Server Engine",
+    "$id": "#NestServerEngine",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      { "$ref": "#/engine_nest_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["nest_server"] },
+          "NestServerHost" : {
+            "type": "string",
+            "default": "localhost",
+            "description": "Nest Server Host"
+          },
+          "NestServerPort": {
+            "type": "integer",
+            "description": "Nest Server Port"
+          }
+        }
+      }
+    ]
+  }
+}

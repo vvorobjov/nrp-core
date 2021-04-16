@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,53 +27,63 @@
 
 using namespace testing;
 
-struct TestEngine1
-        : public EngineInterface
+struct TestEngineConfigConst
 {
-	TestEngine1()
-	    : EngineInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
-	{
-		this->engineName() = "engine1";
-	}
-
-	virtual ~TestEngine1() override = default;
-
-	std::shared_ptr<EngineConfigGeneral> engineConfigGeneral() const override
-	{	return nullptr;		}
-
-	void initialize() override
-	{}
-
-	void shutdown() override
-	{}
-
-	SimulationTime getEngineTime() const override
-	{	return SimulationTime::zero();	}
-
-	SimulationTime getEngineTimestep() const override
-	{	return SimulationTime::zero();	}
-
-	void runLoopStep(SimulationTime) override
-	{}
-
-	void waitForStepCompletion(float) override
-	{}
-
-	void handleInputDevices(const device_inputs_t&) override
-	{}
-
-	protected:
-	    device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override
-		{
-			device_outputs_set_t retVal;
-			for(const auto &devID : deviceIdentifiers)
-			{
-				retVal.emplace(new DeviceInterface(devID));
-			}
-
-			return retVal;
-		}
+    static constexpr FixedString EngineType = "test_engine";
+    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
 };
+
+class TestEngine
+        : public EngineClient<TestEngine, TestEngineConfigConst::EngineSchema>
+{
+public:
+    TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient(configHolder, std::move(launcher))
+    {}
+
+    virtual void initialize() override
+    {}
+
+    virtual void shutdown() override
+    {}
+
+    virtual const std::vector<std::string> engineProcStartParams() const override
+    { return std::vector<std::string>(); }
+
+    virtual const std::vector<std::string> engineProcEnvParams() const override
+    { return std::vector<std::string>(); }
+
+    virtual SimulationTime getEngineTime() const override
+    {	return SimulationTime::zero();	}
+
+    virtual void runLoopStep(SimulationTime) override
+    {}
+
+    virtual void waitForStepCompletion(float) override
+    {}
+
+    virtual void sendDevicesToEngine(const devices_ptr_t &) override
+    {}
+
+protected:
+    virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
+    {
+        devices_set_t retVal;
+        for(const auto &devID : deviceIdentifiers)
+        {
+            retVal.emplace(new DeviceInterface(devID));
+        }
+
+        return retVal;
+    }
+};
+
+//static nlohmann::json config = R"(
+//{
+//    "EngineName" : "engine",
+//    "EngineType" " "test_engine"
+//}
+//)"_json;
 
 struct TestLauncher1
         : public EngineLauncherInterface
@@ -83,50 +93,10 @@ struct TestLauncher1
 	{}
 	~TestLauncher1() override = default;
 
-	EngineInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
+	EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
 	{
-		return EngineInterface::shared_ptr(new TestEngine1());
+		return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
 	}
-};
-
-struct TestEngine2
-        : public EngineInterface
-{
-	TestEngine2()
-	    : EngineInterface(ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()))
-	{
-		this->engineName() = "engine2";
-	}
-
-	virtual ~TestEngine2() override = default;
-
-	std::shared_ptr<EngineConfigGeneral> engineConfigGeneral() const override
-	{	return nullptr;		}
-
-	void initialize() override
-	{}
-
-	void shutdown() override
-	{}
-
-	SimulationTime getEngineTime() const override
-	{	return SimulationTime::zero();	}
-
-	SimulationTime getEngineTimestep() const override
-	{	return SimulationTime::zero();	}
-
-	void runLoopStep(SimulationTime) override
-	{}
-
-	void waitForStepCompletion(float) override
-	{}
-
-	void handleInputDevices(const device_inputs_t&) override
-	{}
-
-	protected:
-	    device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t&) override
-		{	return device_outputs_set_t();	}
 };
 
 struct TestLauncher2
@@ -138,9 +108,9 @@ struct TestLauncher2
 
 	virtual ~TestLauncher2() override = default;
 
-	EngineInterface::shared_ptr launchEngine(EngineConfigConst::config_storage_t&, ProcessLauncherInterface::unique_ptr&&) override
+	EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
 	{
-		return EngineInterface::shared_ptr(new TestEngine2());
+		return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
 	}
 };
 

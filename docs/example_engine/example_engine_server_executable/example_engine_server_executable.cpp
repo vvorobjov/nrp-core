@@ -1,5 +1,8 @@
 #include "example_engine_server_executable/example_engine_server_executable.h"
 
+#include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
+#include "nrp_json_engine_protocol/config/engine_json_config.h"
+
 #include "nrp_general_library/utils/spdlog_setup.h"
 
 #include <boost/python.hpp>
@@ -65,7 +68,7 @@ int ExampleEngineServerExecutable::run()
 	}
 
 	// Shutdown server
-	this->_server.shutdownServer();
+	this->_server.shutdown();
 	return 0;
 }
 

@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Engine Base",
+  "description": "Base configuration schema which all engine configurations inherit from",
+  "$id": "#EngineBase",
+  "type": "object",
+  "properties" : {
+    "EngineName" : {
+      "type" : "string",
+      "description": "Name of the engine"
+    },
+    "EngineType" : {
+      "type" : "string",
+      "description": "Engine type. Used by EngineLauncherManager to select the correct engine launcher"
+    },
+    "EngineProcCmd" : {
+      "type" : "string",
+      "description": "Engine Process Launch command"
+    },
+    "EngineProcStartParams" : {
+      "type" : "array",
+      "items": {"type" : "string"},
+      "description": "Engine Process Start Parameters"
+    },
+    "EngineEnvParams" : {
+      "type" : "array",
+      "items": {"type" : "string"},
+      "description": "Engine Process Environment Parameters"
+    },
+    "EngineLaunchCommand" : {
+      "type" : "string",
+      "default": "BasicFork",
+      "description": "LaunchCommand type that will be used to launch the engine process"
+    },
+    "EngineTimestep" : {
+      "type" : "number",
+      "default": 0.01,
+      "description": "Engine Timestep in seconds"
+    },
+    "EngineCommandTimeout" : {
+      "type" : "number",
+      "default": 0.0,
+      "description": "Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout"
+    }
+  },
+  "required" : ["EngineName", "EngineType"]
+}

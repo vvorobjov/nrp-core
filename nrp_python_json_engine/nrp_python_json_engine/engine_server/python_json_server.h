@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #ifndef PYTHON_JSON_SERVER_H
 #define PYTHON_JSON_SERVER_H
 
-#include "nrp_general_library/device_interface/devices/pyobject_device.h"
+#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_server.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 

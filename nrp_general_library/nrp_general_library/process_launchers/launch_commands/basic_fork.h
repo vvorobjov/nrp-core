@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@
 #ifndef BASIC_FORK_H
 #define BASIC_FORK_H
 
-#include "nrp_general_library/config/engine_config.h"
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/process_launchers/launch_commands/launch_command.h"
 
+static constexpr FixedString LAUNCH_COMMAND = "BasicFork";
+
 class BasicFork
-        : public LaunchCommand<EngineConfigConst::DefEngineLaunchCmd>
+        : public LaunchCommand<LAUNCH_COMMAND>
 {
 		/*!
 		 *	\brief Command to set environment variables. More versatile than the C function setenv
@@ -37,8 +38,8 @@ class BasicFork
     public:
 		~BasicFork() override;
 
-		pid_t launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-		                          const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv = true) override;
+		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+		                          const std::vector<std::string> &startParams, bool appendParentEnv = true) override;
 
 		pid_t stopEngineProcess(unsigned int killWait) override;
 
@@ -54,7 +55,7 @@ class BasicFork
 		 * \brief Add environment variables to environ
 		 * \param envVars Environment variables
 		 */
-		static void appendEnvVars(const EngineConfigConst::string_vector_t &envVars);
+		static void appendEnvVars(const std::vector<std::string> &envVars);
 };
 
 #endif // BASIC_FORK_H

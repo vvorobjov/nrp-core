@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,13 +40,50 @@ void testSleep(unsigned sleepMs)
 }
 
 class TestGrpcDeviceInterface1
-    : public Device<TestGrpcDeviceInterface1, "test_type1", PropNames<> >
+    : public Device<TestGrpcDeviceInterface1, "test_type1", PropNames<"testProperty">, uint32_t >
 {
 	public:
 		TestGrpcDeviceInterface1(DeviceIdentifier &&devID, property_template_t &&props = property_template_t())
 		    : Device(std::move(devID), std::move(props))
 		{}
+
+    uint32_t getTestProperty() const
+    {
+        return this->getPropertyByName<"testProperty">();
+    }
+
+    void setTestProperty(const uint32_t value)
+    {
+        this->getPropertyByName<"testProperty">() = value;
+    }
 };
+
+template<>
+GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<TestGrpcDeviceInterface1>(const TestGrpcDeviceInterface1 &device)
+{
+    // Copy device ID to the gRPC message
+
+    GRPCDevice grpcMessage = serializeID<GRPCDevice>(device.id());
+
+    // Get pointer to the message data
+
+    auto myDevice = grpcMessage.dev().mutable_test();
+
+    myDevice->InitAsDefaultInstance();
+
+    // Copy data from scalar property to the gRPC message
+
+    myDevice->set_integer(device.getTestProperty());
+
+    return grpcMessage;
+}
+
+template<>
+TestGrpcDeviceInterface1 DeviceSerializerMethods<GRPCDevice>::deserialize<TestGrpcDeviceInterface1>(DeviceIdentifier &&devID, deserialization_t data)
+{
+    return TestGrpcDeviceInterface1(std::move(devID), TestGrpcDeviceInterface1::property_template_t(data->test().integer()));
+}
+
 
 class TestGrpcDeviceController
         : public EngineGrpcDeviceController<TestGrpcDeviceInterface1>
@@ -62,38 +99,25 @@ class TestGrpcDeviceController
 		{	this->_dev = std::move(data);	}
 
 		virtual const TestGrpcDeviceInterface1 *getDeviceInformationCallback() override
-		{	return &this->_dev;	}
+		{
+            return this->_returnEmptyDevice ? nullptr : &this->_dev;
+        }
+
+        void triggerEmptyDeviceReturn(bool value)
+        {
+            this->_returnEmptyDevice = value;
+        }
 
 	private:
 		TestGrpcDeviceInterface1 _dev;
+        bool _returnEmptyDevice = false;
 };
 
-class TestEngineGRPCConfig
-        : public EngineGRPCConfig<TestEngineGRPCConfig, PropNames<> >
+struct TestEngineGRPCConfigConst
 {
-    public:
-        static constexpr FixedString ConfigType = "TestEngineConfig";
-
-		TestEngineGRPCConfig(EngineConfigConst::config_storage_t &config)
-		    : EngineGRPCConfig(config)
-        {}
+    static constexpr FixedString EngineType = "test_engine";
+    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc";
 };
-
-
-template<>
-GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<TestGrpcDeviceInterface1>(const TestGrpcDeviceInterface1 &dev)
-{
-	GRPCDevice data = serializeID<GRPCDevice>(dev.id());
-
-	return data;
-}
-
-template<>
-TestGrpcDeviceInterface1 DeviceSerializerMethods<GRPCDevice>::deserialize<TestGrpcDeviceInterface1>(DeviceIdentifier &&devID, deserialization_t)
-{
-	return TestGrpcDeviceInterface1(std::move(devID));
-}
-
 
 class TestGrpcDeviceInterface2
     : public Device<TestGrpcDeviceInterface2, "test_type2", PropNames<> >
@@ -124,10 +148,10 @@ TestGrpcDeviceInterface2 DeviceSerializerMethods<GRPCDevice>::deserialize<TestGr
 
 
 class TestEngineGrpcClient
-        : public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfig, TestGrpcDeviceInterface1, TestGrpcDeviceInterface2>
+: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, TestGrpcDeviceInterface1, TestGrpcDeviceInterface2>
 {
     public:
-        TestEngineGrpcClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
+        TestEngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineGrpcClient(config, std::move(launcher))
         {}
 
@@ -146,9 +170,9 @@ class TestEngineGrpcServer
     : public EngineGrpcServer
 {
     public:
-        template<class ...T>
-        TestEngineGrpcServer(T &&...properties)
-            : EngineGrpcServer(std::forward<T>(properties)...)
+
+        TestEngineGrpcServer(const std::string & serverAddress)
+            : EngineGrpcServer(serverAddress)
         {
 
         }
@@ -205,7 +229,7 @@ class TestEngineGrpcServer
             }
         }
 
-        SimulationTime _time        = SimulationTime::zero();
+        SimulationTime _time = SimulationTime::zero();
         int            _sleepTimeMs = 0;
 };
 
@@ -228,9 +252,12 @@ TEST(EngineGrpc, BASIC)
 
 TEST(EngineGrpc, InitCommand)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config;
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
@@ -256,9 +283,13 @@ TEST(EngineGrpc, InitCommand)
 
 TEST(EngineGrpc, InitCommandTimeout)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config(nlohmann::json({{"EngineCommandTimeout", 0.0005}}));
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+    config["EngineCommandTimeout"] = 0.0005;
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
@@ -273,9 +304,12 @@ TEST(EngineGrpc, InitCommandTimeout)
 
 TEST(EngineGrpc, ShutdownCommand)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config;
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
@@ -301,9 +335,13 @@ TEST(EngineGrpc, ShutdownCommand)
 
 TEST(EngineGrpc, ShutdownCommandTimeout)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config(nlohmann::json({{"EngineCommandTimeout", 1}}));
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+    config["EngineCommandTimeout"] = 1;
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
@@ -323,9 +361,12 @@ static SimulationTime floatToSimulationTime(float time)
 
 TEST(EngineGrpc, RunLoopStepCommand)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config;
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     // The gRPC server isn't running, so the runLoopStep command should fail
 
@@ -359,9 +400,13 @@ TEST(EngineGrpc, RunLoopStepCommand)
 
 TEST(EngineGrpc, runLoopStepCommandTimeout)
 {
-    TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config(nlohmann::json({{"EngineCommandTimeout", 1}}));
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+    config["EngineCommandTimeout"] = 1;
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     // Test runLoopStep command timeout
 
@@ -373,7 +418,7 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
 
 TEST(EngineGrpc, RegisterDevices)
 {
-    TestEngineGrpcServer server;
+    TestEngineGrpcServer server("localhost:9004");
 
     TestGrpcDeviceController dev1(DeviceIdentifier("dev1", "test", "test"));
 
@@ -384,18 +429,18 @@ TEST(EngineGrpc, RegisterDevices)
 
 TEST(EngineGrpc, SetDeviceData)
 {
-    SimulationConfig::config_storage_t config;
-
-    TestEngineGrpcServer server;
-    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-
-    std::vector<DeviceInterface*> input_devices;
-
     const std::string deviceName = "a";
     const std::string deviceType = "test_type1";
     const std::string engineName = "c";
 
-    client.engineName() = engineName;
+    nlohmann::json config;
+    config["EngineName"] = engineName;
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+
+    std::vector<DeviceInterface*> input_devices;
 
     DeviceIdentifier         devId(deviceName, engineName, deviceType);
 	TestGrpcDeviceInterface1 dev1((DeviceIdentifier(devId)));             // Client side
@@ -405,15 +450,15 @@ TEST(EngineGrpc, SetDeviceData)
 
     input_devices.push_back(&dev1);
 
-    // The gRPC server isn't running, so the handleInputDevices command should fail
+    // The gRPC server isn't running, so the sendDevicesToEngine command should fail
 
-    ASSERT_THROW(client.handleInputDevices(input_devices), std::runtime_error);
+    ASSERT_THROW(client.sendDevicesToEngine(input_devices), std::runtime_error);
 
     // Normal command execution
 
     server.startServer();
     testSleep(1500);
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
 	ASSERT_EQ(deviceController.getDeviceInformationCallback()->id().Name,       deviceName);
 	ASSERT_EQ(deviceController.getDeviceInformationCallback()->id().Type,       deviceType);
@@ -428,27 +473,27 @@ TEST(EngineGrpc, SetDeviceData)
 
     input_devices.push_back(&dev2);
 
-    ASSERT_THROW(client.handleInputDevices(input_devices), std::runtime_error);
+    ASSERT_THROW(client.sendDevicesToEngine(input_devices), std::runtime_error);
 
     // TODO Add test for setData timeout
 }
 
 TEST(EngineGrpc, GetDeviceData)
 {
-    SimulationConfig::config_storage_t config;
+    const std::string deviceName = "a";
+    const std::string deviceType = "test_type2";
+    const std::string engineName = "c";
 
-    TestEngineGrpcServer server;
+    nlohmann::json config;
+    config["EngineName"] = engineName;
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
     // Client sends a request to the server
 
     std::vector<DeviceInterface*> input_devices;
-
-    const std::string deviceName = "a";
-    const std::string deviceType = "test_type2";
-    const std::string engineName = "c";
-
-    client.engineName() = engineName;
 
     DeviceIdentifier         devId(deviceName, engineName, deviceType);
 	TestGrpcDeviceInterface2 dev1((DeviceIdentifier(devId)));             // Client side
@@ -458,25 +503,54 @@ TEST(EngineGrpc, GetDeviceData)
 
     input_devices.push_back(&dev1);
 
-    EngineInterface::device_identifiers_t deviceIdentifiers;
+    EngineClientInterface::device_identifiers_set_t deviceIdentifiers;
     deviceIdentifiers.insert(devId);
 
-    // The gRPC server isn't running, so the getOutputDevices command should fail
+    // The gRPC server isn't running, so the updateDevicesFromEngine command should fail
 
-    ASSERT_THROW(client.requestOutputDevices(deviceIdentifiers), std::runtime_error);
-
-    // Normal command execution
+    ASSERT_THROW(client.updateDevicesFromEngine(deviceIdentifiers), std::runtime_error);
 
     server.startServer();
     testSleep(1500);
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
-    const auto output = client.requestOutputDevices(deviceIdentifiers);
+    // Return an empty device from the server
+    // It should be inserted into the engines cache, but should be marked as empty
+
+    deviceController.triggerEmptyDeviceReturn(true);
+
+    auto output = client.updateDevicesFromEngine(deviceIdentifiers);
 
     ASSERT_EQ(output.size(), 1);
     ASSERT_EQ(output.at(0)->name(),       deviceName);
     ASSERT_EQ(output.at(0)->type(),       deviceType);
     ASSERT_EQ(output.at(0)->engineName(), engineName);
+    ASSERT_EQ(output.at(0)->isEmpty(),    true);
+
+    deviceController.triggerEmptyDeviceReturn(false);
+
+    // Normal command execution
+    // Engine cache should be updated with a non-empty device
+
+    output = client.updateDevicesFromEngine(deviceIdentifiers);
+
+    ASSERT_EQ(output.size(), 1);
+    ASSERT_EQ(output.at(0)->name(),       deviceName);
+    ASSERT_EQ(output.at(0)->type(),       deviceType);
+    ASSERT_EQ(output.at(0)->engineName(), engineName);
+    ASSERT_EQ(output.at(0)->isEmpty(),    false);
+
+    // Trigger return of an empty device again
+    // Check that it doesn't overwrite the cache
+
+    deviceController.triggerEmptyDeviceReturn(true);
+
+    output = client.updateDevicesFromEngine(deviceIdentifiers);
+
+    ASSERT_EQ(output.size(), 1);
+    ASSERT_EQ(output.at(0)->isEmpty(), false);
+
+    deviceController.triggerEmptyDeviceReturn(false);
 
     // Test setting data on a device that wasn't registered in the engine server
 
@@ -487,22 +561,13 @@ TEST(EngineGrpc, GetDeviceData)
 
     deviceIdentifiers.insert(devId2);
 
-    ASSERT_THROW(client.requestOutputDevices(deviceIdentifiers), std::runtime_error);
+    ASSERT_THROW(client.updateDevicesFromEngine(deviceIdentifiers), std::runtime_error);
 
     // TODO Add test for getData timeout
 }
 
 TEST(EngineGrpc, GetDeviceData2)
 {
-    SimulationConfig::config_storage_t config;
-
-    TestEngineGrpcServer server;
-    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-
-    // Client sends a request to the server
-
-    std::vector<DeviceInterface*> input_devices;
-
     const std::string engineName = "c";
 
     const std::string deviceName1 = "a";
@@ -510,7 +575,16 @@ TEST(EngineGrpc, GetDeviceData2)
     const std::string deviceName2 = "b";
     const std::string deviceType2 = "test_type2";
 
-    client.engineName() = engineName;
+    nlohmann::json config;
+    config["EngineName"] = engineName;
+    config["EngineType"] = "test_engine_grpc";;
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+
+    // Client sends a request to the server
+
+    std::vector<DeviceInterface*> input_devices;
 
     DeviceIdentifier         devId1(deviceName1, engineName, deviceType1);
     DeviceIdentifier         devId2(deviceName2, engineName, deviceType2);
@@ -526,13 +600,13 @@ TEST(EngineGrpc, GetDeviceData2)
     input_devices.push_back(&dev2);
 
     server.startServer();
-    client.handleInputDevices(input_devices);
+    client.sendDevicesToEngine(input_devices);
 
-    EngineInterface::device_identifiers_t deviceIdentifiers;
+    EngineClientInterface::device_identifiers_set_t deviceIdentifiers;
     deviceIdentifiers.insert(devId1);
     deviceIdentifiers.insert(devId2);
 
-    const auto output = client.requestOutputDevices(deviceIdentifiers);
+    const auto output = client.updateDevicesFromEngine(deviceIdentifiers);
 
     ASSERT_EQ(output.size(), 2);
     ASSERT_EQ(output.at(0)->engineName(), engineName);

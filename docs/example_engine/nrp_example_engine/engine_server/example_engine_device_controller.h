@@ -6,17 +6,11 @@
 class ExampleEngineDeviceControllerInterface
 {
 	public:
-		ExampleEngineDeviceControllerInterface(const DeviceIdentifier &devID);
+		ExampleEngineDeviceControllerInterface();
 		virtual ~ExampleEngineDeviceControllerInterface() = default;
 
-		virtual DeviceInterface::shared_ptr getDeviceInformation() = 0;
+		virtual DeviceInterface::const_shared_ptr getDeviceInformation() = 0;
 		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) = 0;
-
-		constexpr const DeviceIdentifier &id() const
-		{	return this->_id;	}
-
-	private:
-		DeviceIdentifier _id;
 };
 
 template<class DEVICE>
@@ -24,38 +18,36 @@ class ExampleEngineDeviceController
         : public ExampleEngineDeviceControllerInterface
 {
 	public:
-		ExampleEngineDeviceController(const DeviceIdentifier &devID)
-		    : ExampleEngineDeviceControllerInterface(devID)
+		ExampleEngineDeviceController()
 		{}
 
 		virtual ~ExampleEngineDeviceController() override = default;
 
-		virtual DeviceInterface::shared_ptr getDeviceInformation() override;
+		virtual DeviceInterface::const_shared_ptr getDeviceInformation() override;
 		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) override;
 };
 
 template<>
-class ExampleEngineDeviceController<ExampleDevice>
+class ExampleEngineDeviceController<MyDevice>
         : public ExampleEngineDeviceControllerInterface
 {
 	public:
-		ExampleEngineDeviceController(const DeviceIdentifier &devID)
-		    : ExampleEngineDeviceControllerInterface(devID),
-		      _dev(devID)
+		ExampleEngineDeviceController(DeviceIdentifier &&devID)
+		    : _dev(std::move(devID))
 		{}
 
 		virtual ~ExampleEngineDeviceController() override;
 
-		virtual DeviceInterface::shared_ptr getDeviceInformation() override
-		{	return std::make_shared(new ExampleDevice(this->_dev));	}
+		virtual DeviceInterface::const_shared_ptr getDeviceInformation() override
+		{	return this->_dev.moveToSharedPtr();	}
 
 		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) override
 		{
-			this->_dev = std::move(*dynamic_cast<ExampleDevice*>(data.release()));
+			this->_dev = std::move(*dynamic_cast<MyDevice*>(data.release()));
 		}
 
 	private:
-		ExampleDevice _dev;
+		MyDevice _dev;
 };
 
 

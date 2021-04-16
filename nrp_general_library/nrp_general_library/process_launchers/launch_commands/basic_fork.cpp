@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ BasicFork::~BasicFork()
 	this->stopEngineProcess(60);
 }
 
-pid_t BasicFork::launchEngineProcess(const EngineConfigGeneral &engineConfig, const EngineConfigConst::string_vector_t &additionalEnvParams,
-                                     const EngineConfigConst::string_vector_t &additionalStartParams, bool appendParentEnv)
+pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                     const std::vector<std::string> &startParams, bool appendParentEnv)
 {
 	// Parent PID
 	const auto ppid = getpid();
@@ -76,36 +76,23 @@ pid_t BasicFork::launchEngineProcess(const EngineConfigGeneral &engineConfig, co
 		if(!appendParentEnv)
 			clearenv();
 
-		// Modify child environment variables
-		const auto engineProcEnvVars = engineConfig.allEngineProcEnvParams();
-		//ProcessLauncherBasic::appendEnvVars(additionalEnvParams);
-
-		// Setup start parameters in a char* vector. See definition of execvpe() for details
-		const auto engineProcStartParams = engineConfig.allEngineProcStartParams();
-
 		std::vector<const char*> startParamPtrs;
 
 		// Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + engineProcCmd + --param1 + --param2 + ... + nullptr)
-		startParamPtrs.reserve(additionalEnvParams.size() + engineProcEnvVars.size() + additionalStartParams.size() + engineProcStartParams.size() + 3);
+		startParamPtrs.reserve(envParams.size() + startParams.size() + 3);
 
 		// Environment set command
 		startParamPtrs.push_back(BasicFork::EnvCfgCmd.data());
 
 		// Environment variables
-		for(const auto &curParam : additionalEnvParams)
-			startParamPtrs.push_back(curParam.data());
-
-		for(const auto &curParam : engineProcEnvVars)
+		for(const auto &curParam : envParams)
 			startParamPtrs.push_back(curParam.data());
 
 		// Engine Exec cmd
-		startParamPtrs.push_back(engineConfig.engineProcCmd().data());
+		std::string engineProcCmd = engineConfig.at("EngineProcCmd");
+		startParamPtrs.push_back(engineProcCmd.data());
 
-		// Engine start parameters
-		for(const auto &curParam : engineProcStartParams)
-			startParamPtrs.push_back(curParam.data());
-
-		for(const auto &curParam : additionalStartParams)
+		for(const auto &curParam : startParams)
 			startParamPtrs.push_back(curParam.data());
 
 		// Parameter end
@@ -117,7 +104,7 @@ pid_t BasicFork::launchEngineProcess(const EngineConfigGeneral &engineConfig, co
 		auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
 		// Don't use the logger here, as this is a separate process
-		std::cerr << "Couldn't start Engine with cmd \"" << engineConfig.engineProcCmd().data() << "\"\n Error code: " << res << std::endl;
+		std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
 		std::cerr.flush();
 
 		// If the exec call fails, exit the child process without any further processing. Prevents the child process from assuming it's the main proc
@@ -194,7 +181,7 @@ LaunchCommandInterface::ENGINE_RUNNING_STATUS BasicFork::getProcessStatus()
 		return ENGINE_RUNNING_STATUS::RUNNING;
 }
 
-void BasicFork::appendEnvVars(const EngineConfigConst::string_vector_t &envVars)
+void BasicFork::appendEnvVars(const std::vector<std::string> &envVars)
 {
 	// Modify child environment variables
 	for(auto &envVar : envVars)

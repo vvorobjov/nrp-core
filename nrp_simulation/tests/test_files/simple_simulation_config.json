@@ -1,3 +1,11 @@
 {
-	"SimulationName": "test_sim"
+	"SimulationName": "test_sim",
+	"EngineConfigs" : [
+		{
+			"EngineType": "test_engine",
+			"EngineName": "test"
+		}
+	],
+	"TransceiverFunctionConfigs" : [],
+	"PreprocessingFunctionConfigs" : []
 }

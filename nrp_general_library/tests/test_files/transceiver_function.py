@@ -1,7 +1,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020 Michael Zechmair
+# Copyright 2020-2021 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 from NRPPythonModule import *
 from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
 
-@SingleTransceiverDevice(keyword='device', id=DeviceIdentifier('out', 'engine', 'type'))
+@FromEngineDevice(keyword='device', id=DeviceIdentifier('tf_input', 'engine', 'type'))
 @TransceiverFunction("engine")
 def transceiver_function(device):
     test_val = device.test_value

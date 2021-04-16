@@ -1,7 +1,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020 Michael Zechmair
+# Copyright 2020-2021 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,5 +27,5 @@ from NRPPythonEngineModule import EngineScript
 class Script(EngineScript):
     """Simple script function"""
     def runLoop(self, timestep):
-        print("Engine 1 at time " + str(self._time))
+        print("Engine 1 at time " + str(self._time.count()))
 

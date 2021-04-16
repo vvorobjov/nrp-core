@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,14 +38,10 @@ cxxopts::Options SimulationParams::createStartParamParser()
 	opts.add_options()
 	        (SimulationParams::ParamHelpLong.data(), SimulationParams::ParamHelpDesc.data(),
 	         cxxopts::value<SimulationParams::ParamHelpT>()->default_value("0"))
-	        (SimulationParams::ParamServCfgFileLong.data(), SimulationParams::ParamServCfgFileDesc.data(),
-	         cxxopts::value<SimulationParams::ParamServCfgFileT>())
 	        (SimulationParams::ParamSimCfgFileLong.data(), SimulationParams::ParamSimCfgFileDesc.data(),
 	         cxxopts::value<SimulationParams::ParamSimCfgFileT>())
 	        (SimulationParams::ParamPluginsLong.data(), SimulationParams::ParamPluginsDesc.data(),
-	         cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}))
-	        (SimulationParams::ParamExpManPipeLong.data(), SimulationParams::ParamExpManPipeDesc.data(),
-	         cxxopts::value<SimulationParams::ParamExpManPipeT>()->default_value({}));
+	         cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}));
 
 	return opts;
 }
@@ -74,19 +70,18 @@ nlohmann::json SimulationParams::parseJSONFile(const std::string &fileName)
 }
 
 
-SimulationManager::SimulationManager(const ServerConfigConstSharedPtr &serverConfig, const SimulationConfigSharedPtr &simulationConfig)
-    : _simConfig(simulationConfig),
-      _serverConfig(serverConfig)
+SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
+    : _simConfig(simulationConfig)
 {}
 
 SimulationManager::~SimulationManager()
 {
 	// Stop running threads
-	this->shutdownLoop(this->acquireSimLock());
+	this->shutdownLoop(this->acquireSimLock()); //TODO Refactor: why twice shutdownLoop?
 
 	// Prevent future sim initialization or loop execution
 	this->_internalLock.lock();
-	auto simLock = this->acquireSimLock();
+	auto simLock = this->acquireSimLock(); //TODO Refactor: review locks usage
 
 	// Ensure that any potentially created loops are stopped
 	this->shutdownLoop(simLock);
@@ -98,26 +93,10 @@ SimulationManager::~SimulationManager()
 
 SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult &args)
 {
-	ServerConfigConstSharedPtr serverConfig = nullptr;
-	SimulationConfigSharedPtr simConfig = nullptr;
+    jsonSharedPtr simConfig = nullptr;
 
 	// Get file names from start params
-	std::string servCfgFileName;
 	std::string simCfgFileName;
-
-	try
-	{	servCfgFileName = args[SimulationParams::ParamServCfgFile.data()].as<SimulationParams::ParamServCfgFileT>();	}
-	catch(std::domain_error&)
-	{
-		servCfgFileName = FileFinder::findFile(NRP_SERVER_CONFIG_FILE_NAME, NRP_SERVER_CONFIG_DIRS);
-		if(servCfgFileName.empty())
-			throw std::runtime_error("Could not find server config file");
-	}
-
-	// Parse JSON config from file
-	nlohmann::json servCfgJSON = SimulationParams::parseJSONFile(servCfgFileName);
-	serverConfig.reset(new ServerConfig(servCfgJSON));
-
 
 	try
 	{
@@ -126,14 +105,20 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	catch(std::domain_error&)
 	{
 		// If no simulation file name is present, return empty config
-		return SimulationManager(serverConfig, simConfig);
+		return SimulationManager(simConfig);
 	}
 
-	nlohmann::json simCfgJSON = SimulationParams::parseJSONFile(simCfgFileName);
-	simConfig.reset(new SimulationConfig(simCfgJSON));
 
+	simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
 
-	return SimulationManager(serverConfig, simConfig);
+	json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
+
+	// Set default values
+
+	json_utils::set_default<std::vector<std::string>>(*simConfig, "TransceiverFunctionConfigs", std::vector<std::string>());
+    json_utils::set_default<std::vector<std::string>>(*simConfig, "PreprocessingFunctionConfigs", std::vector<std::string>());
+
+	return SimulationManager(simConfig);
 }
 
 SimulationLoopConstSharedPtr SimulationManager::simulationLoop() const
@@ -147,12 +132,12 @@ SimulationManager::sim_lock_t SimulationManager::acquireSimLock()
 	return retval;
 }
 
-SimulationConfigSharedPtr SimulationManager::simulationConfig(const sim_lock_t&)
+jsonSharedPtr SimulationManager::simulationConfig(const sim_lock_t&)
 {
 	return this->_simConfig;
 }
 
-SimulationConfigConstSharedPtr SimulationManager::simulationConfig() const
+jsonConstSharedPtr SimulationManager::simulationConfig() const
 {
 	return this->_simConfig;
 }
@@ -206,12 +191,12 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 		// Check whether the simLoop was stopped by any server threads
 		simLock.lock();
 
-		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->simulationTimeOut()));
+		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->at("SimulationTimeout")));
 
 		if(!this->isRunning() || hasTimedOut)
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_serverConfig->serverTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
 		this->_loop->runLoop(timeStep);
 
@@ -243,7 +228,7 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 		if(!this->isRunning() || endTime < this->_loop->getSimTime())
 			break;
 
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_serverConfig->serverTimestep());
+		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
 		this->_loop->runLoop(timeStep);
 
@@ -258,8 +243,18 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 
 void SimulationManager::shutdownLoop(const SimulationManager::sim_lock_t&)
 {
-	this->_loop = nullptr;
-	this->_runningSimulation = false;
+	try {
+		if(this->_loop != nullptr) {
+			this->_loop->shutdownLoop();
+
+			this->_loop = nullptr;
+			this->_runningSimulation = false;
+		}
+	}
+	catch(NRPException &e) {
+		throw NRPException::logCreate(e, "SimulationManager: Loop shutdown has FAILED");
+	}
+
 }
 
 bool SimulationManager::isSimInitializing()
@@ -274,20 +269,14 @@ bool SimulationManager::isSimInitializing()
 SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
 	SimulationLoop::engine_interfaces_t engines;
-	auto &engineConfigs = this->_simConfig->engineConfigs();
+	auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
 	// Create all engines required by simConfig
 	engines.reserve(engineConfigs.size());
 	for(auto &engineConfig : engineConfigs)
 	{
-		// Get engine type
-		nlohmann::json engineData = static_cast<const nlohmann::json &>(engineConfig);
-		auto engineTypeIterator = engineData.find(EngineConfigConst::EngineType.m_data);
-		if(engineTypeIterator == engineData.end())
-			throw NRPException::logCreate("Improperly formatted engine config. Couldn't find EngineType specification");
-
 		// Get engine launcher associated with type
-		const std::string engineType = *engineTypeIterator;
+		const std::string engineType = engineConfig.at("EngineType");
 		auto engineLauncher = engineManager->findLauncher(engineType);
 		if(engineLauncher == nullptr)
 		{
@@ -300,7 +289,7 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 		// Create and launch engine
 		try
 		{
-			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_serverConfig->processLauncherType())));
+			engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_simConfig->at("ProcessLauncherType"))));
 		}
 		catch(std::exception &e)
 		{

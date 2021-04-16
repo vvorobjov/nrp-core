@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
-#include "nrp_general_library/transceiver_function/single_transceiver_device.h"
+#include "nrp_general_library/transceiver_function/from_engine_device.h"
 
 #include <boost/python.hpp>
 using namespace boost;
@@ -32,8 +32,8 @@ struct TestSimpleTransceiverDevice
 	TestSimpleTransceiverDevice(python::object fcn);
 	virtual ~TestSimpleTransceiverDevice() override;
 
-	EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override
-	{	return EngineInterface::device_identifiers_t();	}
+	EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override
+	{	return EngineClientInterface::device_identifiers_set_t();	}
 
 	TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override;
 
@@ -41,7 +41,7 @@ struct TestSimpleTransceiverDevice
 
 	boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 
-	EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&deviceIDs = EngineInterface::device_identifiers_t()) const override;
+	EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs = EngineClientInterface::device_identifiers_set_t()) const override;
 
 	TransceiverDeviceInterface::shared_ptr *_tfInterpreterRegistry = nullptr;
 	python::object _fcn;
@@ -52,7 +52,7 @@ struct TestSimpleTransceiverDevice
 struct TestOutputDevice
         : public DeviceInterface
 {
-	static DeviceIdentifier ID();
+	static DeviceIdentifier ID(const std::string & name = "out");
 
 	TestOutputDevice();
 
@@ -89,10 +89,10 @@ struct TestTransceiverDevice
 
 	virtual ~TestTransceiverDevice() override;
 
-	EngineInterface::device_identifiers_t updateRequestedDeviceIDs(EngineInterface::device_identifiers_t &&) const override
+	EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&) const override
 	{	return this->getRequestedDeviceIDs();	}
 
-	EngineInterface::device_identifiers_t getRequestedDeviceIDs() const override
+	EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override
 	{	return {TestOutputDevice::ID()};	}
 
 	TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override
@@ -102,7 +102,7 @@ struct TestTransceiverDevice
 
 	boost::python::object runTf(boost::python::tuple&, boost::python::dict&) override
 	{
-		const auto &outDev = TFInterpreter->engineDevices().begin()->second->front();
+		const auto &outDev = TFInterpreter->getEngineDevices().begin()->second->front();
 		TestInputDevice inDev(TestInputDevice::ID());
 		inDev.TestValue = std::to_string(dynamic_cast<const TestOutputDevice*>(outDev.get())->TestValue);
 

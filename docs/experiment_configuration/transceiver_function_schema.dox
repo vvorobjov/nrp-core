@@ -1,0 +1,29 @@
+/*! \page transceiver_function_schema Transceiver Function Schema
+
+The TransceiverFunctions are responsible for exchanging data between engines. They are simple python scripts that take devices as input (i.e. data, either as received from engines, or pre-processed by preprocessing functions), performs some computation on those devices, and output other devices to be consumed by a given engine. Additional information can be found \ref transceiver_function "here". In order to use them in an experiment they must be added in the simulation configuration file.
+
+Below is a list of all the parameters needed to configure a TransceiverFunction.
+
+\section transceiver_function_schema_parameters Parameters
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>Name<td>Name of TF<td>string<td><td>X<td>
+<tr><td>FileName<td>Name of file containing the transceiver function Python script<td>string<td><td>X<td>
+<tr><td>IsActive<td>Tells if this TF is active. Only active TFs will be executed<td>boolean<td>True<td><td>
+</table>
+
+\section transceiver_function_schema_example Example
+
+\code{.py}
+{
+    "Name": "tf_1",
+    "FileName": "tf_1.py"
+}
+\endcode
+
+\section transceiver_function_schema_schema Schema
+
+\include transceiver_function.json
+
+*/

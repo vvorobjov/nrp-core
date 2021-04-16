@@ -1,0 +1,39 @@
+/*! \page installation Installation Instructions
+
+The instructions required to install nrp-core from source (the only option currently available) are listed below.
+
+\section installation_requirements Requirements
+
+<b>WARNING:</b> Previous versions of the NRP install forked versions of several libraries, particularly NEST and gazebo. Installing nrp-core in a system where a previous version of NRP is installed is known to cause conflicts. We strongly recommend not to do it.
+
+\subsection os Operative System
+
+nrp-core has only been tested on <b>Ubuntu 20.04</b> at the moment, and therefore this OS and version are recommended. Installation in other environments might be possible but has not been tested yet.
+
+\subsection nest_version NEST
+
+nrp-core only supports <b>NEST 3</b>. 
+
+As part of the installation process NEST 3 is built and installed. If you have an existing installation of NEST we recommend you to uninstall it before installing nrp-core. In case you still want to use your installed version, you can avoid the installation process to build and install NEST by changing the value of <i>ENABLE_NEST</i> from <i>FULL</i> to <i>CLIENT</i> in the root CMakeLists.txt file:
+
+\code{.sh}
+set(ENABLE_NEST CLIENT)
+\endcode
+
+But be aware that NEST 2.x is incompatible with nrp-core.
+
+\dontinclude README.md
+
+\section installation_dependencies Dependency Installation
+\skip Pistache
+\until sed
+\section installation_procedure Installation
+\skip git clone
+\until make doxygen
+\section installation_environment Setting the enviroment
+
+In order to properly set the environment to run experiments with nrp-core add the lines below to your ~/.bashrc file
+\skip export
+\until . /usr/share
+
+*/

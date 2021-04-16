@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,27 +20,22 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
-#include "nrp_general_library/config/engine_config.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include "nrp_general_library/plugin_system/plugin.h"
 
-struct TestEngineConfig
-        : public EngineConfig<TestEngineConfig, PropNames<> >
+struct TestEngineConfigConst
 {
-	static constexpr FixedString ConfigType = "TestConf";
-
-	TestEngineConfig(EngineConfigConst::config_storage_t &config)
-	    : EngineConfig(config)
-	{}
+	static constexpr FixedString EngineType = "test_engine";
+    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
 };
 
 class TestEngine
-        : public Engine<TestEngine, TestEngineConfig>
+        : public EngineClient<TestEngine, TestEngineConfigConst::EngineSchema>
 {
 	public:
-		TestEngine(EngineConfigConst::config_storage_t &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : Engine(configHolder, std::move(launcher))
+		TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
+		    : EngineClient(configHolder, std::move(launcher))
 		{}
 
 		virtual void initialize() override
@@ -48,6 +43,12 @@ class TestEngine
 
 		virtual void shutdown() override
 		{}
+
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        { return std::vector<std::string>(); }
+
+        virtual const std::vector<std::string> engineProcEnvParams() const override
+        { return std::vector<std::string>(); }
 
 		virtual SimulationTime getEngineTime() const override
 		{	return SimulationTime::zero();	}
@@ -58,13 +59,13 @@ class TestEngine
 		virtual void waitForStepCompletion(float) override
 		{}
 
-		virtual void handleInputDevices(const device_inputs_t &) override
+		virtual void sendDevicesToEngine(const devices_ptr_t &) override
 		{}
 
 	protected:
-		virtual device_outputs_set_t requestOutputDeviceCallback(const device_identifiers_t &deviceIdentifiers) override
+		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
 		{
-			device_outputs_set_t retVal;
+			devices_set_t retVal;
 			for(const auto &devID : deviceIdentifiers)
 			{
 				retVal.emplace(new DeviceInterface(devID));
@@ -74,4 +75,4 @@ class TestEngine
 		}
 };
 
-CREATE_NRP_ENGINE_LAUNCHER(TestEngine::EngineLauncher<"TestEngine">);
+CREATE_NRP_ENGINE_LAUNCHER(TestEngine::EngineLauncher<TestEngineConfigConst::EngineType>);

@@ -20,14 +20,13 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_example_engine/config/example_config.cpp
 	nrp_example_engine/devices/example_device.cpp
 	nrp_example_engine/engine_server/example_engine_device_controller.cpp
 	nrp_example_engine/engine_server/example_engine_server.cpp
 	nrp_example_engine/nrp_client/example_engine_client.cpp
 )
 
-# List of python module build files
+# List of Python module build files
 set(PYTHON_MODULE_SRC_FILES
 	nrp_example_engine/python/example_engine_python.cpp
 )
@@ -70,6 +69,7 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
 		${NRP_GEN_LIB_TARGET}
+		NRPJSONEngineProtocol::NRPJSONEngineProtocol
 
 	PRIVATE
 )
@@ -174,7 +174,7 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 		PATTERN "*.hpp"
 )
 
-# Install python module
+# Install Python module
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
 		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")

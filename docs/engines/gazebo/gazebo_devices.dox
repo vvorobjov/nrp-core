@@ -1,0 +1,35 @@
+/*! \page gazebo_devices Gazebo Devices
+  Gazebo engines can use the following device types:
+  - PhysicsCamera: contains a camera image
+  - PhysicsJoint: contains a single joint state information
+  - PhysicsLink: contains a single link state information
+  
+  The PhysicsCamera Device consists of the following attributes:
+  <table>
+  <caption id="physics_camera_attributes_table">Physics Camera Attributes</caption>
+  <tr><th>Attribute       <th>Description                                      <th>Python Type <th>C type
+  <tr><td>image_height    <td>Camera Image height                              <td>uint32 <td>uint32
+  <tr><td>image_width     <td>Camera Image width                               <td>uint32 <td>uint32
+  <tr><td>image_depth     <td>Camera Image depth. Number of bytes per pixel    <td>uint8 <td>uint32
+  <tr><td>image_data      <td>Camera Image data. 1-D array of pixel data       <td>numpy.array(image_height * image_width * image_depth, numpy.uint8) <td>std::vector<unsigned char>
+  </table>
+  
+  The PhysicsJoint Device consists of the following attributes:
+  <table>
+  <caption id="physics_joint_attributes_table">Physics Joint Attributes</caption>
+  <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
+  <tr><td>position    <td>Joint angle position (in rad)    <td>float <td>float
+  <tr><td>velocity     <td>Joint angle velocity (in rad/s) <td>float <td>float
+  <tr><td>effort     <td>Joint angle effort (in N)         <td>float <td>float
+  </table>
+  
+  The PhysicsLink Device consists of the following attributes:
+  <table>
+  <caption id="physics_link_attributes_table">Physics Link Attributes</caption>
+  <tr><th>Attribute  <th>Description                                 <th>Python Type                   <th>C type
+  <tr><td>pos        <td>Link Position                              <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+  <tr><td>rot        <td>Link Rotation as quaternion                <td>numpy.array(4, numpy.float32) <td>std::array<float,4>
+  <tr><td>lin_vel    <td>Link Linear Velocity                       <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+  <tr><td>ang_vel    <td>Link Angular Velocity                      <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+  </table>
+ */

@@ -19,12 +19,8 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_simulation/config/server_config.cpp
-	#nrp_simulation/server/simulation_server.cpp
-	#nrp_simulation/server/simulation_status.cpp
 	nrp_simulation/simulation/simulation_loop.cpp
 	nrp_simulation/simulation/simulation_manager.cpp
-	nrp_simulation/utils/pipe_packet_communication.cpp
 )
 
 # List of python module build files
@@ -47,25 +43,11 @@ set(TEST_SRC_FILES
 ## Dependencies
 
 # pistache: REST server library
-find_package(Pistache REQUIRED)
-
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 ##########################################
 ## Header configuration
-
-# Server config file name
-set(NRP_SERVER_CONFIG_FILE_NAME "nrp.conf")
-
-# Set directories under which to look for NRP Server Config File
-set(NRP_GLOBAL_SERVER_CONFIG_DIR "${CMAKE_INSTALL_PREFIX}/etc/nrp/")
-set(NRP_SERVER_CONFIG_DIRS "~/.config/nrp/" "${NRP_GLOBAL_SERVER_CONFIG_DIR}" "/etc/nrp/")
-list(JOIN NRP_SERVER_CONFIG_DIRS "\", \"" NRP_SERVER_CONFIG_DIRS_STR)
-
-# Default working directory
-set(NRP_SERVER_DEFAULT_WORKING_DIR "${CMAKE_INSTALL_PREFIX}/var/nrp/" CACHE PATH "Default working directory of the NRP")
-
-# Default experiment max
-set(NRP_SERVER_DEF_MAX_NUM_EXPERIMENTS 5 CACHE STRING "Default server experiment limit")
 
 # Default engines
 list(JOIN NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "\", \"" NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS_STR)
@@ -130,24 +112,8 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 
 ##########################################
-## Server Configuration Generator
-add_executable(NRPGenServerConf nrp_gen_server_conf/nrp_gen_server_conf.cpp)
-target_link_libraries(NRPGenServerConf
-	${NAMESPACE_NAME}::${LIBRARY_NAME}
-)
-
-add_custom_target(NRPServerConf ALL
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/NRPGenServerConf "${CMAKE_CURRENT_BINARY_DIR}/${NRP_SERVER_CONFIG_FILE_NAME}"
-	DEPENDS NRPGenServerConf
-	BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/${NRP_SERVER_CONFIG_FILE_NAME}"
-	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-	COMMENT "Creating default server config file"
-	VERBATIM)
-
-
-##########################################
 ## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 	find_package(Gazebo REQUIRED)
 
 	set(GAZEBO_WORLD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/empty_world.sdf")
@@ -166,8 +132,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 		${NAMESPACE_NAME}::${LIBRARY_NAME}
 		NRPNestJSONEngine::NRPNestJSONEngine
 		NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
-		GTest::gtest
-		GTest::gtest_main)
+		GTest::GTest
+		GTest::Main)
 
 	gtest_discover_tests(${TEST_NAME}
 		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
@@ -224,16 +190,6 @@ endif()
 if(TARGET ${EXECUTABLE_NAME})
 	install(TARGETS ${EXECUTABLE_NAME}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
-
-# Install server conf
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${NRP_SERVER_CONFIG_FILE_NAME}
-	DESTINATION ${NRP_GLOBAL_SERVER_CONFIG_DIR}
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-
-# Install server working directory
-if(${NRP_SERVER_DEFAULT_WORKING_DIR} STREQUAL "")
-	install(DIRECTORY DESTINATION ${NRP_SERVER_DEFAULT_WORKING_DIR})
 endif()
 
 # create cmake version and config files

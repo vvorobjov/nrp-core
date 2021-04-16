@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,38 +38,33 @@ using namespace testing;
 TEST(SimulationLoopTest, InitTFManager)
 {
 	auto simConfigFile = std::fstream(TEST_SIM_SIMPLE_CONFIG_FILE, std::ios::in);
-	nlohmann::json simConfig = nlohmann::json::parse(simConfigFile);
 
 	const char *procName = "test";
 	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
-	SimulationConfigSharedPtr config(new SimulationConfig(simConfig));
+    jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 	ASSERT_NO_THROW(auto tfManager = SimulationLoop::initTFManager(config, {}));
 }
 
 TEST(SimulationLoopTest, Constructor)
 {
-	auto simConfigFile = std::fstream(TEST_SIM_SIMPLE_CONFIG_FILE, std::ios::in);
-	nlohmann::json simConfig = nlohmann::json::parse(simConfigFile);
+	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
 
 	const char *procName = "test";
 	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
-	SimulationConfigSharedPtr config(new SimulationConfig(simConfig));
-	config->engineConfigs().resize(2);
+    jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 
-	EngineInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-
-	config->engineConfigs().at(1).Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
-	EngineInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
 	ASSERT_NO_THROW(SimulationLoop simLoop(config, {brain, physics}));
 }
 
 TEST(SimulationLoopTest, RunLoop)
 {
-	auto simConfigFile = std::fstream(TEST_SIM_SIMPLE_CONFIG_FILE, std::ios::in);
-	nlohmann::json simConfig = nlohmann::json::parse(simConfigFile);
+	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
+    jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 
 	const char *procName = "test";
 	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
@@ -77,27 +72,24 @@ TEST(SimulationLoopTest, RunLoop)
 	const SimulationTime timestep(10);
 	const float timeStepFloat = 0.01f;
 
-	SimulationConfigSharedPtr config(new SimulationConfig(simConfig));
-	config->engineConfigs().resize(2);
-
 	{
-		NestConfig nestCfg(config->engineConfigs().at(0));
+		nlohmann::json nestCfg(config->at("EngineConfigs").at(1));
+        nestCfg["NestInitFileName"] = TEST_NEST_SIM_FILE;
+        nestCfg["EngineTimestep"] = timeStepFloat;
 
-		config->engineConfigs().at(1).Data = nlohmann::json({{GazeboGrpcConfigConst::GazeboWorldFile, ""}});
-		GazeboGrpcConfig gazeboCfg(config->engineConfigs().at(1));
+		nlohmann::json gazeboCfg(config->at("EngineConfigs").at(0));
+        gazeboCfg["GazeboWorldFile"] = TEST_GAZEBO_WORLD_FILE;
+        gazeboCfg["EngineTimestep"] = timeStepFloat;
 
-		nestCfg.nestInitFileName() = TEST_NEST_SIM_FILE;
-		nestCfg.engineTimestep() = timeStepFloat;
-
-		gazeboCfg.gazeboWorldFile() = TEST_GAZEBO_WORLD_FILE;
-		gazeboCfg.engineTimestep() = timeStepFloat;
-
-		config->engineConfigs().at(0).Data = nestCfg.writeConfig();
-		config->engineConfigs().at(1).Data = gazeboCfg.writeConfig();
+		config->at("EngineConfigs").at(1) = nestCfg;
+		config->at("EngineConfigs").at(0) = gazeboCfg;
 	}
 
-	EngineInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->engineConfigs().at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-	EngineInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->engineConfigs().at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+
+	// TODO Without this, gazebo engine fails to launch. Fix it!
+	sleep(1);
 
 	SimulationLoop simLoop(config, {brain, physics});
 

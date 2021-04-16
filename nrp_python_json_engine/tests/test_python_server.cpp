@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_general_library/device_interface/devices/pyobject_device.h"
+#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "tests/test_env_cmake.h"
 
 #include <boost/python.hpp>
@@ -42,40 +43,44 @@ TEST(TestPythonJSONServer, TestFunc)
 	python::dict pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
 	python::object pyLocals;
 
-	auto cfg = PythonConfig(nlohmann::json());
-	cfg.pythonFileName() = TEST_PYTHON_DEVICE_FILE_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_python";
+    config["PythonFileName"] = TEST_PYTHON_DEVICE_FILE_NAME;
+    std::string server_address = "localhost:5434";;
+    config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(cfg.engineServerAddress(), pyGlobals, pyLocals);
+	PythonJSONServer server(config.at("ServerAddress"), pyGlobals, pyLocals);
 
 	// Test Init
-	nlohmann::json req = nlohmann::json({{PythonConfig::ConfigType.m_data, cfg.writeConfig()}});
 	pyState.allowThreads();
 
 	EngineJSONServer::mutex_t fakeMutex;
 	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(req, fakeLock);
+	nlohmann::json respParse = server.initialize(config, fakeLock);
 
-	const auto execResult = respParse[PythonConfig::InitFileExecStatus.data()].get<bool>();
+	const auto execResult = respParse[PythonConfigConst::InitFileExecStatus.data()].get<bool>();
 	ASSERT_EQ(execResult, true);
 	ASSERT_EQ(server.initRunFlag(), true);
 
 	// Test runStep REST call
-	const SimulationTime timeStep(1);
+	const SimulationTime timeStep(1000);
 	ASSERT_EQ(server.runLoopStep(timeStep), timeStep);
 
 	// Test getDevice REST call EngineServerGetDevicesRoute
 	server.startServerAsync();
 
 	//pyState.endAllowThreads();
-	req = nlohmann::json({{"device1", 0}});
-	auto resp = RestClient::post(cfg.engineServerAddress() + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
+	auto req = nlohmann::json({{"device1", 0}});
+	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
 	respParse = nlohmann::json::parse(resp.body);
 
+	// TODO Why return here?
 	return;
 
 	// Test Python Device data deserialization
-	PyObjectDevice dev = JSONDeviceConversionMechanism<>::deserialize<PyObjectDevice>(respParse.begin());
+    auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
+	PyObjectDevice dev = DeviceSerializerMethods<nlohmann::json>::deserialize<PyObjectDevice>(std::move(devid), respParse.begin());
 
 	dev.PyObjectDevice::data() = python::dict(dev.PyObjectDevice::data().deserialize(""));
 
@@ -98,18 +103,19 @@ TEST(TestPythonJSONServer, TestInitError)
 	auto pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
 	python::object pyLocals;
 
-	auto cfg = PythonConfig(nlohmann::json());
-	cfg.pythonFileName() = TEST_PYTHON_INIT_ERROR_FILE_NAME;
-	cfg.engineServerAddress() = "localhost:5432";
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_python";
+    config["PythonFileName"] = TEST_PYTHON_INIT_ERROR_FILE_NAME;
+    std::string server_address = "localhost:5434";
+    config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(cfg.engineServerAddress(), pyGlobals, pyLocals);
-
-	nlohmann::json req = nlohmann::json({{PythonConfig::ConfigType.m_data, cfg.writeConfig()}});
+	PythonJSONServer server(server_address, pyGlobals, pyLocals);
 	pyState.allowThreads();
 
 	EngineJSONServer::mutex_t fakeMutex;
 	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(req, fakeLock);
+	nlohmann::json respParse = server.initialize(config, fakeLock);
 
 	pyState.endAllowThreads();
 }

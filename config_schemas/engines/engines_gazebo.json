@@ -1,0 +1,61 @@
+{"engine_gazebo_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Gazebo Base",
+    "description": "Gazebo Base Engine configuration schema. Configuration for all gazebo engine implementations inherit from this one",
+    "$id": "#GazeboBase",
+    "properties" : {
+      "GazeboWorldFile": {
+        "type": "string",
+        "description": "Path to Gazebo SDF World file"
+      },
+      "GazeboPlugins": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": "Additional system plugins that should be loaded on startup"
+      },
+      "GazeboRNGSeed": {
+        "type": "integer",
+        "default": 0,
+        "description": "Seed parameters passed to gzserver start command"
+      },
+      "WorldLoadTime": {
+        "type": "integer",
+        "default": 20,
+        "description": "Maximum time (in seconds) to wait for the NRPCommunicatioPlugin to load the world sdf file. 0 means it will wait indefinitely"
+      }
+    },
+    "required": ["GazeboWorldFile"]
+  },
+  "engine_gazebo_grpc" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Gazebo Grpc Engine",
+    "description": "Gazebo Grpc Engine",
+    "$id": "#GazeboGRPCEngine",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc" },
+      { "$ref": "#/engine_gazebo_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["gazebo_grpc"] },
+          "EngineProcCmd": { "default": "/usr/bin/gzserver" }
+        }
+      }
+    ]
+  },
+  "engine_gazebo_json" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Gazebo Json Engine",
+    "description": "Gazebo Json Engine",
+    "$id": "#GazeboJSONEngine",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "#/engine_gazebo_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["gazebo_json"] },
+          "EngineProcCmd": { "default": "/usr/bin/gzserver" }
+        }
+      }
+    ]
+  }
+}

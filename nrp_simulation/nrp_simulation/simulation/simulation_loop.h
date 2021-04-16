@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,13 @@
 #ifndef SIMULATION_LOOP_H
 #define SIMULATION_LOOP_H
 
-#include "nrp_general_library/config/simulation_config.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
-#include "nrp_general_library/engine_interfaces/engine_interface.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+
+#include "nrp_general_library/utils/json_schema_utils.h"
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -36,15 +37,20 @@ class SimulationLoop
         : public PtrTemplates<SimulationLoop>
 {
 	public:
-		using engine_interfaces_t = std::vector<EngineInterfaceSharedPtr>;
+		using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
 		SimulationLoop() = default;
-		SimulationLoop(SimulationConfigSharedPtr config, engine_interfaces_t engines);
+		SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines);
 
 		/*!
 		 * \brief Initialize engines before running loop
 		 */
 		void initLoop();
+
+		/*!
+		 * \brief Shutdown engines
+		 */
+		void shutdownLoop();
 
 		/*!
 		 * \brief Runs a single loop step
@@ -53,10 +59,10 @@ class SimulationLoop
 		//void runLoopStep(float timeStep);
 
 		/*!
-		 * \brief Runs simulation for a total of runTime (in s)
-		 * \param runTime Time (in s) to run simulation. At end, will run TransceiverFunctions
+		 * \brief Runs simulation for a total of runLoopTime (in s)
+		 * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
 		 */
-		void runLoop(SimulationTime runTime);
+		void runLoop(SimulationTime runLoopTime);
 
 		/*!
 		 * \brief Get Simulation Time (in seconds)
@@ -69,17 +75,17 @@ class SimulationLoop
 		/*!
 		 * \brief Configuration of simulation
 		 */
-		SimulationConfigSharedPtr _config;
+        jsonSharedPtr _config;
 
 		/*!
 		 * \brief Engines
 		 */
 		engine_interfaces_t _engines;
 
-		using engine_queue_t = std::multimap<SimulationTime, EngineInterfaceSharedPtr>;
+		using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
 		/*!
-		 * \brief Engine Queue. Contains all engines, sorted by time until completion
+		 * \brief Engine Queue. Contains all engines, sorted by completion time of their last step
 		 */
 		engine_queue_t _engineQueue;
 
@@ -91,7 +97,7 @@ class SimulationLoop
 		/*!
 		 * \brief Simulated time (in seconds)
 		 */
-		SimulationTime _simTime;
+		SimulationTime _simTime = SimulationTime::zero();
 
 		/*!
 		 * \brief Initialize the TF Manager. Reads the TF Configurations from the Simulation Config, and registers the TFs
@@ -99,7 +105,7 @@ class SimulationLoop
 		 * \param engines Loaded Engines
 		 * \return Returns initialized TransceiverFunctionManager
 		 */
-		static TransceiverFunctionManager initTFManager(const SimulationConfigSharedPtr &simConfig, const engine_interfaces_t &engines);
+		static TransceiverFunctionManager initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines);
 
 		/*!
 		 * \brief Handle device intputs of specified interface
@@ -107,7 +113,7 @@ class SimulationLoop
 		 * \param results Results to be processes
 		 * \return Returns result of device handling inputs
 		 */
-		void handleInputDevices(const EngineInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results);
+		void sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results);
 
 		friend class SimulationLoopTest_InitTFManager_Test;
 };

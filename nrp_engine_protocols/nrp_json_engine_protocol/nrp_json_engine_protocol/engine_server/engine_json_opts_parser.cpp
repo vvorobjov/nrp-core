@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 //
 
 #include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
+#include "nrp_json_engine_protocol/config/engine_json_config.h"
 
 cxxopts::Options EngineJSONOptsParser::createOptionParser(bool allowUnrecognised)
 {
@@ -30,8 +31,8 @@ cxxopts::Options EngineJSONOptsParser::createOptionParser(bool allowUnrecognised
 		options.allow_unrecognised_options();
 
 	options.add_options()
-	        (EngineJSONConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>()->default_value(EngineJSONConfigConst::DefEngineServerAddress.data()))
-	        (EngineJSONConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>()->default_value(EngineJSONConfigConst::DefEngineRegistrationServerAddress.data()))
+	        (EngineJSONConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
+	        (EngineJSONConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>())
 	        (EngineJSONConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
 
 	return options;

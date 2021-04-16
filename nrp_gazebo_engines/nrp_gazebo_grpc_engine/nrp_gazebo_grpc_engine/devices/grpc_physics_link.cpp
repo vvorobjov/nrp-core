@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,25 +26,25 @@
 template<>
 GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<PhysicsLink>(const PhysicsLink &dev)
 {
-	GRPCDevice dat = serializeID(dev.id());
+	GRPCDevice dat = serializeID<GRPCDevice>(dev.id());
 	dat.dev().mutable_link()->InitAsDefaultInstance();
 
-	dat.dev().mutable_link()->set_position(0, dev.position()[0]);
-	dat.dev().mutable_link()->set_position(1, dev.position()[1]);
-	dat.dev().mutable_link()->set_position(2, dev.position()[2]);
+	dat.dev().mutable_link()->add_position(dev.position()[0]);
+	dat.dev().mutable_link()->add_position(dev.position()[1]);
+	dat.dev().mutable_link()->add_position(dev.position()[2]);
 
-	dat.dev().mutable_link()->set_rotation(0, dev.rotation()[0]);
-	dat.dev().mutable_link()->set_rotation(1, dev.rotation()[1]);
-	dat.dev().mutable_link()->set_rotation(2, dev.rotation()[2]);
-	dat.dev().mutable_link()->set_rotation(3, dev.rotation()[3]);
+	dat.dev().mutable_link()->add_rotation(dev.rotation()[0]);
+	dat.dev().mutable_link()->add_rotation(dev.rotation()[1]);
+	dat.dev().mutable_link()->add_rotation(dev.rotation()[2]);
+	dat.dev().mutable_link()->add_rotation(dev.rotation()[3]);
 
-	dat.dev().mutable_link()->set_linearvelocity(0, dev.linVel()[0]);
-	dat.dev().mutable_link()->set_linearvelocity(1, dev.linVel()[1]);
-	dat.dev().mutable_link()->set_linearvelocity(2, dev.linVel()[2]);
+	dat.dev().mutable_link()->add_linearvelocity(dev.linVel()[0]);
+	dat.dev().mutable_link()->add_linearvelocity(dev.linVel()[1]);
+	dat.dev().mutable_link()->add_linearvelocity(dev.linVel()[2]);
 
-	dat.dev().mutable_link()->set_angularvelocity(0, dev.angVel()[0]);
-	dat.dev().mutable_link()->set_angularvelocity(1, dev.angVel()[1]);
-	dat.dev().mutable_link()->set_angularvelocity(2, dev.angVel()[2]);
+	dat.dev().mutable_link()->add_angularvelocity(dev.angVel()[0]);
+	dat.dev().mutable_link()->add_angularvelocity(dev.angVel()[1]);
+	dat.dev().mutable_link()->add_angularvelocity(dev.angVel()[2]);
 
 	return dat;
 }

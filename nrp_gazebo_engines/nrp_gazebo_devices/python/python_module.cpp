@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 #include "nrp_gazebo_devices/physics_link.h"
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/device_interface/python_device.h"
+#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_general_library/config/cmake_constants.h"
 
 
@@ -77,11 +77,3 @@ BOOST_PYTHON_MODULE(GAZEBO_PYTHON_MODULE_NAME)
 
 	python_property_device_class<PhysicsLink>::create();
 }
-
-
-/*! \defgroup gazebo_devices Gazebo Devices
- * Gazebo engines use the following devices:
- * - PhysicsCamera: Get camera image
- * - PhysicsJoint: Get/Set joint data
- * - PhysicsLink: Get link data
- */

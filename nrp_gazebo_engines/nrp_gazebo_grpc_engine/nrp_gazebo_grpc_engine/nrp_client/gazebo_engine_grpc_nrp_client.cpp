@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,19 +27,23 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "nrp_gazebo_grpc_engine/config/cmake_constants.h"
+#include "nrp_general_library/config/cmake_constants.h"
+
 #include <chrono>
 
-GazeboEngineGrpcNRPClient::GazeboEngineGrpcNRPClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
+GazeboEngineGrpcNRPClient::GazeboEngineGrpcNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineGrpcClient(config, std::move(launcher))
-{}
+{
+    setDefaultProperty<std::vector<std::string>>("GazeboPlugins", std::vector<std::string>());
+}
 
 void GazeboEngineGrpcNRPClient::initialize()
 {
 	// Wait for Gazebo to load world
-	auto confDat = this->engineConfig()->writeConfig();
 	try
 	{
-		this->sendInitCommand(confDat);
+		this->sendInitCommand(this->engineConfig());
 	}
 	catch(std::exception& e)
 	{
@@ -57,4 +61,46 @@ void GazeboEngineGrpcNRPClient::shutdown()
 	{
 		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" shutdown failed");
 	}
+}
+
+const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcEnvParams() const
+{
+    std::vector<std::string> envVars = this->EngineGrpcClient::engineProcEnvParams();
+
+    // Add NRP and Gazebo plugins dir
+    envVars.push_back("GAZEBO_PLUGIN_PATH=" NRP_GAZEBO_PLUGINS_DIR ":" DEFAULT_GAZEBO_PLUGIN_DIR ":$GAZEBO_PLUGIN_PATH");
+
+    // Add NRP and Gazebo library paths
+    envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":" DEFAULT_GAZEBO_LIB_DIRS ":" NRP_GAZEBO_PLUGINS_DIR ":" DEFAULT_GAZEBO_PLUGIN_DIR ":$LD_LIBRARY_PATH");
+
+    // Add Gazebo models path
+    envVars.push_back("GAZEBO_MODEL_PATH=" DEFAULT_GAZEBO_MODEL_DIR ":${GAZEBO_MODEL_PATH}");
+
+    return envVars;
+}
+
+const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcStartParams() const
+{
+    std::vector<std::string> startParams = this->EngineGrpcClient::engineProcStartParams();
+
+    // Add gazebo plugins
+    for(const auto &curPlugin : this->engineConfig().at("GazeboPlugins"))
+    {
+        startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
+        startParams.push_back(curPlugin);
+    }
+
+    // Add gazebo communication system plugin
+    startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
+    startParams.push_back(NRP_GAZEBO_COMMUNICATION_PLUGIN);
+
+    // Add RNG Seed
+    int seed = this->engineConfig().at("GazeboRNGSeed");
+    startParams.push_back(GazeboGrpcConfigConst::GazeboRNGSeedArg.data());
+    startParams.push_back(std::to_string(seed));
+
+    // Add world file
+    startParams.push_back(this->engineConfig().at("GazeboWorldFile"));
+
+    return startParams;
 }

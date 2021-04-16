@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #define ENGINE_DEVICE_CONTROLLER_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
 #include "nrp_general_library/device_interface/device_serializer_methods.h"
 #include "nrp_general_library/utils/function_traits.h"
 #include "nrp_general_library/utils/ptr_templates.h"
@@ -80,7 +79,7 @@ class EngineDeviceController
 			if(pDevDat != nullptr)
 				return DeviceSerializerMethods<SERIALIZATION>::template serialize(*pDevDat);
 			else
-				return emptyValue();
+				return DeviceSerializerMethods<SERIALIZATION>::serializeID(DeviceIdentifier(this->Name, this->EngineName, this->Type));
 		}
 
 		virtual void handleDeviceData(deserialization_t data) override final
@@ -101,12 +100,6 @@ class EngineDeviceController
 		 * \return Returns a Device containing device information. If no new data available, return nullptr
 		 */
 		virtual const DEVICE *getDeviceInformationCallback() = 0;
-
-		/*!
-		 * \brief Get an empty value. This is used if getDeviceInformationCallback() has no new data available
-		 */
-		static SERIALIZATION emptyValue()
-		{	return SERIALIZATION();	}
 };
 
 

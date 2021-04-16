@@ -1,7 +1,8 @@
 #ifndef EXAMPLE_ENGINE_SERVER_EXECUTABLE_H
 #define EXAMPLE_ENGINE_SERVER_EXECUTABLE_H
 
-#include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
+#include <cxxopts.hpp>
+
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 #include "nrp_example_engine/engine_server/example_engine_server.h"

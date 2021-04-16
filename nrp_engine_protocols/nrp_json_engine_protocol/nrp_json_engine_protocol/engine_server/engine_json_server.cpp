@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress)
 }
 
 EngineJSONServer::EngineJSONServer()
-    : EngineJSONServer(EngineJSONConfigConst::DefEngineServerAddress.data())
+    : EngineJSONServer("")
 {}
 
 EngineJSONServer::~EngineJSONServer()
@@ -178,10 +178,16 @@ nlohmann::json EngineJSONServer::getDeviceData(const nlohmann::json &reqData)
 		const auto devInterface = this->_devicesControllers.find(devName);
 
 		// If device not found, return empty string, else get device information
-		if(devInterface != this->_devicesControllers.end())
-			jres.update(devInterface->second->getDeviceInformation());
-		else
-			jres[devName] = nlohmann::json();
+		if(devInterface != this->_devicesControllers.end()) {
+		    auto dev = devInterface->second->getDeviceInformation();
+            // update with empty json causes exception
+		    if(!dev.empty()) {
+                jres.update(dev);
+                continue;
+            }
+        }
+
+		jres[devName] = nlohmann::json();
 	}
 
 	return jres;

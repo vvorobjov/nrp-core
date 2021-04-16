@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 #define PHYSICS_CAMERA_H
 
 #include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/utils/property_template.h"
-#include "nrp_general_library/utils/serializers/json_property_serializer.h"
+#include "nrp_general_library/property_template/property_template.h"
+#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
 
 #include <vector>
 
@@ -93,17 +93,5 @@ class PhysicsCamera
 		cam_data_t &imageData();
 		void setImageData(const cam_data_t &imageData);
 };
-
-/*! \addtogroup gazebo_devices
- * The PhysicsCamera Device consists of the following attributes:
- * <table>
- * <caption id="physics_camera_attributes_table">Physics Camera Attributes</caption>
- * <tr><th>Attribute       <th>Description                                      <th>Python Type <th>C type
- * <tr><td>image_height    <td>Camera Image height                              <td>uint32 <td>uint32
- * <tr><td>image_width     <td>Camera Image width                               <td>uint32 <td>uint32
- * <tr><td>image_depth     <td>Camera Image depth. Number of bytes per pixel    <td>uint8 <td>uint32
- * <tr><td>image_data      <td>Camera Image data. 1-D array of pixel data       <td>numpy.array(image_height*image_width*image_depth, numpy.uint8) <td>std::vector<unsigned char>
- * </table>
- */
 
 #endif // PHYSICS_CAMERA_H

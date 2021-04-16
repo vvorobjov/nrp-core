@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include "nrp_python_json_engine/python/py_engine_script_wrapper.h"
 
-#include "nrp_python_device/python_module.h"
+#include "nrp_python_device/python/python_module.h"
 
 namespace python = boost::python;
 

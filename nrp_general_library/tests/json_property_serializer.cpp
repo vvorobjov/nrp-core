@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020 Michael Zechmair
+// Copyright 2020-2021 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_general_library/utils/serializers/json_property_serializer.h"
+#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
 
 using namespace testing;
 
@@ -38,7 +38,7 @@ struct TestJSONPropertySerializer
 
 	template<class ...T>
 	TestJSONPropertySerializer(const nlohmann::json &data, T &&...properties)
-	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::readProperties(data, std::forward<T>(properties)...))
+	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::deserializeProperties(data, std::forward<T>(properties)...))
 	{}
 };
 
@@ -52,7 +52,7 @@ struct TestJSONPropertySerializerDefaults
 
 	template<class ...T>
 	TestJSONPropertySerializerDefaults(const nlohmann::json &data, T &&...properties)
-	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::readProperties(data, std::forward<T>(properties)...))
+	    : PropertyTemplate(JSONPropertySerializer<PropertyTemplate>::deserializeProperties(data, std::forward<T>(properties)...))
 	{}
 };
 

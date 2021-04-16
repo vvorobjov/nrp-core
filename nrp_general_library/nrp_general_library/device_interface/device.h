@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 #define DEVICE_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer.h"
+#include "nrp_general_library/device_interface/device_serializer_methods.h"
 
 /*!
  * \brief Device class. All devices must inherit from this one
@@ -64,39 +64,14 @@ class Device
 		{
 			// Make sure DEVICE class is derived from DeviceInterface
 			static_assert(DEVICE_C<DEVICE>, "DEVICE does not fulfill concept requirements");
+
+			this->setIsEmpty(false);
 		};
 
 		template<class STRING1_T, class STRING2_T>
 		requires(std::constructible_from<std::string, STRING1_T> && std::constructible_from<std::string, STRING2_T>)
 		static DeviceIdentifier createID(STRING1_T &&name, STRING2_T &&engineName)
 		{	return DeviceIdentifier(std::forward<STRING1_T>(name), std::forward<STRING2_T>(engineName), DEVICE::TypeName);	}
-
-//		/*!
-//		 * \brief Deserialize data into new device
-//		 * \tparam DESERIALZER_T Type to deserialize
-//		 * \param id Device ID. Type must match device type
-//		 * \param data Data to deserialize
-//		 * \return Returns DEVICE
-//		 */
-//		template<class DESERIALIZER_T, class ...PROPS_T>
-//		static DEVICE deserialize(DeviceIdentifier &&id, DESERIALIZER_T &&data)
-//		{	return DeviceSerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template deserialize(std::move(id), std::forward<DESERIALIZER_T>(data));	}
-
-//		/*!
-//		 * \brief Update device by filling it with deserialized data
-//		 * \tparam PROP_DESERIALZER_T Type to deserialize
-//		 * \param data Data to deserialize
-//		 */
-//		template<class PROP_DESERIALIZER_T>
-//		void update(PROP_DESERIALIZER_T &&data)
-//		{	PropertySerializer<std::remove_cvref_t<PROP_DESERIALIZER_T>, DEVICE>::template updateProperties(*this, std::forward<PROP_DESERIALIZER_T>(data));	}
-
-//		/*!
-//		 * \brief Serialize device
-//		 */
-//		template<class SERIALIZER_T>
-//		SERIALIZER_T serialize() const
-//		{	return DeviceSerializer<std::remove_cvref_t<SERIALIZER_T>, DEVICE>::template serialize(*this);	}
 
 		/*!
 		 * \brief Deserialize property data into PropertyTemplate format
@@ -109,53 +84,21 @@ class Device
 		template<class DESERIALIZER_T, class ...PROPERTIES_T>
 		static property_template_t deserializeProperties(DESERIALIZER_T &&data, PROPERTIES_T &&...props)
 		{
-			return PropertySerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template readProperties(std::forward<DESERIALIZER_T>(data),
+			return PropertySerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template deserializeProperties(std::forward<DESERIALIZER_T>(data),
 			                                                                                                std::forward<PROPERTIES_T>(props)...);
 		}
+
+		virtual DeviceInterfaceConstSharedPtr moveToSharedPtr() const override final
+		{
+			return this->moveToSharedPtrHelper();
+		}
+
+	private:
+		
+		typename PtrTemplates<DEVICE>::const_shared_ptr moveToSharedPtrHelper() const
+		{	
+			return typename PtrTemplates<DEVICE>::const_shared_ptr(new DEVICE(std::move(static_cast<const DEVICE&>(*this))));
+		}
 };
-
-
-/*! \page devices Devices
-
-\copydoc device_usage_section
-
-The Device base class is DeviceInterface, which contains the DeviceIdentifier necessary for identifying the corresponding engine. All devices must conform to the DEVICE_C concept.
-Additionally, they must be de-/serializable in a manner that makes communication with an Engine possible. See \ref device_serializer for details on implementing de-/serialization.
-
-To create new devices, developers can use the Device template as a base. It derives a DeviceInterface as well as a PropertyTemplate containing all requested properties.
-
-An example device class would be:
-\code{.cpp}
-class NewDevice
-	: public Device<NewDevice, "NewDevice", PropNames<"intValue", "stringValue">, int, std::string>
-{
-	public:
-		// Constructor. property_template_t refers to the PropertyTemplate<> base class.
-		// Note the default property values. If no property_template_t is specified, they will be used
-		NewDevice(DeviceIdentifier &&devID, property_template_t props = property_template_t(5, "empty")
-			: Device(std::move(devID), std::move(props))
-		{}
-
-		// Property Deserializer. The base Device::deserializeProperties references the DeviceSerializerMethods template specialized by DESERIALIZER_T
-		// Note the default property values. If no property_template_t is specified, they will be used. They should be the same as the ones in the constructor above
-		// Also note that this function override must only be provided if default property values should be set on instantiation
-		template<class DESERIALIZE_T>
-		static deserializeProperties(DESERIALIZE_T &&data)
-		{	return Device::deserializeProperties(std::forward<DESERIALIZE_T>(data), 5, "empty");	}
-
-		// Add functions to access property values easier
-		constexpr const int &intVal() const
-		{	return this->getPropertyByName<"intValue">();	}
-		constexpr int &intVal()
-		{	return this->getPropertyByName<"intValue">();	}
-
-		constexpr const std::string &strVal() const
-		{	return this->getPropertyByName<"stringValue">();	}
-		constexpr std::string &strVal()
-		{	return this->getPropertyByName<"stringValue">();	}
-}
-\endcode
-
- */
 
 #endif // DEVICE_H

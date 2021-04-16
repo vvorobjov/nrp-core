@@ -1,0 +1,20 @@
+message MyDevice
+{
+    float          scalar = 1;
+    repeated float array  = 2;
+    string         string = 3;
+    repeated int64 vector = 4;
+}
+
+message DeviceMessage
+{
+    DeviceIdentifier deviceId = 1;
+
+    oneof data
+    {
+	    GazeboCamera camera   = 2;
+		GazeboLink   link     = 3;
+		GazeboJoint  joint    = 4;
+        MyDevice     myDevice = 5; // Added the new message here
+    }
+}

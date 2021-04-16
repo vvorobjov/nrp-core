@@ -19,22 +19,18 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_general_library/config/base_config.cpp
-	nrp_general_library/config/config_formats/json_config_properties.cpp
-	nrp_general_library/config/config_storage.cpp
-	nrp_general_library/config/engine_config.cpp
-	nrp_general_library/config/simple_engine_config.cpp
-	nrp_general_library/config/simulation_config.cpp
-	nrp_general_library/config/transceiver_function_config.cpp
-	nrp_general_library/device_interface/device_conversion_mechanism.cpp
+	nrp_general_library/property_template/property_template.cpp
+	nrp_general_library/property_template/serializers/json_property_serializer.cpp
+	nrp_general_library/property_template/serializers/property_serializer.cpp
+	nrp_general_library/property_template/serializers/property_serializer_general.cpp
+	nrp_general_library/property_template/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/device_interface/device_interface.cpp
 	nrp_general_library/device_interface/device.cpp
-	nrp_general_library/device_interface/device_serializer.cpp
 	nrp_general_library/device_interface/device_serializer_methods.cpp
-	nrp_general_library/device_interface/devices/pyobject_device.cpp
-	nrp_general_library/device_interface/python_device.cpp
+	nrp_python_device/devices/pyobject_device.cpp
+	nrp_general_library/device_interface/device_python_wrappers.cpp
 	nrp_general_library/engine_interfaces/engine_device_controller.cpp
-	nrp_general_library/engine_interfaces/engine_interface.cpp
+	nrp_general_library/engine_interfaces/engine_client_interface.cpp
 	nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
 	nrp_general_library/plugin_system/plugin.cpp
 	nrp_general_library/plugin_system/plugin_manager.cpp
@@ -43,7 +39,7 @@ set(LIB_SRC_FILES
 	nrp_general_library/process_launchers/process_launcher.cpp
 	nrp_general_library/process_launchers/process_launcher_basic.cpp
 	nrp_general_library/process_launchers/process_launcher_manager.cpp
-	nrp_general_library/transceiver_function/single_transceiver_device.cpp
+	nrp_general_library/transceiver_function/from_engine_device.cpp
 	nrp_general_library/transceiver_function/transceiver_function.cpp
 	nrp_general_library/transceiver_function/transceiver_device_interface.cpp
 	nrp_general_library/transceiver_function/transceiver_function_interpreter.cpp
@@ -54,25 +50,21 @@ set(LIB_SRC_FILES
 	nrp_general_library/utils/fixed_string.cpp
 	nrp_general_library/utils/nrp_exceptions.cpp
 	nrp_general_library/utils/nrp_logger.cpp
-	nrp_general_library/utils/pipe_communication.cpp
-	nrp_general_library/utils/property_template.cpp
 	nrp_general_library/utils/ptr_templates.cpp
 	nrp_general_library/utils/python_array_converter.cpp
 	nrp_general_library/utils/python_error_handler.cpp
 	nrp_general_library/utils/python_interpreter_state.cpp
 	nrp_general_library/utils/restclient_setup.cpp
-	nrp_general_library/utils/serializers/json_property_serializer.cpp
-	nrp_general_library/utils/serializers/property_serializer.cpp
-	nrp_general_library/utils/serializers/property_serializer_general.cpp
-	nrp_general_library/utils/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/utils/spdlog_setup.cpp
+	nrp_general_library/utils/time_utils.cpp
 	nrp_general_library/utils/wchar_t_converter.cpp
 	nrp_general_library/utils/zip_container.cpp
+	nrp_general_library/utils/pipe_communication.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-	nrp_python_device/python_module.cpp
+	nrp_python_device/python/python_module.cpp
 )
 
 # List executable build files
@@ -81,9 +73,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/base_config.cpp
 	tests/device_interface.cpp
-	tests/config_storage.cpp
 	tests/engine_launcher_manager.cpp
 	tests/json_property_serializer.cpp
 	tests/plugin_manager.cpp
@@ -138,7 +128,8 @@ if(NOT ${restclient-cpp_FOUND})
 endif()
 
 # pistache: REST server library
-find_package(Pistache REQUIRED)
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 # nlohmann_json: JSON library
 find_package(nlohmann_json 3.9.0 QUIET)
@@ -155,6 +146,21 @@ if(NOT ${nlohmann_json_FOUND})
 	endif()
 endif()
 
+# nlohmann_json schema validator
+find_package(nlohmann_json_schema_validator 2.1.0 QUIET)
+if(NOT ${nlohmann_json_schema_validator_FOUND})
+	message("Please wait. Downloading nlohmann_json_schema_validator...")
+	FetchContent_Declare(json_schema
+			GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
+			GIT_TAG 2.1.0)
+
+#	FetchContent_MakeAvailable(json_schema)
+	if(NOT json_schema_POPULATED)
+		FetchContent_Populate(json_schema)
+		add_subdirectory(${json_schema_SOURCE_DIR} ${json_schema_BINARY_DIR})
+	endif()
+endif()
+
 # libzip: ZIP Manipulation
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
@@ -165,11 +171,13 @@ pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
 
 set(NRP_CLEAR_ENV "NRP_CLEAR_ENV")
 
+set(NRP_CONFIG_DIR "config_schemas")
+
 # General Header defines
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python Module defines
-configure_file("nrp_python_device/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+configure_file("nrp_python_device/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 # Process startup script
 configure_file("cmake/set_env_exec.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh" @ONLY)
@@ -189,7 +197,8 @@ target_link_libraries(${LIBRARY_NAME}
 	    ${BOOST_PYTHON}
 		cxxopts::cxxopts
 		nlohmann_json::nlohmann_json
-		pistache
+		nlohmann_json_schema_validator
+		PkgConfig::Pistache
 		PkgConfig::LibZip
 		Python3::Module
 		Python3::Python
@@ -276,8 +285,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 	target_link_libraries(${TEST_NAME}
 		PUBLIC
 		${NAMESPACE_NAME}::${LIBRARY_NAME}
-		GTest::gtest
-		GTest::gtest_main
+		GTest::GTest
+		GTest::Main
 		${TEST_PYTHON_MODULE_NAME})
 
 	gtest_discover_tests(${TEST_NAME}
@@ -294,6 +303,8 @@ set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 # Install library files
 install(TARGETS
 		${LIBRARY_NAME}
+		# TODO: move to its own install command
+		nlohmann_json_schema_validator
 	EXPORT
 		${LIB_EXPORT_NAME}
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -321,6 +332,14 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 	    PATTERN "*.h"
 		PATTERN "*.hpp"
 )
+
+# Install configuration schemas
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/${NRP_CONFIG_DIR}"
+		DESTINATION
+		${CMAKE_INSTALL_LIBDIR}
+		FILES_MATCHING
+		PATTERN "*.json"
+		)
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
@@ -361,3 +380,4 @@ install(
 # Install env set script
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh"
 	DESTINATION ${CMAKE_INSTALL_SBINDIR})
+

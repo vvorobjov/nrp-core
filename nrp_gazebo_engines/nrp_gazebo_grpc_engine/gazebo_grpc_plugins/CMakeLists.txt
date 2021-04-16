@@ -4,7 +4,10 @@ project(NRPGazeboGrpcPlugins VERSION ${NRP_VERSION} LANGUAGES CXX)
 include(GNUInstallDirs)
 
 find_package(Gazebo REQUIRED)
-find_package(Pistache REQUIRED)
+
+find_package(PkgConfig)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
 find_package(nlohmann_json REQUIRED)
 
 if(NOT DEFINED NRP_GAZEBO_COMMUNICATION_PLUGIN)
@@ -28,7 +31,7 @@ target_include_directories(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 
 target_link_libraries(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 		${NRP_GEN_LIB_TARGET}
@@ -48,12 +51,12 @@ target_include_directories(NRPGazeboGrpcWorldPlugin
 		$<BUILD_INTERFACE:${GAZEBO_INCLUDE_DIRS}>
 
 	PRIVATE
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 )
 
 target_link_libraries(NRPGazeboGrpcWorldPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -77,7 +80,7 @@ target_include_directories(NRPGazeboGrpcJointControllerPlugin
 
 target_link_libraries(NRPGazeboGrpcJointControllerPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -103,7 +106,7 @@ target_include_directories(NRPGazeboGrpcLinkControllerPlugin
 target_link_libraries(NRPGazeboGrpcLinkControllerPlugin
 	PUBLIC
 	    nlohmann_json::nlohmann_json
-		${NRP_GAZEBO_LIB_TARGET}
+		${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}
@@ -125,12 +128,12 @@ target_include_directories(NRPGazeboGrpcCameraControllerPlugin
 		$<BUILD_INTERFACE:${GAZEBO_INCLUDE_DIRS}>
 
 	PRIVATE
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 )
 
 target_link_libraries(NRPGazeboGrpcCameraControllerPlugin
 	PUBLIC
-	    ${NRP_GAZEBO_LIB_TARGET}
+	    ${NRP_GAZEBO_LIB_TARGETS}
 
 	PRIVATE
 	    ${NRP_GEN_LIB_TARGET}

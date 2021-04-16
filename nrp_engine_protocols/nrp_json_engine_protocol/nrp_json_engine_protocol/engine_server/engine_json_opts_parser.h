@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020 Michael Zechmair
+ * Copyright 2020-2021 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@
 #define ENGINE_JSON_OPTS_PARSER_H
 
 #include <cxxopts.hpp>
-
-#include "nrp_json_engine_protocol/config/engine_json_config.h"
 
 /*!
  *  \brief Engine JSON Executable parameter parser
