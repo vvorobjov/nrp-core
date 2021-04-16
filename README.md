@@ -1,4 +1,4 @@
-This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details and much more can be found at the nrp-core online documentation [TODO: add link to online documentation]
+This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details and much more can be found at the nrp-core online documentation: hbpneurorobotics.bitbucket.io
 
 **WARNING:** nrp-core is in alpha release state, use it at your own risk. Also notice that nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in instructions below. Installation in other environments might be possible but has not been tested yet.
 
