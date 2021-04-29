@@ -32,8 +32,9 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 {
 	std::cout << "NRPWorldPlugin: Loading world plugin...\n";
 
-	this->_world = world;
-	this->_worldSDF = sdf;
+	this->_initialWorldState = gazebo::physics::WorldState(world);
+	this->_world             = world;
+	this->_worldSDF          = sdf;
 
 	// Pause simulation
 	world->SetPaused(true);
@@ -47,10 +48,11 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 
 void gazebo::NRPWorldPlugin::Reset()
 {
-	std::cout << "NRPWorldPlugin: Resetting world...\n";
+	// Reset the world to the initial state
+	// Reset doesn't take into account the <state> tag, so we have to reload it manually
 
-	this->_world.reset();
-	this->_worldSDF.reset();
+	WorldPlugin::Reset();
+	this->_world->SetState(this->_initialWorldState);
 }
 
 SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
@@ -83,11 +85,11 @@ bool gazebo::NRPWorldPlugin::finishWorldLoading()
 {
 	std::cout << "Finalizing gazebo loading... Time:" <<  this->_world->SimTime().Double() << "\n";
 
-	// Force loading of all plugins
-//	const auto prevStepSize = this->_world->Physics()->GetMaxStepSize();
-//	this->_world->Physics()->SetMaxStepSize(0);
-//	this->startLoop(1);
-//	this->_world->Physics()->SetMaxStepSize(prevStepSize);
+	// Run a single iteration and reset the world
+	// This should force all plugins to load
+
+	this->startLoop(1);
+	this->Reset();
 
 	std::cout << "Gazebo loading finalized Time:" <<  this->_world->SimTime().Double() << "\n";
 

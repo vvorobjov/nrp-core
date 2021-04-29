@@ -27,6 +27,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/JointController.hh>
 #include <gazebo/physics/Joint.hh>
+#include <gazebo/physics/WorldState.hh>
 
 namespace gazebo
 {
@@ -55,6 +56,11 @@ namespace gazebo
 
 			physics::WorldPtr _world;
 			sdf::ElementPtr _worldSDF;
+
+			/*!
+			 * \brief Contains state of the world loaded with the Load function
+			 */
+			physics::WorldState _initialWorldState;
 
 			/*!
 			 * \brief Start running the sim.

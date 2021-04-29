@@ -34,6 +34,8 @@
 
 #include <fstream>
 
+static constexpr int MAX_DATA_ACQUISITION_TRIALS = 5;
+
 TEST(TestGazeboEngine, Start)
 {
 	// Setup config
@@ -95,17 +97,23 @@ TEST(TestGazeboEngine, CameraPlugin)
 
 	ASSERT_NO_THROW(engine->initialize());
 
-	// Run a single simulation step. This is to ensure that the camera data has been updated.
-	// The data is updated asynchronously, on every new frame, so it may happen that on first
-	// acquisition, there's no camera image yet.
+	// The data is updated asynchronously, on every new frame. It may happen that on first
+	// acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    const EngineClientInterface::devices_t * devices;
+    int trial = 0;
 
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
-	ASSERT_EQ(devices.size(), 1);
+    do
+    {
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
+        ASSERT_EQ(devices->size(), 1);
+    }
+    while(dynamic_cast<const DeviceInterface&>(*(devices->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
-	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
+	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
+
+	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices->at(0)));
 
 	ASSERT_EQ(camDat.imageHeight(), 240);
 	ASSERT_EQ(camDat.imageWidth(),  320);
