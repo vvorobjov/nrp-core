@@ -6,8 +6,8 @@ repo_root=$(git rev-parse --show-toplevel)
 
 # Create a build directory in the root directory
 
-mkdir -p $repo_root/build
-cd $repo_root/build
+mkdir -p "$repo_root"/build
+cd "$repo_root"/build || exit 1;
 
 # Use gcc 10
 
@@ -16,23 +16,39 @@ export CXX=/usr/bin/g++-10
 
 # Run cmake and make
 
-if [ -z ${NRP_INSTALL_DIR} ]; then 
+if [ -z "$NRP_INSTALL_DIR" ]; then
     echo "NRP_INSTALL_DIR is unset"
     exit 1
 fi
 
-cmake .. -DCMAKE_INSTALL_PREFIX=$NRP_INSTALL_DIR
+cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR"
 make -j
 make install
 
-# Run all tests. We assume that test executables are called *Tests
-# On headless machines we need to run with X virtual frame buffer, otherwise some
-# gazebo tests will fail
+# Run all tests. Save test results in build/xml directory (used by Jenkins).
+# On headless machines we need to run with X virtual frame buffer.
+# Otherwise some gazebo tests will fail
 
-if [ -z ${DISPLAY} ]; then
-    xvfb-run find . -name "*Tests" -exec {} --gtest_output=xml:$repo_root/build/xml/{}.xml \;
+test_results_dir="${repo_root}/build/xml/"
+
+mkdir -p "$test_results_dir"
+export GTEST_OUTPUT="xml:$test_results_dir"
+
+ctest_result=0
+if [ -z "$DISPLAY" ]; then
+    xvfb-run ctest
+    ctest_result=$?
 else
-    find . -name "*Tests" -exec {} --gtest_output=xml:$repo_root/build/xml/{}.xml \;
+    ctest
+    ctest_result=$?
+fi
+
+# ctest exit code is a bitmap. 0x8 means that some of the tests failed. We have to mask that bit.
+# If this isn't done and there are any failing tests,
+# Jenkins is going to treat the build as failed and will not process nor display the test results
+
+if (((ctest_result & ~0x8) != 0)); then
+    exit $ctest_result
 fi
 
 # EOF

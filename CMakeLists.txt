@@ -20,6 +20,8 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 ## Unit testing library
 option(ENABLE_TESTING "Build tests" ON)
 if(${ENABLE_TESTING})
+	enable_testing()
+
 	include(GoogleTest)
 
 	find_package(GTest 1.10 QUIET)
@@ -232,6 +234,7 @@ doxygen_add_docs(doxygen
 		"docs/getting_started/running_example_exp.dox"
 
 		"docs/guides/guides.dox"
+		"docs/guides/general_developer_guide.dox"
 		"docs/guides/helpful_info.dox"
 		"docs/guides/device_creation.dox"
 		"docs/guides/device_integration_gazebo_grpc.dox"

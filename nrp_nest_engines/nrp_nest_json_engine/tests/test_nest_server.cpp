@@ -33,7 +33,7 @@
 
 namespace python = boost::python;
 
-TEST(TestNestJSONServer, TestFunc)
+TEST(TestNestJSONServer, DISABLED_TestFunc)
 {
 	std::string argvDat = "TestProg";
 	char *argv = &argvDat[0];

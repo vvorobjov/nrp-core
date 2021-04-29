@@ -172,7 +172,7 @@ TEST(EngineJSONNRPClientTest, EmptyDevice)
 	sleep(1);
 }
 
-TEST(EngineJSONNRPClientTest, ServerCalls)
+TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 {
 	// Setup test server
 	TestEngineJSONServer server("localhost:5463");

@@ -83,7 +83,6 @@ set(TEST_SRC_FILES
 	tests/transceiver_function_interpreter.cpp
 )
 
-
 ##########################################
 ## Dependencies
 
@@ -142,6 +141,7 @@ if(NOT ${nlohmann_json_FOUND})
 	FetchContent_GetProperties(json)
 	if(NOT json_POPULATED)
 		FetchContent_Populate(json)
+		set(JSON_BuildTests OFF)
 		add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
 	endif()
 endif()
@@ -157,6 +157,7 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
 #	FetchContent_MakeAvailable(json_schema)
 	if(NOT json_schema_POPULATED)
 		FetchContent_Populate(json_schema)
+		set(BUILD_TESTS OFF)
 		add_subdirectory(${json_schema_SOURCE_DIR} ${json_schema_BINARY_DIR})
 	endif()
 endif()
@@ -209,7 +210,7 @@ target_link_libraries(${LIBRARY_NAME}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-	PUBLIC 
+	PUBLIC
 	    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
@@ -380,4 +381,3 @@ install(
 # Install env set script
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh"
 	DESTINATION ${CMAKE_INSTALL_SBINDIR})
-

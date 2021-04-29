@@ -36,7 +36,7 @@
 
 static constexpr int MAX_DATA_ACQUISITION_TRIALS = 5;
 
-TEST(TestGazeboEngine, Start)
+TEST(TestGazeboJSONEngine, Start)
 {
 	// Setup config
     nlohmann::json config;
@@ -56,7 +56,7 @@ TEST(TestGazeboEngine, Start)
 	ASSERT_ANY_THROW(engine->initialize());
 }
 
-TEST(TestGazeboEngine, WorldPlugin)
+TEST(TestGazeboJSONEngine, WorldPlugin)
 {
 	// Setup config
     nlohmann::json config;
@@ -77,7 +77,7 @@ TEST(TestGazeboEngine, WorldPlugin)
 	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
 }
 
-TEST(TestGazeboEngine, CameraPlugin)
+TEST(TestGazeboJSONEngine, CameraPlugin)
 {
 	// Setup config
     nlohmann::json config;
@@ -122,7 +122,7 @@ TEST(TestGazeboEngine, CameraPlugin)
 }
 
 
-TEST(TestGazeboEngine, JointPlugin)
+TEST(TestGazeboJSONEngine, JointPlugin)
 {
 	// Setup config
     nlohmann::json config;
@@ -160,7 +160,7 @@ TEST(TestGazeboEngine, JointPlugin)
 	ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
 }
 
-TEST(TestGazeboEngine, LinkPlugin)
+TEST(TestGazeboJSONEngine, LinkPlugin)
 {
 	// Setup config
     nlohmann::json config;

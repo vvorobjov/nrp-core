@@ -1,0 +1,61 @@
+/*! \page tutorial_developer_guide General developer guide
+
+This page is supposed to give an overview of the development process set up for the NRP Core repository.
+
+\section tutorial_developer_guide_testing Testing
+
+The testing framework of our choice is <a href="https://github.com/google/googletest">Google Test</a>.
+To execute our tests we use <a href="https://cmake.org/cmake/help/latest/manual/ctest.1.html">ctest</a>,
+which is a test runner provided by CMake.
+
+<em>Please note that all commands in this section should be executed from the build directory!</em>
+
+By default, building of the tests is enabled. To disable it, add `-DENABLE_TESTING=OFF` to the cmake step of the build process.
+
+The simplest way to run all available tests, after the build and installation process is complete:
+
+\code{.sh}
+make test
+\endcode
+
+or, equivalently:
+
+\code{.sh}
+ctest
+\endcode
+
+Every NRP Core module should have its own tests compiled into a single executable.
+The executable should be named `${PROJECT_NAME}Tests`.
+
+To find all test executables:
+
+\code{.sh}
+find . -name "*Tests"
+\endcode
+
+which should give an output similar to this:
+
+\code
+./nrp_engine_protocols/nrp_grpc_engine_protocol/NRPGRPCEngineProtocolTests
+./nrp_engine_protocols/nrp_json_engine_protocol/NRPJSONEngineProtocolTests
+./nrp_general_library/NRPGeneralLibraryTests
+./nrp_gazebo_engines/nrp_gazebo_grpc_engine/NRPGazeboGrpcEngineTests
+./nrp_gazebo_engines/nrp_gazebo_json_engine/NRPGazeboJSONEngineTests
+./nrp_simulation/NRPSimulationTests
+./nrp_python_json_engine/NRPPythonJSONEngineTests
+./nrp_nest_engines/nrp_nest_json_engine/NRPNestJSONEngineTests
+\endcode
+
+To run a single executable, which contains all tests for the module:
+
+\code{.sh}
+./nrp_general_library/NRPGeneralLibraryTests
+\endcode
+
+To run a single test you can use the gtest filtering capability:
+
+\code{.sh}
+nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTransceiverFcnDevices
+\endcode
+
+*/
