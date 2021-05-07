@@ -175,7 +175,7 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 
 
 	// TransceiverFunction
-	class_<TransceiverFunction, bases<TransceiverDeviceInterface> >("TransceiverFunction", init<std::string>( (arg("engineName")) ))
+	class_<TransceiverFunction, bases<TransceiverDeviceInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
 	        .def("__call__", &TransceiverFunction::pySetup)
 	        .def("runTf", &TransceiverFunction::runTf);
 
@@ -183,7 +183,7 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 	register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
 
 	// PreprocessingFunction
-	class_<PreprocessingFunction, bases<TransceiverDeviceInterface> >("PreprocessingFunction", init<std::string>( (arg("engineName")) ))
+	class_<PreprocessingFunction, bases<TransceiverDeviceInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
 	        .def("__call__", &PreprocessingFunction::pySetup)
 	        .def("runTf", &PreprocessingFunction::runTf);
 

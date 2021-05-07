@@ -29,6 +29,11 @@ const std::string &TransceiverDeviceInterface::linkedEngineName() const
 	return this->_function->linkedEngineName();
 }
 
+bool TransceiverDeviceInterface::isPrepocessing() const
+{
+    return this->_function->isPrepocessing();
+}
+
 boost::python::object TransceiverDeviceInterface::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
 {
 	return this->_function->runTf(args, kwargs);

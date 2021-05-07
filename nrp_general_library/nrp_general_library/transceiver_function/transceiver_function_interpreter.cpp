@@ -101,7 +101,7 @@ boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFuncti
 
 	// If TF doesn't exist yet, throw error
 	if(tfDataIterator == this->_transceiverFunctions.end())
-		throw NRPException::logCreate("TF with name " + tfName + "not loaded");
+		throw NRPException::logCreate("TF with name " + tfName + " not loaded");
 
 	return this->runSingleTransceiverFunction(tfDataIterator->second);
 }
@@ -113,18 +113,17 @@ boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFuncti
 		boost::python::tuple args;
 		boost::python::dict kwargs;
 
-		boost::python::object retVal = tfData.TransceiverFunction->runTf(args, kwargs);
-
-		// Make sure that tf returns a list. If not, return an empty list
-		if(!boost::python::extract<boost::python::list>(retVal).check())
-			return boost::python::list();
-		else
-			return retVal;
+		return tfData.TransceiverFunction->runTf(args, kwargs);
 	}
 	catch(boost::python::error_already_set &)
 	{
-		throw NRPException::logCreate("Python error occured during execution of TF \"" + tfData.Name + "\": " + handle_pyerror());
+		throw NRPException::logCreate("Python error occurred during execution of TF \"" + tfData.Name + "\": " + handle_pyerror());
 	}
+    catch (NRPException &e)
+    {
+        std::string function_type = tfData.TransceiverFunction->isPrepocessing() ? "Preprocessing" : "Transceiver";
+        throw NRPException::logCreate("Error occurred during execution of " + function_type + " Function \"" + tfData.Name + "\": " + e.what());
+    }
 }
 
 TransceiverFunctionInterpreter::linked_tfs_t TransceiverFunctionInterpreter::getLinkedTransceiverFunctions(const std::string &engineName)

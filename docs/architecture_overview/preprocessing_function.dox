@@ -6,9 +6,9 @@ They are similar to \ref transceiver_function both in implementation and behavio
 
 They show two main differences with respect to TFs:
 - Their output devices are not sent to the corresponding Engines, they are kept in a local device cache and can be used as input in TFs
-- PFs just can take input devices from the Engine they are linked to
+- PFs just can take input devices from the Engine they are linked to. In the same way, output devices can just be attached to this same Engine
 
-The latter constraint is necessary to guarantee that new devices retrieved from a particular Engine will be always processed by its connected PFs as specified in the simulation configuration and the PFs definitions. In this way PFs can be thought as simple filters that read and transform devices coming from a certain Engine and store the processed data in the local device cache.
+The latter constraints are necessary to guarantee that new devices retrieved from a particular Engine are always processed by its connected PFs. In this way PFs can be thought as simple filters that read and transform devices coming from a certain Engine and store the processed data in the local device cache.
 
 To declare a function as PreprocessingFunction, the decorator:
 
@@ -24,9 +24,11 @@ In order to use the devices returned by PFs in other TFs, a dedicated decorator 
 @PreprocessedDevice(keyword, id)
 \endcode
 
-The difference between this decorator and FromEngineDevice is that with the latter it is indicated that the specified device should be requested from its linked engine. While the use the PreprocessedDevice decorator tells that the device can be directly taken from the local device cache.
+The difference between this decorator and FromEngineDevice is that with the latter it is indicated that the device should be requested from its linked engine. While the use the PreprocessedDevice decorator tells that the device can be directly taken from the local device cache.
 
-Though PFs can return any type of Device, there is one type particularly well suited for this purpose: PythonDevice. This type of device stores a Python dictionary, and thus any type of data can be attached to it. Below is an example taking a camera image from \ref gazebo_engine "Gazebo" and returning the processed data as a PythonDevice object.
+Since the output of PFs is stored in the local cache and does not need to process on the Engine Server side, <b>PFs can return any type of Device without restrictions</b>. 
+
+There is a Device type particularly convenient to use as PF output: <b>PythonDevice</b>. This type of device stores a Python dictionary, and thus any type of data can be attached to it. Below is an example taking a camera image from \ref gazebo_engine "Gazebo" and returning the processed data as a PythonDevice object.
 
 \include husky_braitenberg_with_preprocessing/grayscale.py
 

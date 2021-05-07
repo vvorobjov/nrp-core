@@ -75,6 +75,11 @@ class TransceiverDeviceInterface
 		 */
 		virtual const std::string &linkedEngineName() const;
 
+        /*!
+         * \brief Indicates if this is a preprocessing function
+         */
+        virtual bool isPrepocessing() const;
+
 		/*!
 		 * \brief Execute Transceiver Function. Base class will simply call runTf on _function
 		 * \param args Arguments for execution. Can be altered by any TransceiverDeviceInterfaces. Base class will only pass them along

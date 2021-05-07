@@ -43,10 +43,12 @@ class TransceiverFunction
 		 * \param linkedEngine Name of linked engine.
 		 * This TF will only be called whenever Said engine finishes a timestep
 		 */
-		TransceiverFunction(std::string linkedEngine);
+		TransceiverFunction(std::string linkedEngine, bool isPreprocessing);
 		virtual ~TransceiverFunction() override = default;
 
 		const std::string &linkedEngineName() const override;
+
+        bool isPrepocessing() const override;
 
 		/*!
 		 * \brief Decorator __call__() function. Takes the Transfer Function as a parameter. Moves this class into a shared_ptr.
@@ -79,6 +81,11 @@ class TransceiverFunction
 		 */
 		std::string _linkedEngine;
 
+        /*!
+         * \brief Indicates if this is a preprocessing function
+         */
+        bool _isPreprocessing;
+
 		/*!
 		 * \brief Pointer to location where TFInterperter has stored this TF
 		 */
@@ -89,6 +96,11 @@ class TransceiverFunction
 		 * \return Returns _tfInterpreterRegistryPtr
 		 */
 		TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override final;
+
+        /*!
+         * \brief Checks that the output of executing this TF is correct. If not raise NRPException
+         */
+		void checkTFOutputIsCorrectOrRaise(const boost::python::object &tfOutput) const;
 };
 
 #endif // TRANSCEIVER_FUNCTION_H

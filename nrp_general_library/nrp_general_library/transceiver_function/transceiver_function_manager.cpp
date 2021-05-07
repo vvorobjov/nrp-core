@@ -38,7 +38,7 @@ void TransceiverFunctionManager::loadTF(const nlohmann::json &tfConfig, const bo
 	std::string tf_name = tfConfig.at("Name");
 	auto loadedTF = this->_tfInterpreter.findTransceiverFunction(tf_name);
 	if(loadedTF != this->_tfInterpreter.getLoadedTransceiverFunctions().end() || storedConfigIterator != this->_tfSettings.end())
-		throw NRPException::logCreate("TF with name " + tf_name + "already loaded");
+		throw NRPException::logCreate("TF with name " + tf_name + " already loaded");
 
 	this->_tfSettings.insert(tfConfig);
 	this->_tfInterpreter.loadTransceiverFunction(tfConfig);
@@ -63,7 +63,7 @@ TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActi
 
 	for(auto curTFIt = linkedTFRange.first; curTFIt != linkedTFRange.second; ++curTFIt)
 	{
-		if(this->isActive(curTFIt->second.Name) && (this->isPreprocessing(curTFIt->second.Name) == preprocessing))
+		if(this->isActive(curTFIt->second.Name) && (curTFIt->second.TransceiverFunction->isPrepocessing() == preprocessing))
 		{
 			// Get device outputs from transceiver function
 			TransceiverFunctionInterpreter::device_list_t pyResult(this->_tfInterpreter.runSingleTransceiverFunction(curTFIt->second.Name));
@@ -71,7 +71,6 @@ TransceiverFunctionManager::tf_results_t TransceiverFunctionManager::executeActi
 
 			// Extract pointers to retrieved devices
 			result.extractDevices();
-
 			tfResults.push_back(result);
 		}
 	}

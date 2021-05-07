@@ -33,6 +33,12 @@ FromEngineDevice::FromEngineDevice(const std::string &keyword, const DeviceIdent
 
 EngineClientInterface::device_identifiers_set_t FromEngineDevice::getRequestedDeviceIDs() const
 {
+    // If this is a preprocessing function this and _deviceID must be linked to the same engine
+    if(this->isPrepocessing() && this->_deviceID.EngineName != this->linkedEngineName())
+        throw NRPException::logCreate("Preprocessing function is linked to engine \"" + this->linkedEngineName() +
+        "\" but its input device \""+ this->_deviceID.Name + "\" is linked to engine \"" + this->_deviceID.EngineName +
+        "\". Preprocessing functions can just take input devices from their linked engines");
+
 	return _isPreprocessed ? EngineClientInterface::device_identifiers_set_t() : EngineClientInterface::device_identifiers_set_t({this->_deviceID});
 }
 

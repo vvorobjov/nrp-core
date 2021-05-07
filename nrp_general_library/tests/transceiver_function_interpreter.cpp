@@ -269,9 +269,53 @@ TEST_F(InterpreterTest, TestPreprocessingFunctionMultipleDevices)
 
 	// Test execution result
 
-	ASSERT_EQ(boost::python::len(res), 2);
+	ASSERT_EQ(boost::python::len(res), 1);
 
 	// TODO How to extract the devices and test return values?
+}
+
+/*
+ * Setup:
+ * - PF raises exception because of wrong input device
+ */
+TEST_F(InterpreterTest, TestPreprocessingFunctionWrongInputDevice)
+{
+    const std::string tfName = "testTFFail";
+    const std::string devName = "pf_input";
+
+    this->preparePreprocessingFunctionConfig(tfName, TEST_INVALID_INPUT_PREPROCESSING_FCN_FILE_NAME);
+
+    this->prepareInputDevice(devName, 5);
+
+    // Load simple preprocessing function and fail
+
+    ASSERT_THROW(interpreter->loadTransceiverFunction(this->pfCfg), NRPException);
+}
+
+/*
+ * Setup:
+ * - PF raises exception because of wrong output device
+ */
+TEST_F(InterpreterTest, TestPreprocessingFunctionWrongOutputDevice)
+{
+    const std::string tfName = "testTF";
+    const std::string devName = "pf_input";
+
+    this->preparePreprocessingFunctionConfig(tfName, TEST_INVALID_OUTPUT_PREPROCESSING_FCN_FILE_NAME);
+
+    this->prepareInputDevice(devName, 5);
+
+    // Load simple preprocessing function
+
+    interpreter->loadTransceiverFunction(this->pfCfg);
+    const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+
+    EXPECT_EQ(reqIDs.size(), 1);
+    EXPECT_EQ(*(reqIDs.begin()), TestOutputDevice::ID(devName));
+
+    // Run the preprocessing funtion and fail
+
+    ASSERT_THROW(interpreter->runSingleTransceiverFunction(interpreter->findTransceiverFunction(tfName)->second), NRPException);
 }
 
 /*

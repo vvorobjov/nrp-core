@@ -22,12 +22,16 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
 
-TransceiverFunction::TransceiverFunction(std::string linkedEngine)
-    : _linkedEngine(linkedEngine)
+TransceiverFunction::TransceiverFunction(std::string linkedEngine, bool isPreprocessing)
+    : _linkedEngine(linkedEngine),
+      _isPreprocessing(isPreprocessing)
 {}
 
 const std::string &TransceiverFunction::linkedEngineName() const
 {	return this->_linkedEngine;	}
+
+bool TransceiverFunction::isPrepocessing() const
+{   return this->_isPreprocessing; }
 
 TransceiverDeviceInterface::shared_ptr TransceiverFunction::pySetup(boost::python::object transceiverFunction)
 {
@@ -44,7 +48,37 @@ TransceiverDeviceInterface::shared_ptr TransceiverFunction::pySetup(boost::pytho
 
 boost::python::object TransceiverFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
 {
-	return this->_function(*args, **kwargs);
+    boost::python::object retVal = this->_function(*args, **kwargs);
+    this->checkTFOutputIsCorrectOrRaise(retVal);
+    return retVal;
+}
+
+void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::object &tfOutput) const
+{
+    // error msg
+    std::string function_type = this->isPrepocessing() ? "Preprocessing" : "Transceiver";
+    std::string error_msg = function_type + " functions must return a list of Devices";
+
+    // TFs must returns a list
+    if(!boost::python::extract<boost::python::list>(tfOutput).check())
+        throw NRPException::logCreate(error_msg);
+
+    const auto devListLength = boost::python::len(tfOutput);
+    for(unsigned int i = 0; i < devListLength; ++i)
+    {
+        // All elements in the list must be devices
+        if (!boost::python::extract<DeviceInterface *>(tfOutput[i]).check())
+            throw NRPException::logCreate(error_msg);
+        // If PF, Device and PF have the same Engine
+        else if(this->isPrepocessing())
+        {
+            DeviceInterface *dev = boost::python::extract<DeviceInterface *>(tfOutput[i]);
+            if (dev->engineName() != this->linkedEngineName())
+                throw NRPException::logCreate("Preprocessing function is linked to engine \"" + this->linkedEngineName() +
+                                              "\" but its output device \""+ dev->name() + "\" is linked to engine \"" + dev->engineName() +
+                                              "\". Preprocessing functions can just return devices to their linked engines");
+        }
+    }
 }
 
 EngineClientInterface::device_identifiers_set_t TransceiverFunction::getRequestedDeviceIDs() const
