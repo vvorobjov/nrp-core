@@ -17,6 +17,7 @@ pipeline {
         docker {
             image 'hbpneurorobotics/nrp-core:latest'
             args '--entrypoint="" -u root --privileged'
+            alwaysPull true
         }
     }
     options { 
@@ -54,6 +55,7 @@ pipeline {
                     sh 'bash .ci/build.sh'
 
                     junit 'build/xml/**/*.xml'
+                    publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
                 }
             }
         }

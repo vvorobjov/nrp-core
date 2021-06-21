@@ -74,10 +74,19 @@ int main(int argc, char *argv[])
 
 //	printf("Finished writing " TEST_PROC_STR_START "to pipe\n");
 
-	char readDat[50] = "";
-	fread(readDat, 50, 1, pRead);
+	// TODO fread doesn't read anything, to be fixed
+	/*char readDat[50] = "";
+	const size_t r = fread(readDat, 50, 1, pRead);
 
-//	printf("Read %s from pipe\n", readDat);
+	printf("Read %s from pipe\n", readDat);
+
+	if(r != 50 * sizeof(char))
+	{
+		std::cout << r << std::endl;
+		return -1;
+	}*/
+
+
 	const char *pTestEnvVal = getenv(TEST_PROC_ENV_VAR_NAME);
 	if(pTestEnvVal == nullptr)
 		fwrite("", 1, sizeof(""), pWrite);

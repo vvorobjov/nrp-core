@@ -58,4 +58,19 @@ To run a single test you can use the gtest filtering capability:
 nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTransceiverFcnDevices
 \endcode
 
+\section tutorial_developer_guide_static Static code analysis
+
+Currently we support <a href="http://cppcheck.sourceforge.net/">cppcheck</a> as the static code analysis tool.
+It is integrated into our build system. Before you can use it, you will have to install it:
+
+\code{.sh}
+sudo apt install cppcheck
+\endcode
+
+You can run it from the build directory with:
+
+\code{.sh}
+make cppcheck
+\endcode
+
 */

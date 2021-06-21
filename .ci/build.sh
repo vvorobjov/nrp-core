@@ -67,4 +67,6 @@ if (((ctest_result & ~0x8) != 0)); then
     exit $ctest_result
 fi
 
+make cppcheck-ci
+
 # EOF

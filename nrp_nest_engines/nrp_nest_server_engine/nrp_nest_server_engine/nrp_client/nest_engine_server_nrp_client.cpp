@@ -178,38 +178,6 @@ namespace
 	}
 
     /*!
-     * \brief Sends Prepare request to NEST server
-     *
-     * \param serverAddress Address of the NEST server
-     */
-    void nestPrepare(const std::string & serverAddress)
-    {
-        nestGenericCall(serverAddress + "/api/Prepare", "text/plain", "");
-    }
-
-	/*!
-	 * \brief Sends Run request to NEST server
-	 *
-	 * \param serverAddress Address of the NEST server
-	 * \param timeStep Step of the simulation in milliseconds
-	 */
-	void nestRun(const std::string & serverAddress, const float timeStep)
-	{
-		nestGenericCall(serverAddress + "/api/Run", "application/json", "[" + std::to_string(timeStep) + "]");
-	}
-
-	/*!
-	 * \brief Sends SetStatus request to NEST server
-	 *
-	 * \param serverAddress Address of the NEST server
-	 * \param data Arguments to SetStatus
-	 */
-	void nestCleanup(const std::string & serverAddress)
-	{
-		nestGenericCall(serverAddress + "/api/Cleanup", "text/plain", "");
-	}
-
-    /*!
      * \brief Sends Run request to NEST server
      *
      * \param serverAddress Address of the NEST server
@@ -312,10 +280,6 @@ void NestEngineServerNRPClient::initialize()
 		throw NRPException::logCreate("Failed to initialize Nest server. Received no response before timeout reached");
 	}
 
-    // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
-	// Run Prepare(). runLoopStep() can now use Run() for stepping
-	// nestPrepare(this->serverAddress());
-
 	// Get simulation resolution and cache it
 
 	this->_simulationResolution = std::stof(nestGetKernelStatus(this->serverAddress(), "[\"resolution\"]"));
@@ -323,8 +287,7 @@ void NestEngineServerNRPClient::initialize()
 
 void NestEngineServerNRPClient::shutdown()
 {
-    // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
-	// nestCleanup(this->serverAddress());
+	// Empty
 }
 
 SimulationTime NestEngineServerNRPClient::getEngineTime() const
@@ -441,8 +404,6 @@ bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
 
 	try
 	{
-        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
-		// nestRun(this->serverAddress(), runTimeMsRounded);
 		nestSimulate(this->serverAddress(), runTimeMsRounded);
 	}
 	catch(const std::exception& e)

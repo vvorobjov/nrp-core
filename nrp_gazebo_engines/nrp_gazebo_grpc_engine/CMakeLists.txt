@@ -73,7 +73,7 @@ configure_file("nrp_gazebo_grpc_engine/python/__init__.py.in" "${CMAKE_CURRENT_B
 # NRPGazeboGrpcEngine
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
-target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
@@ -98,7 +98,7 @@ target_link_libraries(${LIBRARY_NAME}
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
-	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 	set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
 
 	target_include_directories(${PYTHON_MODULE_NAME}
@@ -146,6 +146,7 @@ if(ENABLE_GAZEBO STREQUAL FULL)
 		# Create testing executable
 		enable_testing()
 		add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+		target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 		target_link_libraries(${TEST_NAME}
 			PUBLIC
 			${NAMESPACE_NAME}::${LIBRARY_NAME}

@@ -18,7 +18,7 @@ endif()
 ## Gazebo Communication Plugin
 add_library(${NRP_GAZEBO_COMMUNICATION_PLUGIN} SHARED "nrp_communication_controller/nrp_communication_controller.cpp" "nrp_communication_controller/nrp_communication_plugin.cpp")
 add_library("NRPGazeboGrpcPlugins::${NRP_GAZEBO_COMMUNICATION_PLUGIN}" ALIAS ${NRP_GAZEBO_COMMUNICATION_PLUGIN})
-target_compile_options(${NRP_GAZEBO_COMMUNICATION_PLUGIN} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(${NRP_GAZEBO_COMMUNICATION_PLUGIN} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 target_include_directories(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 	PUBLIC
@@ -43,7 +43,7 @@ target_link_libraries(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
 ## Gazebo World Plugin
 add_library(NRPGazeboGrpcWorldPlugin SHARED "nrp_world_plugin/nrp_world_plugin.cpp")
 add_library(NRPGazeboGrpcPlugins::NRPGazeboGrpcWorldPlugin ALIAS NRPGazeboGrpcWorldPlugin)
-target_compile_options(NRPGazeboGrpcWorldPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(NRPGazeboGrpcWorldPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 target_include_directories(NRPGazeboGrpcWorldPlugin
 	PUBLIC
 	    $<INSTALL_INTERFACE:include>
@@ -69,7 +69,7 @@ target_link_libraries(NRPGazeboGrpcWorldPlugin
 ## Gazebo Joint Controller Plugin
 add_library(NRPGazeboGrpcJointControllerPlugin SHARED "nrp_joint_controller/nrp_joint_controller.cpp")
 add_library(NRPGazeboGrpcPlugins::NRPGazeboGrpcJointControllerPlugin ALIAS NRPGazeboGrpcJointControllerPlugin)
-target_compile_options(NRPGazeboGrpcJointControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(NRPGazeboGrpcJointControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 target_include_directories(NRPGazeboGrpcJointControllerPlugin
 	PUBLIC
@@ -93,7 +93,7 @@ target_link_libraries(NRPGazeboGrpcJointControllerPlugin
 ## Gazebo Link Controller Plugin
 add_library(NRPGazeboGrpcLinkControllerPlugin SHARED "nrp_link_controller_plugin/nrp_link_controller_plugin.cpp")
 add_library(NRPGazeboGrpcPlugins::NRPGazeboGrpcLinkControllerPlugin ALIAS NRPGazeboGrpcLinkControllerPlugin)
-target_compile_options(NRPGazeboGrpcLinkControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(NRPGazeboGrpcLinkControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 add_library(NRPGazeboGrpcPlugins::NRPGazeboGrpcLinkControllerPlugin ALIAS NRPGazeboGrpcLinkControllerPlugin)
 
 target_include_directories(NRPGazeboGrpcLinkControllerPlugin
@@ -119,7 +119,7 @@ target_link_libraries(NRPGazeboGrpcLinkControllerPlugin
 ## Gazebo Camera Controller Plugin
 add_library(NRPGazeboGrpcCameraControllerPlugin SHARED "nrp_camera_controller_plugin/nrp_camera_controller_plugin.cpp")
 add_library(NRPGazeboGrpcPlugins::NRPGazeboGrpcCameraControllerPlugin ALIAS NRPGazeboGrpcCameraControllerPlugin)
-target_compile_options(NRPGazeboGrpcCameraControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+target_compile_options(NRPGazeboGrpcCameraControllerPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 target_include_directories(NRPGazeboGrpcCameraControllerPlugin
 	PUBLIC

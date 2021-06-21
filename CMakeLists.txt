@@ -9,6 +9,8 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 #string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--no-undefined")
 
+set (NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror)
+
 include(GNUInstallDirs)
 include(ExternalProject)
 include(FetchContent)
@@ -167,6 +169,40 @@ add_subdirectory(nrp_python_json_engine)
 set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
 	CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
+
+##########################################
+## cppcheck
+
+# Generates a file with exact compiler calls for all translation units, which is needed by cppcheck
+# Searches for *.cpp, *.cc, *.hpp and *.h files in the _deps subdirectory of the build directory
+# All found files will be excluded from cppcheck analysis
+# Their absolute paths are saved in cppcheck_suppress.txt file, which will be used by cppcheck --suppressions
+add_custom_target(cppcheck-base
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	COMMAND mkdir -p cppcheck
+	COMMAND ${CMAKE_COMMAND} .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	COMMAND find _deps/ -type f \( -iname \*.cpp -o -iname \*.cc -o -iname \*.hpp -o -iname \*.h \) -exec sh -c "printf \"*:${CMAKE_BINARY_DIR}/{}\\n\"" \; > cppcheck/cppcheck_suppress.txt
+    COMMENT "Generating compile_commands.json and cppcheck/cppcheck_suppress.txt"
+    VERBATIM
+)
+
+# Runs cppcheck on the project and saves the results in cppcheck_results.xml
+add_custom_target(cppcheck-ci
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json --xml --xml-version=2 2> cppcheck/cppcheck_results.xml
+    COMMENT "Running cppcheck and generating cppcheck/cppcheck_results.xml"
+	DEPENDS cppcheck-base
+    VERBATIM
+)
+
+# Runs cppcheck on the project and prints the results to stderr
+add_custom_target(cppcheck
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json
+    COMMENT "Running cppcheck"
+	DEPENDS cppcheck-base
+    VERBATIM
+)
 
 ##########################################
 ## Doxygen

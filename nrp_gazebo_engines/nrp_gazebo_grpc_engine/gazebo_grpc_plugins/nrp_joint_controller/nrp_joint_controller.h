@@ -39,7 +39,8 @@ namespace gazebo
 
 				PID_TYPE Type = POSITION;
 
-				PIDConfig(PID &&_pid, PID_TYPE _type);
+				PIDConfig(double p, double i, double d, PID_TYPE _type);
+				PIDConfig(const PIDConfig& pid);
 
 				static PID_TYPE convertStringToType(std::string type);
 			};
