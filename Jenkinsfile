@@ -25,9 +25,6 @@ pipeline {
                 sh 'bash .ci/00-prepare-build.sh'
             }
         }
-    }
-
-    stages {
        
         stage('Build') {
             steps {
@@ -37,9 +34,6 @@ pipeline {
                 sh 'bash .ci/05-build.sh'
             }
         }
-    }
-
-    stages {
        
         stage('Unit tests') {
             steps {
@@ -49,9 +43,6 @@ pipeline {
                 sh 'bash .ci/10-run-tests.sh'
             }
         }
-    }
-
-    stages {
        
         stage('Static tests') {
             steps {
@@ -61,9 +52,6 @@ pipeline {
                 sh 'bash .ci/15-run-cppcheck.sh'
             }
         }
-    }
-
-    stages {
        
         stage('Publishing results') {
             steps {
