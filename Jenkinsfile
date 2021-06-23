@@ -7,17 +7,11 @@
 
 pipeline {
     environment {
-        NRP_CORE_DIR = "nrp-core"
-        // GIT_CHECKOUT_DIR is a dir of the main project (that was pushed)
-        GIT_CHECKOUT_DIR = "${env.NRP_CORE_DIR}"
-
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
     }
     agent {
-        docker {
-            image 'hbpneurorobotics/nrp-core:latest'
-            args '--entrypoint="" -u root --privileged'
-            alwaysPull true
+        dockerfile {
+            args '-u root --privileged'
         }
     }
     options { 
@@ -37,11 +31,8 @@ pipeline {
                 // Debug information on available environment
                 echo sh(script: 'env|sort', returnStdout: true)
 
-                // Checkout main project to GIT_CHECKOUT_DIR
-                dir(env.GIT_CHECKOUT_DIR) {
-                    checkout scm
-                    sh 'chown -R "${USER}" ./'
-                }
+                checkout scm
+                sh 'chown -R "${USER}" ./'
             }
         }
         
@@ -49,14 +40,11 @@ pipeline {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
 
-                // Build operations (starting in .ci directory)
-                dir(env.GIT_CHECKOUT_DIR){
-                    // Determine explicitly the shell as bash (needed for proper user-scripts operation)
-                    sh 'bash .ci/build.sh'
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/build.sh'
 
-                    junit 'build/xml/**/*.xml'
-                    publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
-                }
+                junit 'build/xml/**/*.xml'
+                publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
             }
         }
     }
