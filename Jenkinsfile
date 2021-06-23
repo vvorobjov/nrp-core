@@ -17,18 +17,64 @@ pipeline {
 
     stages {
        
+        stage('Prepare Build') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'CMake nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/00-prepare-build.sh'
+            }
+        }
+    }
+
+    stages {
+       
         stage('Build') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
 
                 // Determine explicitly the shell as bash (needed for proper user-scripts operation)
-                sh 'bash .ci/build.sh'
+                sh 'bash .ci/05-build.sh'
+            }
+        }
+    }
+
+    stages {
+       
+        stage('Unit tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/10-run-tests.sh'
+            }
+        }
+    }
+
+    stages {
+       
+        stage('Static tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/15-run-cppcheck.sh'
+            }
+        }
+    }
+
+    stages {
+       
+        stage('Publishing results') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
 
                 junit 'build/xml/**/*.xml'
                 publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
             }
         }
     }
+
 
     post {
         always {
