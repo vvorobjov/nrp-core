@@ -14,28 +14,9 @@ pipeline {
             args '-u root --privileged'
         }
     }
-    options { 
-        // Skip code checkout prior running pipeline (only Jenkinsfile is checked out)
-        skipDefaultCheckout true
-    }
 
     stages {
-        stage('Code checkout') {
-            steps {
-                // Notify BitBucket on the start of the job
-                // The Bitbucket Build Status Notifier is used
-                // REF: https://plugins.jenkins.io/bitbucket-build-status-notifier/
-                
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Code checkout')
-
-                // Debug information on available environment
-                echo sh(script: 'env|sort', returnStdout: true)
-
-                checkout scm
-                sh 'chown -R "${USER}" ./'
-            }
-        }
-        
+       
         stage('Build') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
