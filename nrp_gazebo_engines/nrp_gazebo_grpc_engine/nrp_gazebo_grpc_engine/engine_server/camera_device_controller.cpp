@@ -20,6 +20,4 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
-
-// EOF
+#include "nrp_gazebo_grpc_engine/engine_server/camera_device_controller.h"

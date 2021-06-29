@@ -25,10 +25,12 @@ set(LIB_SRC_FILES
 	nrp_general_library/property_template/serializers/property_serializer_general.cpp
 	nrp_general_library/property_template/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/device_interface/device_interface.cpp
+	nrp_general_library/device_interface/data_device.cpp
 	nrp_general_library/device_interface/device.cpp
 	nrp_general_library/device_interface/device_serializer_methods.cpp
 	nrp_python_device/devices/pyobject_device.cpp
 	nrp_general_library/device_interface/device_python_wrappers.cpp
+	nrp_general_library/engine_interfaces/data_device_controller.cpp
 	nrp_general_library/engine_interfaces/engine_device_controller.cpp
 	nrp_general_library/engine_interfaces/engine_client_interface.cpp
 	nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
@@ -73,6 +75,7 @@ set(EXEC_SRC_FILES
 # List testing build files
 set(TEST_SRC_FILES
 	tests/device_interface.cpp
+	tests/device_data.cpp
 	tests/engine_launcher_manager.cpp
 	tests/json_property_serializer.cpp
 	tests/plugin_manager.cpp

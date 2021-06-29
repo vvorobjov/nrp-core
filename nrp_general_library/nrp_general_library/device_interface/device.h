@@ -88,7 +88,7 @@ class Device
 			                                                                                                std::forward<PROPERTIES_T>(props)...);
 		}
 
-		virtual DeviceInterfaceConstSharedPtr moveToSharedPtr() const override final
+		virtual DeviceInterfaceConstSharedPtr moveToSharedPtr() override final
 		{
 			return this->moveToSharedPtrHelper();
 		}

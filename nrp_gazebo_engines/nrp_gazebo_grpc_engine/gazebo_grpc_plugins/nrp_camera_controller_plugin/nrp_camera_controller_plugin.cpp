@@ -21,8 +21,7 @@
 //
 
 #include "nrp_camera_controller_plugin/nrp_camera_controller_plugin.h"
-
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_grpc_engine/engine_server/nrp_communication_controller.h"
 
 
 void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf)
@@ -34,7 +33,7 @@ void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::E
 	std::cout << "NRPCameraController: Registering new controller \"" << devName << "\"\n";
 
 	// Create camera device and register it
-	this->_cameraInterface.reset(new GrpcDeviceControlSerializer<CameraDeviceController>(devName, this->camera, sensor));
+	this->_cameraInterface.reset(new CameraGrpcDeviceController(devName, this->camera, sensor));
 	NRPCommunicationController::getInstance().registerDevice(devName, this->_cameraInterface.get());
 }
 

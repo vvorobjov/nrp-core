@@ -1,7 +1,6 @@
 from NRPPythonModule import *
-import NRPGazeboDevicesPython
+from NRPProtoPythonModule import *
 from NRPNestJSONPythonModule import NestDevice
-import numpy
 import numpy as np
 from PIL import Image
 import time
@@ -26,15 +25,17 @@ def detect_red(camDevice):
     """
     red_left = red_right = green_blue = 0
     if not camDevice.isEmpty():
+
         lower_red = np.array([0, 30, 30])
         upper_red = np.array([0, 255, 255])
 
         # Reshape to proper size
-        cv_image = camDevice.image_data.reshape((camDevice.image_height,camDevice.image_width,3))
-        
+        d = np.frombuffer(camDevice.data.imageData, np.uint8)
+        cv_image = d.reshape((camDevice.data.imageHeight,camDevice.data.imageWidth,3))
+
         # Transform image to HSV (easier to detect colors).
         hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2HSV)
-        
+
         # Create a mask where every non red pixel will be a Zero.
         mask = cv2.inRange(hsv_image, lower_red, upper_red)
         image_size = (cv_image.shape[0] * cv_image.shape[1])
@@ -66,14 +67,14 @@ def detect_red(camDevice):
 @TransceiverFunction("nest")
 def transceiver_function(camera, processed):
     #print("Camera Depth: " + str(camera.image_depth))
-
-    res = detect_red(camera)
-
+    
     # Set to True to display camera image data and pause for 10 s
     if False and not camera.isEmpty():
         img = Image.fromarray(processed.data["grayscale"])
         img.show()
         time.sleep(10)
+
+    res = detect_red(camera)
 
     # print("Left Red:  " + str(res.left))
     # print("Right Red: " + str(res.right))

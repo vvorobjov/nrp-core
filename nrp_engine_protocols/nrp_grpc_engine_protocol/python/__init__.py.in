@@ -19,3 +19,15 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from .@PYTHON_MODULE_NAME@ import *
+
+# Protobuf don't allow to set default values for fields
+# This is a workaround using nan to let Joint Device Controller infer which values have been set
+old_init = JointDevice.__init__
+def new_init(self, name, engine_name):
+    old_init(self, name=name, engine_name=engine_name)
+    self.data.position = float('NaN')
+    self.data.velocity = float('NaN')
+    self.data.effort = float('NaN')
+
+JointDevice.__init__ = new_init
+

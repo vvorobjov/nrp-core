@@ -30,11 +30,11 @@
 
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-#include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_general_library/device_interface/data_device.h"
+#include "proto_python_bindings/proto_python_bindings.h"
 
-
-template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
+template<class ENGINE, FixedString SCHEMA, PROTO_MSG_C ...MSG_TYPES>
 class EngineGrpcClient
     : public EngineClient<ENGINE, SCHEMA>
 {
@@ -225,8 +225,12 @@ class EngineGrpcClient
             {
                 if(device->engineName().compare(this->engineName()) == 0)
                 {
-                    auto r = request.add_request();
-                    this->getProtoFromSingleDeviceInterface<DEVICES...>(*device, r);
+                    if(device->isEmpty())
+                        throw NRPException::logCreate("Attempt to send empty device " + device->name() + " to Engine " + this->engineName());
+                    else {
+                        auto r = request.add_request();
+                        setProtoFromDeviceInterface<MSG_TYPES...>(r, device);
+                    }
                 }
             }
 
@@ -236,78 +240,6 @@ class EngineGrpcClient
             {
                 const auto errMsg = "Engine server sendDevicesToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
-            }
-        }
-
-        template<class DEVICE, class ...REMAINING_DEVICES>
-		inline void getProtoFromSingleDeviceInterface(const DeviceInterface &device, EngineGrpc::DeviceMessage * request) const
-        {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            if(DEVICE::TypeName.compare(device.type()) == 0)
-            {
-				*request = GRPCDeviceSerializerMethods::template serialize<DEVICE>(dynamic_cast<const DEVICE&>(device));
-
-                return;
-            }
-
-            // If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
-
-            if constexpr (sizeof...(REMAINING_DEVICES) > 0)
-            {
-                this->getProtoFromSingleDeviceInterface<REMAINING_DEVICES...>(device, request);
-            }
-            else
-            {
-				throw std::logic_error("Could not serialize given device of type \"" + device.type() + "\"");
-            }
-        }
-
-        typename EngineClientInterface::devices_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
-        {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            typename EngineClientInterface::devices_set_t interfaces;
-
-            for(int i = 0; i < reply.reply_size(); i++)
-            {
-				interfaces.insert(this->getSingleDeviceInterfaceFromProto<DEVICES...>(reply.reply(i)));
-            }
-
-            return interfaces;
-        }
-
-        template<class DEVICE, class ...REMAINING_DEVICES>
-        inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromProto(const EngineGrpc::DeviceMessage &deviceData) const
-        {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            if(DEVICE::TypeName.compare(deviceData.deviceid().devicetype()) == 0)
-            {
-                DeviceIdentifier devId(deviceData.deviceid().devicename(),
-				                       this->engineName(),
-                                       deviceData.deviceid().devicetype());
-
-                // Check whether the requested device has new data
-
-                if(deviceData.data_case() == EngineGrpc::DeviceMessage::DataCase::DATA_NOT_SET)
-                {
-                    // There's no meaningful data in the device, so create an empty device with device ID only
-
-                    return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(devId)));
-                }
-
-				return DeviceInterfaceConstSharedPtr(new DEVICE(DeviceSerializerMethods<GRPCDevice>::template deserialize<DEVICE>(std::move(devId), &deviceData)));
-            }
-
-            // If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
-            if constexpr (sizeof...(REMAINING_DEVICES) > 0)
-            {
-                return this->getSingleDeviceInterfaceFromProto<REMAINING_DEVICES...>(deviceData);
-            }
-            else
-            {
-				throw std::logic_error("Could not deserialize given device of type \"" + deviceData.deviceid().devicetype() + "\"");
             }
         }
 
@@ -330,6 +262,59 @@ class EngineGrpcClient
         virtual const std::vector<std::string> engineProcEnvParams() const override
         {
             return this->engineConfig().at("EngineEnvParams");
+        }
+
+        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+        DeviceInterfaceConstSharedPtr getDeviceInterfaceFromProto(EngineGrpc::DeviceMessage &deviceData) const
+        {
+            const google::protobuf::OneofDescriptor *fieldOne = deviceData.GetDescriptor()->FindOneofByName("data");
+            const google::protobuf::FieldDescriptor *field = deviceData.GetReflection()->GetOneofFieldDescriptor(deviceData,fieldOne);
+            if(field && std::strstr(typeid(MSG_TYPE).name(), field->message_type()->name().data())) {
+                return DeviceInterfaceConstSharedPtr(
+                        new DataDevice<MSG_TYPE>(deviceData.deviceid().devicename(), this->engineName(),
+                                               dynamic_cast<MSG_TYPE *>(deviceData.GetReflection()->ReleaseMessage(&deviceData, field))));
+            }
+            // There's no data set in the message, so create an empty device with device ID only
+            else if(!field) {
+                // NOTE: deviceData.deviceid().devicetype() becomes useless, it should always be set internally in Device
+                //  constructor
+                return DeviceInterfaceConstSharedPtr(new DeviceInterface(deviceData.deviceid().devicename(),
+                                                     this->engineName(), deviceData.deviceid().devicetype()));
+            }
+
+            if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+                return getDeviceInterfaceFromProto<REMAINING_MSG_TYPES...>(deviceData);
+            else
+                throw NRPException::logCreate("Data type: \"" + field->name() + "\" is not supported by engine" +
+                this->engineName());
+        }
+
+        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+        void setProtoFromDeviceInterface(EngineGrpc::DeviceMessage *deviceData, DeviceInterface* device)
+        {
+            if(dynamic_cast< DataDevice<MSG_TYPE> *>(device)) {
+                deviceData->mutable_deviceid()->set_devicename(device->name());
+                MSG_TYPE* d = dynamic_cast< DataDevice<MSG_TYPE> *>(device)->releaseData();
+                auto n = deviceData->GetDescriptor()->field_count();
+                auto device_type = d->GetDescriptor()->full_name();
+                for(int i=0;i<n;++i) {
+                    auto field_type = deviceData->GetDescriptor()->field(i)->message_type()->full_name();
+                    if (device_type == field_type) {
+                        deviceData->GetReflection()->SetAllocatedMessage(deviceData, d,
+                                                                         deviceData->GetDescriptor()->field(i));
+                        return;
+                    }
+                }
+
+                throw NRPException::logCreate("Data type \"" + d->GetDescriptor()->name() + "\" is not supported by engine" +
+                                        this->engineName());
+            }
+
+            if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+                return setProtoFromDeviceInterface<REMAINING_MSG_TYPES...>(deviceData, device);
+            else
+                throw NRPException::logCreate("Device " + device->name() + " is not supported by engine" +
+                                        this->engineName());
         }
 
 	protected:
@@ -361,7 +346,11 @@ class EngineGrpcClient
 				throw std::runtime_error(errMsg);
 			}
 
-			return this->getDeviceInterfacesFromProto(reply);
+            typename EngineClientInterface::devices_set_t interfaces;
+            for(int i = 0; i < reply.reply_size(); i++)
+                interfaces.insert(this->getDeviceInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
+
+            return interfaces;
 		}
 
     private:

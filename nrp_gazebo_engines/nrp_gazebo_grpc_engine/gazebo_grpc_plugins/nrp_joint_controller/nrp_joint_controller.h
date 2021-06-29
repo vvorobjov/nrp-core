@@ -22,9 +22,7 @@
 #ifndef NRP_JOINT_CONTROLLER_H
 #define NRP_JOINT_CONTROLLER_H
 
-#include "nrp_gazebo_devices/engine_server/joint_device_controller.h"
-#include "nrp_gazebo_grpc_engine/devices/grpc_physics_joint.h"
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_device_controller.h"
+#include "nrp_gazebo_grpc_engine/engine_server/joint_device_controller.h"
 
 
 namespace gazebo
@@ -55,7 +53,7 @@ namespace gazebo
 			/*!
 			 * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
 			 */
-			std::list<GrpcDeviceControlSerializer<JointDeviceController> > _jointDeviceControllers;
+			std::list< JointGrpcDeviceController > _jointDeviceControllers;
 
 			/*!
 			 * \brief Joint PID Configuration

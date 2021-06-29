@@ -23,7 +23,6 @@
 #define NRP_COMMUNICATION_CONTROLLER_H
 
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_device_controller.h"
 
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/engine_server/gazebo_step_controller.h"
@@ -39,9 +38,10 @@
  * \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
  */
 class NRPCommunicationController
-        : public EngineGrpcServer
+        : public EngineGrpcServer<EngineGrpc::GazeboCamera, EngineGrpc::GazeboJoint, EngineGrpc::GazeboLink>
 {
 	public:
+
 		~NRPCommunicationController() override;
 
 		/*! \brief Delete for singleton */
@@ -110,7 +110,7 @@ class NRPCommunicationController
 
 		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-		virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &deviceLock) override;
+		virtual void initialize(const nlohmann::json &data, lock_t &deviceLock) override;
 
 		virtual void shutdown(const nlohmann::json &data) override;
 

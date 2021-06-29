@@ -21,9 +21,7 @@
 //
 
 #include "nrp_joint_controller/nrp_joint_controller.h"
-
-#include "nrp_communication_controller/nrp_communication_controller.h"
-
+#include "nrp_gazebo_grpc_engine/engine_server/nrp_communication_controller.h"
 #include <gazebo/physics/Model.hh>
 
 gazebo::NRPJointController::PIDConfig::PIDConfig(double p, double i, double d, gazebo::NRPJointController::PIDConfig::PID_TYPE _type)
@@ -132,7 +130,7 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 		const auto deviceName = NRPCommunicationController::createDeviceName(*this, joint->GetName());
 
 		std::cout << "Registering joint controller for joint \"" << jointName << "\"\n";
-		this->_jointDeviceControllers.push_back(GrpcDeviceControlSerializer<JointDeviceController>(joint, jointControllerPtr, jointName));
+		this->_jointDeviceControllers.push_back(JointGrpcDeviceController(jointName, joint, jointControllerPtr));
 		NRPCommunicationController::getInstance().registerDevice(deviceName, &(this->_jointDeviceControllers.back()));
 	}
 }

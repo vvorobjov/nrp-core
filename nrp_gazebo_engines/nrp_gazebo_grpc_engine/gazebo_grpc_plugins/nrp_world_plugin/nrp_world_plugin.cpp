@@ -22,7 +22,7 @@
 
 #include "nrp_world_plugin/nrp_world_plugin.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_grpc_engine/engine_server/nrp_communication_controller.h"
 
 #include <gazebo/physics/PhysicsEngine.hh>
 #include <gazebo/physics/World.hh>

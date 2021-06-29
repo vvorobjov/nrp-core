@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "nrp_grpc_engine_protocol")
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "${PROJECT_NAME}PythonModule")
+set(PYTHON_MODULE_NAME "NRPProtoPythonModule")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -20,15 +20,17 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_grpc_engine_protocol/config/engine_grpc_config.cpp
-	nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.cpp
-	nrp_grpc_engine_protocol/engine_server/engine_grpc_device_controller.cpp
 	nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
 	nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
 	nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
+	proto_python_bindings/proto_field_ops.cpp
+	proto_python_bindings/repeated_field_proxy.cpp
+    proto_python_bindings/proto_python_bindings.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
+		python/python_module.cpp
 )
 
 # List executable build files
@@ -92,6 +94,11 @@ set(GRPC_SRC_FILES ${proto_srcs} ${grpc_srcs})
 ##########################################
 ## Header configuration
 
+# General Header defines
+configure_file("nrp_grpc_engine_protocol/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
+
+# Python Module defines
+configure_file("python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 ##########################################
 # NRPGRPCEngineProtocol

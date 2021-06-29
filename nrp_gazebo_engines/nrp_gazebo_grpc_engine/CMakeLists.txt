@@ -20,11 +20,7 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_gazebo_grpc_engine/config/gazebo_grpc_config.cpp
-	nrp_gazebo_grpc_engine/engine_server/gazebo_step_controller.cpp
 	nrp_gazebo_grpc_engine/nrp_client/gazebo_engine_grpc_nrp_client.cpp
-	nrp_gazebo_grpc_engine/devices/grpc_physics_camera.cpp
-	nrp_gazebo_grpc_engine/devices/grpc_physics_joint.cpp
-	nrp_gazebo_grpc_engine/devices/grpc_physics_link.cpp
 )
 
 # List of python module build files
@@ -66,9 +62,6 @@ list(JOIN GAZEBO_LIBRARY_DIRS ":" DEFAULT_GAZEBO_LIB_DIRS)
 # Gazebo defines
 configure_file("nrp_gazebo_grpc_engine/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
-# Python module dependencies
-configure_file("nrp_gazebo_grpc_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 ##########################################
 # NRPGazeboGrpcEngine
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
@@ -88,8 +81,9 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
-	    NRPGazeboDevices::NRPGazeboDevices
 		NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+
+	PRIVATE
 )
 
 
@@ -129,10 +123,15 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 if(ENABLE_GAZEBO STREQUAL FULL)
 
 	##########################################
+	## Gazebo Grpc Device Controllers
+	set(NRP_GAZEBO_GRPC_LIB "${NAMESPACE_NAME}::${LIBRARY_NAME}")
+	add_subdirectory(nrp_gazebo_grpc_engine/engine_server)
+
+	##########################################
 	## Gazebo plugins
 	set(NRP_GAZEBO_LIB_TARGETS
 			"${NAMESPACE_NAME}::${LIBRARY_NAME}"
-			NRPGazeboDeviceControllers::NRPGazeboDeviceControllers)
+			NRPGazeboGrpcDeviceControllers::NRPGazeboGrpcDeviceControllers)
 
 	add_subdirectory(gazebo_grpc_plugins)
 

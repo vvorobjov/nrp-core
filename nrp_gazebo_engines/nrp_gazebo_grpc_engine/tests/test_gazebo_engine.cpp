@@ -24,9 +24,6 @@
 
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/config/cmake_constants.h"
-#include "nrp_gazebo_devices/physics_camera.h"
-#include "nrp_gazebo_devices/physics_joint.h"
-#include "nrp_gazebo_devices/physics_link.h"
 #include "nrp_gazebo_grpc_engine/nrp_client/gazebo_engine_grpc_nrp_client.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
@@ -109,19 +106,19 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
+        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), "irrelevant_type")});
         ASSERT_EQ(devices->size(), 1);
     }
     while(dynamic_cast<const DeviceInterface&>(*(devices->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
 	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices->at(0)));
+    const DataDevice<EngineGrpc::GazeboCamera>& camDat = dynamic_cast<const DataDevice<EngineGrpc::GazeboCamera>&>(*(devices->at(0)));
 
-    ASSERT_EQ(camDat.imageHeight(), 240);
-    ASSERT_EQ(camDat.imageWidth(),  320);
-    ASSERT_EQ(camDat.imagePixelSize(),  3);
-    ASSERT_EQ(camDat.imageData().size(), 320*240*3);
+    ASSERT_EQ(camDat.getData().imageheight(), 240);
+    ASSERT_EQ(camDat.getData().imagewidth(),  320);
+    ASSERT_EQ(camDat.getData().imagedepth(),  3);
+    ASSERT_EQ(camDat.getData().imagedata().size(), 320*240*3);
 }
 
 
@@ -147,21 +144,24 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     ASSERT_NO_THROW(engine->initialize());
 
     // Test device data getting
-    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), PhysicsJoint::TypeName.data())});
+    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint",
+                                                    engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(devices.size(), 1);
 
-    const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
-    ASSERT_EQ(pJointDev->position(), 0);
+    const auto *pJointDev = dynamic_cast<const DataDevice<EngineGrpc::GazeboJoint> *>(devices[0].get());
+    ASSERT_NE(pJointDev, nullptr);
+    ASSERT_EQ(pJointDev->getData().position(), 0);
 
     // Test device data setting
     const auto newTargetPos = 2.0f;
 
-    PhysicsJoint newJointDev(DeviceIdentifier(pJointDev->id()));
-    newJointDev.setEffort(NAN);
-    newJointDev.setVelocity(NAN);
-    newJointDev.setPosition(newTargetPos);
+    auto newJointDev = new EngineGrpc::GazeboJoint();
+    newJointDev->set_effort(NAN);
+    newJointDev->set_velocity(NAN);
+    newJointDev->set_position(newTargetPos);
+    DataDevice<EngineGrpc::GazeboJoint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
 
-    ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
+    ASSERT_NO_THROW(engine->sendDevicesToEngine({&dev}));
 }
 
 TEST(TestGazeboGrpcEngine, LinkPlugin)
@@ -186,10 +186,11 @@ TEST(TestGazeboGrpcEngine, LinkPlugin)
     ASSERT_NO_THROW(engine->initialize());
 
     // Test device data getting
-    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), PhysicsJoint::TypeName.data())});
+    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint",
+                                                    engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(devices.size(), 1);
 
-    const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());
+    const auto *pLinkDev = dynamic_cast<const DataDevice<EngineGrpc::GazeboLink> *>(devices[0].get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // TODO: Check that link state is correct

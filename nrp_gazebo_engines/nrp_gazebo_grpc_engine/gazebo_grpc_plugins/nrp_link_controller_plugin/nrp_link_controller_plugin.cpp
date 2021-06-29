@@ -21,8 +21,7 @@
 //
 
 #include "nrp_link_controller_plugin/nrp_link_controller_plugin.h"
-
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_grpc_engine/engine_server/nrp_communication_controller.h"
 
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/Link.hh>
@@ -43,7 +42,7 @@ void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf:
 
 		std::cout << "Registering link controller for link \"" << deviceName << "\"\n";
 
-		this->_linkInterfaces.push_back(GrpcDeviceControlSerializer<LinkDeviceController>(deviceName, link));
+		this->_linkInterfaces.push_back(LinkGrpcDeviceController(deviceName, link));
 		commControl.registerDevice(deviceName, &(this->_linkInterfaces.back()));
 	}
 }
