@@ -35,11 +35,15 @@
 GazeboEngineGrpcNRPClient::GazeboEngineGrpcNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineGrpcClient(config, std::move(launcher))
 {
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
     setDefaultProperty<std::vector<std::string>>("GazeboPlugins", std::vector<std::string>());
 }
 
 void GazeboEngineGrpcNRPClient::initialize()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Wait for Gazebo to load world
 	try
 	{
@@ -49,10 +53,14 @@ void GazeboEngineGrpcNRPClient::initialize()
 	{
 		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" initialization failed");
 	}
+
+	NRPLogger::debug("GazeboEngineGrpcNRPClient::initialize(...) completed with no errors.");
 }
 
 void GazeboEngineGrpcNRPClient::shutdown()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	try
 	{
 		this->sendShutdownCommand(nlohmann::json());
@@ -65,6 +73,8 @@ void GazeboEngineGrpcNRPClient::shutdown()
 
 const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcEnvParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> envVars = this->EngineGrpcClient::engineProcEnvParams();
 
     // Add NRP and Gazebo plugins dir
@@ -81,25 +91,31 @@ const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcEnvParams() 
 
 const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcStartParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> startParams = this->EngineGrpcClient::engineProcStartParams();
 
     // Add gazebo plugins
     for(const auto &curPlugin : this->engineConfig().at("GazeboPlugins"))
     {
+        NRPLogger::debug("Adding Gazebo plugin: {}.", curPlugin.dump());
         startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
         startParams.push_back(curPlugin);
     }
 
     // Add gazebo communication system plugin
+    NRPLogger::debug("Adding Gazebo communication system plugin.");
     startParams.push_back(GazeboGrpcConfigConst::GazeboPluginArg.data());
     startParams.push_back(NRP_GAZEBO_COMMUNICATION_PLUGIN);
 
     // Add RNG Seed
     int seed = this->engineConfig().at("GazeboRNGSeed");
+    NRPLogger::debug("Adding Gazebo RNG seed: {0:d}.", seed);
     startParams.push_back(GazeboGrpcConfigConst::GazeboRNGSeedArg.data());
     startParams.push_back(std::to_string(seed));
 
     // Add world file
+    NRPLogger::debug("Adding world file {}.", this->engineConfig().at("GazeboWorldFile"));
     startParams.push_back(this->engineConfig().at("GazeboWorldFile"));
 
     return startParams;

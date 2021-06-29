@@ -58,6 +58,8 @@ class EngineGrpcClient
         EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher))
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             std::string serverAddress = this->engineConfig().at("ServerAddress");
 
             // Timeouts of less than 1ms will be rounded up to 1ms
@@ -84,6 +86,8 @@ class EngineGrpcClient
 
         grpc_connectivity_state connect()
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            
             _channel->GetState(true);
             _channel->WaitForConnected(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN)));
@@ -92,6 +96,8 @@ class EngineGrpcClient
 
         void sendInitCommand(const nlohmann::json & data)
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             EngineGrpc::InitRequest  request;
             EngineGrpc::InitReply    reply;
             grpc::ClientContext      context;
@@ -111,6 +117,8 @@ class EngineGrpcClient
 
         void sendShutdownCommand(const nlohmann::json & data)
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             EngineGrpc::ShutdownRequest request;
             EngineGrpc::ShutdownReply   reply;
             grpc::ClientContext         context;
@@ -130,6 +138,8 @@ class EngineGrpcClient
 
         SimulationTime sendRunLoopStepCommand(const SimulationTime timeStep)
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             EngineGrpc::RunLoopStepRequest request;
             EngineGrpc::RunLoopStepReply   reply;
             grpc::ClientContext            context;
@@ -181,6 +191,8 @@ class EngineGrpcClient
 
         virtual void waitForStepCompletion(float timeOut) override
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             // If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
             if(!this->_loopStepThread.valid())
             {
@@ -201,6 +213,8 @@ class EngineGrpcClient
 
 		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             EngineGrpc::SetDeviceRequest request;
             EngineGrpc::SetDeviceReply   reply;
             grpc::ClientContext          context;
@@ -228,6 +242,8 @@ class EngineGrpcClient
         template<class DEVICE, class ...REMAINING_DEVICES>
 		inline void getProtoFromSingleDeviceInterface(const DeviceInterface &device, EngineGrpc::DeviceMessage * request) const
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             if(DEVICE::TypeName.compare(device.type()) == 0)
             {
 				*request = GRPCDeviceSerializerMethods::template serialize<DEVICE>(dynamic_cast<const DEVICE&>(device));
@@ -249,6 +265,8 @@ class EngineGrpcClient
 
         typename EngineClientInterface::devices_set_t getDeviceInterfacesFromProto(const EngineGrpc::GetDeviceReply & reply)
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             typename EngineClientInterface::devices_set_t interfaces;
 
             for(int i = 0; i < reply.reply_size(); i++)
@@ -262,6 +280,8 @@ class EngineGrpcClient
         template<class DEVICE, class ...REMAINING_DEVICES>
         inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromProto(const EngineGrpc::DeviceMessage &deviceData) const
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             if(DEVICE::TypeName.compare(deviceData.deviceid().devicetype()) == 0)
             {
                 DeviceIdentifier devId(deviceData.deviceid().devicename(),
@@ -293,6 +313,8 @@ class EngineGrpcClient
 
         virtual const std::vector<std::string> engineProcStartParams() const override
         {
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
 
             std::string name = this->engineConfig().at("EngineName");
@@ -313,6 +335,8 @@ class EngineGrpcClient
 	protected:
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
+		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            
 			EngineGrpc::GetDeviceRequest request;
 			EngineGrpc::GetDeviceReply   reply;
 			grpc::ClientContext          context;

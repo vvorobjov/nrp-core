@@ -63,22 +63,30 @@ EngineJSONRegistrationServer *EngineJSONRegistrationServer::getInstance()
 
 EngineJSONRegistrationServer *EngineJSONRegistrationServer::resetInstance(const std::string &serverAddress)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	EngineJSONRegistrationServer::_instance.reset(new EngineJSONRegistrationServer(serverAddress));
 	return EngineJSONRegistrationServer::getInstance();
 }
 
 void EngineJSONRegistrationServer::clearInstance()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	EngineJSONRegistrationServer::_instance.reset();
 }
 
 EngineJSONRegistrationServer::~EngineJSONRegistrationServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->shutdownServer();
 }
 
 void EngineJSONRegistrationServer::startServerAsync()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(!this->_serverRunning)
 	{
 		this->_endpoint.serveThreaded();
@@ -88,6 +96,8 @@ void EngineJSONRegistrationServer::startServerAsync()
 
 void EngineJSONRegistrationServer::shutdownServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_serverRunning)
 	{
 		this->_serverRunning = false;
@@ -148,6 +158,8 @@ void EngineJSONRegistrationServer::registerEngineAddress(const engine_name_t &en
 
 bool EngineJSONRegistrationServer::sendClientEngineRequest(const std::string &address, const EngineJSONRegistrationServer::engine_name_t &engineName, const std::string &engineAddress, const unsigned int numTries, const unsigned int waitTime)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	const nlohmann::json data({ { JSONEngineName, engineName }, { JSONAddress, engineAddress} });
 
 	bool res;
@@ -174,6 +186,8 @@ EngineJSONRegistrationServer::EngineJSONRegistrationServer(const std::string &ad
     : _address(address),
       _endpoint(Pistache::Address(address))
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	// Set Endpoint options
 	auto options = Pistache::Http::Endpoint::options();
 	options.threads(1).backlog(10);

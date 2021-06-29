@@ -59,7 +59,10 @@ TEST(SimulationManagerTest, OptParser)
 	// Test valid parameters
 	startParamDat = {"nrp_server",
 	                std::string("-") + SimulationParams::ParamHelp.data(),
-	                std::string("-") + SimulationParams::ParamSimCfgFile.data(), "cfgFile.json"};
+	                std::string("-") + SimulationParams::ParamSimCfgFile.data(), "cfgFile.json",
+	                std::string("--") + SimulationParams::ParamConsoleLogLevelLong.data(), "debug",
+	                std::string("--") + SimulationParams::ParamFileLogLevelLong.data(), "trace",
+	                std::string("--") + SimulationParams::ParamLogDirLong.data(), ""};
 
 	startParams = createStartParamPtr(startParamDat);
 

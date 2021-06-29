@@ -114,6 +114,16 @@ class EngineGrpcServer : public EngineGrpcService::Service
         std::string _serverAddress;
 
         /*!
+         * \brief Indicates whether the gRPC server is currently running
+         */
+        bool _isServerRunning;
+
+        /*!
+         * \brief Conbfiguration of the process logger
+         */
+		NRPLogger _loggerCfg;
+
+        /*!
          * \brief Name of the simulation engine
          *
          * Must be the same on the server and the client side. It should be imprinted
@@ -125,11 +135,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
          * \brief Pointer to the gRPC server object
          */
         std::unique_ptr<grpc::Server> _server;
-
-        /*!
-         * \brief Indicates whether the gRPC server is currently running
-         */
-        bool _isServerRunning;
 
         /*!
          * \brief Map of device names and device controllers used by the engine

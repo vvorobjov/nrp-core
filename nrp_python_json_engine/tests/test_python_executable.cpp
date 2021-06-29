@@ -24,7 +24,7 @@
 
 #include "python_server_executable/python_server_executable.h"
 #include "nrp_general_library/utils/pipe_communication.h"
-#include "nrp_general_library/utils/spdlog_setup.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 #include "nrp_python_json_engine/config/python_config.h"
 #include "tests/test_env_cmake.h"
 
@@ -59,7 +59,7 @@ void handle_signal(int signal)
 		// Finish printing
 		std::cout.flush();
 		std::cerr.flush();
-		SPDLogSetup::shutdownDefault();
+
 		exit(0);
 	}
 }
@@ -188,7 +188,6 @@ TEST(TestPythonExecutable, TestPython)
 		// Finish printing
 		std::cout.flush();
 		std::cerr.flush();
-		SPDLogSetup::shutdownDefault();
 
 		exit(0);
 	}

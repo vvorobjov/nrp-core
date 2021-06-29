@@ -22,7 +22,7 @@
 
 #include "nest_server_executable/nest_server_executable.h"
 
-#include "nrp_general_library/utils/spdlog_setup.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 #include <boost/python.hpp>
 #include <csignal>
@@ -43,7 +43,8 @@ NestServerExecutable::NestServerExecutable(int argc, char *argv[])
       _server(this->_res[EngineJSONConfigConst::EngineServerAddrArg.data()].as<std::string>(),
               this->_res[EngineJSONConfigConst::EngineNameArg.data()].as<std::string>(),
               this->_res[EngineJSONConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>(),
-              python::dict(python::import("__main__").attr("__dict__")), python::dict(python::import("__main__").attr("__dict__")))
+              python::dict(python::import("__main__").attr("__dict__")), 
+			  python::dict(python::import("__main__").attr("__dict__")))
 {
 	// Register function to handle SIGTERM events
 	signal(SIGTERM, &NestServerExecutable::handleSIGTERM);
@@ -124,7 +125,6 @@ void NestServerExecutable::handleSIGTERM(int signal)
 			NRPException::logCreate(e, "NRP Nest Server shutdown failed after receiving SIGTERM signal");
 		}
 
-		SPDLogSetup::shutdownDefault();
 		exit(signal);
 	}
 }

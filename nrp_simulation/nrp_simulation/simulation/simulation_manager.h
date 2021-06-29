@@ -56,6 +56,19 @@ struct SimulationParams
 	static constexpr std::string_view ParamPluginsDesc = "Additional engine plugins to load";
 	using ParamPluginsT = std::vector<std::string>;
 
+	// Log paramters
+	static constexpr std::string_view ParamConsoleLogLevelLong = "cloglevel";
+	static constexpr std::string_view ParamConsoleLogLevelDesc = "Console minimum level of log severity (info by default)";
+	using ParamConsoleLogLevelT = std::string;
+
+	static constexpr std::string_view ParamFileLogLevelLong = "floglevel";
+	static constexpr std::string_view ParamFileLogLevelDesc = "File minimum level of log severity (off by default)";
+	using ParamFileLogLevelT = std::string;
+
+	static constexpr std::string_view ParamLogDirLong = "logdir";
+	static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";
+	using ParamLogDirT = std::string;
+
 	/*!
 	 * \brief Create a parser for start parameters
 	 * \return Returns parser
@@ -68,6 +81,17 @@ struct SimulationParams
 	 * \return Returns parsed JSON
 	 */
 	static nlohmann::json parseJSONFile(const std::string &fileName);
+
+	/*!
+	 * \brief parsing input parameter string log level into enum type
+	 * \param logLevel The string expression of the log level
+	 */
+	static NRPLogger::level_t parseLogLevel(const std::string &logLevel);
+
+	/*!
+	 * \brief default log level for the acses when the parameters are specified wrongly
+	 */
+	static const NRPLogger::level_t _defaultLogLevel = NRPLogger::level_t::info;
 };
 
 

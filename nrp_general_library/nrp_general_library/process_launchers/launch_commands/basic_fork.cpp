@@ -35,6 +35,8 @@
 
 BasicFork::~BasicFork()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Stop engine process if it's still running
 	this->stopEngineProcess(60);
 }
@@ -42,6 +44,8 @@ BasicFork::~BasicFork()
 pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
                                      const std::vector<std::string> &startParams, bool appendParentEnv)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Parent PID
 	const auto ppid = getpid();
 
@@ -98,9 +102,10 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 		// Parameter end
 		startParamPtrs.push_back(nullptr);
 
-		std::cout << "Current engine PID: " <<getpid() << std::endl;
+		NRPLogger::info("Engine type: {}, name: {}, PID: {}", engineConfig.at("EngineType"), engineConfig.at("EngineName"), getpid());
 
 		// Start engine, stop current execution
+		NRPLogger::debug("Starting engine with cmd: {}",  engineProcCmd.data());
 		auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
 		// Don't use the logger here, as this is a separate process
@@ -127,6 +132,8 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 
 pid_t BasicFork::stopEngineProcess(unsigned int killWait)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_enginePID > 0)
 	{
 		// Send SIGTERM to gracefully stop Nest process
@@ -166,6 +173,8 @@ pid_t BasicFork::stopEngineProcess(unsigned int killWait)
 
 LaunchCommandInterface::ENGINE_RUNNING_STATUS BasicFork::getProcessStatus()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Check if engine was already stopped before
 	if(this->_enginePID < 0)
 		return ENGINE_RUNNING_STATUS::RUNNING;
@@ -183,6 +192,8 @@ LaunchCommandInterface::ENGINE_RUNNING_STATUS BasicFork::getProcessStatus()
 
 void BasicFork::appendEnvVars(const std::vector<std::string> &envVars)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	// Modify child environment variables
 	for(auto &envVar : envVars)
 	{

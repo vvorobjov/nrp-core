@@ -49,6 +49,8 @@ namespace
 	 */
 	std::string readBrainFile(const std::string & brainFileName)
 	{
+		NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 		std::string initCode;
 		{
 			std::ifstream initFile(brainFileName);
@@ -230,6 +232,8 @@ NestEngineServerNRPClient::~NestEngineServerNRPClient()
 
 void NestEngineServerNRPClient::initialize()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	const auto initCode    = readBrainFile(this->engineConfig().at("NestInitFileName"));
 	const auto timeout     = processCommandTimeout(this->engineConfig().at("EngineCommandTimeout"));
 	const auto startTime   = std::chrono::system_clock::now();
@@ -279,14 +283,21 @@ void NestEngineServerNRPClient::initialize()
 	{
 		throw NRPException::logCreate("Failed to initialize Nest server. Received no response before timeout reached");
 	}
+	else
+	{
+		NRPLogger::info("Nest server is initialized.");
+	}
 
 	// Get simulation resolution and cache it
 
 	this->_simulationResolution = std::stof(nestGetKernelStatus(this->serverAddress(), "[\"resolution\"]"));
+
+	NRPLogger::debug("NestEngineServerNRPClient::initialize(...) completed with no errors.");
 }
 
 void NestEngineServerNRPClient::shutdown()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	// Empty
 }
 
@@ -297,11 +308,15 @@ SimulationTime NestEngineServerNRPClient::getEngineTime() const
 
 void NestEngineServerNRPClient::runLoopStep(SimulationTime timeStep)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->_runStepThread = std::async(std::launch::async, &NestEngineServerNRPClient::runStepFcn, this, timeStep);
 }
 
 void NestEngineServerNRPClient::waitForStepCompletion(float timeOut)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
 	if(!this->_runStepThread.valid())
 		return;
@@ -326,6 +341,8 @@ void NestEngineServerNRPClient::waitForStepCompletion(float timeOut)
 
 const std::string & NestEngineServerNRPClient::getDeviceIdList(const std::string & deviceName) const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Check if the device is in the populations map
 
 	if(this->_populations.count(deviceName) == 0)
@@ -340,6 +357,8 @@ const std::string & NestEngineServerNRPClient::getDeviceIdList(const std::string
 
 EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	EngineClientInterface::devices_set_t retVals;
 
 	for(const auto &devID : deviceIdentifiers)
@@ -373,6 +392,8 @@ EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEn
 
 void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devicesArray)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	for(DeviceInterface * const device : devicesArray)
 	{
 		if(isDeviceTypeValid(device->id(), this->engineName()))
@@ -421,6 +442,8 @@ std::string NestEngineServerNRPClient::serverAddress() const
 
 const std::vector<std::string> NestEngineServerNRPClient::engineProcEnvParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> envVars = this->engineConfig().at("EngineEnvParams");
 
     // Add NRP library path
@@ -434,6 +457,8 @@ const std::vector<std::string> NestEngineServerNRPClient::engineProcEnvParams() 
 
 const std::vector<std::string> NestEngineServerNRPClient::engineProcStartParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
     std::vector<std::string> startParams;
 
     // Add Server address

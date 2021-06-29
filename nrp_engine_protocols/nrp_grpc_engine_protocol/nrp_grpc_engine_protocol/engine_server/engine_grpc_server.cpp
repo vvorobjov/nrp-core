@@ -30,8 +30,10 @@
 
 grpc::Status EngineGrpcServer::handleGrpcError(const std::string & contextMessage, const std::string & errorMessage)
 {
-    std::cerr << contextMessage << std::endl;
-    std::cerr << errorMessage   << std::endl;
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    NRPLogger::error(contextMessage);
+    NRPLogger::error(errorMessage);
 
     // Pass the error message to the client
 
@@ -42,6 +44,8 @@ grpc::Status EngineGrpcServer::handleGrpcError(const std::string & contextMessag
 
 grpc::Status EngineGrpcServer::init(grpc::ServerContext * , const EngineGrpc::InitRequest * request, EngineGrpc::InitReply *)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     try
     {
         EngineGrpcServer::lock_t lock(this->_deviceLock);
@@ -62,6 +66,8 @@ grpc::Status EngineGrpcServer::init(grpc::ServerContext * , const EngineGrpc::In
 
 grpc::Status EngineGrpcServer::shutdown(grpc::ServerContext * , const EngineGrpc::ShutdownRequest * request, EngineGrpc::ShutdownReply *)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     try
     {
         EngineGrpcServer::lock_t lock(this->_deviceLock);
@@ -69,7 +75,6 @@ grpc::Status EngineGrpcServer::shutdown(grpc::ServerContext * , const EngineGrpc
         nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
         // Run engine-specifi shutdown function
-
         this->shutdown(requestJson);
     }
     catch(const std::exception &e)
@@ -77,11 +82,15 @@ grpc::Status EngineGrpcServer::shutdown(grpc::ServerContext * , const EngineGrpc
         return handleGrpcError("Error while executing shutdown", e.what());
     }
 
+    this->_loggerCfg.flush();
+    
     return grpc::Status::OK;
 }
 
 grpc::Status EngineGrpcServer::runLoopStep(grpc::ServerContext * , const EngineGrpc::RunLoopStepRequest * request, EngineGrpc::RunLoopStepReply * reply)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     try
     {
         EngineGrpcServer::lock_t lock(this->_deviceLock);
@@ -100,6 +109,8 @@ grpc::Status EngineGrpcServer::runLoopStep(grpc::ServerContext * , const EngineG
 
 grpc::Status EngineGrpcServer::setDevice(grpc::ServerContext * , const EngineGrpc::SetDeviceRequest * request, EngineGrpc::SetDeviceReply *)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     try
     {
         this->setDeviceData(*request);
@@ -114,6 +125,8 @@ grpc::Status EngineGrpcServer::setDevice(grpc::ServerContext * , const EngineGrp
 
 grpc::Status EngineGrpcServer::getDevice(grpc::ServerContext * , const EngineGrpc::GetDeviceRequest * request, EngineGrpc::GetDeviceReply * reply)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     try
     {
         this->getDeviceData(*request, reply);
@@ -127,21 +140,25 @@ grpc::Status EngineGrpcServer::getDevice(grpc::ServerContext * , const EngineGrp
 }
 
 EngineGrpcServer::EngineGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &)
-    : EngineGrpcServer(serverAddress)
+    : _serverAddress(serverAddress), _isServerRunning(false), _loggerCfg(engineName), _engineName(engineName)
 {
-    this->_engineName = engineName;
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    grpc::EnableDefaultHealthCheckService(true);
 }
 
 EngineGrpcServer::EngineGrpcServer(const std::string address)
+    : _serverAddress(address), _isServerRunning(false), _loggerCfg("EngineGrpcServer")
 {
-    this->_serverAddress   = address;
-    this->_isServerRunning = false;
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     grpc::EnableDefaultHealthCheckService(true);
 }
 
 EngineGrpcServer::~EngineGrpcServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->shutdownServer();
 }
 
@@ -157,11 +174,15 @@ const std::string EngineGrpcServer::serverAddress() const
 
 void EngineGrpcServer::startServerAsync()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     this->startServer();
 }
 
 void EngineGrpcServer::startServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(!this->_isServerRunning)
 	{
         grpc::ServerBuilder builder;
@@ -176,6 +197,8 @@ void EngineGrpcServer::startServer()
 
 void EngineGrpcServer::shutdownServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_isServerRunning)
 	{
 		this->_server->Shutdown();
@@ -186,17 +209,23 @@ void EngineGrpcServer::shutdownServer()
 
 void EngineGrpcServer::registerDevice(const std::string &deviceName, EngineGrpcDeviceControllerInterface *interface)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     EngineGrpcServer::lock_t lock(this->_deviceLock);
     this->_devicesControllers.emplace(deviceName, interface);
 }
 
 unsigned EngineGrpcServer::getNumRegisteredDevices()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     return this->_devicesControllers.size();
 }
 
 void EngineGrpcServer::clearRegisteredDevices()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     // TODO Check if it's true
 	// Do not lock scope. This method is called from the route handlers, which should already have locked down access.
 	//EngineJSONServer::lock_t lock(this->_deviceLock);
@@ -206,6 +235,8 @@ void EngineGrpcServer::clearRegisteredDevices()
 
 void EngineGrpcServer::setDeviceData(const EngineGrpc::SetDeviceRequest & data)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     EngineGrpcServer::lock_t lock(this->_deviceLock);
 
     const auto numDevices = data.request_size();
@@ -229,6 +260,8 @@ void EngineGrpcServer::setDeviceData(const EngineGrpc::SetDeviceRequest & data)
 
 void EngineGrpcServer::getDeviceData(const EngineGrpc::GetDeviceRequest & request, EngineGrpc::GetDeviceReply * reply)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
     EngineGrpcServer::lock_t lock(this->_deviceLock);
 
     const auto numDevices = request.deviceid_size();

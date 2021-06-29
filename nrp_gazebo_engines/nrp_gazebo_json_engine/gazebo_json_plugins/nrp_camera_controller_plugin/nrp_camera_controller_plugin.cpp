@@ -27,6 +27,8 @@
 
 void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	// Load camera plugin
 	this->CameraPlugin::Load(sensor, sdf);
 

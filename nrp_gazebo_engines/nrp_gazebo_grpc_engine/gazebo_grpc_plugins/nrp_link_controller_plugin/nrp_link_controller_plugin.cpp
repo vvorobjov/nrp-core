@@ -31,6 +31,8 @@ using namespace nlohmann;
 
 void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	auto &commControl = NRPCommunicationController::getInstance();
 
 	// Register a device for each link

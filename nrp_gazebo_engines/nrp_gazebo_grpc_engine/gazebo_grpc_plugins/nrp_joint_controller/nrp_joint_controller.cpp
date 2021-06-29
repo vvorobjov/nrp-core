@@ -53,6 +53,8 @@ gazebo::NRPJointController::~NRPJointController() = default;
 
 void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	std::map<std::string, double> jointTargets;
 
 	// Iterate over sdf configurations

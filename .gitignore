@@ -14,3 +14,4 @@ test_env_cmake.h
 .orig
 .idea
 .cache
+*.log

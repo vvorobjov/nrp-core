@@ -22,9 +22,12 @@
 
 #include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 cxxopts::Options EngineJSONOptsParser::createOptionParser(bool allowUnrecognised)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	cxxopts::Options options("NRP JSON Server");
 
 	if(allowUnrecognised)
@@ -40,5 +43,7 @@ cxxopts::Options EngineJSONOptsParser::createOptionParser(bool allowUnrecognised
 
 cxxopts::ParseResult EngineJSONOptsParser::parseOpts(int argc, char *argv[], cxxopts::Options parser)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	return parser.parse(argc, argv);
 }

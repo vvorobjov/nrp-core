@@ -28,6 +28,8 @@
 
 static void executePreprocessingFunctions(TransceiverFunctionManager & tfManager, const std::vector<EngineClientInterfaceSharedPtr> & engines)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	for(auto &engine : engines)
 	{
 		// Execute all preprocessing functions for this engine
@@ -58,14 +60,19 @@ SimulationLoop::SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines
       _engines(engines),
       _tfManager(SimulationLoop::initTFManager(config, _engines))
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	TransceiverDeviceInterface::setTFInterpreter(&(this->_tfManager.getInterpreter()));
 
 	for(const auto &curEnginePtr : this->_engines)
-	{	this->_engineQueue.emplace(0, curEnginePtr);	}
+	{	
+		this->_engineQueue.emplace(0, curEnginePtr);
+	}
 }
 
 void SimulationLoop::initLoop()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	for(const auto &engine : this->_engines)
 	{
 		try
@@ -81,6 +88,8 @@ void SimulationLoop::initLoop()
 
 void SimulationLoop::shutdownLoop()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	for(const auto &engine : this->_engines)
 	{
 		try
@@ -96,6 +105,8 @@ void SimulationLoop::shutdownLoop()
 
 void SimulationLoop::runLoop(SimulationTime runLoopTime)
 {
+	NRP_LOGGER_TRACE("{} called [ runLoopTime: {} ]", __FUNCTION__, runLoopTime.count());
+
 	const auto loopStopTime = this->_simTime + runLoopTime;
 
 	if(this->_engineQueue.empty())
@@ -198,7 +209,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			{
 				const auto timeDiff = fromSimulationTime<float, std::ratio<1>>(engine->getEngineTime() - this->_simTime);
 
-				NRPLogger::SPDWarnLogDefault("Engine \"" + engine->engineName() + "\" is ahead of simulation time by " +
+				NRPLogger::warn("Engine \"" + engine->engineName() + "\" is ahead of simulation time by " +
 				                             std::to_string(timeDiff) + "s\n");
 
 				// Wait for rest of simulation to catch up to engine
@@ -214,12 +225,17 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	TransceiverFunctionManager newManager;
 
 	{
 		TransceiverFunctionInterpreter::engines_devices_t engineDevs;
 		for(const auto &engine : engines)
+		{
+			NRPLogger::debug("Adding {} to TransceiverFunctionManager", engine->engineName());
 			engineDevs.emplace(engine->engineName(), &(engine->getCachedDevices()));
+		}
 
 		newManager.getInterpreter().setEngineDevices(std::move(engineDevs));
 	}
@@ -231,6 +247,7 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &si
 	const auto &preprocessingFunctions = simConfig->at("PreprocessingFunctionConfigs");
 	for(const auto &tf : preprocessingFunctions)
 	{
+		NRPLogger::debug("Adding preprocessing function {}", tf.dump());
 		newManager.loadTF(tf, true);
 	}
 
@@ -239,6 +256,7 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &si
 	const auto &transceiverFunctions = simConfig->at("TransceiverFunctionConfigs");
 	for(const auto &tf : transceiverFunctions)
 	{
+		NRPLogger::debug("Adding transceiver function {}", tf.dump());
         newManager.loadTF(tf, false);
 	}
 
@@ -247,6 +265,8 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &si
 
 void SimulationLoop::sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Find corresponding devices
 	const auto interfaceResultIterator = results.find(engine->engineName());
 	if(interfaceResultIterator != results.end())

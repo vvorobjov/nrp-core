@@ -60,6 +60,8 @@ bool PythonJSONServer::shutdownFlag() const
 
 SimulationTime PythonJSONServer::runLoopStep(SimulationTime timestep)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	PythonGILLock lock(this->_pyGILState, true);
 
 	try
@@ -76,6 +78,8 @@ SimulationTime PythonJSONServer::runLoopStep(SimulationTime timestep)
 
 nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJSONServer::lock_t&)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	PythonGILLock lock(this->_pyGILState, true);
 	try
 	{
@@ -93,14 +97,14 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	if(fileName.empty())
 	{
 		const auto errMsg = "No python filename given. Aborting...";
-		NRPLogger::SPDErrLogDefault(errMsg);
+		NRPLogger::error(errMsg);
 		return this->formatInitErrorMessage(errMsg);
 	}
 
 	if(!std::filesystem::exists(fileName))
 	{
 		const auto errMsg = "Could not find init file " + std::string(fileName);
-		NRPLogger::SPDErrLogDefault(errMsg);
+		NRPLogger::error(errMsg);
 		return this->formatInitErrorMessage(errMsg);
 	}
 
@@ -116,7 +120,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	{
 		// If an error occured, return the message to the NRP server without setting the initRunFlag
 		const auto msg = handle_pyerror();
-		NRPLogger::SPDErrLogDefault(msg);
+		NRPLogger::error(msg);
 		return this->formatInitErrorMessage(msg);
 	}
 
@@ -125,7 +129,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	{
 		PythonJSONServer::_registrationPyServer = nullptr;
 		const auto errMsg = "Failed to initialize Python server. Given python file \"" + std::string(fileName) + "\" does not register a script";
-		NRPLogger::SPDErrLogDefault(errMsg);
+		NRPLogger::error(errMsg);
 		return this->formatInitErrorMessage(errMsg);
 	}
 
@@ -139,7 +143,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	{
 		// If an error occured, return the message to the NRP server without setting the initRunFlag
 		const auto msg = handle_pyerror();
-		NRPLogger::SPDErrLogDefault(msg);
+		NRPLogger::error(msg);
 		return this->formatInitErrorMessage(msg);
 
 	}
@@ -147,12 +151,16 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	// Init has run once
 	this->_initRunFlag = true;
 
+	NRPLogger::debug("PythonJSONServer::initialize(...) completed with no errors.");
+
 	// Return success and parsed devmap
 	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, true}});
 }
 
 nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	PythonGILLock lock(this->_pyGILState, true);
 
 	this->_shutdownFlag = true;
@@ -181,6 +189,8 @@ nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
 
 PyEngineScript *PythonJSONServer::registerScript(const boost::python::object &pythonScript)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	assert(PythonJSONServer::_registrationPyServer != nullptr);
 
 	// Register script with server

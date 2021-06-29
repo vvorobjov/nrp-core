@@ -27,6 +27,8 @@
 
 void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	std::cout << "NRP Communication plugin: Initializing...\n";
 
 	std::string serverAddr, engineName, registrationAddr;
@@ -65,6 +67,8 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 
 void gazebo::NRPCommunicationPlugin::Reset()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	// Reset server
 	std::cout << "NRP Communication plugin: Resetting controller...\n";
 	auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);

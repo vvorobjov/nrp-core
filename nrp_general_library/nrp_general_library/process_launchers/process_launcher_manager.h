@@ -58,6 +58,7 @@ class ProcessLauncherManager
 		 */
 		ProcessLauncherInterface::unique_ptr createProcessLauncher(const std::string &launcherType) const
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 			//ProcessLauncherManager *const manager = ProcessLauncherManager::getInstance();
 
 			const auto launcherIterator = this->_processLaunchers.find(launcherType);
@@ -85,6 +86,8 @@ class ProcessLauncherManager
 		template<PROCESS_LAUNCHER_C PROCESS_LAUNCHER, class ...REST>
 		void registerProcessLauncher()
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+			
 			ProcessLauncherInterface::unique_ptr launcher(new PROCESS_LAUNCHER());
 			this->registerProcessLauncher(std::move(launcher));
 

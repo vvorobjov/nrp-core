@@ -58,7 +58,11 @@ class EngineJSONNRPClient
 		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
 		      _serverAddress(this->engineConfig().at("ServerAddress")),
 			  _engineTime(0)
-		{	RestClientSetup::ensureInstance();	}
+		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+			RestClientSetup::ensureInstance();
+		}
 
 		/*!
 		 * \brief Constructor
@@ -71,6 +75,8 @@ class EngineJSONNRPClient
 		      _serverAddress(serverAddress),
 			  _engineTime(0)
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             this->engineConfig()["ServerAddress"] = this->_serverAddress;
 			RestClientSetup::ensureInstance();
 		}
@@ -79,6 +85,8 @@ class EngineJSONNRPClient
 
 		virtual pid_t launchEngine() override
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+			
 			// Launch engine process
 			auto enginePID = this->EngineClientInterface::launchEngine();
 
@@ -98,6 +106,8 @@ class EngineJSONNRPClient
 
 		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 			// Convert devices to JSON format
 			nlohmann::json request;
 			for(const auto &curDevice : devicesArray)
@@ -124,6 +134,8 @@ class EngineJSONNRPClient
 
 		virtual void waitForStepCompletion(float timeOut) override
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 			// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
 			if(!this->_loopStepThread.valid())
 				return;
@@ -142,6 +154,8 @@ class EngineJSONNRPClient
 
         virtual const std::vector<std::string> engineProcStartParams() const override
         {
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
             std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
 
             std::string name = this->engineConfig().at("EngineName");
@@ -166,6 +180,8 @@ class EngineJSONNRPClient
 	protected:
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 			nlohmann::json request;
 			for(const auto &devID : deviceIdentifiers)
 			{
@@ -188,6 +204,10 @@ class EngineJSONNRPClient
 		 */
 		nlohmann::json sendInitCommand(const nlohmann::json &data)
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+			NRPLogger::debug("EngineJSONNRPClient::sendInitCommand [ data: {} ]", data.dump());
+
 			// Post init request to Engine JSON server
 			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(),
 			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
@@ -201,6 +221,10 @@ class EngineJSONNRPClient
 		 */
 		nlohmann::json sendShutdownCommand(const nlohmann::json &data)
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+			NRPLogger::debug("EngineJSONNRPClient::sendShutdownCommand [ data: {} ]", data.dump());
+
 			// Post init request to Engine JSON server
 			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(),
 			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
@@ -215,6 +239,8 @@ class EngineJSONNRPClient
 		 */
 		std::string waitForRegistration(unsigned int numTries, unsigned int waitTime) const
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 			auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
 			if(pRegistrationServer == nullptr)
 				pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig().at("RegistrationServerAddress"));
@@ -322,6 +348,8 @@ class EngineJSONNRPClient
 		 */
 		typename EngineClientInterface::devices_set_t getDeviceInterfacesFromJSON(const nlohmann::json &devices) const
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 			typename EngineClientInterface::devices_set_t interfaces;
 
 			for(auto curDeviceIterator = devices.begin(); curDeviceIterator != devices.end(); ++curDeviceIterator)
@@ -353,6 +381,8 @@ class EngineJSONNRPClient
 		template<class DEVICE, class ...REMAINING_DEVICES>
 		inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromJSON(const nlohmann::json::const_iterator &deviceData, DeviceIdentifier &deviceID) const
 		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+			
             if(DEVICE::TypeName.compare(deviceID.Type) == 0)
             {
 				// Check whether the requested device has new data

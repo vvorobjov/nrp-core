@@ -21,9 +21,12 @@
 //
 
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	cxxopts::Options options("NRP Gazebo Server");
 
 	if(allowUnrecognised)
@@ -38,5 +41,7 @@ cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised
 
 cxxopts::ParseResult EngineGRPCOptsParser::parseOpts(int argc, char *argv[], cxxopts::Options parser)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	return parser.parse(argc, argv);
 }

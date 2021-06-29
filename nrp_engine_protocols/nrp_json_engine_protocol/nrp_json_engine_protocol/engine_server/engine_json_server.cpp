@@ -32,8 +32,11 @@ using json = nlohmann::json;
 
 EngineJSONServer::EngineJSONServer(const std::string &engineAddress, const std::string &engineName, const std::string &clientAddress)
     : _serverAddress(engineAddress),
-      _router(EngineJSONServer::setRoutes(this))
+      _router(EngineJSONServer::setRoutes(this)),
+	  _loggerCfg(engineName)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	RestClientSetup::ensureInstance();
 
 	// Try to bind to preferred address. If that fails, try incremental ports
@@ -73,13 +76,18 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress, const std::
 		if(!EngineJSONRegistrationServer::sendClientEngineRequest(clientAddress, engineName, this->_serverAddress, 20, 1))
 			throw NRPException::logCreate(std::string("Error while trying to register engine \"") + engineName + "\" at " + clientAddress);
 	}
+
+	NRPLogger::info("EngineJSONServer {} has been created", engineName);
 }
 
 EngineJSONServer::EngineJSONServer(const std::string &engineAddress)
     : _serverAddress(engineAddress),
       _router(EngineJSONServer::setRoutes(this)),
-      _pEndpoint(enpoint_ptr_t(new Pistache::Http::Endpoint(Pistache::Address(engineAddress))))
+      _pEndpoint(enpoint_ptr_t(new Pistache::Http::Endpoint(Pistache::Address(engineAddress)))),
+	  _loggerCfg("EngineJSONServer")
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	RestClientSetup::ensureInstance();
 
 	// Add routes to endpoint
@@ -88,10 +96,14 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress)
 
 EngineJSONServer::EngineJSONServer()
     : EngineJSONServer("")
-{}
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+}
 
 EngineJSONServer::~EngineJSONServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->shutdownServer();
 }
 
@@ -102,6 +114,8 @@ bool EngineJSONServer::isServerRunning() const
 
 void EngineJSONServer::startServerAsync()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(!this->_serverRunning)
 	{
 		std::unique_lock devLock(this->_deviceLock);
@@ -112,6 +126,8 @@ void EngineJSONServer::startServerAsync()
 
 void EngineJSONServer::startServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(!this->_serverRunning)
 	{
 		this->_serverRunning = true;
@@ -125,6 +141,8 @@ void EngineJSONServer::startServer()
 
 void EngineJSONServer::shutdownServer()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_serverRunning)
 	{
 		EngineJSONServer::lock_t devLock(this->_deviceLock, std::defer_lock);
@@ -137,7 +155,7 @@ void EngineJSONServer::shutdownServer()
 }
 
 uint16_t EngineJSONServer::serverPort() const
-{
+{	
 	if(this->_serverRunning)
 		return this->_pEndpoint->getPort();
 
@@ -151,15 +169,22 @@ std::string EngineJSONServer::serverAddress() const
 
 void EngineJSONServer::registerDevice(const std::string &deviceName, controller_t *interface)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	EngineJSONServer::lock_t lock(this->_deviceLock);
 	return this->registerDeviceNoLock(deviceName, interface);
 }
 
 void EngineJSONServer::registerDeviceNoLock(const std::string &deviceName, controller_t *interface)
-{	this->_devicesControllers.emplace(deviceName, interface);	}
+{	
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
+	this->_devicesControllers.emplace(deviceName, interface);
+}
 
 void EngineJSONServer::clearRegisteredDevices()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	// Do not lock scope. This method is called from the route handlers, which should already have locked down access.
 	//EngineJSONServer::lock_t lock(this->_deviceLock);
 
@@ -221,6 +246,8 @@ nlohmann::json EngineJSONServer::setDeviceData(const nlohmann::json &reqData)
 
 Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	Pistache::Rest::Router router;
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::GetDeviceInformationRoute.data(), Pistache::Rest::Routes::bind(&EngineJSONServer::getDeviceDataHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDeviceRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDeviceHandler, server));
@@ -257,6 +284,8 @@ void EngineJSONServer::getDeviceDataHandler(const Pistache::Rest::Request &req, 
 
 void EngineJSONServer::setDeviceHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	json jrequest;
 	try
 	{
@@ -331,6 +360,8 @@ void EngineJSONServer::runLoopStepHandler(const Pistache::Rest::Request &req, Pi
 
 void EngineJSONServer::initializeHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	const json jrequest = this->parseRequest(req, res);
 
 	json jresp;
@@ -356,6 +387,8 @@ void EngineJSONServer::initializeHandler(const Pistache::Rest::Request &req, Pis
 
 void EngineJSONServer::shutdownHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	const json jrequest = this->parseRequest(req, res);
 
 	json jresp;
@@ -381,10 +414,11 @@ void EngineJSONServer::shutdownHandler(const Pistache::Rest::Request &req, Pista
 
 Pistache::Http::Endpoint EngineJSONServer::createEndpoint(std::string *engineAddress, const std::string &engineName)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
 	if(engineName.empty())
 	{
-		std::cout << "No engine name specified for server at address \"" + *engineAddress + "\". Skipping registration";
+		NRPLogger::error("No engine name specified for server at address {}. Skipping registration", *engineAddress);
 
 		return Pistache::Http::Endpoint(Pistache::Address(*engineAddress));
 	}

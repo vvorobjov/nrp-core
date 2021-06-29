@@ -32,6 +32,8 @@ using engine_launch_fcn_t = NRP_ENGINE_LAUNCH_FCN_T;
 
 EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string &pluginLibFile)
 {
+	NRP_LOGGER_TRACE("{} called [ pluginLibFile: {} ]", __FUNCTION__, pluginLibFile);
+
 	dlerror();	// Clear previous error msgs
 
 	// Try loading plugin with given paths
@@ -42,7 +44,10 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
 
 		pLibHandle = dlopen(fileName.c_str(), RTLD_LAZY | RTLD_GLOBAL);
 		if(pLibHandle != nullptr)
+		{
+			NRPLogger::debug("Plugin {} found at {}", pluginLibFile, fileName);
 			break;
+		}
 	}
 
 	// Print error if opening failed
@@ -50,7 +55,7 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
 	{
 		const auto dlerr = dlerror();
 
-		NRPLogger::SPDErrLogDefault("Unable to load plugin library \"" + pluginLibFile + "\"" + (dlerr ? std::string(": ")+dlerr : ""));
+		NRPLogger::error("Unable to load plugin library \"" + pluginLibFile + "\"" + (dlerr ? std::string(": ")+dlerr : ""));
 
 		return nullptr;
 	}
@@ -62,8 +67,8 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
 	engine_launch_fcn_t *pLaunchFcn = reinterpret_cast<engine_launch_fcn_t*>(dlsym(pLibHandle, CREATE_NRP_ENGINE_LAUNCHER_FCN_STR));
 	if(pLaunchFcn == nullptr)
 	{
-		NRPLogger::SPDErrLogDefault("Plugin Library \"" + pluginLibFile + "\" does not contain an engine load creation function");
-		NRPLogger::SPDErrLogDefault("Register a plugin using CREATE_NRP_ENGINE_LAUNCHER(engine_launcher_name)");
+		NRPLogger::error("Plugin Library \"" + pluginLibFile + "\" does not contain an engine load creation function");
+		NRPLogger::error("Register a plugin using CREATE_NRP_ENGINE_LAUNCHER(engine_launcher_name)");
 
 		return nullptr;
 	}
@@ -73,6 +78,8 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
 
 PluginManager::~PluginManager()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Unload all plugins
 	while(!this->_loadedLibs.empty())
 	{
@@ -80,7 +87,7 @@ PluginManager::~PluginManager()
 		if(dlclose(curLibIt->second) != 0)
 		{
 			const auto errStr = dlerror();
-			NRPLogger::SPDErrLogDefault("Couldn't unload plugin \"" + curLibIt->first + "\": " + errStr);
+			NRPLogger::error("Couldn't unload plugin \"" + curLibIt->first + "\": " + errStr);
 		}
 
 		this->_loadedLibs.erase(curLibIt);

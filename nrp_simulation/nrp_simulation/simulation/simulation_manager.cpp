@@ -25,11 +25,11 @@
 #include "nrp_general_library/utils/file_finder.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_simulation/config/cmake_conf.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 #include <iostream>
 #include <fstream>
 #include <future>
-#include <spdlog/spdlog.h>
 
 
 cxxopts::Options SimulationParams::createStartParamParser()
@@ -41,7 +41,13 @@ cxxopts::Options SimulationParams::createStartParamParser()
 	        (SimulationParams::ParamSimCfgFileLong.data(), SimulationParams::ParamSimCfgFileDesc.data(),
 	         cxxopts::value<SimulationParams::ParamSimCfgFileT>())
 	        (SimulationParams::ParamPluginsLong.data(), SimulationParams::ParamPluginsDesc.data(),
-	         cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}));
+	         cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}))
+	        (SimulationParams::ParamConsoleLogLevelLong.data(), SimulationParams::ParamConsoleLogLevelDesc.data(),
+	         cxxopts::value<SimulationParams::ParamConsoleLogLevelT>()->default_value("info"))
+	        (SimulationParams::ParamFileLogLevelLong.data(), SimulationParams::ParamFileLogLevelDesc.data(),
+	         cxxopts::value<SimulationParams::ParamFileLogLevelT>()->default_value("off"))
+	        (SimulationParams::ParamLogDirLong.data(), SimulationParams::ParamLogDirDesc.data(),
+	         cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"));
 
 	return opts;
 }
@@ -69,6 +75,24 @@ nlohmann::json SimulationParams::parseJSONFile(const std::string &fileName)
 	return cfgJSON;
 }
 
+NRPLogger::level_t SimulationParams::parseLogLevel(const std::string &strLogLevel)
+{
+	// try to parse log level taken from paramters
+	NRPLogger::level_t level = NRPLogger::level_from_string(strLogLevel);
+
+	// if the log level does not exist, the NRPLogger::level_from_string returns "off", what is a valid log level
+	// in this case we check if the parameters are trying to turn off the log indeed
+	if (level == NRPLogger::level_t::off && strLogLevel.compare(NRPLogger::level_to_string(NRPLogger::level_t::off).data()) != 0)
+	{
+		// if the input parameter is different from "off", then we apply default log level
+		level = _defaultLogLevel;
+		NRPLogger::warn(
+			"Couldn't set the desired log level, using default [{}]. You specified: {}", 
+			NRPLogger::level_to_string(level), strLogLevel);
+	}
+	return level;
+}
+
 
 SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     : _simConfig(simulationConfig)
@@ -76,6 +100,8 @@ SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
 
 SimulationManager::~SimulationManager()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Stop running threads
 	this->shutdownLoop(this->acquireSimLock()); //TODO Refactor: why twice shutdownLoop?
 
@@ -93,6 +119,8 @@ SimulationManager::~SimulationManager()
 
 SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult &args)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     jsonSharedPtr simConfig = nullptr;
 
 	// Get file names from start params
@@ -101,10 +129,12 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	try
 	{
 		simCfgFileName = args[SimulationParams::ParamSimCfgFile.data()].as<SimulationParams::ParamSimCfgFileT>();
+		NRPLogger::debug("{}: got configuration file from parameters: {}", __FUNCTION__, simCfgFileName);
 	}
 	catch(std::domain_error&)
 	{
 		// If no simulation file name is present, return empty config
+		NRPLogger::debug("{}: couldn't get configuration file from parameters, returning empty config", __FUNCTION__);
 		return SimulationManager(simConfig);
 	}
 
@@ -146,6 +176,8 @@ void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstShare
                                                                     const MainProcessLauncherManager::const_shared_ptr &processLauncherManager,
                                                                     sim_lock_t &simLock)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Make sure initLock is retrieved before simLock
 	if(simLock.owns_lock())
 		simLock.unlock();
@@ -155,7 +187,8 @@ void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstShare
 	simLock.lock();
 
 	// Create and initialize loop
-	spdlog::info("Initializing simulation loop");
+	NRPLogger::info("Initializing simulation loop");
+
 	this->_loop.reset(new SimulationLoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
 
 	//sleep(10);
@@ -170,11 +203,14 @@ bool SimulationManager::isRunning() const
 
 void SimulationManager::stopSimulation(const sim_lock_t&)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	this->_runningSimulation = false;
 }
 
 bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	if(this->_loop == nullptr)
 		return false;
 
@@ -211,6 +247,8 @@ bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
 
 bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &simLock)
 {
+	NRP_LOGGER_TRACE("{} called [ secs: {} ]", __FUNCTION__, secs.count());
+
 	if(this->_loop == nullptr)
 		return false;
 
@@ -243,6 +281,8 @@ bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &sim
 
 void SimulationManager::shutdownLoop(const SimulationManager::sim_lock_t&)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	try {
 		if(this->_loop != nullptr) {
 			this->_loop->shutdownLoop();
@@ -259,6 +299,8 @@ void SimulationManager::shutdownLoop(const SimulationManager::sim_lock_t&)
 
 bool SimulationManager::isSimInitializing()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_loop != nullptr)
 		return false;
 
@@ -268,6 +310,8 @@ bool SimulationManager::isSimInitializing()
 
 SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	SimulationLoop::engine_interfaces_t engines;
 	auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
@@ -281,7 +325,7 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 		if(engineLauncher == nullptr)
 		{
 			const auto errMsg = "Failed to find engine interface \"" + engineType + "\"";
-			spdlog::error(errMsg);
+			NRPLogger::error(errMsg);
 
 			throw std::invalid_argument(errMsg);
 		}

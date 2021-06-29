@@ -36,37 +36,52 @@
 PythonEngineJSONNRPClient::PythonEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineJSONNRPClient(config, std::move(launcher))
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     setDefaultProperty<std::string>("EngineProcCmd", NRP_PYTHON_EXECUTABLE_PATH);
 }
 
 PythonEngineJSONNRPClient::~PythonEngineJSONNRPClient()
-{}
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+}
 
 void PythonEngineJSONNRPClient::initialize()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	nlohmann::json resp = this->sendInitCommand(this->engineConfig());
 	if(!resp.at(PythonConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
 		this->_initErrMsg = resp.at(PythonConfigConst::InitFileErrorMsg.data());
-		NRPLogger::SPDErrLogDefault(this->_initErrMsg);
+		NRPLogger::error(this->_initErrMsg);
 
 		throw NRPException::logCreate("Initialization failed: " + this->_initErrMsg);
 	}
+
+	NRPLogger::debug("PythonEngineJSONNRPClient::initialize(...) completed with no errors.");
 }
 
 void PythonEngineJSONNRPClient::shutdown()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->sendShutdownCommand(nlohmann::json());
 }
 
 const std::vector<std::string> PythonEngineJSONNRPClient::engineProcStartParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
 
     // Add JSON Server address (will be used by plugin)
     std::string server_address = this->engineConfig().at("ServerAddress");
     startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address);
+
+
+	NRPLogger::debug("{} got the {} start parameters.", __FUNCTION__, startParams.size());
 
     return startParams;
 }

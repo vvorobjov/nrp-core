@@ -11,6 +11,9 @@ set (CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 set (NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror)
 
+# Uncomment to compile a production version of code (without trace calls)
+# add_definitions(-DPRODUCTION_RELEASE)
+
 include(GNUInstallDirs)
 include(ExternalProject)
 include(FetchContent)

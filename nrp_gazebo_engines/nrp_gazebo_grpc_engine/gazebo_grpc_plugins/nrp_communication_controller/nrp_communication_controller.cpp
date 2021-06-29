@@ -30,16 +30,22 @@ std::unique_ptr<NRPCommunicationController> NRPCommunicationController::_instanc
 
 NRPCommunicationController::~NRPCommunicationController()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	this->_stepController = nullptr;
 }
 
 NRPCommunicationController &NRPCommunicationController::getInstance()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	return *(NRPCommunicationController::_instance.get());
 }
 
 NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	// Remove old server, start new one with given server URL
 	NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL));
 	return NRPCommunicationController::getInstance();
@@ -47,18 +53,24 @@ NRPCommunicationController &NRPCommunicationController::resetInstance(const std:
 
 NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, registrationURL));
 	return NRPCommunicationController::getInstance();
 }
 
 void NRPCommunicationController::registerStepController(GazeboStepController *stepController)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	EngineGrpcServer::lock_t lock(this->_deviceLock);
 	this->_stepController = stepController;
 }
 
 SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	if(this->_stepController == nullptr)
 	{
 		auto err = std::out_of_range("Tried to run loop while the controller has not yet been initialized");
@@ -83,6 +95,8 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 
 void NRPCommunicationController::initialize(const json &data, EngineGrpcServer::lock_t &lock)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     double waitTime = data.at("WorldLoadTime");
 	if(waitTime <= 0)
 		waitTime = std::numeric_limits<double>::max();
@@ -111,13 +125,18 @@ void NRPCommunicationController::initialize(const json &data, EngineGrpcServer::
 
 void NRPCommunicationController::shutdown(const json&)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	// Do nothing
 }
 
 NRPCommunicationController::NRPCommunicationController(const std::string &address)
     : EngineGrpcServer(address)
-{}
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+}
 
 NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
     : EngineGrpcServer(serverURL, engineName, registrationURL)
-{}
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+}

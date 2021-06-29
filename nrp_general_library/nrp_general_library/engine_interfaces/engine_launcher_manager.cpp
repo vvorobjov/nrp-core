@@ -22,7 +22,7 @@
 
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 
-#include <spdlog/spdlog.h>
+#include "nrp_general_library/utils/nrp_logger.h"
 
 void EngineLauncherManager::registerLauncher(const EngineLauncherInterfaceSharedPtr &launcher)
 {
@@ -30,7 +30,7 @@ void EngineLauncherManager::registerLauncher(const EngineLauncherInterfaceShared
 	if(sameLauncherPtr != nullptr)
 	{
 		// TODO: Handle error where two launchers have same name
-		spdlog::warn("Launcher with same name \"" + sameLauncherPtr->engineType() + "\"already registered");
+		NRPLogger::error("Launcher with same name \"" + sameLauncherPtr->engineType() + "\"already registered");
 	}
 
 	this->_launchers.emplace(launcher);
@@ -38,11 +38,13 @@ void EngineLauncherManager::registerLauncher(const EngineLauncherInterfaceShared
 
 EngineLauncherInterfaceSharedPtr EngineLauncherManager::findLauncher(const EngineLauncherInterface::engine_type_t &type) const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	for(const auto &launcher : this->_launchers)
 	{
 		if(launcher->engineType() == type)
 		{
-			spdlog::info("Found launcher for engine " + type);
+			NRPLogger::debug("Found launcher for engine " + type);
 			return launcher;
 		}
 	}

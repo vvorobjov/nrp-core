@@ -59,6 +59,8 @@ const NestDevice *NestEngineJSONDeviceController<NestDevice>::getDeviceInformati
 
 void NestEngineJSONDeviceController<NestDevice>::setNestID(boost::python::dict nest, boost::python::object nodeCollection)
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	
 	this->_nest = nest;
 	this->_nodeCollection = nodeCollection;
 }

@@ -28,24 +28,30 @@
 #include "nrp_general_library/utils/restclient_setup.h"
 #include "nrp_simulation/config/cmake_conf.h"
 #include "nrp_simulation/simulation/simulation_manager.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
-#include <spdlog/spdlog.h>
 #include <stdlib.h>
 #include <string.h>
 
 void loadPlugins(const char *libName, PluginManager &pluginManager, const EngineLauncherManagerSharedPtr &engines)
 {
+	NRP_LOGGER_TRACE("{} called [ libName: {} ]", __FUNCTION__, libName);
+
 	// Extract plugin file name and load it
+	NRPLogger::debug("Loading {} plugin", libName);
 	auto engineLauncher = pluginManager.loadPlugin(libName);
 	if(engineLauncher == nullptr)
 		throw NRPException::logCreate(std::string("Failed to load engine launcher from plugin \"") + libName + "\"");
 
+	NRPLogger::info("Plugin {} is loaded", libName);
+
 	// Register launcher
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
+	NRPLogger::debug("Engine launcher ({}) is registered", libName);
 }
 
 int main(int argc, char *argv[])
-{	
+{
 	RestClientSetup::ensureInstance();
 
 	// Parse start params
@@ -66,11 +72,25 @@ int main(int argc, char *argv[])
 	auto &startParams = *startParamPtr;
 
 	// If help output was requested, only print that, then exit
-	if(startParams[SimulationParams::ParamHelp.data()].as<bool>())
+	if(startParams[SimulationParams::ParamHelp.data()].as<SimulationParams::ParamHelpT>())
 	{
 		std::cout << optParser.help();
 		return 0;
 	}
+
+	// Create default logger for the launcher
+	auto logger = NRPLogger
+	(
+		SimulationParams::NRPProgramName.data(), 														// Logger name
+		SimulationParams::parseLogLevel(
+			startParams[SimulationParams::ParamFileLogLevelLong.data()].as<SimulationParams::ParamFileLogLevelT>()
+			),																							// File log level
+		SimulationParams::parseLogLevel(
+			startParams[SimulationParams::ParamConsoleLogLevelLong.data()].as<SimulationParams::ParamConsoleLogLevelT>()
+			),																							// Console log level
+		startParams[SimulationParams::ParamLogDirLong.data()].as<SimulationParams::ParamLogDirT>(), 	// Log files location
+		true
+	);
 
 	// Setup Python
 	PythonInterpreterState pythonInterp(argc, argv);
@@ -104,7 +124,7 @@ int main(int argc, char *argv[])
 	// Check if configuration file was specified
 	if(manager.simulationConfig() != nullptr)
 	{
-		spdlog::info("Config file specified, launching...\n");
+		NRPLogger::info("Config file specified, launching...");
 
 		auto simLock = manager.acquireSimLock();
 		manager.initSimulationLoop(engines, processLaunchers, simLock);

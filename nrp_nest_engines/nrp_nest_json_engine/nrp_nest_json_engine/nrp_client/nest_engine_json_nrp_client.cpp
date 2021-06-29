@@ -33,6 +33,8 @@
 NestEngineJSONNRPClient::NestEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineJSONNRPClient(config, std::move(launcher))
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
     setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_EXECUTABLE_PATH);
 }
 
@@ -41,24 +43,32 @@ NestEngineJSONNRPClient::~NestEngineJSONNRPClient()
 
 void NestEngineJSONNRPClient::initialize()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	nlohmann::json resp = this->sendInitCommand(this->engineConfig());
 	if(!resp.at(NestConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
 		this->_initErrMsg = resp.at(NestConfigConst::InitFileErrorMsg.data());
-		NRPLogger::SPDErrLogDefault(this->_initErrMsg);
+		NRPLogger::error(this->_initErrMsg);
 
 		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" initialization failed: " + this->_initErrMsg);
 	}
+
+	NRPLogger::debug("NestEngineJSONNRPClient::initialize(...) completed with no errors.");
 }
 
 void NestEngineJSONNRPClient::shutdown()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
 	this->sendShutdownCommand(nlohmann::json());
 }
 
 const std::vector<std::string> NestEngineJSONNRPClient::engineProcEnvParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> envVars = this->EngineJSONNRPClient::engineProcEnvParams();;
 
     // Add NRP library path
@@ -69,6 +79,8 @@ const std::vector<std::string> NestEngineJSONNRPClient::engineProcEnvParams() co
 
 const std::vector<std::string> NestEngineJSONNRPClient::engineProcStartParams() const
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
     std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
 
     // Add JSON Server address (will be used by plugin)
