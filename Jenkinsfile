@@ -7,59 +7,62 @@
 
 pipeline {
     environment {
-        NRP_CORE_DIR = "nrp-core"
-        // GIT_CHECKOUT_DIR is a dir of the main project (that was pushed)
-        GIT_CHECKOUT_DIR = "${env.NRP_CORE_DIR}"
-
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
     }
     agent {
-        docker {
-            image 'hbpneurorobotics/nrp-core:latest'
-            args '--entrypoint="" -u root --privileged'
-            alwaysPull true
+        dockerfile {
+            args '-u root --privileged'
         }
-    }
-    options { 
-        // Skip code checkout prior running pipeline (only Jenkinsfile is checked out)
-        skipDefaultCheckout true
     }
 
     stages {
-        stage('Code checkout') {
+       
+        stage('Prepare Build') {
             steps {
-                // Notify BitBucket on the start of the job
-                // The Bitbucket Build Status Notifier is used
-                // REF: https://plugins.jenkins.io/bitbucket-build-status-notifier/
-                
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Code checkout')
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'CMake nrp-core')
 
-                // Debug information on available environment
-                echo sh(script: 'env|sort', returnStdout: true)
-
-                // Checkout main project to GIT_CHECKOUT_DIR
-                dir(env.GIT_CHECKOUT_DIR) {
-                    checkout scm
-                    sh 'chown -R "${USER}" ./'
-                }
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/10-prepare-build.sh'
             }
         }
-        
+       
         stage('Build') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
 
-                // Build operations (starting in .ci directory)
-                dir(env.GIT_CHECKOUT_DIR){
-                    // Determine explicitly the shell as bash (needed for proper user-scripts operation)
-                    sh 'bash .ci/build.sh'
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/20-build.sh'
+            }
+        }
+       
+        stage('Unit tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
 
-                    junit 'build/xml/**/*.xml'
-                    publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
-                }
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/30-run-tests.sh'
+            }
+        }
+       
+        stage('Static tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/40-run-cppcheck.sh'
+            }
+        }
+       
+        stage('Publishing results') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+
+                junit 'build/xml/**/*.xml'
+                publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
             }
         }
     }
+
 
     post {
         always {
