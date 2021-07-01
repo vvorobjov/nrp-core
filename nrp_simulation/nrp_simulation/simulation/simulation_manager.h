@@ -56,6 +56,11 @@ struct SimulationParams
 	static constexpr std::string_view ParamPluginsDesc = "Additional engine plugins to load";
 	using ParamPluginsT = std::vector<std::string>;
 
+	static constexpr std::string_view ParamExpDir = "d";
+	static constexpr std::string_view ParamExpDirLong = "d,dir";
+	static constexpr std::string_view ParamExpDirDesc = "The explicit location of the experiment folder";
+	using ParamExpDirT = std::string;
+	
 	// Log paramters
 	static constexpr std::string_view ParamConsoleLogLevelLong = "cloglevel";
 	static constexpr std::string_view ParamConsoleLogLevelDesc = "Console minimum level of log severity (info by default)";

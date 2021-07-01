@@ -60,6 +60,7 @@ TEST(SimulationManagerTest, OptParser)
 	startParamDat = {"nrp_server",
 	                std::string("-") + SimulationParams::ParamHelp.data(),
 	                std::string("-") + SimulationParams::ParamSimCfgFile.data(), "cfgFile.json",
+	                std::string("-") + SimulationParams::ParamExpDir.data(), "experiment_dir",
 	                std::string("--") + SimulationParams::ParamConsoleLogLevelLong.data(), "debug",
 	                std::string("--") + SimulationParams::ParamFileLogLevelLong.data(), "trace",
 	                std::string("--") + SimulationParams::ParamLogDirLong.data(), ""};
@@ -87,12 +88,9 @@ TEST(SimulationManagerTest, OptParser)
 	ASSERT_THROW(optParser.parse(argc, argv), cxxopts::OptionParseException);
 }
 
-TEST(SimulationManagerTest, SimulationManagerSetup)
+TEST(SimulationManagerTest, SetupExperimentConfig)
 {
 	auto optParser(SimulationParams::createStartParamParser());
-
-	const char *pPyArgv = "simtest";
-	PythonInterpreterState pyInterp(1, const_cast<char**>(&pPyArgv));
 
 	// Test no simulation file passed
 	std::vector<std::string> startParamDat;
@@ -146,6 +144,82 @@ TEST(SimulationManagerTest, SimulationManagerSetup)
 		SimulationManager manager = SimulationManager::createFromParams(startParamVals);
 
 		ASSERT_NE(manager.simulationConfig(), nullptr);
+	}
+}
+
+TEST(SimulationManagerTest, SetupExperimentDirectory)
+{
+	auto optParser(SimulationParams::createStartParamParser());
+
+	// Test invalid experiment directory
+	std::vector<std::string> startParamDat = {"nrp_server",
+	                 std::string("-") + SimulationParams::ParamExpDir.data(), "non/existing/directory"};
+	std::vector<const char*> startParams = createStartParamPtr(startParamDat);
+
+	int argc = static_cast<int>(startParams.size());
+	char **argv = const_cast<char**>(startParams.data());
+
+	{
+		auto startParamVals(optParser.parse(argc, argv));
+		ASSERT_THROW(SimulationManager manager = SimulationManager::createFromParams(startParamVals), std::invalid_argument);
+	}
+
+	// Test valid example directory
+	startParamDat = {"nrp_server",
+	                 std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
+	startParams = createStartParamPtr(startParamDat);
+
+	argc = static_cast<int>(startParams.size());
+	argv = const_cast<char**>(startParams.data());
+
+	{
+		auto startParamVals(optParser.parse(argc, argv));
+		ASSERT_NO_THROW(SimulationManager manager = SimulationManager::createFromParams(startParamVals));
+	}
+
+	// Test valid JSON config file and valid example directory
+	startParamDat = {"nrp_server",
+	                 std::string("-") + SimulationParams::ParamSimCfgFile.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).filename(),
+	                 std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
+	startParams = createStartParamPtr(startParamDat);
+
+	argc = static_cast<int>(startParams.size());
+	argv = const_cast<char**>(startParams.data());
+
+	{
+		auto startParamVals(optParser.parse(argc, argv));
+		SimulationManager manager = SimulationManager::createFromParams(startParamVals);
+
+		ASSERT_NE(manager.simulationConfig(), nullptr);
+	}
+
+	// Test valid JSON config file with absolute path
+	startParamDat = {"nrp_server",
+	                 std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE};
+	startParams = createStartParamPtr(startParamDat);
+
+	argc = static_cast<int>(startParams.size());
+	argv = const_cast<char**>(startParams.data());
+
+	{
+		auto startParamVals(optParser.parse(argc, argv));
+		SimulationManager manager = SimulationManager::createFromParams(startParamVals);
+
+		ASSERT_NE(manager.simulationConfig(), nullptr);
+	}
+
+	// Test invalid JSON config file and valid example directory
+	startParamDat = {"nrp_server",
+	                 std::string("-") + SimulationParams::ParamSimCfgFile.data(), "noFile.json",
+	                 std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
+	startParams = createStartParamPtr(startParamDat);
+
+	argc = static_cast<int>(startParams.size());
+	argv = const_cast<char**>(startParams.data());
+
+	{
+		auto startParamVals(optParser.parse(argc, argv));
+		ASSERT_THROW(SimulationManager manager = SimulationManager::createFromParams(startParamVals), std::invalid_argument);
 	}
 }
 

@@ -30,6 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <future>
+#include <filesystem>
 
 
 cxxopts::Options SimulationParams::createStartParamParser()
@@ -42,6 +43,8 @@ cxxopts::Options SimulationParams::createStartParamParser()
 	         cxxopts::value<SimulationParams::ParamSimCfgFileT>())
 	        (SimulationParams::ParamPluginsLong.data(), SimulationParams::ParamPluginsDesc.data(),
 	         cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}))
+	        (SimulationParams::ParamExpDirLong.data(), SimulationParams::ParamExpDirDesc.data(),
+	         cxxopts::value<SimulationParams::ParamExpDirT>())
 	        (SimulationParams::ParamConsoleLogLevelLong.data(), SimulationParams::ParamConsoleLogLevelDesc.data(),
 	         cxxopts::value<SimulationParams::ParamConsoleLogLevelT>()->default_value("info"))
 	        (SimulationParams::ParamFileLogLevelLong.data(), SimulationParams::ParamFileLogLevelDesc.data(),
@@ -126,18 +129,57 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	// Get file names from start params
 	std::string simCfgFileName;
 
+	bool directoryIsSet = false;
+
+	// Get and check experiment directory from start params
 	try
 	{
+		std::string simDirName = args[SimulationParams::ParamExpDir.data()].as<SimulationParams::ParamExpDirT>();
+		NRPLogger::debug("Got working directory from parameters: {}", simDirName);
+		if (std::filesystem::is_directory(simDirName)){
+			NRPLogger::debug("Setting working directory from command line [ {} ]", simDirName);
+			std::filesystem::current_path(simDirName);
+			// Mark that the WD is set with parameter
+			directoryIsSet = true;
+		}
+		else {
+			throw std::invalid_argument("The provided experiment directory path [ " + simDirName + " ] is not a directory.");
+		}
+	}
+	catch(std::domain_error&)
+	{
+	}
+
+	try
+	{
+		// Get config file name from the parameters
 		simCfgFileName = args[SimulationParams::ParamSimCfgFile.data()].as<SimulationParams::ParamSimCfgFileT>();
-		NRPLogger::debug("{}: got configuration file from parameters: {}", __FUNCTION__, simCfgFileName);
+		NRPLogger::debug("Got configuration file from parameters [ {} ]", simCfgFileName);
+
+		// Change working directory and config path if needed
+		auto simCfgFileDir = std::filesystem::path(simCfgFileName).parent_path();
+		if (!directoryIsSet && std::filesystem::is_directory(simCfgFileDir)){
+			NRPLogger::debug("Setting working directory from config file name [ {} ]", simCfgFileDir.c_str());
+			// If the WD wasn't set with parameter, set it as parent path of the config
+			std::filesystem::current_path(simCfgFileDir);
+			// Remove directory name from config file name
+			simCfgFileName = std::filesystem::path(simCfgFileName).filename().c_str();
+			NRPLogger::debug("Using the relative path to the simulation config [ {} ]", simCfgFileName.c_str());
+		}
+
+		if (!std::filesystem::is_regular_file(simCfgFileName)){
+			throw std::invalid_argument("The provided configuration file [ " + simCfgFileName + " ] is invalid");
+		}
 	}
 	catch(std::domain_error&)
 	{
 		// If no simulation file name is present, return empty config
-		NRPLogger::debug("{}: couldn't get configuration file from parameters, returning empty config", __FUNCTION__);
+		NRPLogger::debug("Couldn't get configuration file from parameters, returning empty config");
 		return SimulationManager(simConfig);
 	}
 
+	NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+	NRPLogger::info("Configuration file: [ {} ]", simCfgFileName);
 
 	simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
 
