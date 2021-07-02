@@ -86,12 +86,13 @@ class EngineJSONNRPClient
 		virtual pid_t launchEngine() override
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-			
-			// Launch engine process
+
+			// Launch engine process.
+			// enginePID == -1 means that the launcher hasn't launched a process
 			auto enginePID = this->EngineClientInterface::launchEngine();
 
-			// Wait for engine to register itself
-			if(!this->engineConfig().at("RegistrationServerAddress").empty())
+			// Wait for engine to register itself if process launching has succeeded
+			if(enginePID > 0 && !this->engineConfig().at("RegistrationServerAddress").empty())
 			{
 				const auto serverAddr = this->waitForRegistration(20, 1);
 				if(serverAddr.empty())

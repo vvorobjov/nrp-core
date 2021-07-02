@@ -21,8 +21,11 @@
 //
 
 #include <gtest/gtest.h>
+#include <string>
+#include <vector>
 
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
+#include "nrp_general_library/process_launchers/launch_commands/launch_command.h"
 #include "nrp_general_library/utils/pipe_communication.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 
@@ -70,4 +73,31 @@ TEST(ProcessLauncherBasicTest, TestLaunch)
 
 	ASSERT_EQ(pCommCtP.readP(readDat, sizeof(TEST_PROC_STR_SIGTERM), 5, 1), sizeof(TEST_PROC_STR_SIGTERM));
 	ASSERT_STREQ(readDat, TEST_PROC_STR_SIGTERM);
+}
+
+
+TEST(ProcessLauncherBasicTest, TestEmptyLaunchCommand)
+{
+
+	ProcessLauncherBasic launcher;
+
+	nlohmann::json config = R"({"EngineName" : "test_engine",
+								"EngineType" : "test_engine",
+								"EngineLaunchCommand": "EmptyLaunchCommand"})"_json;
+
+	json_utils::validate_json(config, "https://neurorobotics.net/engines/engine_base.json#EngineBase");
+
+	std::vector<std::string> emptyVector;
+	auto & envVars = emptyVector;
+	auto & startParams = emptyVector;
+
+	// the launching of an Engine with a Empty launch command returns -1
+	ASSERT_GE(launcher.launchEngineProcess(config, startParams, envVars), -1);
+
+	// the RUNNING_STATUS an Empty launch command process is always UNKNOWN
+	ASSERT_EQ(launcher.getProcessStatus(), LaunchCommandInterface::ENGINE_RUNNING_STATUS::UNKNOWN);
+
+	// stop must return 0
+	ASSERT_EQ(launcher.stopEngineProcess(42), 0);
+
 }

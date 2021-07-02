@@ -66,7 +66,7 @@ class LaunchCommandInterface
 		/*!
 		 * \brief Stop a running engine process
 		 * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinetly
-		 * \return Returns 0 on sucess, negative value on error
+		 * \return Returns 0 on success, negative value on error
 		 */
 		virtual pid_t stopEngineProcess(unsigned int killWait) = 0;
 
