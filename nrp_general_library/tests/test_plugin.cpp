@@ -62,7 +62,7 @@ class TestEngine
 		virtual void sendDevicesToEngine(const devices_ptr_t &) override
 		{}
 
-	protected:
+
 		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
 		{
 			devices_set_t retVal;

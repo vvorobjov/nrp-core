@@ -178,7 +178,7 @@ class EngineJSONNRPClient
             return this->engineConfig().at("EngineEnvParams");
         }
 
-	protected:
+
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);

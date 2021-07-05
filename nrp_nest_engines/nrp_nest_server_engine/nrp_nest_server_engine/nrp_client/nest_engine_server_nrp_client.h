@@ -67,7 +67,7 @@ class NestEngineServerNRPClient
 
 		using population_mapping_t = std::map<std::string, std::string>;
 
-	protected:
+
 		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
 	private:

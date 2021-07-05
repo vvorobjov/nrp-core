@@ -185,8 +185,6 @@ class EngineClientInterface
 		 */
 		void updateCachedDevices(devices_set_t &&devs);
 
-	protected:
-
 		/*!
 		 * \brief Gets requested devices from engine
 		 * \param deviceNames All requested device ids
@@ -194,6 +192,8 @@ class EngineClientInterface
 		 * \throw Throws on error
 		 */
 		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) = 0;
+
+protected:
 
 		/*!
 		 * \brief Process Launcher. Will be used to stop process at end
