@@ -78,6 +78,9 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	// Setup working directory and get config based on start pars
+	jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
+
 	// Create default logger for the launcher
 	auto logger = NRPLogger
 	(
@@ -92,6 +95,8 @@ int main(int argc, char *argv[])
 		true
 	);
 
+	NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+
 	// Setup Python
 	PythonInterpreterState pythonInterp(argc, argv);
 
@@ -101,7 +106,6 @@ int main(int argc, char *argv[])
 	// Create engine launchers
 	PluginManager pluginManager;
 	EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
-
 
 	// Load engine launchers from default plugins
 	{
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Load simulation
-	SimulationManager manager = SimulationManager::createFromParams(startParams);
+	SimulationManager manager = SimulationManager::createFromConfig(simConfig);
 
 	// Check if configuration file was specified
 	if(manager.simulationConfig() != nullptr)

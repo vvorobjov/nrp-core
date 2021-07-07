@@ -123,11 +123,18 @@ class SimulationManager
 		~SimulationManager();
 
 		/*!
-		 * \brief Create SimulationManager from start parameters
+		 * \brief Get the config from start parameters
 		 * \param args Parsed start parameters
+		 * \return Returns instance of simulation config
+		 */
+		static jsonSharedPtr configFromParams(const cxxopts::ParseResult &args);
+
+		/*!
+		 * \brief Create SimulationManager from pointer to config
+		 * \param config Pointer to a config
 		 * \return Returns instance of SimulationManager
 		 */
-		static SimulationManager createFromParams(const cxxopts::ParseResult &args);
+		static SimulationManager createFromConfig(jsonSharedPtr &config);
 
 		/*!
 		 * \brief Get simulation loop

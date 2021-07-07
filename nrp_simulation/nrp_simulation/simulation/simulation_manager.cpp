@@ -120,7 +120,7 @@ SimulationManager::~SimulationManager()
 }
 
 
-SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult &args)
+jsonSharedPtr SimulationManager::configFromParams(const cxxopts::ParseResult &args)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -175,22 +175,25 @@ SimulationManager SimulationManager::createFromParams(const cxxopts::ParseResult
 	{
 		// If no simulation file name is present, return empty config
 		NRPLogger::debug("Couldn't get configuration file from parameters, returning empty config");
-		return SimulationManager(simConfig);
+		return simConfig;
 	}
-
-	NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
-	NRPLogger::info("Configuration file: [ {} ]", simCfgFileName);
 
 	simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
 
-	json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
+	return simConfig;
+}
+
+
+SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
+{
+	json_utils::validate_json(*config, "https://neurorobotics.net/simulation.json#Simulation");
 
 	// Set default values
 
-	json_utils::set_default<std::vector<std::string>>(*simConfig, "TransceiverFunctionConfigs", std::vector<std::string>());
-    json_utils::set_default<std::vector<std::string>>(*simConfig, "PreprocessingFunctionConfigs", std::vector<std::string>());
+	json_utils::set_default<std::vector<std::string>>(*config, "TransceiverFunctionConfigs", std::vector<std::string>());
+    json_utils::set_default<std::vector<std::string>>(*config, "PreprocessingFunctionConfigs", std::vector<std::string>());
 
-	return SimulationManager(simConfig);
+	return SimulationManager(config);
 }
 
 SimulationLoopConstSharedPtr SimulationManager::simulationLoop() const

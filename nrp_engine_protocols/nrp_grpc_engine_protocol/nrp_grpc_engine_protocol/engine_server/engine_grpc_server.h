@@ -55,12 +55,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
         using mutex_t = std::timed_mutex;
         using lock_t  = std::unique_lock<EngineGrpcServer::mutex_t>;
 
-        EngineGrpcServer(const std::string address)
+        EngineGrpcServer(const std::string &address)
+                : EngineGrpcServer(address, "EngineGrpcServer", "")
         {
-            this->_serverAddress   = address;
-            this->_isServerRunning = false;
-
-            grpc::EnableDefaultHealthCheckService(true);
         }
 
         /*!
@@ -71,10 +68,13 @@ class EngineGrpcServer : public EngineGrpcService::Service
          * \param[in] registrationAddress Should be removed
          */
         // TODO registrationAddress isn't needed
-        EngineGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &/*registrationAddress*/)
-                : EngineGrpcServer(serverAddress)
+        EngineGrpcServer(const std::string serverAddress, const std::string &engineName, const std::string &/*registrationAddress*/)
+                : _loggerCfg(engineName), _engineName(engineName)
         {
-            this->_engineName = engineName;
+            this->_serverAddress   = serverAddress;
+            this->_isServerRunning = false;
+
+            grpc::EnableDefaultHealthCheckService(true);
         }
 
         /*!
