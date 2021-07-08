@@ -38,6 +38,7 @@
  */
 #define NRP_LOGGER_TRACE(...) SPDLOG_TRACE(__VA_ARGS__)
 
+
 /*!
  * \brief NRP Logging functions
  */

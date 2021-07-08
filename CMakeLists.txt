@@ -14,6 +14,9 @@ set (NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror)
 # Uncomment to compile a production version of code (without trace calls)
 # add_definitions(-DPRODUCTION_RELEASE)
 
+# Uncomment to compile time profile calls
+# add_definitions(-DTIME_PROFILE)
+
 include(GNUInstallDirs)
 include(ExternalProject)
 include(FetchContent)

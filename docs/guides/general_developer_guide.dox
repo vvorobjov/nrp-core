@@ -165,4 +165,32 @@ You can run it from the build directory with:
 make cppcheck
 \endcode
 
+\section tutorial_developer_guide_time_profiler Time Profiler
+
+There are two macros available for time profiling: NRP_LOG_TIME and NRP_LOG_TIME_BLOCK. Both macros are only activated if TIME_PROFILE variable is defined at compilation. This allows easily hiding all time profile calls from the compiled code if wished.
+
+NRP_LOG_TIME takes a `filename` parameter and records in a file with that name (and `.log` extension) the time difference, expressed in microseconds, between the clock time at the moment of calling and a fix time point. For example the next call:
+
+\code{.cpp}
+NRP_LOG_TIME("my_time_point");
+\endcode
+
+will add a record with the aforementioned time difference to a file named `my_time_point.log`.
+
+NRP_LOG_TIME_BLOCK functions in a similar way than NRP_LOG_TIME but records the duration between the moment of calling and the end of the current block, ie. when a created helper object goes out of scope. For example:
+
+\code{.cpp}
+
+{
+	NRP_LOG_TIME_BLOCK("my_time_duration");
+	// ... here some important code
+}
+\endcode
+
+will add a record with the duration, also expressed in microseconds, until the execution reaches the end of the block to a file named `my_time_duration.log'.
+
+All time log files are stored in a subfolder `time_logs` of the simulation working directory.
+
+Finally, both macros are defined in \ref nrp_general_library/utils/time_utils.h, which must be included in order to use them.
+
 */
