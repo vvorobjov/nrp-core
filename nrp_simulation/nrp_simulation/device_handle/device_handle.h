@@ -24,7 +24,7 @@
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
-
+#include "nrp_general_library/utils/time_utils.h"
 
 /*!
  * \brief Helper class for SimulationLoop encapsulating the device operations between Engines in a simulation loop
@@ -74,8 +74,11 @@ public:
     void deviceCycle(const std::vector<EngineClientInterfaceSharedPtr> &engines)
     {
         updateDevicesFromEngines(engines);
+        NRP_LOG_TIME("get");
         compute(engines);
+        NRP_LOG_TIME("run");
         sendDevicesToEngines(engines);
+        NRP_LOG_TIME("send");
     }
 };
 

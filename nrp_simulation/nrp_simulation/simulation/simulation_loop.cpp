@@ -24,6 +24,7 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/utils/python_error_handler.h"
+#include "nrp_general_library/utils/time_utils.h"
 
 #include "nrp_simulation/device_handle/tf_manager_handle.h"
 
@@ -79,6 +80,7 @@ void SimulationLoop::shutdownLoop()
 void SimulationLoop::runLoop(SimulationTime runLoopTime)
 {
 	NRP_LOGGER_TRACE("{} called [ runLoopTime: {} ]", __FUNCTION__, runLoopTime.count());
+    NRP_LOG_TIME_BLOCK("sim_loop");
 
 	const auto loopStopTime = this->_simTime + runLoopTime;
 
@@ -104,6 +106,8 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		}
 		while(!this->_engineQueue.empty() && this->_engineQueue.begin()->first <= nextCompletionTime);
 
+        NRP_LOG_TIME("begin");
+
 		// Wait for engines which will be processed to complete execution
 		for(const auto &engine : idleEngines)
 		{
@@ -119,9 +123,11 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			}
 		}
 
+        NRP_LOG_TIME("wait");
+
 		// Retrieve devices required by TFs from completed engines
 		// Execute preprocessing TFs and TFs sequentially
-		// Send tf output devices to corresponding engines
+        // Send tf output devices to corresponding engines
         this->_devHandler->deviceCycle(idleEngines);
 
 		// Restart engines
@@ -156,6 +162,8 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 			engine = nullptr;
 		}
+
+        NRP_LOG_TIME("start");
 	}
 
 	this->_simTime = loopStopTime;
