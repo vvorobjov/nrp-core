@@ -23,60 +23,33 @@
 #include "nrp_simulation/simulation/simulation_loop.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/utils/python_error_handler.h"
+
+#include "nrp_simulation/device_handle/tf_manager_handle.h"
 
 #include <iostream>
 
-static void executePreprocessingFunctions(TransceiverFunctionManager & tfManager, const std::vector<EngineClientInterfaceSharedPtr> & engines)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	for(auto &engine : engines)
-	{
-		// Execute all preprocessing functions for this engine
-
-		auto results = tfManager.executeActiveLinkedPFs(engine->engineName());
-
-		// Extract devices from the function results
-		// The devices are stack objects, but we want to store pointers to them in engines cache
-		// We have to convert them into heap-allocated objects
-
-		EngineClientInterface::devices_set_t devicesHeap;
-		for(const auto & result : results)
-		{
-			for(const auto &device : result.Devices)
-			{
-				devicesHeap.emplace(device->moveToSharedPtr());
-			}
-		}
-
-		// Store pointers to devices from preprocessing functions in the engines cache
-
-		engine->updateCachedDevices(std::move(devicesHeap));
-	}
-}
-
-SimulationLoop::SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines)
+SimulationLoop::SimulationLoop(jsonSharedPtr config, DeviceHandle::engine_interfaces_t engines)
     : _config(config),
       _engines(engines),
-      _tfManager(SimulationLoop::initTFManager(config, _engines))
+      _devHandler(new TFManagerHandle())
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	TransceiverDeviceInterface::setTFInterpreter(&(this->_tfManager.getInterpreter()));
-
-	for(const auto &curEnginePtr : this->_engines)
-	{	
-		this->_engineQueue.emplace(0, curEnginePtr);
-	}
 }
 
 void SimulationLoop::initLoop()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
+	// Init Device handle
+    this->_devHandler->init(_config, _engines);
+
+    // Init Engine
 	for(const auto &engine : this->_engines)
 	{
 		try
 		{
+            this->_engineQueue.emplace(0, engine);
 			engine->initialize();
 		}
 		catch(std::exception &e)
@@ -147,44 +120,9 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		}
 
 		// Retrieve devices required by TFs from completed engines
-		const auto requestedDeviceIDs = this->_tfManager.updateRequestedDeviceIDs();
-		try
-		{
-			for(auto &engine : idleEngines)
-			{
-				engine->updateDevicesFromEngine(requestedDeviceIDs);
-			}
-		}
-		catch(std::exception &)
-		{
-			// TODO: Handle failure on device retrieval
-			throw;
-		}
-
-		// Execute preprocessing TFs
-
-		executePreprocessingFunctions(this->_tfManager, idleEngines);
-
-		// Execute TFs, and sort results according to engine
-		TransceiverFunctionSortedResults results;
-		for(const auto &engine : idleEngines)
-		{
-			auto curResults = this->_tfManager.executeActiveLinkedTFs(engine->engineName());
-			results.addResults(curResults);
-		}
-
+		// Execute preprocessing TFs and TFs sequentially
 		// Send tf output devices to corresponding engines
-		for(const auto &engine : idleEngines)
-		{
-			try
-			{
-				this->sendDevicesToEngine(engine, results);
-			}
-			catch(std::exception &e)
-			{
-				throw NRPException::logCreate(e, "Failed to send devices to engine \"" + engine->engineName() + "\"");
-			}
-		}
+        this->_devHandler->deviceCycle(idleEngines);
 
 		// Restart engines
 		for(auto &engine : idleEngines)
@@ -221,49 +159,4 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 	}
 
 	this->_simTime = loopStopTime;
-}
-
-TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	TransceiverFunctionManager newManager;
-
-	{
-		TransceiverFunctionInterpreter::engines_devices_t engineDevs;
-		for(const auto &engine : engines)
-		{
-			NRPLogger::debug("Adding {} to TransceiverFunctionManager", engine->engineName());
-			engineDevs.emplace(engine->engineName(), &(engine->getCachedDevices()));
-		}
-
-		newManager.getInterpreter().setEngineDevices(std::move(engineDevs));
-	}
-
-	TransceiverDeviceInterface::setTFInterpreter(&newManager.getInterpreter());
-
-	// Load all transceiver functions specified in the config
-
-	const auto &transceiverFunctions = simConfig->at("DeviceProcessingFunctions");
-	for(const auto &tf : transceiverFunctions)
-	{
-		NRPLogger::debug("Adding transceiver function {}", tf.dump());
-        newManager.loadTF(tf);
-	}
-
-	return newManager;
-}
-
-void SimulationLoop::sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	// Find corresponding devices
-	const auto interfaceResultIterator = results.find(engine->engineName());
-	if(interfaceResultIterator != results.end())
-		engine->sendDevicesToEngine(interfaceResultIterator->second);
-
-	// If no devices are available, have interface handle empty device input list
-	// TODO: be sure that this is right
-	engine->sendDevicesToEngine(typename EngineClientInterface::devices_ptr_t());
 }

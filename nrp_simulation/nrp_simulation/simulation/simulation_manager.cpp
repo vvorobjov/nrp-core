@@ -356,7 +356,7 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	SimulationLoop::engine_interfaces_t engines;
+	DeviceHandle::engine_interfaces_t engines;
 	auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
 	// Create all engines required by simConfig

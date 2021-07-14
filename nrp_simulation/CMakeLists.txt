@@ -21,6 +21,8 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
 	nrp_simulation/simulation/simulation_loop.cpp
 	nrp_simulation/simulation/simulation_manager.cpp
+		nrp_simulation/device_handle/device_handle.cpp
+		nrp_simulation/device_handle/tf_manager_handle.cpp
 )
 
 # List of python module build files

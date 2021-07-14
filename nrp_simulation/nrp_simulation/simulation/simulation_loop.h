@@ -22,13 +22,11 @@
 #ifndef SIMULATION_LOOP_H
 #define SIMULATION_LOOP_H
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
-#include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
-#include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
-
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include "nrp_general_library/utils/json_schema_utils.h"
+
+#include "nrp_simulation/device_handle/device_handle.h"
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -37,10 +35,9 @@ class SimulationLoop
         : public PtrTemplates<SimulationLoop>
 {
 	public:
-		using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
 		SimulationLoop() = default;
-		SimulationLoop(jsonSharedPtr config, engine_interfaces_t engines);
+		SimulationLoop(jsonSharedPtr config, DeviceHandle::engine_interfaces_t engines);
 
 		/*!
 		 * \brief Initialize engines before running loop
@@ -80,7 +77,7 @@ class SimulationLoop
 		/*!
 		 * \brief Engines
 		 */
-		engine_interfaces_t _engines;
+		DeviceHandle::engine_interfaces_t _engines;
 
 		using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
@@ -90,30 +87,15 @@ class SimulationLoop
 		engine_queue_t _engineQueue;
 
 		/*!
-		 * \brief TF Manager containing all TFs associated with this simulation
-		 */
-		TransceiverFunctionManager _tfManager;
-
-		/*!
 		 * \brief Simulated time (in seconds)
 		 */
 		SimulationTime _simTime = SimulationTime::zero();
 
-		/*!
-		 * \brief Initialize the TF Manager. Reads the TF Configurations from the Simulation Config, and registers the TFs
-		 * \param simConfig Simulation Config
-		 * \param engines Loaded Engines
-		 * \return Returns initialized TransceiverFunctionManager
-		 */
-		static TransceiverFunctionManager initTFManager(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines);
+        /*!
+         * \brief Used to handle device operations in engines
+         */
+        std::unique_ptr<DeviceHandle> _devHandler;
 
-		/*!
-		 * \brief Handle device intputs of specified interface
-		 * \param interfacePtr Shared Pointer to interface
-		 * \param results Results to be processes
-		 * \return Returns result of device handling inputs
-		 */
-		void sendDevicesToEngine(const EngineClientInterfaceSharedPtr &engine, const TransceiverFunctionSortedResults &results);
 
 		friend class SimulationLoopTest_InitTFManager_Test;
 };

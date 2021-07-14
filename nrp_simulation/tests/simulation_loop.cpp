@@ -35,17 +35,6 @@
 
 using namespace testing;
 
-TEST(SimulationLoopTest, InitTFManager)
-{
-	auto simConfigFile = std::fstream(TEST_SIM_SIMPLE_CONFIG_FILE, std::ios::in);
-
-	const char *procName = "test";
-	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
-
-    jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
-	ASSERT_NO_THROW(auto tfManager = SimulationLoop::initTFManager(config, {}));
-}
-
 TEST(SimulationLoopTest, Constructor)
 {
 	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
