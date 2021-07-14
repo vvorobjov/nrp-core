@@ -15,12 +15,11 @@
 			"PythonFileName": "engine_2.py"
 		}
 	],
-	"TransceiverFunctionConfigs":
+	"DeviceProcessingFunctions":
 	[
 		{
 			"Name": "tf_1",
 			"FileName": "tf_1.py"
 		}
-	],
-	"PreprocessingFunctionConfigs": []
+	]
 }

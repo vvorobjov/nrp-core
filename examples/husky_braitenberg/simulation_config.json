@@ -16,7 +16,7 @@
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"TransceiverFunctionConfigs": [
+	"DeviceProcessingFunctions": [
 		{
 			"Name": "cam_tf",
 			"FileName": "cam_tf.py"
@@ -25,6 +25,5 @@
 			"Name": "mot_tf",
 			"FileName": "mot_tf.py"
 		}
-	],
-	"PreprocessingFunctionConfigs": []
+	]
 }

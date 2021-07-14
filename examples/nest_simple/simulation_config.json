@@ -9,11 +9,10 @@
 			"NestInitFileName": "nest_simple.py"
 		}
 	],
-	"TransceiverFunctionConfigs": [
+	"DeviceProcessingFunctions": [
 		{
 			"Name": "tf_1",
 			"FileName": "tf_1.py"
 		}
-	],
-	"PreprocessingFunctionConfigs": []
+	]
 }

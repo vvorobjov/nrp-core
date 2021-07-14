@@ -190,8 +190,7 @@ SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
 
 	// Set default values
 
-	json_utils::set_default<std::vector<std::string>>(*config, "TransceiverFunctionConfigs", std::vector<std::string>());
-    json_utils::set_default<std::vector<std::string>>(*config, "PreprocessingFunctionConfigs", std::vector<std::string>());
+	json_utils::set_default<std::vector<std::string>>(*config, "DeviceProcessingFunctions", std::vector<std::string>());
 
 	return SimulationManager(config);
 }

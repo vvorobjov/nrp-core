@@ -26,15 +26,10 @@
       "minItems": 1,
       "description": "Engines that will be started in the experiment"
     },
-    "TransceiverFunctionConfigs" : {
+    "DeviceProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
-      "description": "Transceiver functions that will be used in the experiment"
-    },
-    "PreprocessingFunctionConfigs" : {
-      "type" : "array",
-      "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
-      "description": "Preprocessing functions that will be used in the experiment"
+      "description": "Transceiver and Preprocessing functions that will be used in the experiment"
     }
   },
   "required": ["EngineConfigs"]

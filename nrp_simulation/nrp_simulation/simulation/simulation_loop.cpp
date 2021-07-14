@@ -242,22 +242,13 @@ TransceiverFunctionManager SimulationLoop::initTFManager(const jsonSharedPtr &si
 
 	TransceiverDeviceInterface::setTFInterpreter(&newManager.getInterpreter());
 
-	// Load all preprocessing functions specified in the config
-
-	const auto &preprocessingFunctions = simConfig->at("PreprocessingFunctionConfigs");
-	for(const auto &tf : preprocessingFunctions)
-	{
-		NRPLogger::debug("Adding preprocessing function {}", tf.dump());
-		newManager.loadTF(tf, true);
-	}
-
 	// Load all transceiver functions specified in the config
 
-	const auto &transceiverFunctions = simConfig->at("TransceiverFunctionConfigs");
+	const auto &transceiverFunctions = simConfig->at("DeviceProcessingFunctions");
 	for(const auto &tf : transceiverFunctions)
 	{
 		NRPLogger::debug("Adding transceiver function {}", tf.dump());
-        newManager.loadTF(tf, false);
+        newManager.loadTF(tf);
 	}
 
 	return newManager;
