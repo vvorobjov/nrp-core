@@ -9,17 +9,21 @@ repo_root=$(git rev-parse --show-toplevel)
 mkdir -p "$repo_root"/build
 cd "$repo_root"/build || exit 1;
 
-# Use gcc 10
-
-export CC=/usr/bin/gcc-10
-export CXX=/usr/bin/g++-10
-
-# Run cmake and make
-
 if [ -z "$NRP_INSTALL_DIR" ]; then
     echo "NRP_INSTALL_DIR is unset"
     exit 1
 fi
+
+# Set up the environment
+
+source "$HOME"/.bashrc
+
+# Install required python dependencies
+
+python3 -m pip install --user grpcio-tools
+python3 -m pip install --user pytest
+
+# Run cmake
 
 cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR"
 

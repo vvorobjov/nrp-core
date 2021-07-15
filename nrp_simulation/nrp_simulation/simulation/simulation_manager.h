@@ -74,6 +74,15 @@ struct SimulationParams
 	static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";
 	using ParamLogDirT = std::string;
 
+	static constexpr std::string_view ParamMode = "m";
+	static constexpr std::string_view ParamModeLong = "m,mode";
+	static constexpr std::string_view ParamModeDesc = "Operational mode, standalone or server";
+	using ParamModeT = std::string;
+
+	static constexpr std::string_view ParamServerAddressLong = "server_address";
+	static constexpr std::string_view ParamServerAddressDesc = "Desired address of the server in server operational mode";
+	using ParamServerAddressT = std::string;
+
 	/*!
 	 * \brief Create a parser for start parameters
 	 * \return Returns parser
@@ -143,16 +152,11 @@ class SimulationManager
 		SimulationLoopConstSharedPtr simulationLoop() const;
 
 		/*!
-		 * \brief Acquire Simulation Lock. Prevents other threads from manipulating simulation
-		 */
-		sim_lock_t acquireSimLock();
-
-		/*!
 		 * \brief Get simulation config
 		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns pointer to simulation config as well as simulation lock. If no config is loaded, return nullptr
 		 */
-        jsonSharedPtr simulationConfig(const sim_lock_t &simLock);
+        jsonSharedPtr simulationConfig();
 
 		/*!
 		 * \brief Get simulation config
@@ -168,62 +172,28 @@ class SimulationManager
 		 * \exception Throws an exception when the initialization fails
 		 */
 		void initSimulationLoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
-		                        const MainProcessLauncherManager::const_shared_ptr &processLauncherManager,
-		                        sim_lock_t &simLock);
-
-		/*!
-		 * \brief Returns true if simulation is running, false otherwise
-		 */
-		bool isRunning() const;
-
-		/*!
-		 * \brief Stop any currently running sim threads
-		 * \param lock Simulation lock
-		 */
-		void stopSimulation(const sim_lock_t &lock);
+		                        const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
 
 		/*!
 		 * \brief Runs the simulation until a separate thread stops it or simTimeout (defined in SimulationConfig) is reached. If simTimeout is zero or negative, ignore it
 		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns true if no error was encountered, false otherwise
 		 */
-		bool runSimulationUntilTimeout(sim_lock_t &simLock);
+		bool runSimulationUntilTimeout();
 
 		/*!
 		 * \brief Run the Simulation for specified amount of time
 		 * \param secs Time (in seconds) to run simulation
-		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns true if no error was encountered, false otherwise
 		 */
-		bool runSimulation(const SimulationTime secs, sim_lock_t &simLock);
+		void runSimulation(unsigned numIterations);
 
 		/*!
 		 * \brief Shuts down simulation loop. Will shutdown any running engines and transceiver functions after any currently running steps are completed
-		 * \param simLock Pass simulation lock if already owned
 		 */
-		void shutdownLoop(const sim_lock_t &simLock);
-
-		/*!
-		 * \brief Returns true if simulation/engines are currently being initialized, false otherwise
-		 */
-		bool isSimInitializing();
+		void shutdownLoop();
 
 	private:
-		/*!
-		 * \brief Lock that prevents simulation changes during execution cycle. Will be locked during a step/change of the sim parameters, unlocked otherwise
-		 */
-		sim_mutex_t _simulationLock;
-
-		/*!
-		 * \brief Lock for internal use. Either indicates that the sim is currently being initialized, or that the simulation is running.
-		 * If used with _simulationLock, make sure that _internalLock is locked first
-		 */
-		sim_mutex_t _internalLock;
-
-		/*!
-		 * \brief True if simulation running, false otherwise
-		 */
-		bool _runningSimulation = false;
 
 		/*!
 		 * \brief Simulation Configuration

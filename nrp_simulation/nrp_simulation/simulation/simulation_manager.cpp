@@ -50,7 +50,11 @@ cxxopts::Options SimulationParams::createStartParamParser()
 	        (SimulationParams::ParamFileLogLevelLong.data(), SimulationParams::ParamFileLogLevelDesc.data(),
 	         cxxopts::value<SimulationParams::ParamFileLogLevelT>()->default_value("off"))
 	        (SimulationParams::ParamLogDirLong.data(), SimulationParams::ParamLogDirDesc.data(),
-	         cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"));
+	         cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"))
+		(SimulationParams::ParamModeLong.data(), SimulationParams::ParamModeDesc.data(),
+	         cxxopts::value<SimulationParams::ParamModeT>()->default_value("standalone"))
+	        (SimulationParams::ParamServerAddressLong.data(), SimulationParams::ParamServerAddressDesc.data(),
+	         cxxopts::value<SimulationParams::ParamServerAddressT>()->default_value(""));
 
 	return opts;
 }
@@ -105,18 +109,7 @@ SimulationManager::~SimulationManager()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	// Stop running threads
-	this->shutdownLoop(this->acquireSimLock()); //TODO Refactor: why twice shutdownLoop?
-
-	// Prevent future sim initialization or loop execution
-	this->_internalLock.lock();
-	auto simLock = this->acquireSimLock(); //TODO Refactor: review locks usage
-
-	// Ensure that any potentially created loops are stopped
-	this->shutdownLoop(simLock);
-
-	// Keep locked until everything is destructed
-	simLock.release();
+	this->shutdownLoop();
 }
 
 
@@ -124,7 +117,7 @@ jsonSharedPtr SimulationManager::configFromParams(const cxxopts::ParseResult &ar
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    jsonSharedPtr simConfig = nullptr;
+	jsonSharedPtr simConfig = nullptr;
 
 	// Get file names from start params
 	std::string simCfgFileName;
@@ -200,13 +193,7 @@ SimulationLoopConstSharedPtr SimulationManager::simulationLoop() const
 	return this->_loop;
 }
 
-SimulationManager::sim_lock_t SimulationManager::acquireSimLock()
-{
-	auto retval = sim_lock_t(this->_simulationLock);
-	return retval;
-}
-
-jsonSharedPtr SimulationManager::simulationConfig(const sim_lock_t&)
+jsonSharedPtr SimulationManager::simulationConfig()
 {
 	return this->_simConfig;
 }
@@ -217,139 +204,79 @@ jsonConstSharedPtr SimulationManager::simulationConfig() const
 }
 
 void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
-                                                                    const MainProcessLauncherManager::const_shared_ptr &processLauncherManager,
-                                                                    sim_lock_t &simLock)
+                                           const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	// Make sure initLock is retrieved before simLock
-	if(simLock.owns_lock())
-		simLock.unlock();
-
-	sim_lock_t initLock(this->_internalLock);
-
-	simLock.lock();
 
 	// Create and initialize loop
 	NRPLogger::info("Initializing simulation loop");
 
-	this->_loop.reset(new SimulationLoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
-
-	//sleep(10);
+	if(this->_loop == nullptr)
+	{
+		this->_loop.reset(new SimulationLoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
+	}
+	else
+	{
+		throw NRPException::logCreate("Simulation already initialized");
+	}
 
 	this->_loop->initLoop();
 }
 
-bool SimulationManager::isRunning() const
-{
-	return this->_loop != nullptr && this->_runningSimulation;
-}
-
-void SimulationManager::stopSimulation(const sim_lock_t&)
+bool SimulationManager::runSimulationUntilTimeout()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	this->_runningSimulation = false;
-}
 
-bool SimulationManager::runSimulationUntilTimeout(sim_lock_t &simLock)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
 	if(this->_loop == nullptr)
 		return false;
-
-	// Lock and unlock mutex before/after every timestep. This allows server threads to execute
-	this->_runningSimulation = true;
-	simLock.unlock();
-
-	sim_lock_t internalLock(this->_internalLock);
 
 	bool hasTimedOut = false;
 
 	while(1)
 	{
-		// Check whether the simLoop was stopped by any server threads
-		simLock.lock();
-
 		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->at("SimulationTimeout")));
 
-		if(!this->isRunning() || hasTimedOut)
+		if(hasTimedOut)
 			break;
 
 		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
 		this->_loop->runLoop(timeStep);
-
-		simLock.unlock();
-		std::this_thread::yield();			// Give any server threads that may wish to lock the simulation a chance to execute TODO: Use better command than sched_yield, which slows down execution significantly
 	}
-
-	this->_runningSimulation = false;
 
 	return hasTimedOut;
 }
 
-bool SimulationManager::runSimulation(const SimulationTime secs, sim_lock_t &simLock)
-{
-	NRP_LOGGER_TRACE("{} called [ secs: {} ]", __FUNCTION__, secs.count());
-
-	if(this->_loop == nullptr)
-		return false;
-
-	this->_runningSimulation = true;
-	simLock.unlock();
-
-	sim_lock_t internalLock(this->_internalLock);
-
-	this->_runningSimulation = true;
-	const auto endTime = this->_loop->getSimTime() + secs;
-	while(1)
-	{
-		simLock.lock();
-
-		if(!this->isRunning() || endTime < this->_loop->getSimTime())
-			break;
-
-		SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
-		this->_loop->runLoop(timeStep);
-
-		simLock.unlock();
-		std::this_thread::yield();			// Give any server threads that may wish to lock the simulation a chance to execute TODO: Use better command than sched_yield, which slows down execution significantly
-	}
-
-	this->_runningSimulation = false;
-
-	return endTime <= this->_loop->getSimTime();
-}
-
-void SimulationManager::shutdownLoop(const SimulationManager::sim_lock_t&)
+void SimulationManager::runSimulation(unsigned numIterations)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
+	if(this->_loop == nullptr)
+		throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
+
+	const SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
+
+	unsigned iteration = 0;
+
+	while(iteration++ < numIterations)
+	{
+		this->_loop->runLoop(timeStep);
+	}
+}
+
+void SimulationManager::shutdownLoop()
+{
 	try {
 		if(this->_loop != nullptr) {
 			this->_loop->shutdownLoop();
 
 			this->_loop = nullptr;
-			this->_runningSimulation = false;
 		}
 	}
 	catch(NRPException &e) {
 		throw NRPException::logCreate(e, "SimulationManager: Loop shutdown has FAILED");
 	}
 
-}
-
-bool SimulationManager::isSimInitializing()
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	if(this->_loop != nullptr)
-		return false;
-
-	sim_lock_t lock(this->_internalLock, std::defer_lock);
-	return lock.try_lock();
 }
 
 SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)

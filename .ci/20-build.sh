@@ -6,10 +6,9 @@ repo_root=$(git rev-parse --show-toplevel)
 
 cd "$repo_root"/build || exit 1;
 
-# Use gcc 10
+# Set up the environment
 
-export CC=/usr/bin/gcc-10
-export CXX=/usr/bin/g++-10
+source "$HOME"/.bashrc
 
 NPROC=$(nproc)
 

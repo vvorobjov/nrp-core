@@ -243,14 +243,13 @@ TEST(SimulationManagerTest, SimulationManagerLoop)
 	// Create brain and physics managers
 
 	// Exception if required brain/physics engine launcher is not added
-	auto simLock = manager.acquireSimLock();
-	ASSERT_THROW(manager.initSimulationLoop(engines, processManager, simLock), std::invalid_argument);
+	ASSERT_THROW(manager.initSimulationLoop(engines, processManager), std::invalid_argument);
 
 	// Add launchers
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new GazeboEngineGrpcLauncher()));
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new NestEngineJSONLauncher()));
 
-	manager.initSimulationLoop(engines, processManager, simLock);
+	manager.initSimulationLoop(engines, processManager);
 
-	ASSERT_TRUE(manager.runSimulation(SimulationTime(1000000), simLock));
+	ASSERT_NO_THROW(manager.runSimulation(1));
 }

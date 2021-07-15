@@ -25,3 +25,4 @@ uwsgi-core
 uwsgi-plugin-python3
 xvfb
 cppcheck
+python3-pip

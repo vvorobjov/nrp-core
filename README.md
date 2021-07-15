@@ -20,6 +20,9 @@ sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
 
 # required by nest-server (which is built and installed along with nrp-core)
 sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3
+
+# required by nrp-server, which uses gRPC python bindings
+pip install grpcio-tools pytest
     
 # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
 sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h

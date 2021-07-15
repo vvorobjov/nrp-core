@@ -6,6 +6,10 @@ repo_root=$(git rev-parse --show-toplevel)
 
 cd "$repo_root"/build || exit 1;
 
+# Set up the environment
+
+source "$HOME"/.bashrc
+
 # Run all tests. Save test results in build/xml directory (used by Jenkins).
 # On headless machines we need to run with X virtual frame buffer.
 # Otherwise some gazebo tests will fail
