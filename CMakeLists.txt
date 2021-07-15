@@ -3,6 +3,9 @@ set(NRP_VERSION 0.1.0)
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+
 set (CMAKE_CXX_STANDARD 20)
 
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
