@@ -50,6 +50,11 @@
           "NestServerPort": {
             "type": "integer",
             "description": "Nest Server Port"
+          },
+          "MPIProcs": {
+            "type": "integer",
+            "default": 1,
+            "description": "Number of MPI processes used in the NEST simulation"
           }
         }
       }

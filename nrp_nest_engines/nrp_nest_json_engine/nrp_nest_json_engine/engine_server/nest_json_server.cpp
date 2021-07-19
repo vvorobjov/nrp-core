@@ -104,7 +104,7 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
         this->_pyNest["Simulate"](runTimeMsRounded);
 
 		// The time field of dictionary returned from GetKernelStatus contains time in milliseconds
-		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("time")));
+		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("biological_time")));
 	}
 	catch(python::error_already_set &)
 	{

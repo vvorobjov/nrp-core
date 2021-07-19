@@ -54,6 +54,7 @@ To use the NEST server engine in an experiment, set `EngineType` to <b>"nest_ser
 <tr><td>NestRNGSeed     <td>Nest RNG seed       <td>integer     <td>0<td><td>
 <tr><td>NestServerHost  <td>Nest Server Host    <td>localhost   <td><td><td>
 <tr><td>NestServerPort  <td>Nest Server Port    <td>integer     <td>first unbound port starting from 5000<td><td>
+<tr><td>MPIProcs  <td>Number of MPI processes used in the NEST simulation    <td>1   <td><td><td>
 </table>
 
 \section nest_server_schema Schema

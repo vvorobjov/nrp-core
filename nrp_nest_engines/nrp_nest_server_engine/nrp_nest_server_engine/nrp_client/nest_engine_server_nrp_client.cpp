@@ -217,7 +217,15 @@ namespace
 NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineClient(config, std::move(launcher))
 {
-    setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_SERVER_EXECUTABLE_PATH);
+    int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
+    if(n_mpi <= 1)
+        setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_SERVER_EXECUTABLE_PATH);
+    else {
+        std::string mpi_cmd = "mpirun -np " + std::to_string(n_mpi) + " " + NRP_NEST_SERVER_MPI_EXECUTABLE_PATH;
+        setDefaultProperty<std::string>("EngineProcCmd", mpi_cmd);
+    }
+
+
     if(!this->engineConfig().contains("NestServerPort"))
         setDefaultProperty<int>("NestServerPort", findUnboundPort(this->PortSearchStart));
 
@@ -303,7 +311,7 @@ void NestEngineServerNRPClient::shutdown()
 
 SimulationTime NestEngineServerNRPClient::getEngineTime() const
 {
-	return toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"time\"]")));
+	return toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"biological_time\"]")));
 }
 
 void NestEngineServerNRPClient::runLoopStep(SimulationTime timeStep)
@@ -463,10 +471,23 @@ const std::vector<std::string> NestEngineServerNRPClient::engineProcStartParams(
 
     // Add Server address
     int port = this->engineConfig().at("NestServerPort");
-    startParams.push_back("start");
-    startParams.push_back("-o");
-    startParams.push_back("-h"); startParams.push_back(this->engineConfig().at("NestServerHost"));
-    startParams.push_back("-p"); startParams.push_back(std::to_string(port));
+    int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
+    if(n_mpi <= 1) {
+        startParams.push_back("start");
+        startParams.push_back("-o");
+        startParams.push_back("-h");
+        startParams.push_back(this->engineConfig().at("NestServerHost"));
+        startParams.push_back("-p");
+        startParams.push_back(std::to_string(port));
+        startParams.push_back("-P");
+        startParams.push_back("python3");
+    }
+    else {
+        startParams.push_back("--host");
+        startParams.push_back(this->engineConfig().at("NestServerHost"));
+        startParams.push_back("--port");
+        startParams.push_back(std::to_string(port));
+    }
 
     return startParams;
 }
