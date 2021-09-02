@@ -11,6 +11,7 @@ pipeline {
     }
     agent {
         dockerfile {
+            label 'ci_label'
             // --net=host solves the problem with gRPC resolving localhost to IPv6 ("Address family not supported" errors)
             args '-u nrpuser:nrpgroup --privileged --net=host'
         }
