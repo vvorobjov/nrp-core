@@ -8,11 +8,12 @@ package EngineGrpc;
  */
 service EngineGrpcService
 {
-    rpc init       (InitRequest)        returns (InitReply)        {}
-    rpc shutdown   (ShutdownRequest)    returns (ShutdownReply)    {}
-    rpc runLoopStep(RunLoopStepRequest) returns (RunLoopStepReply) {}
-    rpc setDevice  (SetDeviceRequest)   returns (SetDeviceReply)   {}
-    rpc getDevice  (GetDeviceRequest)   returns (GetDeviceReply)   {}
+    rpc init        (InitRequest)        returns (InitReply)        {}
+    rpc shutdown    (ShutdownRequest)    returns (ShutdownReply)    {}
+    rpc runLoopStep (RunLoopStepRequest) returns (RunLoopStepReply) {}
+    rpc setDevice   (SetDeviceRequest)   returns (SetDeviceReply)   {}
+    rpc getDevice   (GetDeviceRequest)   returns (GetDeviceReply)   {}
+    rpc resetHandle (ResetRequest)       returns (ResetReply)       {}
 }
 
 /*
@@ -167,6 +168,22 @@ message GazeboJoint
 message TestPayload
 {
     uint32 integer = 1;
+}
+
+/*
+ * Request sent by reset command
+ */
+message ResetRequest
+{
+    // Empty
+}
+
+/*
+ * Server's response to the reset command
+ */
+message ResetReply
+{
+    // Empty
 }
 
 // EOF

@@ -111,6 +111,13 @@ class EngineClientInterface
 		virtual void initialize() = 0;
 
 		/*!
+		 * \brief Reset engine
+		 * \return Returns SUCCESS if no error was encountered
+		 * \throw Throws on error
+		 */
+		virtual void reset() = 0;
+
+		/*!
 		 * \brief Shutdown engine
 		 * \return Return SUCCESS if no error was encountered
 		 * \throw Throws on error

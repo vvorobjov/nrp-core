@@ -44,6 +44,8 @@ class GazeboEngineGrpcNRPClient
 
 		virtual void initialize() override;
 
+		virtual void reset() override;
+
 		virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;

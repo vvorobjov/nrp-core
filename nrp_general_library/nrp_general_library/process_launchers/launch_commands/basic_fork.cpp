@@ -81,6 +81,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 			clearenv();
 
 		std::vector<const char*> startParamPtrs;
+		std::string startParamStr;
 
 		// Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + engineProcCmd + --param1 + --param2 + ... + nullptr)
 		startParamPtrs.reserve(envParams.size() + startParams.size() + 3);
@@ -95,9 +96,12 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 		// Engine Exec cmd
 		std::string engineProcCmd = engineConfig.at("EngineProcCmd");
 		startParamPtrs.push_back(engineProcCmd.data());
+		startParamStr.append(engineProcCmd.data());
 
-		for(const auto &curParam : startParams)
+		for(const auto &curParam : startParams){
 			startParamPtrs.push_back(curParam.data());
+			startParamStr += " " + std::string(curParam.data());
+		}
 
 		// Parameter end
 		startParamPtrs.push_back(nullptr);
@@ -105,7 +109,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 		NRPLogger::info("Engine type: {}, name: {}, PID: {}", engineConfig.at("EngineType"), engineConfig.at("EngineName"), getpid());
 
 		// Start engine, stop current execution
-		NRPLogger::debug("Starting engine with cmd: {}",  engineProcCmd.data());
+		NRPLogger::debug("Starting engine with cmd: {}",  startParamStr.c_str());
 		auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
 		// Don't use the logger here, as this is a separate process

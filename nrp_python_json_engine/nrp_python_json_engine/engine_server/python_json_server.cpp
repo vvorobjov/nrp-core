@@ -81,6 +81,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	
 	PythonGILLock lock(this->_pyGILState, true);
+	_initData = data;
 	try
 	{
 		// Load python
@@ -157,6 +158,34 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, true}});
 }
 
+
+nlohmann::json PythonJSONServer::reset(EngineJSONServer::lock_t &lock)
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	if (!this->initRunFlag())
+	{
+		return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, "Cannot reset non-initialized instance"}});
+	}
+
+	try
+	{
+		this->shutdown(_initData);
+
+		this->_shutdownFlag = false;
+
+		this->initialize(_initData, lock);
+
+		return nlohmann::json({{PythonConfigConst::ResetExecStatus, true}});
+	}
+	catch (python::error_already_set &)
+	{
+		const auto msg = handle_pyerror();
+		NRPLogger::error("Failed to reset Python Engine instance: {}", msg);
+		return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, msg}});
+	}
+}
+
 nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -207,7 +236,7 @@ PyEngineScript *PythonJSONServer::registerScript(const boost::python::object &py
 
 nlohmann::json PythonJSONServer::formatInitErrorMessage(const std::string &errMsg)
 {
-	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::InitFileErrorMsg, errMsg}});
+	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::ErrorMsg, errMsg}});
 }
 
 nlohmann::json PythonJSONServer::getDeviceData(const nlohmann::json &reqData)

@@ -129,8 +129,11 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 		// Create device
 		const auto deviceName = NRPCommunicationController::createDeviceName(*this, joint->GetName());
 
-		std::cout << "Registering joint controller for joint \"" << jointName << "\"\n";
+		NRPLogger::info("Registering joint controller for joint [ {} ]", jointName);
 		this->_jointDeviceControllers.push_back(EngineJSONSerialization<JointDeviceController>(joint, jointControllerPtr, jointName));
 		NRPCommunicationController::getInstance().registerDevice(deviceName, &(this->_jointDeviceControllers.back()));
 	}
+
+	// Register plugin
+	NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

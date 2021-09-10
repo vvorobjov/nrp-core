@@ -45,6 +45,11 @@ class SimulationLoop
 		void initLoop();
 
 		/*!
+		 * \brief Reset engines of the loop
+		 */
+		void resetLoop();
+
+		/*!
 		 * \brief Shutdown engines
 		 */
 		void shutdownLoop();

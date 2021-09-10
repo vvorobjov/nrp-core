@@ -49,6 +49,7 @@ class EngineJSONServer
 		static constexpr std::string_view SetDeviceRoute = EngineJSONConfigConst::EngineServerSetDevicesRoute;
 		static constexpr std::string_view RunLoopStepRoute = EngineJSONConfigConst::EngineServerRunLoopStepRoute;
 		static constexpr std::string_view InitializeRoute = EngineJSONConfigConst::EngineServerInitializeRoute;
+		static constexpr std::string_view ResetRoute = EngineJSONConfigConst::EngineServerResetRoute;
 		static constexpr std::string_view ShutdownRoute = EngineJSONConfigConst::EngineServerShutdownRoute;
 
 	public:
@@ -139,6 +140,13 @@ class EngineJSONServer
 		 * \return Returns data about initialization status
 		 */
 		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &deviceLock) = 0;
+
+		/*!
+		 * \brief Engine reset routine
+		 * \param deviceLock Device Lock. Prevents access to _devicesControllers
+		 * \return Returns data about initialization status
+		 */
+		virtual nlohmann::json reset(EngineJSONServer::lock_t &deviceLock) = 0;
 
 		/*!
 		 * \brief Engine Shutdown routine
@@ -250,6 +258,13 @@ class EngineJSONServer
 		 * \param res Response writer. Contains initialization status
 		 */
 		void initializeHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+		/*!
+		 * \brief Callback function to reset
+		 * \param req Reset Data
+		 * \param res Response writer. Contains initialization status
+		 */
+		void resetHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
 
 		/*!
 		 * \brief Callback function for shutdown routine

@@ -28,6 +28,8 @@
 #include "nrp_general_library/engine_interfaces/data_device_controller.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
+#include "nrp_general_library/utils/nrp_logger.h"
+
 namespace gazebo
 {
 	class CameraGrpcDeviceController
@@ -51,10 +53,10 @@ namespace gazebo
 
             virtual google::protobuf::Message *getDeviceInformation() override
 			{
-	            if(hasNewData) {
+	            if(_hasNewData) {
                     auto old = _data;
                     _data = new EngineGrpc::GazeboCamera();
-                    hasNewData = false;
+                    _hasNewData = false;
                     return old;
                 }
 	            else
@@ -75,8 +77,13 @@ namespace gazebo
 					const auto imageSize = width*height*depth;
 					_data->set_imagedata(image, imageSize);
 
-                    hasNewData = true;
+                    _hasNewData = true;
 				}
+			}
+
+			void resetTime(){
+				this->_lastSensorUpdateTime = 0;
+				this->_hasNewData = false;
 			}
 
 		private:
@@ -88,7 +95,7 @@ namespace gazebo
 
             EngineGrpc::GazeboCamera *_data;
 
-            bool hasNewData = false;
+            bool _hasNewData = false;
 	};
 }
 

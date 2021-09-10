@@ -62,7 +62,7 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 	if(this->_stepController == nullptr)
 	{
 		auto err = std::out_of_range("Tried to run loop while the controller has not yet been initialized");
-		std::cerr << err.what();
+		NRPLogger::error(err.what());
 
 		throw err;
 	}
@@ -74,9 +74,7 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 	}
 	catch(const std::exception &e)
 	{
-		std::cerr << "Error during Gazebo stepping\n";
-		std::cerr << e.what();
-
+		NRPLogger::error("Error during Gazebo stepping: [ {} ]",  e.what());
 		throw;
 	}
 }
@@ -107,6 +105,28 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
 	}
 
 	lock.lock();
+}
+
+void NRPCommunicationController::reset()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	try{
+		// Is it enough to reset just the world?
+		this->_stepController->resetWorld();
+		for (size_t i = 0; i < this->_sensorPlugins.size(); i++){
+			this->_sensorPlugins[i]->Reset();
+		}
+		for (size_t i = 0; i < this->_modelPlugins.size(); i++){
+			this->_modelPlugins[i]->Reset();
+		}
+	}
+	catch(const std::exception &e)
+	{
+		NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
+
+		throw;
+	}
 }
 
 void NRPCommunicationController::shutdown(const json&)

@@ -253,3 +253,40 @@ TEST(SimulationManagerTest, SimulationManagerLoop)
 
 	ASSERT_NO_THROW(manager.runSimulation(1));
 }
+
+TEST(SimulationManagerTest, SimulationManagerLoopReset)
+{
+	auto optParser(SimulationParams::createStartParamParser());
+
+	const char *pPyArgv = "simtest";
+	PythonInterpreterState pyInterp(1, const_cast<char**>(&pPyArgv));
+
+	std::vector<std::string> startParamDat = {"nrp_server",
+	                                          std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_CONFIG_FILE};
+	std::vector<const char*> startParams = createStartParamPtr(startParamDat);
+
+	auto argc = static_cast<int>(startParams.size());
+	auto argv = const_cast<char**>(startParams.data());
+
+	auto startParamVals(optParser.parse(argc, argv));
+	jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+	SimulationManager manager = SimulationManager::createFromConfig(simConfig);
+
+	EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
+	MainProcessLauncherManagerSharedPtr processManager(new MainProcessLauncherManager());
+
+	// Create brain and physics managers
+
+	// Exception if required brain/physics engine launcher is not added
+	ASSERT_THROW(manager.initSimulationLoop(engines, processManager), std::invalid_argument);
+
+	// Add launchers
+	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new GazeboEngineGrpcLauncher()));
+	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new NestEngineJSONLauncher()));
+
+	manager.initSimulationLoop(engines, processManager);
+
+	ASSERT_NO_THROW(manager.runSimulation(1));
+	ASSERT_TRUE(manager.resetSimulation());
+	ASSERT_NO_THROW(manager.runSimulation(1));
+}

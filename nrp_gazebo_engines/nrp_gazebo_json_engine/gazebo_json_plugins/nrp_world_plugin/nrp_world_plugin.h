@@ -48,6 +48,8 @@ namespace gazebo
 
 			bool finishWorldLoading() override;
 
+			bool resetWorld() override;
+
 		private:
 			/*!
 			 * \brief Lock to ensure only one loop is being executed

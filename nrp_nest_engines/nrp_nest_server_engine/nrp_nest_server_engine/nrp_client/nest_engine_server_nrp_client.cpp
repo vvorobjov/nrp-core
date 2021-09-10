@@ -180,6 +180,16 @@ namespace
 	}
 
     /*!
+     * \brief Sends ResetKernel request to NEST server
+     *
+     * \param serverAddress Address of the NEST server
+     */
+    void nestResetKernel(const std::string & serverAddress)
+    {
+        nestGenericCall(serverAddress + "/api/ResetKernel", "text/plain", "");
+    }
+
+    /*!
      * \brief Sends Run request to NEST server
      *
      * \param serverAddress Address of the NEST server
@@ -301,6 +311,29 @@ void NestEngineServerNRPClient::initialize()
 	this->_simulationResolution = std::stof(nestGetKernelStatus(this->serverAddress(), "[\"resolution\"]"));
 
 	NRPLogger::debug("NestEngineServerNRPClient::initialize(...) completed with no errors.");
+}
+
+void NestEngineServerNRPClient::reset(){
+
+	try
+	{
+		nestResetKernel(this->serverAddress());
+	}
+	catch (std::exception &e)
+	{
+		throw NRPException::logCreate(e, "Failed to execute NEST ResetKernel at reset");
+	}
+
+	this->_populations.clear();
+
+	try
+	{
+		this->initialize();
+	}
+	catch (std::exception &e)
+	{
+		throw NRPException::logCreate(e, "Failed re-initialize NEST during reset");
+	}
 }
 
 void NestEngineServerNRPClient::shutdown()
@@ -428,7 +461,6 @@ void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devices
 bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
 {
 	// According to the NEST API documentation, Run accepts time to simulate in milliseconds and floating-point format
-
 	const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, this->_simulationResolution);
 
 	try

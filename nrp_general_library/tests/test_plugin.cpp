@@ -41,6 +41,9 @@ class TestEngine
 		virtual void initialize() override
 		{}
 
+		virtual void reset() override
+		{}
+
 		virtual void shutdown() override
 		{}
 

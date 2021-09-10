@@ -30,7 +30,7 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	std::cout << "NRP Communication plugin: Initializing...\n";
+	NRPLogger::info("NRP Communication plugin: Initializing...");
 
 	std::string serverAddr, engineName, registrationAddr;
 	try
@@ -53,12 +53,12 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 
 	// Save bound URL
 	this->_serverAddress = newController.serverAddress();
-	std::cout << "NRP Communication plugin: Starting server on \"" + this->_serverAddress + "\"\n";
+	NRPLogger::info("NRP Communication plugin: Starting server on {}", this->_serverAddress);
 
 	// Start the server
 	newController.startServerAsync();
 
-	std::cout << "NRP Communication plugin: Server started. Waiting for input...\n";
+	NRPLogger::info("NRP Communication plugin: Server started. Waiting for input...");
 }
 
 void gazebo::NRPCommunicationPlugin::Reset()
@@ -66,11 +66,11 @@ void gazebo::NRPCommunicationPlugin::Reset()
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	
 	// Reset server
-	std::cout << "NRP Communication plugin: Resetting controller...\n";
+	NRPLogger::info("NRP Communication plugin: Resetting controller...");
 	auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);
 
 	// Start server
 	newController.startServerAsync();
 
-	std::cout << "NRP Communication plugin: Server restarted. Waiting for input...\n";
+	NRPLogger::info("NRP Communication plugin: Server restarted. Waiting for input...");
 }

@@ -47,9 +47,14 @@ struct NestConfigConst
 	static constexpr std::string_view NestRNGSeedArg = "--nrprng";
 
 	/*!
-	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under InitFileErrorMsg).
+	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
 	 */
 	static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
+
+	/*!
+	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
+	 */
+	static constexpr std::string_view ResetExecStatus = "ResetStatus";
 
 	/*!
 	 * \brief After the server executes the init file, the parsed devMap will be passed back with this param
@@ -59,7 +64,7 @@ struct NestConfigConst
 	/*!
 	 * \brief If the init file could not be parsed, the python error message will be stored under this JSON property name
 	 */
-	static constexpr std::string_view InitFileErrorMsg = "Message";
+	static constexpr std::string_view ErrorMsg = "Message";
 };
 
 #endif // NEST_CONFIG_H

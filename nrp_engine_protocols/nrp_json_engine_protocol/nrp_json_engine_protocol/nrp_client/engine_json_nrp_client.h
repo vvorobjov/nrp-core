@@ -216,6 +216,23 @@ class EngineJSONNRPClient
 		}
 
 		/*!
+		 * \brief Send a reset command
+		 * \param data Data that should be passed to the engine
+		 * \return Returns reset data from engine
+		 */
+		nlohmann::json sendResetCommand(const nlohmann::json &data)
+		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+			
+			NRPLogger::debug("EngineJSONNRPClient::sendResetCommand [ data: {} ]", data.dump());
+
+			// Post reset request to Engine JSON server
+			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerResetRoute.data(),
+			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
+			                   "Engine server \"" + this->engineName() + "\" failed during reset");
+		}
+
+		/*!
 		 * \brief Send a shutdown command
 		 * \param data Data that should be passed to the engine
 		 * \return Returns init data from engine
@@ -265,6 +282,10 @@ class EngineJSONNRPClient
 				EngineJSONRegistrationServer::clearInstance();
 
 			return engineAddr;
+		}
+		
+		void resetEngineTime(){
+			this->_engineTime = SimulationTime(0);
 		}
 
 	private:

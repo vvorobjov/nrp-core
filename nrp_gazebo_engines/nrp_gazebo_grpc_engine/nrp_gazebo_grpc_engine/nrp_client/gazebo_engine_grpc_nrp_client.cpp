@@ -57,6 +57,23 @@ void GazeboEngineGrpcNRPClient::initialize()
 	NRPLogger::debug("GazeboEngineGrpcNRPClient::initialize(...) completed with no errors.");
 }
 
+void GazeboEngineGrpcNRPClient::reset()
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	try
+	{
+		this->sendResetCommand();
+	}
+	catch(std::exception& e)
+	{
+		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
+	}
+
+    this->_deviceCache.clear();
+
+    this->resetEngineTime();
+}
+
 void GazeboEngineGrpcNRPClient::shutdown()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);

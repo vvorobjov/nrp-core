@@ -78,6 +78,11 @@ namespace gazebo
 				}
 			}
 
+			void resetTime(){
+				this->_lastSensorUpdateTime = 0;
+				this->_newDataAvailable = false;
+			}
+
 		private:
 			sensors::SensorPtr _parentSensor;
 

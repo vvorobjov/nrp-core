@@ -253,6 +253,7 @@ Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDeviceRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDeviceHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::RunLoopStepRoute.data(),          Pistache::Rest::Routes::bind(&EngineJSONServer::runLoopStepHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::InitializeRoute.data(),           Pistache::Rest::Routes::bind(&EngineJSONServer::initializeHandler, server));
+	Pistache::Rest::Routes::Post(router, EngineJSONServer::ResetRoute.data(),                Pistache::Rest::Routes::bind(&EngineJSONServer::resetHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::ShutdownRoute.data(),             Pistache::Rest::Routes::bind(&EngineJSONServer::shutdownHandler, server));
 
 	return router;
@@ -376,6 +377,31 @@ void EngineJSONServer::initializeHandler(const Pistache::Rest::Request &req, Pis
 	catch(std::exception &e)
 	{
 		const auto err = NRPException::logCreate(std::string("Error while executing initialization: ") + e.what());
+
+		res.send(Pistache::Http::Code::Internal_Server_Error);
+		throw err;
+	}
+
+	// Return init response
+	res.send(Pistache::Http::Code::Ok, jresp.dump());
+}
+
+void EngineJSONServer::resetHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
+{
+	const json jrequest = this->parseRequest(req, res);
+
+	json jresp;
+	try
+	{
+		// Prevent other device reading/setting calls as well as loop execution
+		EngineJSONServer::lock_t lock(this->_deviceLock);
+
+		// Run initialization function
+		jresp = this->reset(lock);
+	}
+	catch(std::exception &e)
+	{
+		const auto err = NRPException::logCreate(std::string("Error while executing reset: ") + e.what());
 
 		res.send(Pistache::Http::Code::Internal_Server_Error);
 		throw err;

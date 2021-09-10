@@ -39,6 +39,8 @@ namespace gazebo
 		public:
 			virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
 
+			virtual void Reset() override;
+
 			void OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &format) override;
 
 		private:

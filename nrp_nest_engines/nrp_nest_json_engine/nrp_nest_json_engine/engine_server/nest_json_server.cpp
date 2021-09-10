@@ -35,7 +35,6 @@
 
 namespace python = boost::python;
 
-
 NestJSONServer::NestJSONServer(const std::string &serverAddress, python::dict globals, python::object locals)
     : EngineJSONServer(serverAddress),
       _pyGlobals(globals),
@@ -95,18 +94,18 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
 	PythonGILLock lock(this->_pyGILState, true);
-
 	try
 	{
 		const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, python::extract<double>(this->_pyNest["GetKernelStatus"]("resolution")));
-        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
+
+		// Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
 		// this->_pyNest["Run"](runTimeMsRounded);
-        this->_pyNest["Simulate"](runTimeMsRounded);
+		this->_pyNest["Simulate"](runTimeMsRounded);
 
 		// The time field of dictionary returned from GetKernelStatus contains time in milliseconds
 		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("biological_time")));
 	}
-	catch(python::error_already_set &)
+	catch (python::error_already_set &)
 	{
 		// If an error occured, print the error
 		throw NRPException::logCreate("Failed to run Nest step: " + handle_pyerror());
@@ -116,6 +115,8 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSONServer::lock_t&)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	_initData = data;
 
 	PythonGILLock lock(this->_pyGILState, true);
 	try
@@ -225,6 +226,36 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 	return nlohmann::json({{NestConfigConst::InitFileExecStatus, true}, {NestConfigConst::InitFileParseDevMap, jsonDevMap}});
 }
 
+nlohmann::json NestJSONServer::reset(EngineJSONServer::lock_t &simLock)
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	PythonGILLock lock(this->_pyGILState, true);
+
+	if (!this->initRunFlag())
+	{
+		return nlohmann::json({{NestConfigConst::ResetExecStatus, false}, {NestConfigConst::ErrorMsg, "Cannot reset non-initialized instance"}});
+	}
+
+	try
+	{	
+		this->shutdown(_initData);
+
+		// Revert _shutdownFlag in order the surver could survive
+		this->_shutdownFlag = false;
+		
+		this->initialize(_initData, simLock);
+
+		return nlohmann::json({{NestConfigConst::ResetExecStatus, true}});
+	}
+	catch (python::error_already_set &)
+	{
+		const auto msg = handle_pyerror();
+		NRPLogger::error("Failed to reset NEST instance: {}", msg);
+		return nlohmann::json({{NestConfigConst::ResetExecStatus, false}, {NestConfigConst::ErrorMsg, msg}});
+	}
+}
+
 nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -233,6 +264,10 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
 
 	this->_shutdownFlag = true;
 
+	this->_pyNest["ResetKernel"]();
+
+	// TODO: _nestPreparedFlag can't be tru currently.
+	// Probably, due to the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
 	if(this->_nestPreparedFlag)
 	{
 		this->_nestPreparedFlag = false;
@@ -248,7 +283,7 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
 
 nlohmann::json NestJSONServer::formatInitErrorMessage(const std::string &errMsg)
 {
-	return nlohmann::json({{NestConfigConst::InitFileExecStatus, 0}, {NestConfigConst::InitFileErrorMsg, errMsg}});
+	return nlohmann::json({{NestConfigConst::InitFileExecStatus, 0}, {NestConfigConst::ErrorMsg, errMsg}});
 }
 
 nlohmann::json NestJSONServer::getDeviceData(const nlohmann::json &reqData)

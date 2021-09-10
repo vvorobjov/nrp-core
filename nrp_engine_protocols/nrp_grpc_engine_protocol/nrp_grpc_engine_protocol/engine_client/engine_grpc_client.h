@@ -106,11 +106,31 @@ class EngineGrpcClient
 
             request.set_json(data.dump());
 
+            NRPLogger::debug("Sending init command to server [ {} ]", this->engineName());
             grpc::Status status = _stub->init(&context, request, &reply);
 
             if(!status.ok())
             {
                 const auto errMsg = "Engine server initialization failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                throw std::runtime_error(errMsg);
+            }
+        }
+
+        void sendResetCommand()
+        {
+	        NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            EngineGrpc::ResetRequest  request;
+            EngineGrpc::ResetReply    reply;
+            grpc::ClientContext       context;
+
+            prepareRpcContext(&context);
+
+            NRPLogger::debug("Sending reset command to server [ {} ]", this->engineName());
+            grpc::Status status = _stub->resetHandle(&context, request, &reply);
+
+            if(!status.ok())
+            {
+                const auto errMsg = "Engine server reset failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
             }
         }
@@ -127,6 +147,7 @@ class EngineGrpcClient
 
             request.set_json(data.dump());
 
+            NRPLogger::debug("Sending shutdown command to server [ {} ]", this->engineName());
             grpc::Status status = _stub->shutdown(&context, request, &reply);
 
             if(!status.ok())
@@ -352,6 +373,11 @@ class EngineGrpcClient
 
             return interfaces;
 		}
+
+        void resetEngineTime() {
+            this->_engineTime = SimulationTime::zero();
+            this->_prevEngineTime = SimulationTime::zero();
+        }
 
     private:
 

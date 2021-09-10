@@ -60,6 +60,11 @@ class TestEngineJSONServer
 		return nlohmann::json({{"status", "success"}, {"original", data}});
 	}
 
+	nlohmann::json reset(EngineJSONServer::lock_t&) override
+	{
+		return nlohmann::json({{"status", "success"}});
+	}
+
 	// TODO: Test shutdown
 	nlohmann::json shutdown(const nlohmann::json &data) override
 	{

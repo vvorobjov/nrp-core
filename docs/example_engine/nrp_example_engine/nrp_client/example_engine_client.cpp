@@ -8,6 +8,11 @@ void ExampleEngineClient::initialize()
 
 }
 
+void ExampleEngineClient::reset()
+{
+
+}
+
 void ExampleEngineClient::shutdown()
 {
 

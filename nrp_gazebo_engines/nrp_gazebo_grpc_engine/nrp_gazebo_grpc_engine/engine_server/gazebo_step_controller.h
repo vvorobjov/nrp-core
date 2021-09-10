@@ -36,6 +36,8 @@ class GazeboStepController
 		virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
 
 		virtual bool finishWorldLoading() = 0;
+
+		virtual bool resetWorld() = 0;
 };
 
 #endif // GAZEBO_STEP_CONTROLLER_H

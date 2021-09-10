@@ -75,6 +75,8 @@ class EngineGrpcServer : public EngineGrpcService::Service
             this->_isServerRunning = false;
 
             grpc::EnableDefaultHealthCheckService(true);
+
+	        NRPLogger::info("EngineGrpcServer {} has been created", engineName);
         }
 
         /*!
@@ -213,6 +215,11 @@ class EngineGrpcServer : public EngineGrpcService::Service
         virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &deviceLock) = 0;
 
         /*!
+         * \brief Resets the simulation
+         */
+        virtual void reset() = 0;
+
+        /*!
          * \brief Shutdowns the simulation
          *
          * \param[in] data Additional data
@@ -257,7 +264,40 @@ class EngineGrpcServer : public EngineGrpcService::Service
             {
                 return handleGrpcError("Error while executing initialization", e.what());
             }
+            NRPLogger::debug("init command returns OK");
+            return grpc::Status::OK;
+        }
 
+
+        /*!
+         * \brief Resets the simulation
+         *
+         * The function implements the reset method of the EngineGrpcService.
+         * It acts as a wrapper around the virtual reset method, which should reset the simulation.
+         * On error, it will return a status object with error message and grpc::StatusCode::CANCELLED error code.
+         *
+         * \param      context Pointer to gRPC server context structure
+         * \param[in]  request Pointer to protobuf init request message. Contains simulation config in JSON format.
+         * \param[out] reply   Pointer to protobuf init reply message. Currently no data is returned.
+         *
+         * \return gRPC request status
+         */
+        grpc::Status resetHandle(grpc::ServerContext * /*context*/, const EngineGrpc::ResetRequest * /*request*/, EngineGrpc::ResetReply * /*reply*/) override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            try
+            {
+                EngineGrpcServer::lock_t lock(this->_deviceLock);
+                
+                // Run engine-specific reset function
+                this->reset();
+            }
+            catch(const std::exception &e)
+            {
+                return handleGrpcError("Error while executing initialization", e.what());
+            }
+
+            NRPLogger::debug("reset command returns OK");
             return grpc::Status::OK;
         }
 
@@ -291,6 +331,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 return handleGrpcError("Error while executing shutdown", e.what());
             }
 
+            NRPLogger::debug("shutdown command returns OK");
             return grpc::Status::OK;
         }
 
@@ -469,8 +510,8 @@ class EngineGrpcServer : public EngineGrpcService::Service
          */
         grpc::Status handleGrpcError(const std::string & contextMessage, const std::string & errorMessage)
         {
-            std::cerr << contextMessage << std::endl;
-            std::cerr << errorMessage   << std::endl;
+            NRPLogger::error("context message: [ {} ]", contextMessage);
+            NRPLogger::error("error message: [ {} ]", errorMessage);
 
             // Pass the error message to the client
 

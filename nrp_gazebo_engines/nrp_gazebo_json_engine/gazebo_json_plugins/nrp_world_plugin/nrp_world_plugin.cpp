@@ -91,7 +91,7 @@ bool gazebo::NRPWorldPlugin::finishWorldLoading()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	std::cout << "Finalizing gazebo loading... Time:" <<  this->_world->SimTime().Double() << "\n";
+	NRPLogger::info("Finalizing gazebo loading... Time: {}",  this->_world->SimTime().Double());
 
 	// Run a single iteration and reset the world
 	// This should force all plugins to load
@@ -99,7 +99,7 @@ bool gazebo::NRPWorldPlugin::finishWorldLoading()
 	this->startLoop(1);
 	this->Reset();
 
-	std::cout << "Gazebo loading finalized Time:" <<  this->_world->SimTime().Double() << "\n";
+	NRPLogger::info("Gazebo loading finalized Time: {}",  this->_world->SimTime().Double());
 
 	return true;
 }
@@ -112,4 +112,20 @@ void gazebo::NRPWorldPlugin::startLoop(unsigned int numIterations)
 
 	this->_world->Step(numIterations);
 	this->_world->SetPaused(true);
+}
+
+
+bool gazebo::NRPWorldPlugin::resetWorld()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time before: {}", this->_world->SimTime().Double());
+
+	// Run a single iteration and reset the world
+	// This should force all plugins to load
+
+	this->Reset();
+
+	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time after: {}", this->_world->SimTime().Double());
+
+	return true;
 }

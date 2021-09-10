@@ -33,12 +33,22 @@ void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::E
 	this->CameraPlugin::Load(sensor, sdf);
 
 	const auto devName = NRPCommunicationController::createDeviceName(*this, sensor->Name());
-	std::cout << "NRPCameraController: Registering new controller \"" << devName << "\"\n";
+	NRPLogger::info("NRPCameraController: Registering new controller [ {} ]", devName);
 
 	// Create camera device and register it
 	this->_cameraInterface.reset(new EngineJSONSerialization<CameraDeviceController>(devName, this->camera, sensor));
 	NRPCommunicationController::getInstance().registerDevice(devName, this->_cameraInterface.get());
+
+	// Register plugin in communication controller
+	NRPCommunicationController::getInstance().registerSensorPlugin(this);
 }
 
 void gazebo::NRPCameraController::OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &)
 {	this->_cameraInterface->updateCamData(image, width, height, depth);	}
+
+
+void gazebo::NRPCameraController::Reset()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	this->_cameraInterface->resetTime();
+}

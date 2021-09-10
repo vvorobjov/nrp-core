@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// This project has received funding from the European Unionâ€™s Horizon 2020
+// This project has received funding from the European Union’s Horizon 2020
 // Framework Programme for Research and Innovation under the Specific Grant
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
@@ -31,7 +31,7 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	std::cout << "NRPWorldPlugin: Loading world plugin...\n";
+	NRPLogger::info("NRPWorldPlugin: Loading world plugin...");
 
 	this->_initialWorldState = gazebo::physics::WorldState(world);
 	this->_world             = world;
@@ -43,7 +43,7 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 	// Tell simulation to go as fast as possible
 //	world->Physics()->SetRealTimeUpdateRate(0);
 
-	std::cout << "NRPWorldPlugin: Registering world controller with communicator...\n";
+	NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
 	NRPCommunicationController::getInstance().registerStepController(this);
 }
 
@@ -53,13 +53,13 @@ void gazebo::NRPWorldPlugin::Reset()
 	// Reset the world to the initial state
 	// Reset doesn't take into account the <state> tag, so we have to reload it manually
 
-	WorldPlugin::Reset();
+	WorldPlugin::Reset(); // <- does nothing
 	this->_world->SetState(this->_initialWorldState);
 }
 
 SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+	NRP_LOGGER_TRACE("{} called [ timeStep: {} ]", __FUNCTION__, timeStep.count());
 	
 	std::scoped_lock lock(this->_lockLoop);
 
@@ -74,9 +74,7 @@ SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
 	}
 	catch(const std::exception &e)
 	{
-		std::cerr << "Error while executing gazebo step\n";
-		std::cerr << e.what();
-
+		NRPLogger::error("Error while executing gazebo step: [ {} ]",  e.what());
 		throw;
 	}
 
@@ -91,23 +89,41 @@ bool gazebo::NRPWorldPlugin::finishWorldLoading()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	std::cout << "Finalizing gazebo loading... Time:" <<  this->_world->SimTime().Double() << "\n";
-
+	NRPLogger::info("Finalizing gazebo loading... Time: {}",  this->_world->SimTime().Double());
+	
 	// Run a single iteration and reset the world
 	// This should force all plugins to load
 
 	this->startLoop(1);
 	this->Reset();
 
-	std::cout << "Gazebo loading finalized Time:" <<  this->_world->SimTime().Double() << "\n";
+	NRPLogger::info("Gazebo loading finalized Time: {}",  this->_world->SimTime().Double());
+
+	return true;
+}
+
+bool gazebo::NRPWorldPlugin::resetWorld()
+{
+	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time before: {}", this->_world->SimTime().Double());
+
+	// There is a World::Reset() function:
+	// this->_world->Reset() 
+	// that is supposed to call Reset() functions for all plugins, including model and sensor plugins.
+	// But for some reason this->_world->Reset()  just calls NRPWorldPlugin::Reset() function
+	// i.e. only WorldPlugin is affected.
+	// it would be cool to use this feature when the problem is fixed:
+	// this->_world->Reset();
+
+	this->Reset();
+
+	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time after: {}", this->_world->SimTime().Double());
 
 	return true;
 }
 
 void gazebo::NRPWorldPlugin::startLoop(unsigned int numIterations)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	//std::cout << "NRPWorldPlugin: Running " << numIterations << " iterations\n";
+	NRP_LOGGER_TRACE("{} called [ numIterations: {} ]", __FUNCTION__, numIterations);
 
 	this->_world->Step(numIterations);
 	this->_world->SetPaused(true);

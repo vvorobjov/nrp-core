@@ -74,6 +74,7 @@ TEST(TestGazeboGrpcEngine, WorldPlugin)
     ASSERT_NO_THROW(engine->initialize());
     ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
     ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    ASSERT_NO_THROW(engine->reset());
 }
 
 TEST(TestGazeboGrpcEngine, CameraPlugin)

@@ -128,6 +128,9 @@ static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
 
 	manager.initSimulationLoop(engines, processLaunchers);
 	manager.runSimulationUntilTimeout();
+	// NRRPLT-8246: uncomment to test reset
+	// manager.resetSimulation();
+	// manager.runSimulationUntilTimeout();
 }
 
 
@@ -226,6 +229,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	NRPLogger::info("Exiting Simulation Manager");
 	return 0;
 }
 

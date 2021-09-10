@@ -19,6 +19,7 @@ class ExampleEngineClient
 		virtual ~ExampleEngineClient() override;
 
 		virtual void initialize() override;
+		virtual void reset() override;
 		virtual void shutdown() override;
 
 		virtual SimulationTime getEngineTime() const override

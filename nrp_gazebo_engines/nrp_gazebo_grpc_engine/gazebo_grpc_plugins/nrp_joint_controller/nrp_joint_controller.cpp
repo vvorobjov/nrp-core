@@ -69,7 +69,7 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 			if(pJoint == nullptr)
 			{
 				const auto errMsg = "Joint \"" + jointName + "\" not found in model \"" + model->GetScopedName() + "\"";
-				std::cerr << errMsg << std::endl;
+				NRPLogger::error(errMsg);
 				throw std::logic_error(errMsg);
 			}
 
@@ -93,7 +93,7 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 	}
 	catch(const std::exception &)
 	{
-		std::cerr << "Error reading configuration for plugin \"" << this->GetHandle() << "\" of model \"" << model->GetScopedName() << "\"" << std::endl;
+		NRPLogger::error("Error reading configuration for plugin {} of model {}", this->GetHandle(), model->GetScopedName());
 		throw;
 	}
 
@@ -129,8 +129,11 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 		// Create device
 		const auto deviceName = NRPCommunicationController::createDeviceName(*this, joint->GetName());
 
-		std::cout << "Registering joint controller for joint \"" << jointName << "\"\n";
+		NRPLogger::info("Registering joint controller for joint [ {} ]", jointName);
 		this->_jointDeviceControllers.push_back(JointGrpcDeviceController(jointName, joint, jointControllerPtr));
 		NRPCommunicationController::getInstance().registerDevice(deviceName, &(this->_jointDeviceControllers.back()));
 	}
+
+	// Register plugin
+	NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

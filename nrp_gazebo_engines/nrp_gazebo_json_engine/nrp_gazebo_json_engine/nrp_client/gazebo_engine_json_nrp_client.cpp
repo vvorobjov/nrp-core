@@ -57,6 +57,26 @@ void GazeboEngineJSONNRPClient::initialize()
 	NRPLogger::debug("GazeboEngineJSONNRPClient::initialize(...) completed with no errors.");
 }
 
+void GazeboEngineJSONNRPClient::reset()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	try
+	{
+		const nlohmann::json resetRes = this->sendResetCommand(nlohmann::json());
+        
+		if(!resetRes[0].get<bool>()){
+			throw NRPExceptionNonRecoverable("Received reset fail message from Engine \"" + this->engineName() + "\"");
+        }
+
+		this->resetEngineTime();
+	}
+	catch(std::exception &e)
+	{
+		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
+	}
+}
+
 void GazeboEngineJSONNRPClient::shutdown()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);

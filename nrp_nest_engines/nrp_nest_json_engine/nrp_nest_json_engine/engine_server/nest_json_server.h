@@ -55,6 +55,7 @@ class NestJSONServer
 
 		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &deviceLock) override;
+		virtual nlohmann::json reset(EngineJSONServer::lock_t &deviceLock) override;
 		virtual nlohmann::json shutdown(const nlohmann::json &data) override;
 
 	private:
@@ -132,6 +133,8 @@ class NestJSONServer
 		nlohmann::json getDeviceData(const nlohmann::json &reqData) override;
 
 		nlohmann::json setDeviceData(const nlohmann::json &reqData) override;
+
+		nlohmann::json _initData;
 };
 
 #endif // NEST_JSON_SERVER_H

@@ -68,6 +68,11 @@ class TestEngineJSONServer
 		return nlohmann::json({{"status", "success"}, {"original", data}});
 	}
 
+	nlohmann::json reset(EngineJSONServer::lock_t&) override
+	{
+		return nlohmann::json({{"status", "success"}});
+	}
+
 	nlohmann::json shutdown(const nlohmann::json &data) override
 	{
 		return nlohmann::json({{"shutdown", "success"}, {"original", data}});
@@ -95,9 +100,16 @@ class TestEngineJSONNRPClient
 	void initialize() override
 	{
 		auto retVal = this->sendInitCommand("initCommand");
-		if(retVal["original"].get<std::string>().compare("initCommand") != 0)
+		if(retVal["status"].get<std::string>().compare("initCommand") != 0)
 			throw NRPExceptionNonRecoverable("Test init failed");
 	}
+
+	void reset() override
+	{
+		auto retVal = this->sendResetCommand("resetCommand");
+		if (retVal["original"].get<std::string>().compare("success") != 0)
+			throw NRPExceptionNonRecoverable("Test reset failed");
+	};
 
 	void shutdown() override
 	{
@@ -262,4 +274,6 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 
 	ASSERT_EQ(inputDev1.data(), dev1Ctrl.data().data());
 	ASSERT_EQ(inputDev2.data(), dev2Ctrl.data().data());
+
+	ASSERT_NO_THROW(client.reset());	
 }

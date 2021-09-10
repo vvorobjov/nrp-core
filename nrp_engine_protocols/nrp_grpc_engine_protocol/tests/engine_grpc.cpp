@@ -95,6 +95,11 @@ class TestEngineGrpcClient
             this->sendInitCommand("test");
         }
 
+		void reset() override
+        {
+            this->sendResetCommand();
+        }
+
 		void shutdown() override
         {
             this->sendShutdownCommand("test");
@@ -124,6 +129,13 @@ class TestEngineGrpcServer
             }
         }
 
+        void reset() override
+        {
+            specialBehaviour();
+
+            this->resetEngineTime();
+        }
+
         void shutdown(const nlohmann::json &data) override
         {
             specialBehaviour();
@@ -151,6 +163,11 @@ class TestEngineGrpcServer
         void resetEngineTime()
         {
             this->_time = SimulationTime::zero();
+        }
+
+        SimulationTime getEngineTime()
+        {
+            return this->_time;
         }
 
     private:
@@ -349,6 +366,55 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
     server.timeoutOnNextCommand();
     SimulationTime timeStep = floatToSimulationTime(2.0f);
     ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
+}
+
+TEST(EngineGrpc, ResetCommand)
+{
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+
+    nlohmann::json jsonMessage;
+    jsonMessage["init"]    = true;
+    jsonMessage["throw"]   = false;
+
+    // The gRPC server isn't running, so the reset command should fail
+
+    ASSERT_THROW(client.sendResetCommand(), std::runtime_error);
+
+    // Start the server and send the reset command. It should succeed
+
+    server.startServer();
+    // TODO Investigate why this is needed. It seems to be caused by the previous call to sendInitCommand function
+    testSleep(1500);
+    ASSERT_NO_THROW(client.sendResetCommand());
+
+    // Normal loop execution, the reset should return time to zero
+
+    SimulationTime timeStep = floatToSimulationTime(0.1f);
+    ASSERT_NO_THROW(client.sendRunLoopStepCommand(timeStep));
+    ASSERT_NO_THROW(client.sendResetCommand());
+    ASSERT_EQ(client.getEngineTime().count(), 0);
+}
+
+TEST(EngineGrpc, ResetCommandTimeout)
+{
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
+    config["EngineCommandTimeout"] = 1;
+
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+
+    // Test runLoopStep command timeout
+
+    server.startServer();
+    server.timeoutOnNextCommand();
+    ASSERT_THROW(client.sendResetCommand(), std::runtime_error);
 }
 
 TEST(EngineGrpc, RegisterDevices)

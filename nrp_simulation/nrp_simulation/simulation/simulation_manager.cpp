@@ -223,7 +223,7 @@ void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstShare
 	this->_loop->initLoop();
 }
 
-bool SimulationManager::runSimulationUntilTimeout()
+bool SimulationManager::runSimulationUntilTimeout(int frac)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -234,7 +234,7 @@ bool SimulationManager::runSimulationUntilTimeout()
 
 	while(1)
 	{
-		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(this->_simConfig->at("SimulationTimeout")));
+		hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(frac * int(this->_simConfig->at("SimulationTimeout"))));
 
 		if(hasTimedOut)
 			break;
@@ -245,6 +245,42 @@ bool SimulationManager::runSimulationUntilTimeout()
 	}
 
 	return hasTimedOut;
+}
+
+bool SimulationManager::resetSimulation()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	NRPLogger::info("SimulationManager: resetting simulation...");
+
+/*	if (this->isRunning()){
+		NRPLogger::error("Cannot reset the running simulation");
+		return false;
+	}
+	if(simLock.owns_lock())
+		simLock.unlock();*/
+
+	//sim_lock_t internalLock(this->_internalLock);
+
+	try{
+		if(this->_loop != nullptr) {
+			//simLock.lock();
+
+			this->_loop->resetLoop();
+
+			//simLock.unlock();
+			//std::this_thread::yield();
+		}
+		else{
+			throw NRPException::logCreate("SimulationManager: cannot reset the loop, the loop doesn't exist");
+		}
+	}
+	catch(NRPException &e) {
+		throw NRPException::logCreate(e, "SimulationManager: Loop reset has FAILED");
+	}
+
+	NRPLogger::info("SimulationManager: simulation is reset.");
+	return true;
 }
 
 void SimulationManager::runSimulation(unsigned numIterations)
@@ -266,6 +302,8 @@ void SimulationManager::runSimulation(unsigned numIterations)
 
 void SimulationManager::shutdownLoop()
 {
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
 	try {
 		if(this->_loop != nullptr) {
 			this->_loop->shutdownLoop();

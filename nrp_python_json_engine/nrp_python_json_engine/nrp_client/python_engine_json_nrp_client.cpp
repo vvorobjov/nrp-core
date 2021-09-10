@@ -54,13 +54,32 @@ void PythonEngineJSONNRPClient::initialize()
 	if(!resp.at(PythonConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
-		this->_initErrMsg = resp.at(PythonConfigConst::InitFileErrorMsg.data());
+		this->_initErrMsg = resp.at(PythonConfigConst::ErrorMsg.data());
 		NRPLogger::error(this->_initErrMsg);
 
 		throw NRPException::logCreate("Initialization failed: " + this->_initErrMsg);
 	}
 
 	NRPLogger::debug("PythonEngineJSONNRPClient::initialize(...) completed with no errors.");
+}
+
+void PythonEngineJSONNRPClient::reset()
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	nlohmann::json resp = this->sendResetCommand(nlohmann::json("reset"));
+    NRPLogger::debug("NestEngineJSONNRPClient:reset()::resp [ {} ]", resp.dump());
+
+	if(!resp.at(PythonConfigConst::ResetExecStatus.data()).get<bool>())
+	{
+		// Write the error message
+		std::string msg = resp.at(PythonConfigConst::ErrorMsg.data());
+		NRPLogger::error(msg);
+
+		throw NRPException::logCreate("Reset failed: " + msg);
+	}
+
+	this->resetEngineTime();
 }
 
 void PythonEngineJSONNRPClient::shutdown()

@@ -175,11 +175,17 @@ class SimulationManager
 		                        const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
 
 		/*!
+		 * \brief Reset the currently running simulation
+		 * \param lock Simulation lock
+		 */
+		bool resetSimulation();
+
+		/*!
 		 * \brief Runs the simulation until a separate thread stops it or simTimeout (defined in SimulationConfig) is reached. If simTimeout is zero or negative, ignore it
 		 * \param simLock Pass simulation lock if already owned
 		 * \return Returns true if no error was encountered, false otherwise
 		 */
-		bool runSimulationUntilTimeout();
+		bool runSimulationUntilTimeout(int frac = 1);
 
 		/*!
 		 * \brief Run the Simulation for specified amount of time

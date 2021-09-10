@@ -37,9 +37,11 @@ void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf:
 	{
 		const auto deviceName = NRPCommunicationController::createDeviceName(*this, link->GetName());
 
-		std::cout << "Registering link controller for link \"" << deviceName << "\"\n";
-
+		NRPLogger::info("Registering link controller for link [ {} ]", deviceName);
 		this->_linkInterfaces.push_back(EngineJSONSerialization<LinkDeviceController>(deviceName, link));
 		commControl.registerDevice(deviceName, &(this->_linkInterfaces.back()));
 	}
+
+	// Register plugin
+	NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

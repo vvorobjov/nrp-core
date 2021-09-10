@@ -67,6 +67,11 @@ struct EngineJSONConfigConst
 		static constexpr std::string_view EngineServerInitializeRoute = "/initialize";
 
 		/*!
+		 * \brief REST Server Route for engine initialization
+		 */
+		static constexpr std::string_view EngineServerResetRoute = "/reset";
+
+		/*!
 		 * \brief REST Server Route for engine shutdown
 		 */
 		static constexpr std::string_view EngineServerShutdownRoute = "/shutdown";

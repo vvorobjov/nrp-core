@@ -32,14 +32,19 @@ struct PythonConfigConst
     static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_python.json#PythonJSONEngine";
 
 	/*!
-	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under InitFileErrorMsg).
+	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
 	 */
 	static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
 
 	/*!
+	 * \brief After the server resets, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
+	 */
+	static constexpr std::string_view ResetExecStatus = "ResetExecStatus";
+
+	/*!
 	 * \brief If the init file could not be parsed, the python error message will be stored under this JSON property name
 	 */
-	static constexpr std::string_view InitFileErrorMsg = "Message";
+	static constexpr std::string_view ErrorMsg = "Message";
 };
 
 #endif // PYTHON_CONFIG_H

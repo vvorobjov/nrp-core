@@ -49,13 +49,35 @@ void NestEngineJSONNRPClient::initialize()
 	if(!resp.at(NestConfigConst::InitFileExecStatus.data()).get<bool>())
 	{
 		// Write the error message
-		this->_initErrMsg = resp.at(NestConfigConst::InitFileErrorMsg.data());
+		this->_initErrMsg = resp.at(NestConfigConst::ErrorMsg.data());
 		NRPLogger::error(this->_initErrMsg);
 
 		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" initialization failed: " + this->_initErrMsg);
 	}
 
 	NRPLogger::debug("NestEngineJSONNRPClient::initialize(...) completed with no errors.");
+}
+
+void NestEngineJSONNRPClient::reset()
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	nlohmann::json resp = this->sendResetCommand(nlohmann::json("reset"));
+
+    if(!resp.at(NestConfigConst::ResetExecStatus.data()).get<bool>())
+	{
+		// Write the error message
+		std::string msg = resp.at(NestConfigConst::ErrorMsg.data());
+		NRPLogger::error("NestEngineJSONNRPClient::reset() failed");
+
+		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" reset failed: " + msg);
+	}
+
+	this->_deviceCache.clear();
+
+	this->resetEngineTime();
+	
+	NRPLogger::debug("NestEngineJSONNRPClient::reset() engine time: {}", this->getEngineTime().count());
 }
 
 void NestEngineJSONNRPClient::shutdown()

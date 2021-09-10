@@ -60,6 +60,61 @@ void SimulationLoop::initLoop()
 	}
 }
 
+void SimulationLoop::resetLoop()
+{
+	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+	// reset engine queue
+	if (!this->_engineQueue.empty())
+	{
+		// Get the next batch of engines which should finish next
+		std::vector<EngineClientInterfaceSharedPtr> idleEngines;
+		const auto nextCompletionTime = this->_engineQueue.begin()->first;
+		do
+		{
+			this->_simTime = this->_engineQueue.begin()->first;
+			idleEngines.push_back(this->_engineQueue.begin()->second);
+
+			this->_engineQueue.erase(this->_engineQueue.begin());
+
+		} while (!this->_engineQueue.empty());
+
+		// Wait for engines which will be processed to complete execution
+		for (const auto &engine : idleEngines)
+		{
+			float timeout = engine->engineConfig().at("EngineCommandTimeout");
+			try
+			{
+				engine->waitForStepCompletion(timeout);
+			}
+			catch (std::exception &e)
+			{
+				throw NRPException::logCreate(e, "Engine \"" + engine->engineName() + "\" loop exceeded timeout of " +
+													 std::to_string(timeout) + "s");
+			}
+		}
+	}
+
+	for(const auto &engine : this->_engines)
+	{
+		try
+		{
+			engine->reset();
+		}
+		catch(std::exception &e)
+		{
+			throw NRPException::logCreate(e, "Failed to reset engine \"" + engine->engineName() + "\"");
+		}
+	}
+
+	for (const auto &curEnginePtr : this->_engines)
+	{
+		this->_engineQueue.emplace(0, curEnginePtr);
+	}
+
+	this->_simTime = SimulationTime::zero();
+}
+
 void SimulationLoop::shutdownLoop()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -86,6 +141,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 
 	if(this->_engineQueue.empty())
 	{
+		NRPLogger::debug("SimulationLoop::runLoop: _engineQueue is empty");
 		this->_simTime = loopStopTime;
 		return;
 	}

@@ -85,6 +85,24 @@ class NRPCommunicationController
 		void registerStepController(GazeboStepController *stepController);
 
 		/*!
+		 * \brief Register a sensor plugin
+		 * \param sensorPlugin Pointer to sensor plugin
+		 */
+		void registerSensorPlugin(gazebo::SensorPlugin *sensorPlugin)
+		{
+			this->_sensorPlugins.push_back(sensorPlugin);
+		};
+
+		/*!
+		 * \brief Register a model plugin
+		 * \param sensorPlugin Pointer to model plugin
+		 */
+		void registerModelPlugin(gazebo::ModelPlugin *modelPlugin)
+		{
+			this->_modelPlugins.push_back(modelPlugin);
+		};
+
+		/*!
 		 * \brief Create device name from the given plugin and sensor/joint/link
 		 * \tparam T Plugin Type
 		 * \param plugin Controller Plugin
@@ -107,9 +125,25 @@ class NRPCommunicationController
 		 */
 		GazeboStepController *_stepController = nullptr;
 
+		/*!
+		 * \brief Vector of registered SensorPlugin's.
+		 * They are kept in order to be available for function calls, like Reset
+		 * Because the world->Reset doesn't call plugins' corresponding functions.
+		 */
+		std::vector< gazebo::SensorPlugin* >  _sensorPlugins;
+
+		/*!
+		 * \brief Vector of registered ModelPlugin's
+		 * They are kept in order to be available for function calls, like Reset
+		 * Because the world->Reset doesn't call plugins' corresponding functions.
+		 */
+		std::vector< gazebo::ModelPlugin* >  _modelPlugins;
+
 		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
 		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &lock) override;
+
+		virtual nlohmann::json reset(EngineJSONServer::lock_t &lock) override;
 
 		virtual nlohmann::json shutdown(const nlohmann::json &data) override;
 
