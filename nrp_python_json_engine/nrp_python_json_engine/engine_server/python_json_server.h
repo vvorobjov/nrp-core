@@ -37,8 +37,8 @@ class PythonJSONServer
         : public EngineJSONServer
 {
 	public:
-		PythonJSONServer(const std::string &serverAddress, boost::python::dict globals, boost::python::object locals);
-		PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, boost::python::dict globals, boost::python::object locals);
+		PythonJSONServer(const std::string &serverAddress, boost::python::dict globals);
+		PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, boost::python::dict globals);
 		virtual ~PythonJSONServer() override = default;
 
 		/*!
@@ -87,10 +87,7 @@ class PythonJSONServer
 		 */
 		boost::python::dict _pyGlobals;
 
-		/*!
-		 * \brief Local Python variables
-		 */
-		boost::python::object _pyLocals;
+
 
 		/*!
 		 * \brief Python script to execute

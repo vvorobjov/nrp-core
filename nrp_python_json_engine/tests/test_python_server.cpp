@@ -50,7 +50,7 @@ TEST(TestPythonJSONServer, TestFunc)
     std::string server_address = "localhost:5434";;
     config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(config.at("ServerAddress"), pyGlobals, pyLocals);
+	PythonJSONServer server(config.at("ServerAddress"), pyGlobals);
 
 	// Test Init
 	pyState.allowThreads();
@@ -110,7 +110,7 @@ TEST(TestPythonJSONServer, TestInitError)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(server_address, pyGlobals, pyLocals);
+	PythonJSONServer server(server_address, pyGlobals);
 	pyState.allowThreads();
 
 	EngineJSONServer::mutex_t fakeMutex;

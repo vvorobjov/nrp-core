@@ -42,7 +42,7 @@ PythonServerExecutable::PythonServerExecutable(int argc, char *argv[])
       _server(this->_res[EngineJSONConfigConst::EngineServerAddrArg.data()].as<std::string>(),
               this->_res[EngineJSONConfigConst::EngineNameArg.data()].as<std::string>(),
               this->_res[EngineJSONConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>(),
-              python::dict(python::import("__main__").attr("__dict__")), python::dict())
+              python::dict(python::import("__main__").attr("__dict__")))
 {
 	// Register function to handle SIGTERM events
 	signal(SIGTERM, &PythonServerExecutable::handleSIGTERM);

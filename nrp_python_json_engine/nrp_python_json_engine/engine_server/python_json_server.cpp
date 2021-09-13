@@ -36,16 +36,14 @@ namespace python = boost::python;
 
 PythonJSONServer *PythonJSONServer::_registrationPyServer = nullptr;
 
-PythonJSONServer::PythonJSONServer(const std::string &serverAddress, python::dict globals, python::object locals)
+PythonJSONServer::PythonJSONServer(const std::string &serverAddress, python::dict globals)
     : EngineJSONServer(serverAddress),
-      _pyGlobals(globals),
-      _pyLocals(locals)
+      _pyGlobals(globals)
 {}
 
-PythonJSONServer::PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, python::dict globals, boost::python::object locals)
+PythonJSONServer::PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, python::dict globals)
     : EngineJSONServer(serverAddress, engineName, registrationAddress),
-      _pyGlobals(globals),
-      _pyLocals(locals)
+      _pyGlobals(globals)
 {}
 
 bool PythonJSONServer::initRunFlag() const
@@ -79,7 +77,7 @@ SimulationTime PythonJSONServer::runLoopStep(SimulationTime timestep)
 nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJSONServer::lock_t&)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
+
 	PythonGILLock lock(this->_pyGILState, true);
 	_initData = data;
 	try
@@ -115,7 +113,7 @@ nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJS
 	// Read python file
 	try
 	{
-		python::exec_file(fileName.c_str(), this->_pyGlobals, this->_pyLocals);
+		python::exec_file(fileName.c_str(), this->_pyGlobals, this->_pyGlobals);
 	}
 	catch(python::error_already_set &)
 	{

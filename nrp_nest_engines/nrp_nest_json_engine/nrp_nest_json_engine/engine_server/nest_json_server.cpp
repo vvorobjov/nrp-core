@@ -35,18 +35,17 @@
 
 namespace python = boost::python;
 
-NestJSONServer::NestJSONServer(const std::string &serverAddress, python::dict globals, python::object locals)
+
+NestJSONServer::NestJSONServer(const std::string &serverAddress, python::dict globals)
     : EngineJSONServer(serverAddress),
-      _pyGlobals(globals),
-      _pyLocals(locals)
+      _pyGlobals(globals)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 }
 
-NestJSONServer::NestJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, python::dict globals, boost::python::object locals)
+NestJSONServer::NestJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, python::dict globals)
     : EngineJSONServer(serverAddress, engineName, registrationAddress),
-      _pyGlobals(globals),
-      _pyLocals(locals)
+      _pyGlobals(globals)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 }
@@ -94,6 +93,7 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
 	PythonGILLock lock(this->_pyGILState, true);
+
 	try
 	{
 		const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, python::extract<double>(this->_pyNest["GetKernelStatus"]("resolution")));
@@ -105,7 +105,7 @@ SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
 		// The time field of dictionary returned from GetKernelStatus contains time in milliseconds
 		return toSimulationTime<float, std::milli>(python::extract<float>(this->_pyNest["GetKernelStatus"]("biological_time")));
 	}
-	catch (python::error_already_set &)
+	catch(python::error_already_set &)
 	{
 		// If an error occured, print the error
 		throw NRPException::logCreate("Failed to run Nest step: " + handle_pyerror());
@@ -159,7 +159,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 		// Execute Init File
 		try
 		{
-			python::exec_file(python::str(initFileName), this->_pyGlobals, this->_pyLocals);
+			python::exec_file(python::str(initFileName), this->_pyGlobals, this->_pyGlobals);
 		}
 		catch(python::error_already_set &)
 		{

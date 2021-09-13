@@ -40,7 +40,7 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
 	PythonInterpreterState pyState(1, &argv);
 
 	python::dict pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
-	python::object pyLocals;
+
 
     nlohmann::json config;
     config["EngineName"] = "engine";
@@ -49,7 +49,7 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-	NestJSONServer server(server_address, pyGlobals, pyLocals);
+	NestJSONServer server(server_address, pyGlobals);
 
 	// Test Init
 	pyState.allowThreads();
@@ -99,7 +99,7 @@ TEST(TestNestJSONServer, TestInitError)
 	PythonInterpreterState pyState(1, &argv);
 
 	auto pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
-	python::object pyLocals;
+
 
     nlohmann::json config;
     config["EngineName"] = "engine";
@@ -108,7 +108,7 @@ TEST(TestNestJSONServer, TestInitError)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-	NestJSONServer server(server_address, pyGlobals, pyLocals);
+	NestJSONServer server(server_address, pyGlobals);
 
 	pyState.allowThreads();
 
