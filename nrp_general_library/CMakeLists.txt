@@ -19,19 +19,9 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_general_library/property_template/property_template.cpp
-	nrp_general_library/property_template/serializers/json_property_serializer.cpp
-	nrp_general_library/property_template/serializers/property_serializer.cpp
-	nrp_general_library/property_template/serializers/property_serializer_general.cpp
-	nrp_general_library/property_template/serializers/python_dict_property_serializer.cpp
 	nrp_general_library/device_interface/device_interface.cpp
-	nrp_general_library/device_interface/data_device.cpp
 	nrp_general_library/device_interface/device.cpp
-	nrp_general_library/device_interface/device_serializer_methods.cpp
-	nrp_python_device/devices/pyobject_device.cpp
-	nrp_general_library/device_interface/device_python_wrappers.cpp
-	nrp_general_library/engine_interfaces/data_device_controller.cpp
-	nrp_general_library/engine_interfaces/engine_device_controller.cpp
+	nrp_general_library/engine_interfaces/device_controller.cpp
 	nrp_general_library/engine_interfaces/engine_client_interface.cpp
 	nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
 	nrp_general_library/plugin_system/plugin.cpp
@@ -53,7 +43,6 @@ set(LIB_SRC_FILES
 	nrp_general_library/utils/nrp_exceptions.cpp
 	nrp_general_library/utils/nrp_logger.cpp
 	nrp_general_library/utils/ptr_templates.cpp
-	nrp_general_library/utils/python_array_converter.cpp
 	nrp_general_library/utils/python_error_handler.cpp
 	nrp_general_library/utils/python_interpreter_state.cpp
 	nrp_general_library/utils/restclient_setup.cpp
@@ -77,10 +66,7 @@ set(TEST_SRC_FILES
 	tests/device_interface.cpp
 	tests/device_data.cpp
 	tests/engine_launcher_manager.cpp
-	tests/json_property_serializer.cpp
 	tests/plugin_manager.cpp
-	tests/property_template.cpp
-	tests/python_dict_property_serializer.cpp
 	tests/test_process_launcher_basic.cpp
 	tests/transceiver_function_interpreter.cpp
 )

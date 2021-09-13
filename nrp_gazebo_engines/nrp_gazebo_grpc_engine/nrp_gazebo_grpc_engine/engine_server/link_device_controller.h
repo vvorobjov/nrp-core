@@ -24,7 +24,7 @@
 
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/Link.hh>
-#include "nrp_general_library/engine_interfaces/data_device_controller.h"
+#include "nrp_general_library/engine_interfaces/device_controller.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 namespace gazebo
@@ -33,7 +33,7 @@ namespace gazebo
 	 * \brief Interface for links
 	 */
 	class LinkGrpcDeviceController
-	        : public DataDeviceController<google::protobuf::Message>
+	        : public DeviceController<google::protobuf::Message>
 	{
 			template<class T>
 			constexpr static float ToFloat(const T &val)

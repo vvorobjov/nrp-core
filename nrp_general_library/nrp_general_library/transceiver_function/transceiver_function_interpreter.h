@@ -22,7 +22,6 @@
 #ifndef TRANSCEIVER_FUNCTION_INTERPRETER_H
 #define TRANSCEIVER_FUNCTION_INTERPRETER_H
 
-#include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
 

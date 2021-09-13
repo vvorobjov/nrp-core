@@ -24,9 +24,6 @@
 
 #include "nrp_gazebo_json_engine/config/gazebo_json_config.h"
 #include "nrp_gazebo_json_engine/config/cmake_constants.h"
-#include "nrp_gazebo_devices/physics_camera.h"
-#include "nrp_gazebo_devices/physics_joint.h"
-#include "nrp_gazebo_devices/physics_link.h"
 #include "nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
@@ -107,19 +104,19 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
     do
     {
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
+        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), JsonDevice::getType())});
         ASSERT_EQ(devices->size(), 1);
     }
     while(dynamic_cast<const DeviceInterface&>(*(devices->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
 	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices->at(0)));
+	const JsonDevice &camDat = dynamic_cast<const JsonDevice&>(*(devices->at(0)));
 
-	ASSERT_EQ(camDat.imageHeight(), 240);
-	ASSERT_EQ(camDat.imageWidth(),  320);
-	ASSERT_EQ(camDat.imagePixelSize(),  3);
-	ASSERT_EQ(camDat.imageData().size(), 320*240*3);
+	ASSERT_EQ(camDat.getData()["image_height"], 240);
+	ASSERT_EQ(camDat.getData()["image_width" ], 320);
+	ASSERT_EQ(camDat.getData()["image_depth" ], 3);
+	ASSERT_EQ(camDat.getData()["image_data"  ].size(), 320*240*3);
 }
 
 
@@ -144,19 +141,16 @@ TEST(TestGazeboJSONEngine, JointPlugin)
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDevice::getType())});
 	ASSERT_EQ(devices.size(), 1);
 
-	const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
-	ASSERT_EQ(pJointDev->position(), 0);
+	const JsonDevice *pJointDev = dynamic_cast<const JsonDevice*>(devices[0].get());
+	ASSERT_EQ(pJointDev->getData()["position"], 0);
 
 	// Test device data setting
 	const auto newTargetPos = 2.0f;
 
-	PhysicsJoint newJointDev(DeviceIdentifier(pJointDev->id()));
-	newJointDev.setEffort(NAN);
-	newJointDev.setVelocity(NAN);
-	newJointDev.setPosition(newTargetPos);
+	JsonDevice newJointDev(pJointDev->name(), pJointDev->engineName(), new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} }));
 
 	ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
 }
@@ -182,10 +176,10 @@ TEST(TestGazeboJSONEngine, LinkPlugin)
 	ASSERT_NO_THROW(engine->initialize());
 
 	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), PhysicsJoint::TypeName.data())});
+	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), JsonDevice::getType())});
 	ASSERT_EQ(devices.size(), 1);
 
-	const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());
+	const JsonDevice *pLinkDev = dynamic_cast<const JsonDevice*>(devices[0].get());
 	ASSERT_NE(pLinkDev, nullptr);
 
 	// TODO: Check that link state is correct

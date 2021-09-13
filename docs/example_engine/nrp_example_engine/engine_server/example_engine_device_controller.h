@@ -1,53 +1,34 @@
 #ifndef EXAMPLE_ENGINE_DEVICE_CONTROLLER_H
 #define EXAMPLE_ENGINE_DEVICE_CONTROLLER_H
 
-#include "nrp_example_engine/devices/example_device.h"
+#include <nlohmann/json.hpp>
 
-class ExampleEngineDeviceControllerInterface
-{
-	public:
-		ExampleEngineDeviceControllerInterface();
-		virtual ~ExampleEngineDeviceControllerInterface() = default;
+#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_general_library/engine_interfaces/device_controller.h"
+#include "nrp_general_library/device_interface/device_interface.h"
 
-		virtual DeviceInterface::const_shared_ptr getDeviceInformation() = 0;
-		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) = 0;
-};
-
-template<class DEVICE>
 class ExampleEngineDeviceController
-        : public ExampleEngineDeviceControllerInterface
+        : public DeviceController<nlohmann::json>
 {
 	public:
-		ExampleEngineDeviceController()
+		ExampleEngineDeviceController(DeviceIdentifier &devID)
+		    : _devId(devID)
 		{}
 
-		virtual ~ExampleEngineDeviceController() override = default;
-
-		virtual DeviceInterface::const_shared_ptr getDeviceInformation() override;
-		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) override;
-};
-
-template<>
-class ExampleEngineDeviceController<MyDevice>
-        : public ExampleEngineDeviceControllerInterface
-{
-	public:
-		ExampleEngineDeviceController(DeviceIdentifier &&devID)
-		    : _dev(std::move(devID))
-		{}
-
-		virtual ~ExampleEngineDeviceController() override;
-
-		virtual DeviceInterface::const_shared_ptr getDeviceInformation() override
-		{	return this->_dev.moveToSharedPtr();	}
-
-		virtual void handleDeviceData(DeviceInterface::unique_ptr &&data) override
+		virtual nlohmann::json * getDeviceInformation()
 		{
-			this->_dev = std::move(*dynamic_cast<MyDevice*>(data.release()));
+			return &_dev;
+		}
+
+		void handleDeviceData(const nlohmann::json &data)
+		{
+			_dev = data;
 		}
 
 	private:
-		MyDevice _dev;
+
+		DeviceIdentifier _devId;
+		nlohmann::json _dev;
 };
 
 

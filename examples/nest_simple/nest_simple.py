@@ -12,7 +12,9 @@ neuron = nest.Create("iaf_psc_alpha")
 voltmeter = nest.Create("voltmeter")
 RegisterDevice('voltage', voltmeter)
 
-nest.SetStatus(noise, {"rate": 80000.0, "rate": 15000.0})
+nest.SetStatus(noise, {"rate": 15000.0})
 
 nest.Connect(noise, neuron, syn_spec={'weight': [[1.2, -1.0]], 'delay': 1.0})
 nest.Connect(voltmeter, neuron)
+
+# EOF

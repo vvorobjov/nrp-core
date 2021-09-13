@@ -1,3 +1,4 @@
+
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
  * Copyright 2020-2021 NRP Team
@@ -22,7 +23,6 @@
 #ifndef PYTHON_ENGINE_JSON_NRP_CLIENT_H
 #define PYTHON_ENGINE_JSON_NRP_CLIENT_H
 
-#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_json_engine_protocol/nrp_client/engine_json_nrp_client.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
@@ -34,7 +34,7 @@
  * \brief NRP - Python Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  */
 class PythonEngineJSONNRPClient
-        : public EngineJSONNRPClient<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema, PyObjectDevice>
+        : public EngineJSONNRPClient<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema>
 {
 		/*!
 		 * \brief Time (in seconds) to wait for Python to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL

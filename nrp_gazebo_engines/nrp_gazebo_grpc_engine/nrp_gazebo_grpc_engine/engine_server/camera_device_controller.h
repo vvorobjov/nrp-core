@@ -25,7 +25,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/sensors/CameraSensor.hh>
 #include <gazebo/rendering/Camera.hh>
-#include "nrp_general_library/engine_interfaces/data_device_controller.h"
+#include "nrp_general_library/engine_interfaces/device_controller.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
@@ -33,7 +33,7 @@
 namespace gazebo
 {
 	class CameraGrpcDeviceController
-	        : public DataDeviceController<google::protobuf::Message>
+	        : public DeviceController<google::protobuf::Message>
 	{
 		public:
 	        // TODO: unused parameter

@@ -23,9 +23,7 @@
 #define DEVICE_INTERFACE_H
 
 #include "nrp_general_library/utils/concepts.h"
-#include "nrp_general_library/property_template/property_template.h"
 #include "nrp_general_library/utils/ptr_templates.h"
-#include "nrp_general_library/property_template/serializers/property_serializer.h"
 
 #include <concepts>
 #include <string>

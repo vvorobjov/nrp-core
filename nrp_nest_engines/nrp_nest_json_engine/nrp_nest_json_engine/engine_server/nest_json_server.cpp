@@ -195,8 +195,8 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 			python::object devNodes = this->_devMap[devKey];
 			NRPLogger::debug("NestJSONServer: registering device {:d} {}", i, devName);
 
-			auto devController = std::shared_ptr<NestEngineJSONDeviceController<NestDevice> >(new
-			            NestEngineJSONDeviceController<NestDevice>(DeviceIdentifier(devName, data.at("EngineName"), NestDevice::TypeName.data()),
+			auto devController = std::shared_ptr<NestEngineJSONDeviceController>(new
+			            NestEngineJSONDeviceController(JsonDevice::createID(devName, data.at("EngineName")),
 												 devNodes, this->_pyNest));
 
 			this->_deviceControllerPtrs.push_back(devController);

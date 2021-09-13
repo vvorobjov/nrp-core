@@ -21,30 +21,34 @@
 //
 
 #include "nrp_python_json_engine/engine_server/python_engine_json_device_controller.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_converter.h"
+
+#include "python/python_module.h"
 
 #include <iostream>
 
-PythonEngineJSONDeviceController<PyObjectDevice>::PythonEngineJSONDeviceController(DeviceIdentifier &&devID, boost::python::object data)
-    : EngineDeviceController<nlohmann::json, PyObjectDevice>(std::move(devID)),
-      _deviceData(DeviceIdentifier(*this), data)
+PythonEngineJSONDeviceController::PythonEngineJSONDeviceController(const DeviceIdentifier & devID)
+    : JsonDeviceController(devID)
 {}
 
-void PythonEngineJSONDeviceController<PyObjectDevice>::handleDeviceDataCallback(PyObjectDevice &&data)
+void PythonEngineJSONDeviceController::handleDeviceData(const nlohmann::json &data)
 {
-	this->_deviceData = std::move(data);
+	this->_deviceData = boost::python::object(boost::python::handle<>(json_converter::convertJsonToPyObject(data["data"])));
 }
 
-const PyObjectDevice *PythonEngineJSONDeviceController<PyObjectDevice>::getDeviceInformationCallback()
+nlohmann::json * PythonEngineJSONDeviceController::getDeviceInformation()
 {
-	return &(this->_deviceData);
+	*(getCachedData()) = json_converter::convertPyObjectToJson(this->_deviceData.ptr());
+
+	return &(this->_data);
 }
 
-boost::python::object &PythonEngineJSONDeviceController<PyObjectDevice>::data()
+boost::python::object & PythonEngineJSONDeviceController::data()
 {
-	return this->_deviceData.data();
+	return this->_deviceData;
 }
 
-boost::python::object PythonEngineJSONDeviceController<PyObjectDevice>::data() const
+boost::python::object PythonEngineJSONDeviceController::data() const
 {
-	return this->_deviceData.data();
+	return this->_deviceData;
 }

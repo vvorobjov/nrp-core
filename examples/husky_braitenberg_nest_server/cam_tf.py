@@ -1,6 +1,7 @@
 from NRPPythonModule import *
 from NRPProtoPythonModule import *
-from NRPNestServerPythonModule import NestServerDevice
+from NRPJSONEngineProtocolPython import *
+from NRPNestServerPythonModule import *
 import numpy as np
 from PIL import Image
 import time
@@ -81,13 +82,13 @@ def transceiver_function(camera):
     # print("Right Red: " + str(res.right))
     # print("Go On:     " + str(res.go_on))
 
-    lpg = NestServerDevice("lpg", "nest")
-    rpg = NestServerDevice("rpg", "nest")
-    gpg = NestServerDevice("gpg", "nest")
+    lpg = JsonDevice("lpg", "nest")
+    rpg = JsonDevice("rpg", "nest")
+    gpg = JsonDevice("gpg", "nest")
 
-    lpg.data = {'rate': 2000.0*res.left}
-    rpg.data = {'rate': 2000.0*res.right}
-    gpg.data = {'rate': 75.0*res.go_on}
+    lpg.data['rate'] = 2000.0*res.left
+    rpg.data['rate'] = 2000.0*res.right
+    gpg.data['rate'] = 75.0*res.go_on
 
     return [ lpg, rpg, gpg ]
 

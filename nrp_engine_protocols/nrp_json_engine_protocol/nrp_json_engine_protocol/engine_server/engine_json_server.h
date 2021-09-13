@@ -23,9 +23,9 @@
 #define ENGINE_JSON_SERVER_H
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
-#include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
+#include "nrp_json_engine_protocol/engine_server/json_device_controller.h"
 
+#include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "nrp_general_library/utils/nrp_logger.h"
 
@@ -33,6 +33,7 @@
 #include <memory>
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
+#include <nlohmann/json.hpp>
 
 /*!
  *  \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
@@ -55,8 +56,6 @@ class EngineJSONServer
 	public:
 		using mutex_t = std::timed_mutex;
 		using lock_t = std::unique_lock<EngineJSONServer::mutex_t>;
-
-		using controller_t = EngineDeviceControllerInterface<nlohmann::json>;
 
 		/*!
 		 * \brief Constructor. Tries to bind to a port and register itself with clientAddress
@@ -116,7 +115,7 @@ class EngineJSONServer
 		 * \param deviceName Name of device
 		 * \param interface Pointer to interface
 		 */
-		void registerDevice(const std::string &deviceName, controller_t *interface);
+		void registerDevice(const std::string &deviceName, JsonDeviceController *interface);
 
 		/*!
 		 * \brief Registers a device. Skips locking the mutex.
@@ -124,7 +123,7 @@ class EngineJSONServer
 		 * \param deviceName Name of device
 		 * \param interface Pointer to interface
 		 */
-		void registerDeviceNoLock(const std::string &deviceName, controller_t *interface);
+		void registerDeviceNoLock(const std::string &deviceName, JsonDeviceController *interface);
 
 		/*!
 		 * \brief Run a single loop step
@@ -179,6 +178,7 @@ class EngineJSONServer
 		 * \param reqData A JSON array containing device names linked to the individual device's data
 		 * \return Execution result
 		 */
+		// TODO What is this function supposed to return?
 		virtual nlohmann::json setDeviceData(const nlohmann::json &reqData);
 
 	private:
@@ -207,7 +207,7 @@ class EngineJSONServer
 		/*!
 		 * \brief Available devices
 		 */
-		std::map<std::string, controller_t*> _devicesControllers;
+		std::map<std::string, JsonDeviceController*> _devicesControllers;
 
 		NRPLogger _loggerCfg;
 

@@ -167,7 +167,7 @@ std::string EngineJSONServer::serverAddress() const
 	return this->_serverAddress;
 }
 
-void EngineJSONServer::registerDevice(const std::string &deviceName, controller_t *interface)
+void EngineJSONServer::registerDevice(const std::string &deviceName, JsonDeviceController *interface)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -175,7 +175,7 @@ void EngineJSONServer::registerDevice(const std::string &deviceName, controller_
 	return this->registerDeviceNoLock(deviceName, interface);
 }
 
-void EngineJSONServer::registerDeviceNoLock(const std::string &deviceName, controller_t *interface)
+void EngineJSONServer::registerDeviceNoLock(const std::string &deviceName, JsonDeviceController *interface)
 {	
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	
@@ -197,22 +197,29 @@ nlohmann::json EngineJSONServer::getDeviceData(const nlohmann::json &reqData)
 	EngineJSONServer::lock_t lock(this->_deviceLock);
 
 	json jres;
+
 	for(auto curRequest = reqData.begin(); curRequest != reqData.end(); ++curRequest)
 	{
 		const auto &devName = EngineJSONServer::getIteratorKey(curRequest);
 		const auto devInterface = this->_devicesControllers.find(devName);
 
-		// If device not found, return empty string, else get device information
-		if(devInterface != this->_devicesControllers.end()) {
+		if(devInterface != this->_devicesControllers.end())
+		{
 		    auto dev = devInterface->second->getDeviceInformation();
-            // update with empty json causes exception
-		    if(!dev.empty()) {
-                jres.update(dev);
-                continue;
-            }
-        }
 
-		jres[devName] = nlohmann::json();
+			if(dev == nullptr)
+			{
+				jres.update(devInterface->second->getEmptyDevice());
+			}
+			else
+			{
+				jres.update(*dev);
+			}
+        }
+		else
+		{
+			jres[devName] = nlohmann::json();
+		}
 	}
 
 	return jres;
@@ -232,7 +239,7 @@ nlohmann::json EngineJSONServer::setDeviceData(const nlohmann::json &reqData)
 		try
 		{
 			if(devInterface != this->_devicesControllers.end())
-				devInterface->second->handleDeviceData(devDataIterator);
+				devInterface->second->handleDeviceData(*devDataIterator);
 			jres[devName] = "";
 		}
 		catch(std::exception &e)

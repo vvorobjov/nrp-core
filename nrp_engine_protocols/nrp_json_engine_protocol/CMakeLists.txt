@@ -20,8 +20,8 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_json_engine_protocol/config/engine_json_config.cpp
-	nrp_json_engine_protocol/device_interfaces/json_device_serializer.cpp
-	nrp_json_engine_protocol/engine_server/engine_json_device_controller.cpp
+	nrp_json_engine_protocol/device_interfaces/json_device.cpp
+	nrp_json_engine_protocol/device_interfaces/json_converter.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_server.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_opts_parser.cpp
 	nrp_json_engine_protocol/nrp_client/engine_json_nrp_client.cpp
@@ -30,6 +30,7 @@ set(LIB_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
+	python/python_module.cpp
 )
 
 # List executable build files
@@ -40,7 +41,7 @@ set(EXEC_SRC_FILES
 set(TEST_SRC_FILES
 	tests/engine_json_server.cpp
 	tests/engine_json_nrp_client.cpp
-	tests/json_device_methods.cpp
+	tests/json_converter.cpp
 )
 
 
@@ -51,6 +52,8 @@ set(TEST_SRC_FILES
 ##########################################
 ## Header configuration
 
+configure_file("nrp_json_engine_protocol/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
+configure_file("python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 ##########################################
 # NRPJSONEngineProtocol
@@ -116,6 +119,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 	target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 	target_link_libraries(${TEST_NAME}
 		PUBLIC
+		${PYTHON_MODULE_NAME}
 		${NAMESPACE_NAME}::${LIBRARY_NAME}
 		GTest::GTest
 		GTest::Main)

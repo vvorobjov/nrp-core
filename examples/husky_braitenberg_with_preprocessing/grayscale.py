@@ -14,14 +14,10 @@ def transceiver_function(camera):
     d = np.frombuffer(camera.data.imageData, np.uint8)
     image_data = d.reshape((camera.data.imageHeight,camera.data.imageWidth,3))
 
-    my_dict = {
-        "image_height": camera.data.imageHeight,
-        "image_width" : camera.data.imageWidth,
-        "grayscale"   : np.dot(image_data[...,:3], rgb_weights),
-    }
-
     # Save image in grayscale in a device and return it
-    device = PythonDevice("processed", "gazebo")
-    device.data = my_dict
+    device = JsonDevice("processed", "gazebo")
+    device.data["image_height"] = camera.data.imageHeight
+    device.data["image_width" ] = camera.data.imageWidth
+    device.data["grayscale"   ] = np.dot(image_data[...,:3], rgb_weights).tolist()
 
     return [ device ]

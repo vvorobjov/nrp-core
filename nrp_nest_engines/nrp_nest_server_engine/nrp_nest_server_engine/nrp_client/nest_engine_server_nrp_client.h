@@ -26,8 +26,6 @@
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
-#include "nrp_nest_server_engine/devices/nest_server_device.h"
-
 #include <future>
 #include <unistd.h>
 

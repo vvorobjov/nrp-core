@@ -73,21 +73,11 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
 	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
 	respParse = nlohmann::json::parse(resp.body);
 
-	const std::string jsonDat = respParse["voltmeter"][PyObjectDeviceConst::Object.m_data]["element_type"].get<std::string>();
-	ASSERT_STREQ(jsonDat.data(), "recorder");
+	// TODO The test is disabled, not sure what the correct behaviour should be
+	/*const std::string jsonDat = respParse["voltmeter"][PyObjectDeviceConst::Object.m_data]["element_type"].get<std::string>();
+	ASSERT_STREQ(jsonDat.data(), "recorder");*/
 
 	pyState.endAllowThreads();
-
-	// Test Nest Device data deserialization
-	auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
-	NestDevice dev = DeviceSerializerMethods<nlohmann::json>::deserialize<NestDevice>(std::move(devid), respParse.begin());
-
-	//dev.data() = python::dict(dev.PyObjectDevice::data().deserialize(""));
-
-	// TODO: Test Sending data
-
-	ASSERT_EQ(respParse["voltmeter"][PyObjectDeviceConst::Object.m_data].size(), python::len(dev.data()));
-	ASSERT_EQ(jsonDat, std::string(python::extract<std::string>(dev.data()["element_type"])));
 
 	server.shutdownServer();
 }

@@ -22,10 +22,8 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "tests/test_env_cmake.h"
 
 #include <boost/python.hpp>
@@ -78,8 +76,9 @@ TEST(TestPythonJSONServer, TestFunc)
 	// TODO Why return here?
 	return;
 
+	// TODO It seems that this part is not executed, to be reviewed
 	// Test Python Device data deserialization
-    auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
+    /*auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
 	PyObjectDevice dev = DeviceSerializerMethods<nlohmann::json>::deserialize<PyObjectDevice>(std::move(devid), respParse.begin());
 
 	dev.PyObjectDevice::data() = python::dict(dev.PyObjectDevice::data().deserialize(""));
@@ -91,7 +90,7 @@ TEST(TestPythonJSONServer, TestFunc)
 	ASSERT_EQ(0, recTime);
 
 	pyState.endAllowThreads();
-	server.shutdownServer();
+	server.shutdownServer();*/
 }
 
 TEST(TestPythonJSONServer, TestInitError)

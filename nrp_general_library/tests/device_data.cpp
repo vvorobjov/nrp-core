@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_general_library/device_interface/data_device.h"
+#include "nrp_general_library/device_interface/device.h"
 
 using namespace testing;
 
@@ -31,14 +31,14 @@ TEST(DataDeviceTest, Constructor)
     const std::string deviceName1("deviceName1");
     const std::string engineType1("engine1");
 
-    DataDevice<int> dev(deviceName1, engineType1);
+    Device<int> dev(deviceName1, engineType1);
 
     ASSERT_STREQ(dev.name().data(), deviceName1.data());
     ASSERT_STREQ(dev.type().data(), typeid(int).name());
     ASSERT_STREQ(dev.engineName().data(), engineType1.data());
 
     int *i = new int(42);
-    DataDevice<int> dev2(deviceName1, engineType1, i);
+    Device<int> dev2(deviceName1, engineType1, i);
     ASSERT_EQ(dev2.getData(), *i);
 }
 
@@ -47,7 +47,7 @@ TEST(DataDeviceTest, GetData)
     const std::string deviceName1("deviceName1");
     const std::string engineType1("engine1");
 
-    DataDevice<int> dev(deviceName1, engineType1);
+    Device<int> dev(deviceName1, engineType1);
 
     ASSERT_FALSE(dev.isEmpty());
 

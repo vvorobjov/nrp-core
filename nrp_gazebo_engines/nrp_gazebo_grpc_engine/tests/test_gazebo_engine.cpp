@@ -114,7 +114,7 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
 
 	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    const DataDevice<EngineGrpc::GazeboCamera>& camDat = dynamic_cast<const DataDevice<EngineGrpc::GazeboCamera>&>(*(devices->at(0)));
+    const Device<EngineGrpc::GazeboCamera>& camDat = dynamic_cast<const Device<EngineGrpc::GazeboCamera>&>(*(devices->at(0)));
 
     ASSERT_EQ(camDat.getData().imageheight(), 240);
     ASSERT_EQ(camDat.getData().imagewidth(),  320);
@@ -149,7 +149,7 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(devices.size(), 1);
 
-    const auto *pJointDev = dynamic_cast<const DataDevice<EngineGrpc::GazeboJoint> *>(devices[0].get());
+    const auto *pJointDev = dynamic_cast<const Device<EngineGrpc::GazeboJoint> *>(devices[0].get());
     ASSERT_NE(pJointDev, nullptr);
     ASSERT_EQ(pJointDev->getData().position(), 0);
 
@@ -160,7 +160,7 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     newJointDev->set_effort(NAN);
     newJointDev->set_velocity(NAN);
     newJointDev->set_position(newTargetPos);
-    DataDevice<EngineGrpc::GazeboJoint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
+    Device<EngineGrpc::GazeboJoint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
 
     ASSERT_NO_THROW(engine->sendDevicesToEngine({&dev}));
 }
@@ -191,7 +191,7 @@ TEST(TestGazeboGrpcEngine, LinkPlugin)
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(devices.size(), 1);
 
-    const auto *pLinkDev = dynamic_cast<const DataDevice<EngineGrpc::GazeboLink> *>(devices[0].get());
+    const auto *pLinkDev = dynamic_cast<const Device<EngineGrpc::GazeboLink> *>(devices[0].get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // TODO: Check that link state is correct

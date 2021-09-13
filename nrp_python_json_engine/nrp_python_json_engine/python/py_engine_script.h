@@ -22,7 +22,6 @@
 #ifndef PY_ENGINE_SCRIPT_H
 #define PY_ENGINE_SCRIPT_H
 
-#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
 
@@ -114,7 +113,7 @@ class PyEngineScript
 		/*!
 		 * \brief Device Controllers
 		 */
-		std::list<EngineJSONDeviceControllerInterface::shared_ptr> _deviceControllers;
+		std::list<std::shared_ptr<PythonEngineJSONDeviceController>> _deviceControllers;
 
 		/*!
 		 * \brief Map from keyword to device data

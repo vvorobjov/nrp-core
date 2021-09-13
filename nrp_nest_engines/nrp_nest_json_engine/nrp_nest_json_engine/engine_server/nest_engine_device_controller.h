@@ -22,26 +22,21 @@
 #ifndef NEST_ENGINE_DEVICE_CONTROLLER_H
 #define NEST_ENGINE_DEVICE_CONTROLLER_H
 
-#include "nrp_nest_json_engine/devices/nest_device.h"
-#include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
-#include "nrp_general_library/property_template/serializers/json_property_serializer.h"
-#include "nrp_general_library/property_template/serializers/python_dict_property_serializer.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_json_engine_protocol/engine_server/json_device_controller.h"
+#include "python/python_module.h"
 
 #include <boost/python.hpp>
 
 
-template<DEVICE_C DEVICE>
-class NestEngineJSONDeviceController;
-
-template<>
-class NestEngineJSONDeviceController<NestDevice>
-        : public EngineJSONDeviceController<NestDevice>
+class NestEngineJSONDeviceController
+        : public JsonDeviceController
 {
 	public:
-		NestEngineJSONDeviceController(DeviceIdentifier &&devID, boost::python::object nodeCollection, boost::python::dict nest);
+		NestEngineJSONDeviceController(const DeviceIdentifier & devID, boost::python::object nodeCollection, boost::python::dict nest);
 
-		virtual void handleDeviceDataCallback(NestDevice &&data) override;
-		virtual const NestDevice *getDeviceInformationCallback() override;
+		void handleDeviceData(const nlohmann::json &data) override;
+		virtual nlohmann::json * getDeviceInformation() override;
 
         /*!
 		 * \brief Set Nest properties
@@ -51,6 +46,7 @@ class NestEngineJSONDeviceController<NestDevice>
 		void setNestID(boost::python::dict nest, boost::python::object nodeCollection);
 
 	protected:
+
 		/*!
 		 * \brief Currently running Nest instance
 		 */
@@ -60,11 +56,6 @@ class NestEngineJSONDeviceController<NestDevice>
 		 * \brief Nest GID of model managed by this controller
 		 */
 		boost::python::object _nodeCollection;
-
-		/*!
-		 * \brief Device Data. Used to convert to/from JSON and python dict
-		 */
-		NestDevice _deviceData;
 
 		/*!
 		 * \brief Retrieves device status from Nest

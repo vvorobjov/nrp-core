@@ -1,7 +1,6 @@
 #ifndef EXAMPLE_ENGINE_CLIENT_H
 #define EXAMPLE_ENGINE_CLIENT_H
 
-#include "nrp_example_engine/devices/example_device.h"
 #include "nrp_example_engine/config/example_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"

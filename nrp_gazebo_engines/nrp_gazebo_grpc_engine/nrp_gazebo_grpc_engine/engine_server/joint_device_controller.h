@@ -25,7 +25,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/JointController.hh>
 #include <gazebo/physics/Joint.hh>
-#include "nrp_general_library/engine_interfaces/data_device_controller.h"
+#include "nrp_general_library/engine_interfaces/device_controller.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 
 namespace gazebo
@@ -34,7 +34,7 @@ namespace gazebo
 	 * \brief Interface for a single joint
 	 */
 	class JointGrpcDeviceController
-	        : public DataDeviceController<google::protobuf::Message>
+	        : public DeviceController<google::protobuf::Message>
 	{
 		public:
         JointGrpcDeviceController(const std::string &jointName, const physics::JointPtr &joint, const physics::JointControllerPtr &jointController)

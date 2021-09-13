@@ -31,12 +31,12 @@
 #include <nlohmann/json.hpp>
 
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
-#include "nrp_general_library/engine_interfaces/data_device_controller.h"
+#include "nrp_general_library/engine_interfaces/device_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "proto_python_bindings/proto_field_ops.h"
 
 
-using ProtoDeviceController = DataDeviceController<google::protobuf::Message>;
+using ProtoDeviceController = DeviceController<google::protobuf::Message>;
 
 using EngineGrpc::EngineGrpcService;
 

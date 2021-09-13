@@ -22,32 +22,28 @@
 #ifndef PYTHON_ENGINE_JSON_DEVICE_CONTROLLER_H
 #define PYTHON_ENGINE_JSON_DEVICE_CONTROLLER_H
 
-#include "nrp_python_device/devices/pyobject_device.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
-#include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
-#include "nrp_general_library/property_template/serializers/python_dict_property_serializer.h"
+#include "nrp_json_engine_protocol/engine_server/json_device_controller.h"
+#include "nrp_general_library/device_interface/device_interface.h"
 
 #include <boost/python.hpp>
+#include <nlohmann/json.hpp>
 
-template<class DEVICE>
-class PythonEngineJSONDeviceController;
 
-template<>
-class PythonEngineJSONDeviceController<PyObjectDevice>
-        : public EngineDeviceController<nlohmann::json, PyObjectDevice>
+class PythonEngineJSONDeviceController
+        : public JsonDeviceController
 {
 	public:
-		PythonEngineJSONDeviceController(DeviceIdentifier &&devID, boost::python::object data = boost::python::object());
+		PythonEngineJSONDeviceController(const DeviceIdentifier & devID);
 
 		virtual ~PythonEngineJSONDeviceController() override = default;
 
-		virtual void handleDeviceDataCallback(PyObjectDevice &&data) override;
-		virtual const PyObjectDevice *getDeviceInformationCallback() override;
+		void handleDeviceData(const nlohmann::json &data) override;
+		virtual nlohmann::json * getDeviceInformation() override;
 
 		/*!
 		 * \brief Get python object referenced by this controller
 		 */
-		boost::python::object &data();
+		boost::python::object & data();
 
 		boost::python::object data() const;
 
@@ -55,7 +51,7 @@ class PythonEngineJSONDeviceController<PyObjectDevice>
 		/*!
 		 * \brief Device Data. Used to convert to/from JSON and python dict
 		 */
-		PyObjectDevice _deviceData;
+		boost::python::object _deviceData;
 };
 
 #endif // PYTHON_ENGINE_JSON_DEVICE_CONTROLLER_H

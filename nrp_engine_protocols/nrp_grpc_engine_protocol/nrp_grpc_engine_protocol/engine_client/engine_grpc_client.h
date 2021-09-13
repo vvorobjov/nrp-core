@@ -31,7 +31,7 @@
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
-#include "nrp_general_library/device_interface/data_device.h"
+#include "nrp_general_library/device_interface/device.h"
 #include "proto_python_bindings/proto_python_bindings.h"
 
 template<class ENGINE, FixedString SCHEMA, PROTO_MSG_C ...MSG_TYPES>
@@ -292,7 +292,7 @@ class EngineGrpcClient
             const google::protobuf::FieldDescriptor *field = deviceData.GetReflection()->GetOneofFieldDescriptor(deviceData,fieldOne);
             if(field && std::strstr(typeid(MSG_TYPE).name(), field->message_type()->name().data())) {
                 return DeviceInterfaceConstSharedPtr(
-                        new DataDevice<MSG_TYPE>(deviceData.deviceid().devicename(), this->engineName(),
+                        new Device<MSG_TYPE>(deviceData.deviceid().devicename(), this->engineName(),
                                                dynamic_cast<MSG_TYPE *>(deviceData.GetReflection()->ReleaseMessage(&deviceData, field))));
             }
             // There's no data set in the message, so create an empty device with device ID only
@@ -313,9 +313,9 @@ class EngineGrpcClient
         template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
         void setProtoFromDeviceInterface(EngineGrpc::DeviceMessage *deviceData, DeviceInterface* device)
         {
-            if(dynamic_cast< DataDevice<MSG_TYPE> *>(device)) {
+            if(dynamic_cast< Device<MSG_TYPE> *>(device)) {
                 deviceData->mutable_deviceid()->set_devicename(device->name());
-                MSG_TYPE* d = dynamic_cast< DataDevice<MSG_TYPE> *>(device)->releaseData();
+                MSG_TYPE* d = dynamic_cast< Device<MSG_TYPE> *>(device)->releaseData();
                 auto n = deviceData->GetDescriptor()->field_count();
                 auto device_type = d->GetDescriptor()->full_name();
                 for(int i=0;i<n;++i) {

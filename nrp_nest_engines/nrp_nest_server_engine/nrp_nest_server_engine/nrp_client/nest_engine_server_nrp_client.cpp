@@ -21,6 +21,7 @@
 //
 
 #include "nrp_nest_server_engine/nrp_client/nest_engine_server_nrp_client.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
@@ -90,8 +91,7 @@ namespace
 		// Check if type matches the NestServerDevice type
 		// Skip the check if type was not set
 
-		const bool isTypeValid = (device.Type.empty() ||
-								device.Type == NestServerDevice::TypeName.m_data);
+		const bool isTypeValid = (device.Type.empty() || device.Type == JsonDevice::getType());
 
 		return (isTypeValid && device.EngineName == engineName);
 	}
@@ -423,8 +423,7 @@ EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEn
 			// Extract device details from the body
 			// Response from GetStatus is an array of JSON objects, which contains device parameters
 
-			const auto respJson = nlohmann::json::parse(response);
-			retVals.emplace(new NestServerDevice(DeviceIdentifier(devID), respJson.dump()));
+			retVals.emplace(new JsonDevice(devID.Name, devID.EngineName, new nlohmann::json(nlohmann::json::parse(response))));
 		}
 	}
 
@@ -444,7 +443,7 @@ void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devices
 			const auto deviceName = device->name();
 
 			std::string setStatusStr = "{\"nodes\":" + getDeviceIdList(deviceName) + ","
-			                           "\"params\":" + ((NestServerDevice const *)device)->data().serialize() + "}";
+			                           "\"params\":" + ((JsonDevice const *)device)->getData().dump() + "}";
 
 			try
 			{

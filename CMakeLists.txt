@@ -155,7 +155,6 @@ set(ENABLE_GAZEBO FULL)
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
-	add_subdirectory(nrp_gazebo_engines/nrp_gazebo_devices)
 	add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
 	add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
 else()

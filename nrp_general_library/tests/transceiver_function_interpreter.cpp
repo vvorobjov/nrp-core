@@ -24,8 +24,10 @@
 
 #include "nrp_general_library/config/cmake_constants.h"
 #include "tests/test_transceiver_function_interpreter.h"
-#include "nrp_python_device/devices/pyobject_device.h"
+#include "nrp_general_library/device_interface/device.h"
 #include "tests/test_env_cmake.h"
+
+using JsonDevice = Device<nlohmann::json>;
 
 using namespace boost;
 
@@ -230,8 +232,8 @@ TEST_F(InterpreterTest, TestPreprocessingFunction)
 	// Test execution result
 
 	ASSERT_EQ(boost::python::len(res), 1);
-	const PyObjectDevice &retDevice = boost::python::extract<PyObjectDevice>(res[0]);
-	ASSERT_EQ(retDevice.data().serialize(), "{\"test_value\": \"6\"}");
+	const JsonDevice &retDevice = boost::python::extract<JsonDevice>(res[0]);
+	ASSERT_EQ(retDevice.getData()["test_value"], "6");
 }
 
 /*
@@ -356,8 +358,9 @@ TEST_F(InterpreterTest, TestFunctionChain)
 	// Test the results
 
 	ASSERT_EQ(boost::python::len(resPf), 1);
-	PyObjectDevice retDevice = boost::python::extract<PyObjectDevice>(resPf[0]);
-	ASSERT_EQ(retDevice.data().serialize(), "{\"test_value\": \"5\"}");
+	const JsonDevice & tmpDevice = boost::python::extract<JsonDevice>(resPf[0]);
+	JsonDevice retDevice(tmpDevice.name(), tmpDevice.engineName(), new nlohmann::json(tmpDevice.getData()));
+	ASSERT_EQ(retDevice.getData()["test_value"], "5");
 
 	// Inject the returned device to the pool of devices, so that it's accesible by the transceiver function
 
@@ -369,12 +372,10 @@ TEST_F(InterpreterTest, TestFunctionChain)
 
 	// Test the results
 
-	const PyObjectDevice &retDeviceTf = boost::python::extract<PyObjectDevice>(resTf[0]);
+	const JsonDevice &retDeviceTf = boost::python::extract<JsonDevice>(resTf[0]);
 
-	nlohmann::json resultJson = nlohmann::json::parse(retDeviceTf.data().serialize());
-
-	ASSERT_EQ(resultJson["test_value1"], "10");
-	ASSERT_EQ(resultJson["test_value2"], "5");
+	ASSERT_EQ(retDeviceTf.getData()["test_value1"], "10");
+	ASSERT_EQ(retDeviceTf.getData()["test_value2"], "5");
 }
 
 // EOF

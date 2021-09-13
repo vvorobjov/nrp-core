@@ -24,8 +24,6 @@
 
 #include "nrp_general_library/config/cmake_constants.h"
 
-#include "nrp_python_device/devices/pyobject_device.h"
-#include "nrp_general_library/device_interface/device_python_wrappers.h"
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
 #include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
@@ -112,20 +110,6 @@ inline std::shared_ptr<DeviceInterface> genDevInterface(const std::string &name,
 	return std::shared_ptr<DeviceInterface>(new DeviceInterface(name, engineName, ""));
 }
 
-inline python::object getPyPropData(const PyObjectDeviceConst::PyObjData &dat)
-{	return dat;	}
-
-inline void setPyPropData(PyObjectDeviceConst::PyObjData &dat, const python::object &val)
-{	dat = val;	}
-
-
-inline python::object getPyDevData(const PyObjectDevice &dat)
-{	return dat.data();	}
-
-inline void setPyDevData(PyObjectDevice &dat, const python::object &val)
-{	dat.data() = val;	}
-
-
 using namespace boost::python;
 
 
@@ -189,8 +173,4 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 
 	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
 	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
-
-	// PyObjectDevice
-	python_property_device_class<PyObjectDevice>::create()
-	        .add_property(PyObjectDevice::Object.m_data, &getPyDevData, &setPyDevData);
 }

@@ -19,86 +19,112 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef DEVICE_H
-#define DEVICE_H
+#ifndef DATA_DEVICE_H
+#define DATA_DEVICE_H
 
 #include "nrp_general_library/device_interface/device_interface.h"
-#include "nrp_general_library/device_interface/device_serializer_methods.h"
+#include "nrp_general_library/utils/nrp_exceptions.h"
+#include <boost/python.hpp>
+
 
 /*!
- * \brief Device class. All devices must inherit from this one
- * \tparam DEVICE Final derived device class
- * \tparam TYPE Device Type
- * \tparam PROP_NAMES Property Names
- * \tparam PROPERTIES Device Properties
+ * \brief Base device class
+ *
+ * The class must be specialized by providing a template argument. The argument
+ * defines what data class will be stored in the device objects.
  */
-template<class DEVICE, FixedString TYPE, PROP_NAMES_C PROP_NAMES, class ...PROPERTIES>
-class Device
-        : public DeviceInterface,
-          public PropertyTemplate<DEVICE, PROP_NAMES, PROPERTIES...>,
-          public PtrTemplates<DEVICE>
+template< class DATA_TYPE>
+class Device : public DeviceInterface
 {
-	public:
-		static constexpr FixedString TypeName = TYPE;
-		using property_template_t = typename PropertyTemplate<DEVICE, PROP_NAMES, PROPERTIES...>::property_template_t;
+public:
 
-		using shared_ptr = typename PtrTemplates<DEVICE>::shared_ptr;
-		using const_shared_ptr = typename PtrTemplates<DEVICE>::const_shared_ptr;
-		using unique_ptr = typename PtrTemplates<DEVICE>::unique_ptr;
-		using const_unique_ptr = typename PtrTemplates<DEVICE>::const_unique_ptr;
+    Device(const std::string &name, const std::string &engineName, DATA_TYPE* data_)
+    : DeviceInterface(createID(name, engineName)), data(data_)
+    { this->setIsEmpty(false); }
 
-		virtual ~Device() override = default;
+    Device(const std::string &name, const std::string &engineName)
+    : DeviceInterface(createID(name, engineName)), data(new DATA_TYPE())
+    { this->setIsEmpty(false); }
 
-		/*!
-		 * \brief Constructor
-		 * \tparam DEV_ID_T DeviceIdentifier type
-		 * \tparam PROPERTIES_T Property types to pass along to PropertyTemplate constructor
-		 * \param devID Device ID
-		 * \param props Properties to pass along to PropertyTemplate constructor
-		 */
-		template<class DEV_ID_T, class ...PROPERTIES_T>
-		requires(std::same_as<std::remove_cvref_t<DEV_ID_T>, DeviceIdentifier>)
-		Device(DEV_ID_T &&devID, PROPERTIES_T &&...props)
-		    : DeviceInterface(std::forward<DEV_ID_T>(devID)),
-		      property_template_t(std::forward<PROPERTIES_T>(props)...)
-		{
-			// Make sure DEVICE class is derived from DeviceInterface
-			static_assert(DEVICE_C<DEVICE>, "DEVICE does not fulfill concept requirements");
+    Device (const Device&) = delete;
+    Device& operator= (const Device&) = delete;
 
-			this->setIsEmpty(false);
-		};
+    /*!
+     * \brief Returns type of the device class
+     *
+     * The function returns type of the device class as string.
+     * The return value is not human readable. It's an implementation-defined name
+     * of the DATA_TYPE used by the device.
+     */
+    static std::string getType()
+    {
+        return typeid(DATA_TYPE).name();
+    }
 
-		template<class STRING1_T, class STRING2_T>
-		requires(std::constructible_from<std::string, STRING1_T> && std::constructible_from<std::string, STRING2_T>)
-		static DeviceIdentifier createID(STRING1_T &&name, STRING2_T &&engineName)
-		{	return DeviceIdentifier(std::forward<STRING1_T>(name), std::forward<STRING2_T>(engineName), DEVICE::TypeName);	}
+    /*!
+     * \brief Creates a DeviceIdentifier object with type matching the DATA_TYPE used by the Device class
+     *
+     * \param[in] name Name of the device
+     * \param[in] name Name of the engine to which the device belongs
+     *
+     * \return A DeviceIdentifier object, with DeviceIdentifier::Name and DeviceIdentifier::EngineName
+     *         provided as arguments, and with DeviceIdentifier::Type deduced from DATA_TYPE template argument
+     *         of the Device class.
+     */
+    static DeviceIdentifier createID(const std::string &name, const std::string &engineName)
+    {
+        return DeviceIdentifier(name, engineName, getType());
+    }
 
-		/*!
-		 * \brief Deserialize property data into PropertyTemplate format
-		 * \tparam DESERIALZER_T Type to deserialize
-		 * \tparam PROPERTIES_T Type of default properties
-		 * \param data Property Data to deserialize
-		 * \param props Default values. Used if data does not initialize a certain value
-		 * \return Returns PropertyTemplate of this device
-		 */
-		template<class DESERIALIZER_T, class ...PROPERTIES_T>
-		static property_template_t deserializeProperties(DESERIALIZER_T &&data, PROPERTIES_T &&...props)
-		{
-			return PropertySerializer<std::remove_cvref_t<DESERIALIZER_T>, DEVICE>::template deserializeProperties(std::forward<DESERIALIZER_T>(data),
-			                                                                                                std::forward<PROPERTIES_T>(props)...);
-		}
+    /*!
+     * \brief Returns reference to data stored in the object
+     *
+     * The function returns a read-only reference to the data stored by the object.
+     * This is the main accessor function of the Device object.
+     *
+     * \return Read-only reference to the data stored by the object
+     */
+    const DATA_TYPE& getData() const
+    {
+        if(this->isEmpty())
+            throw NRPException::logCreate("Attempt to get data from empty Device " + this->name());
+        else
+            return *data.get();
+    }
 
-		virtual DeviceInterfaceConstSharedPtr moveToSharedPtr() override final
-		{
-			return this->moveToSharedPtrHelper();
-		}
+    /*!
+     * \brief Releases ownership of the data stored in the object and returns a raw pointer to the data
+     *
+     * The caller is responsible for destruction of the released data.
+     *
+     * \return Raw pointer to the data stored in the object
+     */
+    DATA_TYPE* releaseData()
+    {
+        if(this->isEmpty())
+            throw NRPException::logCreate("Attempt to get data from empty Device " + this->name());
+        else {
+            this->setIsEmpty(true);
+            return data.release();
+        }
+    }
 
-	private:
-		
-		typename PtrTemplates<DEVICE>::const_shared_ptr moveToSharedPtrHelper() const
-		{	
-			return typename PtrTemplates<DEVICE>::const_shared_ptr(new DEVICE(std::move(static_cast<const DEVICE&>(*this))));
-		}
+    static void create_python(const std::string &name)
+    {
+        using namespace boost::python;
+        class_< Device<DATA_TYPE>, Device<DATA_TYPE> *, bases<DeviceInterface>, boost::noncopyable >
+            binder(name.data(), init<const std::string&, const std::string& >((boost::python::arg("name"), boost::python::arg("engine_name"))));
+        binder.add_property("data", make_function(&Device<DATA_TYPE>::getData, return_internal_reference<>()));
+    }
+
+    DeviceInterfaceConstSharedPtr moveToSharedPtr() final
+    {
+        return typename PtrTemplates<Device<DATA_TYPE>>::const_shared_ptr(new Device<DATA_TYPE>(this->name(), this->engineName(), this->releaseData()));
+    }
+
+private:
+
+    std::unique_ptr<DATA_TYPE> data;
 };
 
-#endif // DEVICE_H
+#endif // DATA_DEVICE_H

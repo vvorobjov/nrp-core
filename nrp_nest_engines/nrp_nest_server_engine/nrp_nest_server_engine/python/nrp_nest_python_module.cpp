@@ -23,9 +23,7 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_nest_server_engine/config/cmake_constants.h"
-#include "nrp_nest_server_engine/devices/nest_server_device.h"
 #include "nrp_nest_server_engine/python/create_device_class.h"
 
 
@@ -51,19 +49,10 @@ python::dict GetDevMap()
 	return pCreateDevice->pyDevMap();
 }
 
-void setNestData(NestServerDevice &dev, const boost::python::object &data)
-{	dev.data() = data;	}
-
-const boost::python::object &getNestData(const NestServerDevice &dev)
-{	return dev.data();	}
-
 BOOST_PYTHON_MODULE(NRP_NEST_PYTHON_MODULE)
 {
 	// Import General NRP Python Module
 	python::import(PYTHON_MODULE_NAME_STR);
-
-	python_property_device_class<NestServerDevice>::create()
-	        .add_property("data", python::make_function(getNestData, python::return_value_policy<python::copy_const_reference>()), &setNestData);
 
 	// Setup CreateDevice and import Nest
 	python::class_<CreateDeviceClass>("__CreateDeviceClass", python::no_init)

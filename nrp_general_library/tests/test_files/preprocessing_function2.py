@@ -19,17 +19,17 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from NRPPythonModule import *
-from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
+from NRPJSONEngineProtocolPython import *
 
 @FromEngineDevice(keyword='device1', id=DeviceIdentifier('pf_input1', 'engine', 'type'))
 @FromEngineDevice(keyword='device2', id=DeviceIdentifier('pf_input2', 'engine', 'type'))
 @FromEngineDevice(keyword='device3', id=DeviceIdentifier('pf_input3', 'engine', 'type'))
 @PreprocessingFunction("engine")
 def transceiver_function(device1, device2, device3):
-    ret_dev1 = PythonDevice("tf_input_preprocessing", "engine")
-    ret_dev1.data = {"test_value1" : str(device1.test_value),
-                     "test_value2" : str(device2.test_value),
-                     "test_value3" : str(device3.test_value)}
+    ret_dev1 = JsonDevice("tf_input_preprocessing", "engine")
+    ret_dev1.data["test_value1"] = str(device1.test_value)
+    ret_dev1.data["test_value2"] = str(device2.test_value)
+    ret_dev1.data["test_value3"] = str(device3.test_value)
     
     return [ret_dev1]
 

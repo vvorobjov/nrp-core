@@ -36,7 +36,7 @@ void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::E
 	NRPLogger::info("NRPCameraController: Registering new controller [ {} ]", devName);
 
 	// Create camera device and register it
-	this->_cameraInterface.reset(new EngineJSONSerialization<CameraDeviceController>(devName, this->camera, sensor));
+	this->_cameraInterface.reset(new CameraDeviceController(devName, this->camera, sensor));
 	NRPCommunicationController::getInstance().registerDevice(devName, this->_cameraInterface.get());
 
 	// Register plugin in communication controller

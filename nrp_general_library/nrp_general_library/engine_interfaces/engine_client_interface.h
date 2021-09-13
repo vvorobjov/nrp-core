@@ -22,12 +22,12 @@
 #ifndef ENGINE_CLIENT_INTERFACE_H
 #define ENGINE_CLIENT_INTERFACE_H
 
-#include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/process_launchers/process_launcher.h"
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
+#include "nrp_general_library/device_interface/device_interface.h"
 
 #include <concepts>
 #include <set>

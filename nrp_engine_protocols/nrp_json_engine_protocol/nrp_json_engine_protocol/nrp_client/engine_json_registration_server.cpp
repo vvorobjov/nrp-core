@@ -21,6 +21,7 @@
 //
 
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
+#include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 

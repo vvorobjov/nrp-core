@@ -22,42 +22,42 @@
 
 #include "nrp_nest_json_engine/engine_server/nest_engine_device_controller.h"
 
+#include "nrp_json_engine_protocol/device_interfaces/json_converter.h"
+
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_error_handler.h"
 
-NestEngineJSONDeviceController<NestDevice>::NestEngineJSONDeviceController(DeviceIdentifier &&devID, boost::python::object nodeCollection, boost::python::dict nest)
-    : EngineJSONDeviceController<NestDevice>(std::move(devID)),
+NestEngineJSONDeviceController::NestEngineJSONDeviceController(const DeviceIdentifier & devID, boost::python::object nodeCollection, boost::python::dict nest)
+    : JsonDeviceController(devID),
 	  _nest(nest),
-	  _nodeCollection(nodeCollection),
-      _deviceData(DeviceIdentifier(*this), getStatusFromNest(nest, nodeCollection))
-{}
-
-void NestEngineJSONDeviceController<NestDevice>::handleDeviceDataCallback(NestDevice &&data)
+	  _nodeCollection(nodeCollection)
 {
-	// Update properties from data
-	this->_deviceData.data() = data.data();
 
-	// Update Nest status
-	this->_nest["SetStatus"](this->_nodeCollection, this->_deviceData.data());
 }
 
-const NestDevice *NestEngineJSONDeviceController<NestDevice>::getDeviceInformationCallback()
+void NestEngineJSONDeviceController::handleDeviceData(const nlohmann::json &data)
+{
+	setCachedData(data);
+
+	this->_nest["SetStatus"](this->_nodeCollection, boost::python::handle<>(json_converter::convertJsonToPyObject(*(getCachedData()))));
+}
+
+nlohmann::json *NestEngineJSONDeviceController::getDeviceInformation()
 {
 	// Get device status from Nest
 	try
 	{
-		this->_deviceData.data() = this->getStatusFromNest();
+		*(getCachedData()) = json_converter::convertPyObjectToJson(this->getStatusFromNest().ptr());
 	}
 	catch(boost::python::error_already_set &)
 	{
 		throw NRPException::logCreate("Failed to get Nest device status: " + handle_pyerror());
 	}
 
-	// Convert to JSON object
-	return &(this->_deviceData);
+	return &(this->_data);
 }
 
-void NestEngineJSONDeviceController<NestDevice>::setNestID(boost::python::dict nest, boost::python::object nodeCollection)
+void NestEngineJSONDeviceController::setNestID(boost::python::dict nest, boost::python::object nodeCollection)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	
@@ -65,8 +65,8 @@ void NestEngineJSONDeviceController<NestDevice>::setNestID(boost::python::dict n
 	this->_nodeCollection = nodeCollection;
 }
 
-boost::python::list NestEngineJSONDeviceController<NestDevice>::getStatusFromNest()
+boost::python::list NestEngineJSONDeviceController::getStatusFromNest()
 {	return getStatusFromNest(this->_nest, this->_nodeCollection);	}
 
-boost::python::list NestEngineJSONDeviceController<NestDevice>::getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection)
+boost::python::list NestEngineJSONDeviceController::getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection)
 {	return boost::python::list(nest["GetStatus"](nodeCollection));	}

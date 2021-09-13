@@ -87,7 +87,7 @@ class TestEngineJSONServer
 };
 
 class TestEngineJSONNRPClient
-: public EngineJSONNRPClient<TestEngineJSONNRPClient, TestEngineJSONConfigConst::EngineSchema, TestJSONDevice1, TestJSONDevice2, TestJSONDeviceThrow>
+: public EngineJSONNRPClient<TestEngineJSONNRPClient, TestEngineJSONConfigConst::EngineSchema>
 {
 	public:
 	template<class ...T>
@@ -132,13 +132,13 @@ TEST(EngineJSONNRPClientTest, EmptyDevice)
 
 	const auto engineName = "engine1";
 
-	auto data = nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
+	auto data = new nlohmann::json({{"", {{"data", 1}}}});
+	auto dev1 = JsonDevice("device1", "engine_name_1", data);
 
 	dev1.setEngineName(engineName);
 
 	// Register device controllers
-	auto dev1Ctrl = TestJSONDevice1Controller(DeviceIdentifier(dev1.id()));
+	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
 	server.registerDevice(dev1.name(), &dev1Ctrl);
 
 	nlohmann::json config;
@@ -192,24 +192,25 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	const auto engineName = "engine1";
 	const auto falseEngineName = "engineFalse";
 
-	auto data = nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
-	data = nlohmann::json({{"", {{"data", 2}}}});
-	auto dev2 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice2>(TestJSONDevice2::createID("device2", "engine_name_2"), data.begin());
-	data = nlohmann::json({{"", {{"data", -1}}}});
-	auto devThrow = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDeviceThrow>(TestJSONDeviceThrow::createID("deviceThrow", "engine_throw"), data.begin());
+	auto data = new nlohmann::json({{"", {{"data", 1}}}});
+	auto dev1 = JsonDevice("device1", "engine_name_1", data);
+	data = new nlohmann::json({{"", {{"data", 2}}}});
+	auto dev2 =JsonDevice("device2", "engine_name_2", data);
+	data = new nlohmann::json({{"", {{"data", -1}}}});
+	auto devThrow = JsonDevice("deviceThrow", "engine_throw", data);
 
 	dev1.setEngineName(engineName);
 	dev2.setEngineName(engineName);
 	devThrow.setEngineName(falseEngineName);
 
-	dev1.data() = 3;
-	dev2.data() = 5;
+	// TODO Review! The test is currently disabled
+	//dev1.data() = 3;
+	//dev2.data() = 5;
 
 	// Register device controllers
-	auto dev1Ctrl = TestJSONDevice1Controller(DeviceIdentifier(dev1.id()));
+	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
 	server.registerDevice(dev1.name(), &dev1Ctrl);
-	auto dev2Ctrl = TestJSONDevice2Controller(DeviceIdentifier(dev2.id()));
+	auto dev2Ctrl = TestJSONDeviceController(DeviceIdentifier(dev2.id()));
 	server.registerDevice(dev2.name(), &dev2Ctrl);
 
 	nlohmann::json config;
@@ -238,7 +239,7 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	ASSERT_EQ(devices.size(), 2);
 
 	// Assign correct devices, order can be arbitrary
-	const DeviceInterface *retDev1BasePtr = nullptr, *retDev2BasePtr = nullptr;
+	/*const DeviceInterface *retDev1BasePtr = nullptr, *retDev2BasePtr = nullptr;
 	if(devices.begin()->get()->id() == dev1.id())
 	{
 		retDev1BasePtr = devices.begin()->get();
@@ -253,8 +254,8 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	ASSERT_NE(retDev1BasePtr, nullptr);
 	ASSERT_NE(retDev2BasePtr, nullptr);
 
-	const auto &retDev1 = dynamic_cast<const TestJSONDevice1&>(*retDev1BasePtr);
-	const auto &retDev2 = dynamic_cast<const TestJSONDevice2&>(*retDev2BasePtr);
+	const auto &retDev1 = dynamic_cast<const JsonDevice&>(*retDev1BasePtr);
+	const auto &retDev2 = dynamic_cast<const JsonDevice&>(*retDev2BasePtr);
 
 	ASSERT_EQ(retDev1.data(), dev1Ctrl.data().data());
 	ASSERT_EQ(retDev2.data(), dev2Ctrl.data().data());
@@ -273,7 +274,7 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	ASSERT_NO_THROW(client.sendDevicesToEngine(inputs));
 
 	ASSERT_EQ(inputDev1.data(), dev1Ctrl.data().data());
-	ASSERT_EQ(inputDev2.data(), dev2Ctrl.data().data());
+	ASSERT_EQ(inputDev2.data(), dev2Ctrl.data().data());*/
 
 	ASSERT_NO_THROW(client.reset());	
 }

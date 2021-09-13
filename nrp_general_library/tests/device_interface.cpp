@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/device_interface/device_interface.h"
 
 using namespace testing;
 

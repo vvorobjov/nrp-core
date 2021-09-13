@@ -22,7 +22,7 @@
 #ifndef TEST_ENV_CMAKE_H
 #define TEST_ENV_CMAKE_H
 
-#include "nrp_general_library/device_interface/device.h"
+//#include "nrp_general_library/device_interface/device.h"
 
 #define TEST_TRANSCEIVER_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function.py"
 #define TEST_TRANSCEIVER_FCN2_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function2.py"

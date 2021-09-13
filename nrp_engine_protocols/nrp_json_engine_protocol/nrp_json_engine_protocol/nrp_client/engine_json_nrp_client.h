@@ -22,11 +22,10 @@
 #ifndef ENGINE_JSON_NRP_CLIENT_H
 #define ENGINE_JSON_NRP_CLIENT_H
 
-#include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
+#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
 
@@ -42,9 +41,8 @@
 /*!
  *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  *  \tparam ENGINE_INTERFACE Class derived from GeneralInterface. Currently either PhysicsInterface or BrainInterface
- *  \tparam DEVICES Classes derived from DeviceInterface that should be communicated to/from the engine.
  */
-template<class ENGINE, FixedString SCHEMA, DEVICE_C ...DEVICES>
+template<class ENGINE, FixedString SCHEMA>
 class EngineJSONNRPClient
         : public EngineClient<ENGINE, SCHEMA>
 {
@@ -114,7 +112,28 @@ class EngineJSONNRPClient
 			for(const auto &curDevice : devicesArray)
 			{
 				if(curDevice->engineName().compare(this->engineName()) == 0)
-					request.update(this->getJSONFromSingleDeviceInterface<DEVICES...>(*curDevice));
+				{
+					if(curDevice->type() != JsonDevice::getType())
+					{
+						throw NRPException::logCreate("Engine \"" +
+													this->engineName() +
+													"\" cannot handle device type '" +
+													curDevice->type() + "'");
+					}
+
+					// We get ownership of the device's data
+					// We'll have to delete the object after we're done
+
+					nlohmann::json * data = (dynamic_cast<JsonDevice *>(curDevice))->releaseData();
+
+					const auto & name = curDevice->name();
+
+					request[name]["engine_name"] = curDevice->engineName();
+					request[name]["type"]        = curDevice->type();
+					request[name]["data"].swap(*data);
+
+					delete data;
+				}
 			}
 
 			// Send updated devices to Engine JSON server
@@ -178,7 +197,7 @@ class EngineJSONNRPClient
             return this->engineConfig().at("EngineEnvParams");
         }
 
-
+	protected:
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -187,7 +206,10 @@ class EngineJSONNRPClient
 			for(const auto &devID : deviceIdentifiers)
 			{
 				if(this->engineName().compare(devID.EngineName) == 0)
-					request.update(JSONDeviceSerializerMethods::serializeID(devID));
+				{
+					request[devID.Name] = {{"engine_name", devID.EngineName}, {"type", devID.Type}};
+				}
+
 			}
 
 			// Post request to Engine JSON server
@@ -378,9 +400,12 @@ class EngineJSONNRPClient
 			{
 				try
 				{
-					auto deviceID = JSONDeviceSerializerMethods::deserializeID(curDeviceIterator);
+					DeviceIdentifier deviceID(curDeviceIterator.key(),
+											  (*curDeviceIterator)["engine_name"],
+											  (*curDeviceIterator)["type"]);
+
 					deviceID.EngineName = this->engineName();
-					interfaces.insert(this->getSingleDeviceInterfaceFromJSON<DEVICES...>(curDeviceIterator, deviceID));
+					interfaces.insert(this->getSingleDeviceInterfaceFromJSON(curDeviceIterator, deviceID));
 				}
 				catch(std::exception &e)
 				{
@@ -400,12 +425,12 @@ class EngineJSONNRPClient
 		 * \param deviceID ID of device
 		 * \return Returns pointer to created device
 		 */
-		template<class DEVICE, class ...REMAINING_DEVICES>
+
 		inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromJSON(const nlohmann::json::const_iterator &deviceData, DeviceIdentifier &deviceID) const
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-			
-            if(DEVICE::TypeName.compare(deviceID.Type) == 0)
+
+            if(deviceID.Type == JsonDevice::getType())
             {
 				// Check whether the requested device has new data
 				// A device that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of device ID)
@@ -417,36 +442,17 @@ class EngineJSONNRPClient
 					return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(deviceID)));
 				}
 
-                DeviceInterfaceSharedPtr newDevice(new DEVICE(JSONDeviceSerializerMethods::template deserialize<DEVICE>(std::move(deviceID), deviceData)));
+                nlohmann::json * data = new nlohmann::json(std::move((*deviceData)["data"]));
+
+                DeviceInterfaceSharedPtr newDevice(new JsonDevice(deviceID.Name, deviceID.EngineName, data));
                 newDevice->setEngineName(this->engineName());
+
                 return newDevice;
             }
-
-			// If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
-			if constexpr (sizeof...(REMAINING_DEVICES) > 0)
-			{	return this->getSingleDeviceInterfaceFromJSON<REMAINING_DEVICES...>(deviceData, deviceID);	}
 			else
-			{	throw NRPException::logCreate("Could not deserialize given device of type \"" + deviceID.Type + "\"");	}
-		}
-
-		/*!
-		 * \brief Go through given DEVICES and try to create a JSON object from the device interface
-		 * \tparam DEVICE DeviceInterface Class to check
-		 * \tparam REMAINING_DEVICES Remaining DeviceInterface Classes to check
-		 * \param device Device data
-		 * \return Returns JSON object with device data
-		 */
-		template<class DEVICE, class ...REMAINING_DEVICES>
-		inline nlohmann::json getJSONFromSingleDeviceInterface(const DeviceInterface &device) const
-		{
-            if(DEVICE::TypeName.compare(device.type()) == 0)
-                return JSONDeviceSerializerMethods::template serialize<DEVICE>(dynamic_cast<const DEVICE&>(device));
-
-			// If device classess are left to check, go through them. If all device classes have been checked without proper result, throw an error
-			if constexpr (sizeof...(REMAINING_DEVICES) > 0)
-			{	return this->getJSONFromSingleDeviceInterface<REMAINING_DEVICES...>(device);	}
-			else
-			{	throw NRPException::logCreate("Could not serialize given device of type \"" + device.type() + "\"");	}
+			{
+				throw NRPException::logCreate("Device type \"" + deviceID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
+			}
 		}
 };
 

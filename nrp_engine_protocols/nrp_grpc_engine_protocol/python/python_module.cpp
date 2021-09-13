@@ -4,7 +4,7 @@
 #include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 
-#include "nrp_general_library/device_interface/data_device.h"
+#include "nrp_general_library/device_interface/device.h"
 
 #include "proto_python_bindings/proto_python_bindings.h"
 #include "proto_python_bindings/repeated_field_proxy.h"
@@ -20,13 +20,13 @@ BOOST_PYTHON_MODULE(PROTO_PYTHON_MODULE_NAME)
     // TODO: python wrappers for all compiled proto message definitions should be automatically generated
 
     proto_python_bindings<EngineGrpc::GazeboCamera>::create();
-    DataDevice<EngineGrpc::GazeboCamera>::create_python("CameraDevice");
+    Device<EngineGrpc::GazeboCamera>::create_python("CameraDevice");
 
     proto_python_bindings<EngineGrpc::GazeboLink>::create();
-    DataDevice<EngineGrpc::GazeboJoint>::create_python("LinkDevice");
+    Device<EngineGrpc::GazeboJoint>::create_python("LinkDevice");
 
     proto_python_bindings<EngineGrpc::GazeboJoint>::create();
-    DataDevice<EngineGrpc::GazeboJoint>::create_python("JointDevice");
+    Device<EngineGrpc::GazeboJoint>::create_python("JointDevice");
 
     proto_python_bindings<EngineGrpc::TestPayload>::create();
 }
