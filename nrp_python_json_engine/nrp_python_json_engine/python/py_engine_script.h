@@ -50,8 +50,8 @@ class PyEngineScript
 		 */
 		inline SimulationTime runLoop(SimulationTime timestep)
 		{
-			this->runLoopFcn(timestep);
 			this->_time += timestep;
+			this->runLoopFcn(timestep);
 
 			return this->_time;
 		}

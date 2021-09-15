@@ -27,6 +27,7 @@
 
 #include "nrp_nest_json_engine/config/cmake_constants.h"
 #include "nrp_nest_json_engine/engine_server/nest_engine_device_controller.h"
+#include "nrp_nest_json_engine/engine_server/nest_kernel_device_controller.h"
 #include "nrp_nest_json_engine/python/create_device_class.h"
 
 #include "nrp_nest_json_engine/config/nest_config.h"
@@ -187,7 +188,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 		this->_devMap = python::dict(this->_pyNRPNest["GetDevMap"]());
 		python::list devMapKeys = this->_devMap.keys();
 		const long numDevices = python::len(devMapKeys);
-		//const long numDevices = python::len(this->_pyNRPNest["GetDevMap"]());
+
 		for(long i=0; i < numDevices; ++i)
 		{
 			const python::object &devKey = devMapKeys[i];
@@ -204,10 +205,17 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 			NRPLogger::debug("NestJSONServer: device {:d} {} is registered", i, devName);
 		}
 
-		// Prepare Nest for execution
-        // Commented out in the context of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8209
-		// this->_pyNest["Prepare"]();
-		// this->_nestPreparedFlag = true;
+		// Register the kernel device
+
+		const auto kernelDeviceName = "kernel";
+
+		auto devController = std::shared_ptr<NestKernelDeviceController>(new
+			            NestKernelDeviceController(JsonDevice::createID(kernelDeviceName, data.at("EngineName")), this->_pyNest));
+
+		this->_deviceControllerPtrs.push_back(devController);
+		this->registerDeviceNoLock(kernelDeviceName, devController.get());
+
+		NRPLogger::debug("NestJSONServer: device {} is registered", kernelDeviceName);
 	}
 	catch(python::error_already_set &)
 	{
