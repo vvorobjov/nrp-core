@@ -22,7 +22,7 @@
 
 #include "nrp_python_json_engine/python/py_engine_script_wrapper.h"
 
-#include "nrp_python_device/python/python_module.h"
+#include "nrp_general_library/python/python_module.h"
 
 namespace python = boost::python;
 

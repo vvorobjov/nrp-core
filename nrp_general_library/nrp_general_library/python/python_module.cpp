@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_python_device/python/python_module.h"
+#include "nrp_general_library/python/python_module.h"
 
 #include "nrp_general_library/config/cmake_constants.h"
 

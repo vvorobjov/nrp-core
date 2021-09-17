@@ -54,7 +54,7 @@ set(LIB_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-	nrp_python_device/python/python_module.cpp
+	nrp_general_library/python/python_module.cpp
 )
 
 # List executable build files
@@ -166,7 +166,7 @@ set(NRP_CONFIG_DIR "config_schemas")
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python Module defines
-configure_file("nrp_python_device/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+configure_file("nrp_general_library/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 # Process startup script
 configure_file("cmake/set_env_exec.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh" @ONLY)
