@@ -235,4 +235,35 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 }
 
 
+/*!
+ * \brief Tests __str__ method of JsonDevice
+ */
+TEST_F(JsonConverter, TestJsonStrMethod)
+{
+    try
+    {
+        // Create input device with JSON data
+
+        nlohmann::json * inputJson = new nlohmann::json();
+        (*inputJson)["testNull"     ] = nullptr;
+        (*inputJson)["testLong"     ] = 100;
+        (*inputJson)["testDouble"   ] = 56.56;
+        (*inputJson)["testString"   ] = "Armageddon";
+        (*inputJson)["testBoolTrue" ] = true;
+        (*inputJson)["testBoolFalse"] = false;
+        (*inputJson)["testArray"    ] = { 1, 0, 2 };
+        (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
+        (*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
+        JsonDevice inputDevice("a", "b", inputJson);
+
+        // Call the test function
+
+        (*globals)["test_str_method"](boost::ref(inputDevice));
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
+}
+
 // EOF

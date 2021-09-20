@@ -118,4 +118,28 @@ def test_unsupported_json_type_failure(input_device):
 
     data = input_device.data["testBinary"]
 
+import sys
+def test_str_method(input_device):
+
+    # Create a test case object, so that we can use unittest assertions
+
+    tc = unittest.TestCase()
+
+    # Test that all basic types of objects were translated
+    # correctly from nlohmann::json into python objects
+
+    data = input_device.data
+
+    expected_string = ('{"testArray":[1,0,2],'
+                       '"testBinary":{"bytes":[202,254,186,190],"subtype":null},'
+                       '"testBoolFalse":false,'
+                       '"testBoolTrue":true,'
+                       '"testDouble":56.56,'
+                       '"testLong":100,'
+                       '"testNull":null,'
+                       '"testObject":{"key1":"value","key2":600},'
+                       '"testString":"Armageddon"}')
+
+    tc.assertEqual(str(data), expected_string)
+
 # EOF

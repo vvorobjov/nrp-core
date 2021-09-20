@@ -69,6 +69,12 @@ static void nlohmannJsonSetItem(nlohmann::json * jsonParent, PyObject* index, Py
 }
 
 
+static PyObject * nlohmannJsonDump(nlohmann::json & json)
+{
+    return PyUnicode_FromString(json.dump().c_str());
+}
+
+
 BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
 {
     // Import General NRP Python Module
@@ -76,7 +82,8 @@ BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
 
     boost::python::class_<nlohmann::json, nlohmann::json*, std::unique_ptr<nlohmann::json>>("NlohmannJson")
         .def("__getitem__", &nlohmannJsonGetItem)
-        .def("__setitem__", &nlohmannJsonSetItem);
+        .def("__setitem__", &nlohmannJsonSetItem)
+        .def("__str__",     &nlohmannJsonDump);
 
     JsonDevice::create_python("JsonDevice");
 }
