@@ -1,6 +1,11 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/time_utils.h"
 
+SimulationTime toSimulationTimeFromSeconds(double time)
+{
+    return std::chrono::duration_cast<SimulationTime>(std::chrono::duration<float, std::ratio<1>>(time));
+}
+
 #ifdef TIME_PROFILE
 
 std::chrono::time_point<std::chrono::high_resolution_clock> TimeProfiler::start = std::chrono::high_resolution_clock::now();

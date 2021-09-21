@@ -30,6 +30,25 @@
 
 #include <iostream>
 
+
+static void runLoopStepAsyncGet(EngineClientInterfaceSharedPtr engine)
+{
+	const SimulationTime timeout = toSimulationTimeFromSeconds(engine->engineConfig().at("EngineCommandTimeout"));
+
+	try
+	{
+		// Wait for run loop step completion and get the results
+
+		engine->runLoopStepAsyncGet(timeout);
+	}
+	catch(std::exception &e)
+	{
+		throw NRPException::logCreate(e, "Engine \"" + engine->engineName() +"\" loop exceeded timeout of " +
+										std::to_string(timeout.count()));
+	}
+}
+
+
 SimulationLoop::SimulationLoop(jsonSharedPtr config, DeviceHandle::engine_interfaces_t engines)
     : _config(config),
       _engines(engines),
@@ -82,16 +101,7 @@ void SimulationLoop::resetLoop()
 		// Wait for engines which will be processed to complete execution
 		for (const auto &engine : idleEngines)
 		{
-			float timeout = engine->engineConfig().at("EngineCommandTimeout");
-			try
-			{
-				engine->waitForStepCompletion(timeout);
-			}
-			catch (std::exception &e)
-			{
-				throw NRPException::logCreate(e, "Engine \"" + engine->engineName() + "\" loop exceeded timeout of " +
-													 std::to_string(timeout) + "s");
-			}
+			runLoopStepAsyncGet(engine);
 		}
 	}
 
@@ -167,16 +177,7 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 		// Wait for engines which will be processed to complete execution
 		for(const auto &engine : idleEngines)
 		{
-            float timeout = engine->engineConfig().at("EngineCommandTimeout");
-			try
-			{
-				engine->waitForStepCompletion(timeout);
-			}
-			catch(std::exception &e)
-			{
-				throw NRPException::logCreate(e, "Engine \"" + engine->engineName() +"\" loop exceeded timeout of " +
-				                              std::to_string(timeout) + "s");
-			}
+            runLoopStepAsyncGet(engine);
 		}
 
         NRP_LOG_TIME("wait");
@@ -195,7 +196,10 @@ void SimulationLoop::runLoop(SimulationTime runLoopTime)
 			{
 				try
 				{
-					engine->runLoopStep(trueRunTime);
+					// Execute run loop step in a worker thread
+					// The results will be checked before running the transceiver functions
+
+					engine->runLoopStepAsync(trueRunTime);
 				}
 				catch(std::exception &e)
 				{

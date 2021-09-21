@@ -31,6 +31,8 @@
 
 #include <set>
 #include <vector>
+#include <future>
+#include <functional>
 
 class EngineClientInterface;
 class EngineLauncherInterface;
@@ -118,15 +120,14 @@ class EngineClientInterface
 		virtual void shutdown() = 0;
 
 		/*!
-		 * \brief Get engine timestep (in seconds)
+		 * \brief Get engine timestep
 		 * \throw Throws on error
 		 */
 		virtual SimulationTime getEngineTimestep() const = 0;
 
 		/*!
-		 * \brief Get current engine time (in seconds)
+		 * \brief Get current engine time
 		 * \return Returns engine time
-		 * \throw Throws on error
 		 */
 		virtual SimulationTime getEngineTime() const = 0;
 
@@ -138,20 +139,24 @@ class EngineClientInterface
         virtual const std::string engineSchema() const = 0;
 
 		/*!
-		 * \brief Starts a single loop step in a separate thread.
-		 * EngineClientInterface::waitForStepCompletion() can be used to join threads again
-		 * \param timeStep Time (in seconds) of a single step
-		 * \throw Throws on error
+		 * \brief Starts a single loop step in a separate thread
+		 *
+		 * The function should be called in tandem with EngineClientInterface::runLoopStepAsyncGet(),
+		 * which will join the worker thread and retrieve the results of the loop step.
+		 *
+		 * \param[in] timeStep Requested duration of the simulation loop step.
 		 */
-		virtual void runLoopStep(SimulationTime timeStep) = 0;
+		virtual void runLoopStepAsync(SimulationTime timeStep) = 0;
 
 		/*!
-		 * \brief Wait until step has been completed, at most timeOut seconds
-		 * \param timeOut Wait for at most timeOut seconds
-		 * \return Returns SUCCESS if step has completed before timeOut, ERROR otherwise
-		 * \throw Throws on error
+		 * \brief Waits and gets the results of the loop step started by EngineClientInterface::runLoopStepAsync()
+		 *
+		 * The function should be called after calling EngineClientInterface::runLoopStepAsync().
+		 * It should join the worker thread and retrieve the results of the loop step.
+		 *
+		 * \param timeOut Timeout of the loop step. If it's less or equal to 0, the function will wait indefinitely.
 		 */
-		virtual void waitForStepCompletion(float timeOut) = 0;
+		virtual void runLoopStepAsyncGet(SimulationTime timeOut) = 0;
 
 		/*!
 		 * \brief Gets requested devices from engine and updates _deviceCache with the results
@@ -339,7 +344,76 @@ class EngineClient
         const std::string engineSchema() const override final
         { return schema;   }
 
+		/*!
+		 * \brief Returns current engine (simulation) time
+		 *
+		 * The time is updated by EngineClient::runLoopStepAsyncGet() method.
+		 *
+		 * \return Current engine (simulation) time
+		 */
+		SimulationTime getEngineTime() const override
+		{
+			return this->_engineTime;
+		}
+
+		/*!
+		 * \brief Concrete implementation of EngineClientInterface::runLoopStepAsync()
+		 *
+		 * The function starts EngineClient::runLoopStepCallback() asynchronously using std::async.
+		 * The callback function should be provided by concrete engine implementation.
+		 * The result of the callback is going to be retrieved using an std::future object
+		 * in EngineClient::runLoopStepAsyncGet().
+		 *
+		 * \param[in] timeStep Requested duration of the simulation loop step.
+		 * \throw NRPException If the future object is still valid (EngineClient::runLoopStepAsyncGet() was not called)
+		 */
+		void runLoopStepAsync(SimulationTime timeStep) override
+		{
+			if(this->_loopStepThread.valid())
+			{
+				throw NRPException::logCreate("Engine \"" + this->engineName() + "\" runLoopStepAsync has overrun");
+			}
+
+			this->_loopStepThread = std::async(std::launch::async, std::bind(&EngineClient::runLoopStepCallback, this, timeStep));
+		}
+
+		/*!
+		 * \brief Concrete implementation of EngineClientInterface::runLoopStepAsyncGet()
+		 *
+		 * The function should be called after EngineClient::runLoopStepAsync(). It will wait for the
+		 * worker thread to finish and retrieve the results from the future object. The value returned
+		 * by the future should be the simulation (engine) time after running the loop step. It will
+		 * be saved in the engine object, and can be accessed with EngineClient::getEngineTime().
+		 *
+		 * \param[in] timeOut Timeout of the loop step. If it's less or equal to 0, the function will wait indefinitely.
+		 * \throw NRPException On timeout
+		 */
+		void runLoopStepAsyncGet(SimulationTime timeOut) override
+		{
+			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+			// If thread state is invalid, loop thread has completed and runLoopStepAsyncGet was called once before
+			if(!this->_loopStepThread.valid())
+				return;
+
+			// Wait until timeOut has passed
+			if(timeOut > SimulationTime::zero())
+			{
+				if(this->_loopStepThread.wait_for(timeOut) != std::future_status::ready)
+					throw NRPException::logCreate("Engine \"" + this->engineName() + "\" loop is taking too long to complete");
+			}
+
+			// Retrieve the engine time returned from the loop step
+
+			this->_engineTime = this->_loopStepThread.get();
+		}
+
     protected:
+
+		virtual void resetEngineTime()
+		{
+			this->_engineTime = SimulationTime(0);
+		}
 
         /*!
         * \brief Attempts to set a default value for a property in the engine configuration. If the property has been already
@@ -353,10 +427,31 @@ class EngineClient
             json_utils::set_default<T>(this->engineConfig(), key, value);
         }
 
+		/*!
+		 * \brief Executes a single loop step
+		 *
+		 * This function is going to be called by runLoopStep using std::async.
+		 * It will be executed by a worker thread, which allows for runLoopStepFunction
+		 * from multiple engines to run simultaneously.
+		 *
+		 * \param[in] timeStep A time step by which the simulation should be advanced
+		 * \return Engine time after loop step execution
+		 */
+		virtual SimulationTime runLoopStepCallback(SimulationTime timeStep) = 0;
+
     private:
 
         nlohmann::json engineConfig_;
         std::string schema = std::string(SCHEMA);
+		/*!
+		 * \brief Future of thread running a single loop. Used by runLoopStep and waitForStepCompletion to execute the thread
+		 */
+		std::future<SimulationTime> _loopStepThread;
+
+		/*!
+		 * \brief Engine Time
+		 */
+		SimulationTime _engineTime = SimulationTime::zero();
 };
 
 #endif // ENGINE_CLIENT_INTERFACE_H

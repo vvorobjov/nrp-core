@@ -18,12 +18,6 @@ void ExampleEngineClient::shutdown()
 
 }
 
-SimulationTime ExampleEngineClient::sendRunLoopStepCommand(SimulationTime timeStep)
-{
-    (void)timeStep;
-    return SimulationTime::zero();
-}
-
 void ExampleEngineClient::sendDevicesToEngine(const devices_ptr_t &devicesArray)
 {
     (void)devicesArray;

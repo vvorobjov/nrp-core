@@ -44,7 +44,7 @@ class EngineGrpcClient
         // TODO It happens that gRPC call is performed before the server is fully initialized.
         // This line was supposed to fix it, but it's breaking some of the tests. The issue will be addressed in NRRPLT-8187.
         // context->set_wait_for_ready(true);
-            
+
         // Set RPC timeout (in absolute time), if it has been specified by the user
 
         if(this->_rpcTimeout > SimulationTime::zero())
@@ -89,7 +89,7 @@ class EngineGrpcClient
         grpc_connectivity_state connect()
         {
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-            
+
             _channel->GetState(true);
             _channel->WaitForConnected(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN)));
@@ -159,7 +159,7 @@ class EngineGrpcClient
             }
         }
 
-        SimulationTime sendRunLoopStepCommand(const SimulationTime timeStep)
+        SimulationTime runLoopStepCallback(const SimulationTime timeStep) override
         {
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -202,38 +202,6 @@ class EngineGrpcClient
             return engineTime;
         }
 
-        SimulationTime getEngineTime() const override
-        {
-            return this->_engineTime;
-        }
-
-        virtual void runLoopStep(SimulationTime timeStep) override
-        {
-            this->_loopStepThread = std::async(std::launch::async, std::bind(&EngineGrpcClient::sendRunLoopStepCommand, this, timeStep));
-        }
-
-        virtual void waitForStepCompletion(float timeOut) override
-        {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            // If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
-            if(!this->_loopStepThread.valid())
-            {
-                return;
-            }
-
-            // Wait until timeOut has passed
-            if(timeOut > 0)
-            {
-                if(this->_loopStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-					throw NRPException::logCreate("Engine \"" + this->engineName() + "\" loop is taking too long to complete");
-            }
-            else
-                this->_loopStepThread.wait();
-
-            this->_engineTime = this->_loopStepThread.get();
-        }
-
 		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
         {
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -274,14 +242,14 @@ class EngineGrpcClient
 
             std::string name = this->engineConfig().at("EngineName");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineNameArg.data() + "=" + name);
-    
+
             // Add JSON Server address (will be used by EngineGrpcServer)
             std::string address = this->engineConfig().at("ServerAddress");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
-    
+
             return startParams;
         }
-    
+
         virtual const std::vector<std::string> engineProcEnvParams() const override
         {
             return this->engineConfig().at("EngineEnvParams");
@@ -344,7 +312,7 @@ class EngineGrpcClient
 		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
 		{
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-            
+
 			EngineGrpc::GetDeviceRequest request;
 			EngineGrpc::GetDeviceReply   reply;
 			grpc::ClientContext          context;
@@ -376,8 +344,11 @@ class EngineGrpcClient
             return interfaces;
 		}
 
-        void resetEngineTime() {
-            this->_engineTime = SimulationTime::zero();
+    protected:
+
+        void resetEngineTime() override
+        {
+            EngineClient<ENGINE, SCHEMA>::resetEngineTime();
             this->_prevEngineTime = SimulationTime::zero();
         }
 
@@ -386,9 +357,7 @@ class EngineGrpcClient
         std::shared_ptr<grpc::Channel>                       _channel;
         std::unique_ptr<EngineGrpc::EngineGrpcService::Stub> _stub;
 
-        std::future<SimulationTime> _loopStepThread;
         SimulationTime _prevEngineTime = SimulationTime::zero();
-        SimulationTime _engineTime     = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();
 };
 

@@ -24,6 +24,14 @@ or, equivalently:
 ctest
 \endcode
 
+To run a single test or a group of tests you can use the ctest regex (-R) option
+(-VV runs the tests in verbose mode):
+
+\code{.sh}
+ctest -VV -R SimulationLoopTest.RunLoop  # Run a single test from the SimulationLoop group
+ctest -VV -R SimulationLoopTest          # Run all tests from the SimulationLoop group
+\endcode
+
 Every NRP Core module should have its own tests compiled into a single executable.
 The executable should be named `${PROJECT_NAME}Tests`.
 
@@ -192,5 +200,10 @@ will add a record with the duration, also expressed in microseconds, until the e
 All time log files are stored in a subfolder `time_logs` of the simulation working directory.
 
 Finally, both macros are defined in \ref nrp_general_library/utils/time_utils.h, which must be included in order to use them.
+
+
+\section tutorial_developer_guide_grpc Debugging gRPC engines
+
+<a href=https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md>gRPC troubleshooting guide</a>
 
 */

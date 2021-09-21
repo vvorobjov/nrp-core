@@ -72,8 +72,8 @@ TEST(TestGazeboGrpcEngine, WorldPlugin)
     sleep(1);
 
     ASSERT_NO_THROW(engine->initialize());
-    ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-    ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
+    ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
     ASSERT_NO_THROW(engine->reset());
 }
 

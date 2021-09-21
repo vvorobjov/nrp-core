@@ -56,17 +56,13 @@ public:
     virtual const std::vector<std::string> engineProcEnvParams() const override
     { return std::vector<std::string>(); }
 
-    virtual SimulationTime getEngineTime() const override
-    {	return SimulationTime::zero();	}
-
-    virtual void runLoopStep(SimulationTime) override
-    {}
-
-    virtual void waitForStepCompletion(float) override
-    {}
-
     virtual void sendDevicesToEngine(const devices_ptr_t &) override
     {}
+
+    virtual SimulationTime runLoopStepCallback(SimulationTime) override
+    {
+        return SimulationTime::zero();
+    }
 
 
     virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override

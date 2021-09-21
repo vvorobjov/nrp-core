@@ -52,6 +52,8 @@ TEST(SimulationLoopTest, Constructor)
 
 TEST(SimulationLoopTest, RunLoop)
 {
+	using namespace std::chrono_literals;
+
 	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 
@@ -77,8 +79,8 @@ TEST(SimulationLoopTest, RunLoop)
 	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	// TODO Without this, gazebo engine fails to launch. Fix it!
-	sleep(1);
+	// TODO Without the sleeps between calls, gRPC seems to fail in weird ways...
+	std::this_thread::sleep_for(100ms);
 
 	SimulationLoop simLoop(config, {brain, physics});
 
@@ -86,7 +88,9 @@ TEST(SimulationLoopTest, RunLoop)
 
 	ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
 	ASSERT_NO_THROW(simLoop.runLoop(timestep));
+	std::this_thread::sleep_for(100ms);
 	ASSERT_EQ(simLoop.getSimTime(), timestep);
 	ASSERT_NO_THROW(simLoop.runLoop(timestep));
+	std::this_thread::sleep_for(100ms);
 	ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
 }

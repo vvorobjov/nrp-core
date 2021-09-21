@@ -33,7 +33,6 @@
 #include <list>
 
 #include <chrono>
-#include <future>
 
 #include <iostream>
 #include <restclient-cpp/restclient.h>
@@ -54,8 +53,7 @@ class EngineJSONNRPClient
 		 */
 		EngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
 		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
-		      _serverAddress(this->engineConfig().at("ServerAddress")),
-			  _engineTime(0)
+		      _serverAddress(this->engineConfig().at("ServerAddress"))
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -70,8 +68,7 @@ class EngineJSONNRPClient
 		 */
 		EngineJSONNRPClient(const std::string &serverAddress, nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
 		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
-		      _serverAddress(serverAddress),
-			  _engineTime(0)
+		      _serverAddress(serverAddress)
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -142,34 +139,6 @@ class EngineJSONNRPClient
 			                                 "Engine server \"" + this->engineName() + "\" failed during device handling");
 
 			// TODO: Check if engine has processed all sent devices
-		}
-
-		SimulationTime getEngineTime() const override
-		{	return this->_engineTime;	}
-
-		virtual void runLoopStep(SimulationTime timeStep) override
-		{
-			this->_loopStepThread = std::async(std::launch::async, std::bind(&EngineJSONNRPClient::loopFcn, this, timeStep));
-		}
-
-		virtual void waitForStepCompletion(float timeOut) override
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-			// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
-			if(!this->_loopStepThread.valid())
-				return;
-
-			// Wait until timeOut has passed
-			if(timeOut > 0)
-			{
-				if(this->_loopStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-					throw NRPException::logCreate("Engine \"" + this->engineName() + "\" loop is taking too long to complete");
-			}
-			else
-				this->_loopStepThread.wait();
-
-			this->_engineTime = this->_loopStepThread.get();
 		}
 
         virtual const std::vector<std::string> engineProcStartParams() const override
@@ -305,26 +274,13 @@ class EngineJSONNRPClient
 
 			return engineAddr;
 		}
-		
-		void resetEngineTime(){
-			this->_engineTime = SimulationTime(0);
-		}
 
 	private:
-		/*!
-		 * \brief Future of thread running a single loop. Used by runLoopStep and waitForStepCompletion to execute the thread
-		 */
-		std::future<SimulationTime> _loopStepThread;
 
 		/*!
 		 * \brief Server Address to send requests to
 		 */
 		std::string _serverAddress;
-
-		/*!
-		 * \brief Engine Time
-		 */
-		SimulationTime _engineTime;
 
 		/*!
 		 * \brief Send a request to the Server
@@ -358,7 +314,7 @@ class EngineJSONNRPClient
 		 * \param timeStep Time (in seconds) to execute the engine
 		 * \return Returns current time of engine
 		 */
-		SimulationTime loopFcn(SimulationTime timeStep)
+		SimulationTime runLoopStepCallback(SimulationTime timeStep) override
 		{
 			nlohmann::json request;
 			request[EngineJSONConfigConst::EngineTimeStepName.data()] = timeStep.count();

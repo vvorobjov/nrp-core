@@ -323,7 +323,7 @@ TEST(EngineGrpc, RunLoopStepCommand)
     // The gRPC server isn't running, so the runLoopStep command should fail
 
     SimulationTime timeStep = floatToSimulationTime(0.1f);
-    ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
+    ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 
     server.startServer();
 
@@ -331,21 +331,21 @@ TEST(EngineGrpc, RunLoopStepCommand)
 
     server.resetEngineTime();
     timeStep = floatToSimulationTime(-0.1f);
-    ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
+    ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 
     // Normal loop execution, the command should return engine time
 
     server.resetEngineTime();
     timeStep = floatToSimulationTime(1.0f);
-    ASSERT_NEAR(client.sendRunLoopStepCommand(timeStep).count(), timeStep.count(), 0.0001);
+    ASSERT_NEAR(client.runLoopStepCallback(timeStep).count(), timeStep.count(), 0.0001);
 
     // Try to go back in time. The client should raise an error when engine time is decreasing
 
     server.resetEngineTime();
     timeStep = floatToSimulationTime(2.0f);
-    ASSERT_NO_THROW(client.sendRunLoopStepCommand(timeStep));
+    ASSERT_NO_THROW(client.runLoopStepCallback(timeStep));
     timeStep = floatToSimulationTime(-1.0f);
-    ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
+    ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 
     // TODO Add test for failure on server side
 }
@@ -365,7 +365,7 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
     server.startServer();
     server.timeoutOnNextCommand();
     SimulationTime timeStep = floatToSimulationTime(2.0f);
-    ASSERT_THROW(client.sendRunLoopStepCommand(timeStep), std::runtime_error);
+    ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 }
 
 TEST(EngineGrpc, ResetCommand)
@@ -395,7 +395,7 @@ TEST(EngineGrpc, ResetCommand)
     // Normal loop execution, the reset should return time to zero
 
     SimulationTime timeStep = floatToSimulationTime(0.1f);
-    ASSERT_NO_THROW(client.sendRunLoopStepCommand(timeStep));
+    ASSERT_NO_THROW(client.runLoopStepCallback(timeStep));
     ASSERT_NO_THROW(client.sendResetCommand());
     ASSERT_EQ(client.getEngineTime().count(), 0);
 }

@@ -342,44 +342,6 @@ void NestEngineServerNRPClient::shutdown()
 	// Empty
 }
 
-SimulationTime NestEngineServerNRPClient::getEngineTime() const
-{
-	return toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"biological_time\"]")));
-}
-
-void NestEngineServerNRPClient::runLoopStep(SimulationTime timeStep)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	this->_runStepThread = std::async(std::launch::async, &NestEngineServerNRPClient::runStepFcn, this, timeStep);
-}
-
-void NestEngineServerNRPClient::waitForStepCompletion(float timeOut)
-{
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-	// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
-	if(!this->_runStepThread.valid())
-		return;
-
-	if(timeOut > 0)
-	{
-		if(this->_runStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-			throw NRPException::logCreate("Nest loop still running after timeout reached");
-	}
-	else
-	{
-		this->_runStepThread.wait();
-	}
-
-	// runStepFcn doesn't return engine time, like in other engines. Only status of REST call is returned
-
-	if(!this->_runStepThread.get())
-	{
-		throw NRPException::logCreate("Nest loop failed unexpectedly");
-	}
-}
-
 const std::string & NestEngineServerNRPClient::getDeviceIdList(const std::string & deviceName) const
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -457,21 +419,14 @@ void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devices
 	}
 }
 
-bool NestEngineServerNRPClient::runStepFcn(SimulationTime timeStep)
+SimulationTime NestEngineServerNRPClient::runLoopStepCallback(SimulationTime timeStep)
 {
 	// According to the NEST API documentation, Run accepts time to simulate in milliseconds and floating-point format
 	const double runTimeMsRounded = getRoundedRunTimeMs(timeStep, this->_simulationResolution);
 
-	try
-	{
-		nestSimulate(this->serverAddress(), runTimeMsRounded);
-	}
-	catch(const std::exception& e)
-	{
-		return false;
-	}
+	nestSimulate(this->serverAddress(), runTimeMsRounded);
 
-	return true;
+	return toSimulationTime<float, std::milli>(std::stof(nestGetKernelStatus(this->serverAddress(), "[\"biological_time\"]")));
 }
 
 std::string NestEngineServerNRPClient::serverAddress() const

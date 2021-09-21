@@ -1,3 +1,4 @@
+
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
@@ -70,8 +71,8 @@ TEST(TestGazeboJSONEngine, WorldPlugin)
 	ASSERT_NE(engine, nullptr);
 
 	ASSERT_NO_THROW(engine->initialize());
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+	ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
+	ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
 	ASSERT_NO_THROW(engine->reset());
 }
 

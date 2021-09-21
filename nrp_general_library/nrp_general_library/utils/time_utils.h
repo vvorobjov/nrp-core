@@ -43,6 +43,14 @@ static SimulationTime toSimulationTime(vartype time)
 }
 
 /*!
+ * \brief Converts floating-point seconds into SimulationTime
+ *
+ * \param time The value to be converted
+ * \return SimulationTime object that corresponds to the argument
+ */
+SimulationTime toSimulationTimeFromSeconds(double time);
+
+/*!
 * \brief Converts SimulationTime object to specified type and with given ratio
 */
 template <class vartype, class ratio>

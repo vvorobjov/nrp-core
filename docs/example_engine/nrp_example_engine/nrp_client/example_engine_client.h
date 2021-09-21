@@ -26,29 +26,9 @@ class ExampleEngineClient
 			return this->_engineTime;
 		}
 
-		virtual void runLoopStep(SimulationTime timeStep) override
+		SimulationTime runLoopStepCallback(SimulationTime) override
 		{
-			this->_loopStepThread = std::async(std::launch::async, std::bind(&ExampleEngineClient::sendRunLoopStepCommand, this, timeStep));
-		}
-
-		virtual SimulationTime sendRunLoopStepCommand(SimulationTime timeStep);
-
-		virtual void waitForStepCompletion(float timeOut) override
-		{
-			// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
-			if(!this->_loopStepThread.valid())
-				return;
-
-			// Wait until timeOut has passed
-			if(timeOut > 0)
-			{
-				if(this->_loopStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-					throw NRPException::logCreate("Engine \"" + this->engineName() + "\" loop is taking too long to complete");
-			}
-			else
-				this->_loopStepThread.wait();
-
-			this->_engineTime = this->_loopStepThread.get();
+			return getEngineTime();
 		}
 
 		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;

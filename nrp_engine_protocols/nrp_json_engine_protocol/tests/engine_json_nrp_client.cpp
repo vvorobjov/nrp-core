@@ -121,11 +121,6 @@ class TestEngineJSONNRPClient
 	SimulationTime curTime = SimulationTime::zero();
 };
 
-static SimulationTime floatToSimulationTime(float time)
-{
-    return toSimulationTime<float, std::ratio<1>>(time);
-}
-
 TEST(EngineJSONNRPClientTest, EmptyDevice)
 {
 	TestEngineJSONServer server("localhost:5463");
@@ -226,8 +221,8 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	TestEngineJSONNRPClient client("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 	ASSERT_NO_THROW(client.initialize());
 
-	ASSERT_NO_THROW(client.runLoopStep(floatToSimulationTime(10)));
-	ASSERT_NO_THROW(client.waitForStepCompletion(10));
+	ASSERT_NO_THROW(client.runLoopStepAsync(toSimulationTimeFromSeconds(10)));
+	ASSERT_NO_THROW(client.runLoopStepAsyncGet(toSimulationTimeFromSeconds(10)));
 
 	ASSERT_EQ(client.getEngineTime(), server.curTime);
 

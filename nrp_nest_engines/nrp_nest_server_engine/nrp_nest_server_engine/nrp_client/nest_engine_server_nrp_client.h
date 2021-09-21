@@ -53,10 +53,7 @@ class NestEngineServerNRPClient
 		virtual void reset() override;
 		virtual void shutdown() override;
 
-		virtual SimulationTime getEngineTime() const override;
-
-		virtual void runLoopStep(SimulationTime timeStep) override;
-		virtual void waitForStepCompletion(float timeOut) override;
+		SimulationTime runLoopStepCallback(SimulationTime timeStep) override;
 
 		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
 
