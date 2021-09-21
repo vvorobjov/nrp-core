@@ -26,7 +26,7 @@
 #include <gazebo/physics/JointController.hh>
 #include <gazebo/physics/Joint.hh>
 #include "nrp_general_library/engine_interfaces/device_controller.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 namespace gazebo
 {
@@ -46,7 +46,7 @@ namespace gazebo
 			virtual void handleDeviceData(const google::protobuf::Message &data) override
 			{
                 // throws bad_cast
-                const auto &j = dynamic_cast<const EngineGrpc::GazeboJoint &>(data);
+                const auto &j = dynamic_cast<const Gazebo::Joint &>(data);
 
                 if(!std::isnan(j.position()))
 					this->_jointController->SetPositionTarget(_name, j.position());
@@ -60,7 +60,7 @@ namespace gazebo
 
 			virtual google::protobuf::Message *getDeviceInformation() override
 			{
-                auto l = new EngineGrpc::GazeboJoint();
+                auto l = new Gazebo::Joint();
             
 				l->set_position(this->_joint->Position(0));
 				l->set_velocity(this->_joint->GetVelocity(0));

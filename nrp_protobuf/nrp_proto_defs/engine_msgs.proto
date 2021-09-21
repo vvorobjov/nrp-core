@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+import "gazebo_msgs.proto";
+
+package Engine;
+
+
+/*
+ * Data of a single device sent by server in response to the getDevice command
+ * Contains device metadata and data specific to the device type
+ */
+ message DeviceMessage
+{
+    DeviceIdentifier deviceId = 1;
+
+    oneof data
+    {
+        TestPayload  test   = 2;
+        Gazebo.Camera camera = 3;
+        Gazebo.Link   link   = 4;
+        Gazebo.Joint  joint  = 5;
+    }
+}
+
+/*
+ * Device metadata
+ */
+message DeviceIdentifier
+{
+    string deviceName = 1;
+    string deviceType = 2;
+    string engineName = 3;
+}
+
+/*
+ * Message used for testing
+ */
+message TestPayload
+{
+    uint32 integer = 1;
+}

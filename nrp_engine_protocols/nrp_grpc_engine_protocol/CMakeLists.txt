@@ -23,14 +23,10 @@ set(LIB_SRC_FILES
 	nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
 	nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
 	nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
-	proto_python_bindings/proto_field_ops.cpp
-	proto_python_bindings/repeated_field_proxy.cpp
-    proto_python_bindings/proto_python_bindings.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-		python/python_module.cpp
 )
 
 # List executable build files
@@ -52,57 +48,16 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 message(STATUS "Using protobuf ${PROTOBUF_VERSION}")
 
-# Protobuf compiler
-find_program(PROTOC protoc)
-message(STATUS "Using protoc ${PROTOC}")
-
-# gRPC cpp plugin
-find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
-message(STATUS "Using gRPC cpp plugin ${GRPC_CPP_PLUGIN}")
-
 # gRPC: google's Remote Procedure Calls library
 pkg_check_modules(GRPC REQUIRED grpc++)
 message(STATUS "Using gRPC ${GRPC_VERSION}")
 
-
-##########################################
-## GRPC Generation
-
-# List of protobuf proto files
-get_filename_component(hw_proto "grpc_server/engine_grpc.proto" ABSOLUTE)
-get_filename_component(hw_proto_path "${hw_proto}" PATH)
-
-# Generated sources
-set(proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.pb.cc")
-set(proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.pb.h")
-set(grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.grpc.pb.cc")
-set(grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server/engine_grpc.grpc.pb.h")
-add_custom_command(
-	OUTPUT "${proto_srcs}" "${proto_hdrs}" "${grpc_srcs}" "${grpc_hdrs}"
-	COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server"
-	COMMAND ${PROTOC}
-	ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server"
-	    --cpp_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/grpc_server"
-		-I "${hw_proto_path}"
-		--plugin=protoc-gen-grpc="${GRPC_CPP_PLUGIN}"
-		"${hw_proto}"
-	DEPENDS "${hw_proto}")
-
-set(GRPC_SRC_FILES ${proto_srcs} ${grpc_srcs})
-
-
 ##########################################
 ## Header configuration
 
-# General Header defines
-configure_file("nrp_grpc_engine_protocol/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
-
-# Python Module defines
-configure_file("python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 ##########################################
 # NRPGRPCEngineProtocol
-add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES} ${GRPC_SRC_FILES})
+add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
@@ -118,6 +73,7 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
 	    ${NRP_GEN_LIB_TARGET}
+		${NRP_PROTO_LIB_TARGET}
 		${PROTOBUF_LIBRARIES}
 		${GRPC_LIBRARIES}
 

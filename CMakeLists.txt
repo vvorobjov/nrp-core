@@ -118,6 +118,10 @@ endfunction(add_doxygen_source)
 ## Includes components to create new devices and engines
 add_subdirectory(nrp_general_library)
 
+##########################################
+## NRP Supported payload libraries
+add_subdirectory(nrp_protobuf)
+
 
 ##########################################
 ## NRP Communication Protocols

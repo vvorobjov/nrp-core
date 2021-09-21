@@ -1,13 +1,13 @@
 from NRPPythonModule import *
-from NRPProtoPythonModule import JointDevice
+from NRPProtobufPythonModule import GazeboJointDevice
 
 @FromEngineDevice(keyword='actors', id=DeviceIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")
 def transceiver_function(actors):
-    back_left_j   = JointDevice("husky::back_left_joint", "gazebo")
-    back_right_j  = JointDevice("husky::back_right_joint", "gazebo")
-    front_left_j  = JointDevice("husky::front_left_joint", "gazebo")
-    front_right_j = JointDevice("husky::front_right_joint", "gazebo")
+    back_left_j   = GazeboJointDevice("husky::back_left_joint", "gazebo")
+    back_right_j  = GazeboJointDevice("husky::back_right_joint", "gazebo")
+    front_left_j  = GazeboJointDevice("husky::front_left_joint", "gazebo")
+    front_right_j = GazeboJointDevice("husky::front_right_joint", "gazebo")
 
     left_voltage = actors.data[0]['V_m']
     right_voltage = actors.data[1]['V_m']

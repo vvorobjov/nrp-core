@@ -27,8 +27,6 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "proto_python_bindings/proto_field_ops.h"
 
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
-
 
 namespace bpy = boost::python;
 namespace gpb = google::protobuf;

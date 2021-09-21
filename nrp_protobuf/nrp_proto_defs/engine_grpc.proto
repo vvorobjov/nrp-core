@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "engine_msgs.proto";
+
 package EngineGrpc;
 
 /*
@@ -74,7 +76,7 @@ message RunLoopStepReply
  */
 message SetDeviceRequest
 {
-    repeated DeviceMessage request = 1;
+    repeated Engine.DeviceMessage request = 1;
 }
 
 /*
@@ -91,7 +93,7 @@ message SetDeviceReply
  */
 message GetDeviceRequest
 {
-    repeated DeviceIdentifier deviceId = 1;
+    repeated Engine.DeviceIdentifier deviceId = 1;
 }
 
 /*
@@ -100,74 +102,7 @@ message GetDeviceRequest
  */
 message GetDeviceReply
 {
-    repeated DeviceMessage reply = 1;
-}
-
-/*
- * Data of a single device sent by server in response to the getDevice command
- * Contains device metadata and data specific to the device type
- */
- message DeviceMessage
-{
-    DeviceIdentifier deviceId = 1;
-
-    oneof data
-    {
-        GazeboCamera camera = 2;
-        GazeboLink   link   = 3;
-        GazeboJoint  joint  = 4;
-        TestPayload  test   = 5;
-    }
-}
-
-/*
- * Device metadata
- */
-message DeviceIdentifier
-{
-    string deviceName = 1;
-    string deviceType = 2;
-    string engineName = 3;
-}
-
-/*
- * Data coming from gazebo camera device
- */
-message GazeboCamera
-{
-    uint32 imageWidth  = 1;
-    uint32 imageHeight = 2;
-    uint32 imageDepth  = 3;
-    bytes  imageData   = 4;
-}
-
-/*
- * Data coming from gazebo link device
- */
-message GazeboLink
-{
-    repeated float position        = 1;
-    repeated float rotation        = 2;
-    repeated float linearVelocity  = 3;
-    repeated float angularVelocity = 4;
-}
-
-/*
- * Data coming from gazebo joint device
- */
-message GazeboJoint
-{
-    float position = 1;
-    float velocity = 2;
-    float effort   = 3;
-}
-
-/*
- * Message used for testing
- */
-message TestPayload
-{
-    uint32 integer = 1;
+    repeated Engine.DeviceMessage reply = 1;
 }
 
 /*

@@ -135,9 +135,9 @@ void NRPCommunicationController::shutdown(const json&)
 }
 
 NRPCommunicationController::NRPCommunicationController(const std::string &address)
-    : EngineGrpcServer<EngineGrpc::GazeboCamera, EngineGrpc::GazeboJoint, EngineGrpc::GazeboLink>(address)
+    : EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>(address)
 {}
 
 NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
-    : EngineGrpcServer<EngineGrpc::GazeboCamera, EngineGrpc::GazeboJoint, EngineGrpc::GazeboLink>(serverURL, engineName, registrationURL)
+    : EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>(serverURL, engineName, registrationURL)
 {}

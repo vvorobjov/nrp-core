@@ -1,5 +1,5 @@
 from NRPPythonModule import *
-from NRPProtoPythonModule import *
+from NRPProtobufPythonModule import *
 from NRPJSONEngineProtocolPython import *
 from NRPNestServerPythonModule import *
 import numpy as np

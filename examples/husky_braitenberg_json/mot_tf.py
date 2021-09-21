@@ -1,5 +1,4 @@
 from NRPPythonModule import *
-from NRPProtoPythonModule import JointDevice
 
 @FromEngineDevice(keyword='actors', id=DeviceIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")

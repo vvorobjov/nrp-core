@@ -16,7 +16,7 @@ void TimeProfiler::recordTimePoint(const std::string& filename, bool newLine)
 
 void TimeProfiler::recordDuration(const std::string& filename, const std::chrono::microseconds& duration, bool newLine)
 {
-    if(!files.contains(filename)) {
+    if(!files.count(filename)) {
         files.emplace(filename, std::ofstream());
         std::filesystem::create_directory("time_logs");
         files[filename].open("time_logs/"+filename+".log", std::ios::out | std::ios::trunc);

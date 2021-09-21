@@ -25,7 +25,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/Link.hh>
 #include "nrp_general_library/engine_interfaces/device_controller.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 namespace gazebo
 {
@@ -50,7 +50,7 @@ namespace gazebo
 
 			virtual google::protobuf::Message *getDeviceInformation() override
 			{
-                auto l = new EngineGrpc::GazeboLink();
+                auto l = new Gazebo::Link();
 
                 const auto &pose = this->_link->WorldCoGPose();
 				l->add_position(ToFloat(pose.Pos().X()));

@@ -30,7 +30,7 @@
 
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_general_library/device_interface/device.h"
 #include "proto_python_bindings/proto_python_bindings.h"
 
@@ -256,7 +256,7 @@ class EngineGrpcClient
         }
 
         template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        DeviceInterfaceConstSharedPtr getDeviceInterfaceFromProto(EngineGrpc::DeviceMessage &deviceData) const
+        DeviceInterfaceConstSharedPtr getDeviceInterfaceFromProto(Engine::DeviceMessage &deviceData) const
         {
             const google::protobuf::OneofDescriptor *fieldOne = deviceData.GetDescriptor()->FindOneofByName("data");
             const google::protobuf::FieldDescriptor *field = deviceData.GetReflection()->GetOneofFieldDescriptor(deviceData,fieldOne);
@@ -281,7 +281,7 @@ class EngineGrpcClient
         }
 
         template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        void setProtoFromDeviceInterface(EngineGrpc::DeviceMessage *deviceData, DeviceInterface* device)
+        void setProtoFromDeviceInterface(Engine::DeviceMessage *deviceData, DeviceInterface* device)
         {
             if(dynamic_cast< Device<MSG_TYPE> *>(device)) {
                 deviceData->mutable_deviceid()->set_devicename(device->name());

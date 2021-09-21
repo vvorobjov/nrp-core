@@ -62,48 +62,16 @@ list(JOIN NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "\", \"" NRP_SIMULATION_DEFAUL
 # General Header defines
 configure_file("nrp_simulation/config/cmake_conf.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_conf.h" @ONLY)
 
-
-##########################################
-## GRPC Generation
-
-# List of protobuf proto files
-get_filename_component(hw_proto "nrp_simulation/proto/nrp_server.proto" ABSOLUTE)
-get_filename_component(hw_proto_path "${hw_proto}" PATH)
-
-# Generated sources
-set(proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server.pb.cc")
-set(proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server.pb.h")
-set(grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server.grpc.pb.cc")
-set(grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server.grpc.pb.h")
-add_custom_command(
-	OUTPUT "${proto_srcs}" "${proto_hdrs}" "${grpc_srcs}" "${grpc_hdrs}"
-	COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation"
-	COMMAND ${PROTOC}
-	ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation"
-	    --cpp_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation"
-		-I "${hw_proto_path}"
-		--plugin=protoc-gen-grpc="${GRPC_CPP_PLUGIN}"
-		"${hw_proto}"
-	COMMAND python3
-	ARGS -m grpc_tools.protoc
-		-I "${hw_proto_path}"
-		--python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation"
-		--grpc_python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation"
-		"${hw_proto}"
-	DEPENDS "${hw_proto}")
-
-set(GRPC_SRC_FILES ${proto_srcs} ${grpc_srcs})
-
-
 ##########################################
 # NRPSimulation
-add_library(${LIBRARY_NAME} SHARED ${LIB_SRC_FILES} ${GRPC_SRC_FILES})
+add_library(${LIBRARY_NAME} SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
 	${NRP_GEN_LIB_TARGET}
+	${NRP_PROTO_LIB_TARGET}
 	${PROTOBUF_LIBRARIES}
 	${GRPC_LIBRARIES}
 )
@@ -241,12 +209,6 @@ endif()
 
 # Install python module with the NRP client
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/nrp_core_client.py"
-	DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
-
-# Install automatically generated python modules with gRPC
-install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server_pb2_grpc.py"
-	"${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nrp_simulation/simulation/nrp_server_pb2.py"
 	DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 
 # Install executable files

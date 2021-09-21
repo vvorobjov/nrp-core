@@ -30,7 +30,7 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <nlohmann/json.hpp>
 
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_general_library/engine_interfaces/device_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "proto_python_bindings/proto_field_ops.h"
@@ -478,7 +478,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         }
 
         template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        void setDeviceMessageData(const std::string &dev_name, google::protobuf::Message *dev_data, EngineGrpc::DeviceMessage *m)
+        void setDeviceMessageData(const std::string &dev_name, google::protobuf::Message *dev_data, Engine::DeviceMessage *m)
         {
             if(dynamic_cast< MSG_TYPE *>(dev_data)) {
                 auto d = dynamic_cast< MSG_TYPE *>(dev_data);

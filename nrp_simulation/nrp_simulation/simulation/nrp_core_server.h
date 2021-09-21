@@ -27,7 +27,7 @@
 #include <condition_variable>
 #include <grpcpp/grpcpp.h>
 
-#include "nrp_simulation/nrp_simulation/simulation/nrp_server.grpc.pb.h"
+#include "nrp_protobuf/nrp_server.grpc.pb.h"
 
 /*!
  * \brief NRP Server class, responsible for handling simulation control requests coming from the client application or script

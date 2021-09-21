@@ -1,5 +1,4 @@
 from NRPPythonModule import *
-from NRPProtoPythonModule import *
 from NRPJSONEngineProtocolPython import *
 import numpy as np
 from PIL import Image

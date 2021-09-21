@@ -26,7 +26,7 @@
 #include <gazebo/sensors/CameraSensor.hh>
 #include <gazebo/rendering/Camera.hh>
 #include "nrp_general_library/engine_interfaces/device_controller.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
@@ -40,7 +40,7 @@ namespace gazebo
             CameraGrpcDeviceController(const std::string &devName, const rendering::CameraPtr &camera, const sensors::SensorPtr &parent)
 			    : _name(devName),
 			      _parentSensor(parent),
-			      _data(new EngineGrpc::GazeboCamera())
+			      _data(new Gazebo::Camera())
 			{}
 
             ~CameraGrpcDeviceController()
@@ -55,7 +55,7 @@ namespace gazebo
 			{
 	            if(_hasNewData) {
                     auto old = _data;
-                    _data = new EngineGrpc::GazeboCamera();
+                    _data = new Gazebo::Camera();
                     _hasNewData = false;
                     return old;
                 }
@@ -93,7 +93,7 @@ namespace gazebo
 
 			common::Time _lastSensorUpdateTime = 0;
 
-            EngineGrpc::GazeboCamera *_data;
+            Gazebo::Camera *_data;
 
             bool _hasNewData = false;
 	};

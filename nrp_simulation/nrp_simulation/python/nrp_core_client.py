@@ -5,6 +5,7 @@ import signal
 from nrp_server_pb2 import EmptyMessage, RunLoopMessage
 from nrp_server_pb2_grpc import NrpCoreStub
 
+
 class NrpCore:
 
     TIMEOUT_SEC = 15

@@ -28,7 +28,7 @@
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 
 void testSleep(unsigned sleepMs)
@@ -44,13 +44,13 @@ class TestGrpcDeviceController
     public:
 
 		TestGrpcDeviceController()
-		    : _data(new EngineGrpc::TestPayload())
+		    : _data(new Engine::TestPayload())
         { }
 
         virtual void handleDeviceData(const google::protobuf::Message &data) override
 		{
             // throws bad_cast
-            const auto &j = dynamic_cast<const EngineGrpc::TestPayload &>(data);
+            const auto &j = dynamic_cast<const Engine::TestPayload &>(data);
 		    _data->CopyFrom(j);
 		}
 
@@ -60,7 +60,7 @@ class TestGrpcDeviceController
                 return nullptr;
             else {
                 auto old_data = _data;
-                _data = new EngineGrpc::TestPayload();
+                _data = new Engine::TestPayload();
                 _data->CopyFrom(*old_data);
                 return old_data;
             }
@@ -72,7 +72,7 @@ class TestGrpcDeviceController
         }
 
 	private:
-        EngineGrpc::TestPayload* _data;
+        Engine::TestPayload* _data;
         bool _returnEmptyDevice = false;
 };
 
@@ -83,7 +83,7 @@ struct TestEngineGRPCConfigConst
 };
 
 class TestEngineGrpcClient
-: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, EngineGrpc::TestPayload>
+: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, Engine::TestPayload>
 {
     public:
         TestEngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
@@ -107,7 +107,7 @@ class TestEngineGrpcClient
 };
 
 class TestEngineGrpcServer
-    : public EngineGrpcServer<EngineGrpc::TestPayload>
+    : public EngineGrpcServer<Engine::TestPayload>
 {
     public:
 
@@ -444,7 +444,7 @@ TEST(EngineGrpc, SetDeviceData)
 	std::shared_ptr<TestGrpcDeviceController> deviceController(new TestGrpcDeviceController()); // Server side
     server.registerDevice(deviceName, deviceController.get());
 
-    std::shared_ptr<Device<EngineGrpc::TestPayload>> dev1(new Device<EngineGrpc::TestPayload>(deviceName, engineName)); // Client side
+    std::shared_ptr<Device<Engine::TestPayload>> dev1(new Device<Engine::TestPayload>(deviceName, engineName)); // Client side
     input_devices.push_back(dev1.get());
 
     // The gRPC server isn't running, so the sendDevicesToEngine command should fail
@@ -459,20 +459,20 @@ TEST(EngineGrpc, SetDeviceData)
     ASSERT_THROW(client.sendDevicesToEngine(input_devices), NRPException::exception);
 
     input_devices.clear();
-    auto d = new EngineGrpc::TestPayload();
+    auto d = new Engine::TestPayload();
     d->set_integer(111);
-    dev1.reset(new Device<EngineGrpc::TestPayload>(deviceName, engineName, d));
+    dev1.reset(new Device<Engine::TestPayload>(deviceName, engineName, d));
     input_devices.push_back(dev1.get());
 
     // Normal command execution
     client.sendDevicesToEngine(input_devices);
-    d = dynamic_cast<EngineGrpc::TestPayload *>(deviceController->getDeviceInformation());
+    d = dynamic_cast<Engine::TestPayload *>(deviceController->getDeviceInformation());
 
 	ASSERT_EQ(d->integer(),       111);
 
     // Test setting data on a device that wasn't registered in the engine server
     const std::string deviceName2 = "b";
-    Device<EngineGrpc::TestPayload> dev2(deviceName2, engineName);
+    Device<Engine::TestPayload> dev2(deviceName2, engineName);
     input_devices.clear();
     input_devices.push_back(&dev2);
 
@@ -499,7 +499,7 @@ TEST(EngineGrpc, GetDeviceData)
     std::vector<DeviceInterface*> input_devices;
 
     DeviceIdentifier         devId(deviceName, engineName, deviceType);
-    Device<EngineGrpc::TestPayload> dev1(deviceName, engineName); // Client side
+    Device<Engine::TestPayload> dev1(deviceName, engineName); // Client side
     std::shared_ptr<TestGrpcDeviceController> deviceController(new TestGrpcDeviceController()); // Server side
 
     server.registerDevice(deviceName, deviceController.get());
@@ -588,8 +588,8 @@ TEST(EngineGrpc, GetDeviceData2)
 
     DeviceIdentifier         devId1(deviceName1, engineName, deviceType1);
     DeviceIdentifier         devId2(deviceName2, engineName, deviceType2);
-    Device<EngineGrpc::TestPayload> dev1(deviceName1, engineName); // Client side
-    Device<EngineGrpc::TestPayload> dev2(deviceName2, engineName); // Client side
+    Device<Engine::TestPayload> dev1(deviceName1, engineName); // Client side
+    Device<Engine::TestPayload> dev2(deviceName2, engineName); // Client side
     std::shared_ptr<TestGrpcDeviceController> deviceController1(new TestGrpcDeviceController()); // Server side
     std::shared_ptr<TestGrpcDeviceController> deviceController2(new TestGrpcDeviceController()); // Server side
 
