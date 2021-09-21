@@ -29,8 +29,10 @@
  * \brief Empty Launch Command. A "dummy" launcher that doesn't launch a process.
           Useful in the cases when the EngineServer is not intended to be launched by the corresponding EngineClient.
  */
+inline const char EmptyLaunchC[] = "EmptyLaunchCommand";
+
 class EmptyLaunchCommand
-        : public LaunchCommand<"EmptyLaunchCommand">
+        : public LaunchCommand<EmptyLaunchC>
 {
 
     public:

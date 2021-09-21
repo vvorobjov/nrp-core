@@ -47,7 +47,7 @@ using EngineGrpc::EngineGrpcService;
  * as middleware. All RPC services are implemented. Derived classes are responsible
  * for implementing simulation initialization, shutdown and run step methods.
  */
-template<PROTO_MSG_C ...MSG_TYPES>
+template<class ...MSG_TYPES>
 class EngineGrpcServer : public EngineGrpcService::Service
 {
     public:
@@ -58,6 +58,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         EngineGrpcServer(const std::string &address)
                 : EngineGrpcServer(address, "EngineGrpcServer", "")
         {
+            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
         }
 
         /*!
@@ -71,6 +72,8 @@ class EngineGrpcServer : public EngineGrpcService::Service
         EngineGrpcServer(const std::string serverAddress, const std::string &engineName, const std::string &/*registrationAddress*/)
                 : _loggerCfg(engineName), _engineName(engineName)
         {
+            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
+
             this->_serverAddress   = serverAddress;
             this->_isServerRunning = false;
 

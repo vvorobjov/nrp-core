@@ -29,19 +29,12 @@
 #include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_general_library/device_interface/device_interface.h"
 
-#include <concepts>
 #include <set>
 #include <vector>
 
 class EngineClientInterface;
 class EngineLauncherInterface;
 
-template<class T>
-concept ENGINE_C = requires (nlohmann::json  &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) {
-    std::derived_from<T, EngineClientInterface>;
-    //std::constructible_from<T, nlohmann::json&, ProcessLauncherInterface::unique_ptr&&>;
-    //{ T(engineConfig, std::move(launcher)) };
-};
 
 /*!
  * \brief Interface to engines
@@ -228,11 +221,6 @@ class EngineLauncherInterface
 		const engine_type_t &engineType() const;
 		virtual EngineClientInterfaceSharedPtr launchEngine(nlohmann::json  &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) = 0;
 
-		/*!
-		 *	\brief Compare EngineLaunchers according to _engineType
-		 */
-		auto operator<=>(const EngineLauncherInterface&) const = default;
-		bool operator==(const EngineLauncherInterface&) const = default;
 	private:
 		/*!
 		 * \brief Engine Type
@@ -247,7 +235,7 @@ using EngineLauncherInterfaceConstSharedPtr = EngineLauncherInterface::const_sha
  *	\brief Base class for all Engines
  *	\tparam ENGINE Final derived engine class
  */
-template<class ENGINE, FixedString SCHEMA>
+template<class ENGINE, const char *SCHEMA>
 class EngineClient
         : public EngineClientInterface
 {
@@ -258,13 +246,13 @@ class EngineClient
 		 * \brief Class for launching engine
 		 * \tparam ENGINE_TYPE Default engine type
 		 */
-		template<FixedString ENGINE_TYPE>
+		template<const char *ENGINE_TYPE>
 		class EngineLauncher
 		        : public EngineLauncherInterface
 		{
 			public:
 				EngineLauncher()
-				    : EngineLauncherInterface(ENGINE_TYPE.m_data)
+				    : EngineLauncherInterface(ENGINE_TYPE)
 				{}
 
 				EngineLauncher(const engine_type_t &engineType)
@@ -349,7 +337,7 @@ class EngineClient
          * \brief Get json schema for this engine type
          */
         const std::string engineSchema() const override final
-        {   return SCHEMA.m_data;   }
+        { return schema;   }
 
     protected:
 
@@ -368,6 +356,7 @@ class EngineClient
     private:
 
         nlohmann::json engineConfig_;
+        std::string schema = std::string(SCHEMA);
 };
 
 #endif // ENGINE_CLIENT_INTERFACE_H

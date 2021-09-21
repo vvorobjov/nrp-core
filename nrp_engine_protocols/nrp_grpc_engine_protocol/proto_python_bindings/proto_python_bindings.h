@@ -51,10 +51,15 @@ using namespace proto_field_ops;
  *  - 5. Message Python wrapper supports only the a subset of the methods listed here https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html
  *       (see "create" method)
  */
-template<PROTO_MSG_C MSG_TYPE, PROTO_MSG_C ...FIELD_MSG_TYPES>
+template<class MSG_TYPE, class ...FIELD_MSG_TYPES>
 class proto_python_bindings
 {
 public:
+
+    proto_python_bindings() {
+        static_assert(std::is_base_of<google::protobuf::Message, MSG_TYPE>(),"Parameter MSG_TYPE must derive from protobuf::Message");
+        static_assert((std::is_base_of_v<google::protobuf::Message, FIELD_MSG_TYPES...>), "Parameter FIELD_MSG_TYPES must derive from protobuf::Message");
+    }
 
     static void throw_python_error(PyObject * error, std::string msg) {
         PyErr_SetString(error, msg.c_str());

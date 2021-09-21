@@ -26,7 +26,6 @@
 #include "nrp_general_library/utils/ptr_templates.h"
 #include <nlohmann/json.hpp>
 
-#include <concepts>
 #include <string>
 #include <vector>
 
@@ -88,7 +87,7 @@ class LaunchCommandInterface
  * \brief Class for launch commands. Must be specialized further
  * \tparam LAUNCH_COMMAND Name of launch command
  */
-template<FixedString LAUNCH_COMMAND>
+template<const char* LAUNCH_COMMAND>
 class LaunchCommand
         : public LaunchCommandInterface
 {
@@ -99,10 +98,5 @@ class LaunchCommand
 		{	return LaunchType;	}
 };
 
-template<class T>
-concept LAUNCH_COMMAND_C = requires() {
-    std::derived_from<T, LaunchCommandInterface>;
-    {	T::LaunchType	};
-};
 
 #endif // LAUNCH_COMMAND_H

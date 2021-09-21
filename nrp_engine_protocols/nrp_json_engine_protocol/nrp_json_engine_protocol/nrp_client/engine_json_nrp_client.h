@@ -42,7 +42,7 @@
  *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  *  \tparam ENGINE_INTERFACE Class derived from GeneralInterface. Currently either PhysicsInterface or BrainInterface
  */
-template<class ENGINE, FixedString SCHEMA>
+template<class ENGINE, const char* SCHEMA>
 class EngineJSONNRPClient
         : public EngineClient<ENGINE, SCHEMA>
 {

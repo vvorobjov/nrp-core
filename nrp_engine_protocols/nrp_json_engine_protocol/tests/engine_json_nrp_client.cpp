@@ -36,8 +36,8 @@ using namespace testing;
 
 struct TestEngineJSONConfigConst
 {
-    static constexpr FixedString EngineType = "test_engine";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json";
+    static constexpr char EngineType[] = "test_engine";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json";
 };
 
 class TestEngineJSONServer

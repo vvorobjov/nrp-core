@@ -69,7 +69,7 @@ def transceiver_function(camera, processed):
     #print("Camera Depth: " + str(camera.image_depth))
     
     # Set to True to display camera image data and pause for 10 s
-    if True and not camera.isEmpty():
+    if False and not camera.isEmpty():
         img = Image.fromarray(np.array(processed.data["grayscale"]))
         img.show()
         time.sleep(10)

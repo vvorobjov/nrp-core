@@ -34,7 +34,6 @@ class PtrTemplates
 		using unique_ptr = std::unique_ptr<T>;
 		using const_unique_ptr = std::unique_ptr<const T>;
 
-		constexpr auto operator<=>(const PtrTemplates<T>&) const = default;
 };
 
 #endif

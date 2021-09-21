@@ -29,8 +29,6 @@
 namespace bpy = boost::python;
 namespace gpb = google::protobuf;
 
-template<class T>
-concept PROTO_MSG_C = (std::is_base_of_v<google::protobuf::Message, T>);
 
 /*!
  * \brief Implement single field Get/Set operations using field descriptor and reflection interface.
@@ -50,8 +48,11 @@ namespace proto_field_ops {
     /*!
      * \brief Get message field. Returns a reference of the field value
      */
-    template<PROTO_MSG_C MSG, PROTO_MSG_C ...REMAINING_MSGS>
+    template<class MSG, class ...REMAINING_MSGS>
     bpy::object GetMessageField(gpb::Message &m, const gpb::FieldDescriptor *field) {
+        static_assert(std::is_base_of_v<google::protobuf::Message, MSG>,"Parameter MSG must derive from protobuf::Message");
+        static_assert((std::is_base_of_v<google::protobuf::Message, REMAINING_MSGS> && ...), "Parameter REMAINING_MSGS must derive from protobuf::Message");
+
         MSG *msg_field = dynamic_cast<MSG *>(m.GetReflection()->MutableMessage(&m, field));
         if(msg_field != nullptr) {
             typename bpy::reference_existing_object::apply<MSG *>::type convert;

@@ -37,7 +37,6 @@ set(LIB_SRC_FILES
 	nrp_general_library/transceiver_function/transceiver_function_interpreter.cpp
 	nrp_general_library/transceiver_function/transceiver_function_manager.cpp
 	nrp_general_library/transceiver_function/transceiver_function_sorted_results.cpp
-	nrp_general_library/utils/concepts.cpp
 	nrp_general_library/utils/file_finder.cpp
 	nrp_general_library/utils/fixed_string.cpp
 	nrp_general_library/utils/nrp_exceptions.cpp

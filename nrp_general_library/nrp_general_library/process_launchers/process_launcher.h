@@ -26,7 +26,6 @@
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 
-#include <concepts>
 
 /*!
  * \brief Functions for all process launchers
@@ -103,23 +102,23 @@ class ProcessLauncherInterface
 		LaunchCommandInterface::unique_ptr _launchCmd = nullptr;
 };
 
-template<class T>
-concept PROCESS_LAUNCHER_C = requires {
-    std::derived_from<T, ProcessLauncherInterface>;
-    { T() };
-};
 
 /*!
  *	\brief Base class for all process launchers
  *	\tparam PROCESS_LAUNCHER Final class derived from ProcessLauncher
  *	\tparam LAUNCHER_TYPE Launcher Type as string
  */
-template<class PROCESS_LAUNCHER, FixedString LAUNCHER_TYPE, LAUNCH_COMMAND_C ...LAUNCHER_COMMANDS>
+template<class PROCESS_LAUNCHER,const char *LAUNCHER_TYPE, class ...LAUNCHER_COMMANDS>
 class ProcessLauncher
         : public ProcessLauncherInterface
 {
 	public:
 		static constexpr auto LauncherType = LAUNCHER_TYPE;
+
+		ProcessLauncher() {
+		    static_assert((std::is_base_of_v<LaunchCommandInterface, LAUNCHER_COMMANDS> && ...) ,"Parameter LAUNCHER_COMMANDS must derive from LaunchCommandInterface");
+		    static_assert((std::is_convertible_v<const volatile LAUNCHER_COMMANDS*, const volatile LaunchCommandInterface*> && ...),"Parameter LAUNCHER_COMMANDS must be convertible to LaunchCommandInterface");
+		}
 
 		~ProcessLauncher() override = default;
 

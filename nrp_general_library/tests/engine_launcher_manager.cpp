@@ -29,8 +29,8 @@ using namespace testing;
 
 struct TestEngineConfigConst
 {
-    static constexpr FixedString EngineType = "test_engine";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
+    static constexpr char EngineType[] = "test_engine";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
 };
 
 class TestEngine

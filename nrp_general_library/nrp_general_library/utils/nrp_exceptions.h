@@ -24,7 +24,6 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
-#include <concepts>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -71,16 +70,18 @@ class NRPException
 		}
 
 		template<class EXCEPTION = NRPExceptionNonRecoverable, class LOG_EXCEPTION_T>
-		requires(std::constructible_from<EXCEPTION, const std::string&>)
 		static EXCEPTION logCreate(LOG_EXCEPTION_T &exception, const std::string &msg, NRPLogger::spdlog_out_fcn_t spdlogCall = NRPLogger::critical)
 		{
+		    static_assert(std::is_nothrow_destructible_v<EXCEPTION> && std::is_constructible_v<EXCEPTION, const std::string&> ,"Parameter EXCEPTION must be constructible from std::string&");
+
 			NRPException::logOnce(exception, spdlogCall);
 
 			std::invoke(spdlogCall, msg);
-			if constexpr (std::constructible_from<EXCEPTION, const std::string&, bool>)
-			{	return EXCEPTION(msg, true);	}
+			if constexpr (std::is_nothrow_destructible_v<EXCEPTION> && std::is_constructible_v<EXCEPTION, const std::string&, bool>)
+			{   return EXCEPTION(msg, true);    }
 			else
-			{	return EXCEPTION(msg);	}
+			{   return EXCEPTION(msg);  }
+
 		}
 
 		/*!
@@ -90,18 +91,18 @@ class NRPException
 		 * \param spdlogCall spdlog function to call for logging
 		 */
 		template<class EXCEPTION = NRPExceptionNonRecoverable>
-		requires(std::constructible_from<EXCEPTION, const std::string&> || std::same_as<EXCEPTION, void>)
 		static EXCEPTION logCreate(const std::string &msg, NRPLogger::spdlog_out_fcn_t spdlogCall = NRPLogger::critical)
 		{
+		    static_assert((std::is_nothrow_destructible_v<EXCEPTION> && std::is_constructible_v<EXCEPTION, const std::string&>) || (std::is_same_v<EXCEPTION, void> && std::is_same_v<void, EXCEPTION>),"Parameter EXCEPTION must be constructible from std::string&");
+
 			std::invoke(spdlogCall, msg);
-			if constexpr (std::constructible_from<EXCEPTION, const std::string&, bool>)
-			{	return EXCEPTION(msg, true);	}
+			if constexpr (std::is_nothrow_destructible_v<EXCEPTION> && std::is_constructible_v<EXCEPTION, const std::string&, bool>)
+			{   return EXCEPTION(msg, true);    }
 			else
-			{	return EXCEPTION(msg);	}
+			{   return EXCEPTION(msg);  }
 		}
 
 		template<class T>
-		requires(std::constructible_from<std::string, T>)
 		explicit NRPException(T &&msg, bool msgLogged = false)
 		    : _errMsg(std::forward<T>(msg)),
 		      _msgLogged(msgLogged)

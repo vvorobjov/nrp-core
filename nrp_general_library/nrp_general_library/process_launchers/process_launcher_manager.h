@@ -83,9 +83,11 @@ class ProcessLauncherManager
 		 *	\tparam PROCESS_LAUNCHER Launcher class to register
 		 *	\tparam REST Remaining launchers to register
 		 */
-		template<PROCESS_LAUNCHER_C PROCESS_LAUNCHER, class ...REST>
+		template<class PROCESS_LAUNCHER, class ...REST>
 		void registerProcessLauncher()
 		{
+		    static_assert(std::is_base_of_v<ProcessLauncherInterface, PROCESS_LAUNCHER> && std::is_convertible_v<const volatile PROCESS_LAUNCHER*, const volatile ProcessLauncherInterface*>,"Parameter PROCESS_LAUNCHER must derive from ProcessLauncherInterface");
+
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 			
 			ProcessLauncherInterface::unique_ptr launcher(new PROCESS_LAUNCHER());

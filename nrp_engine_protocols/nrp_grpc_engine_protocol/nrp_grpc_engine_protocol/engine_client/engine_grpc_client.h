@@ -34,7 +34,7 @@
 #include "nrp_general_library/device_interface/device.h"
 #include "proto_python_bindings/proto_python_bindings.h"
 
-template<class ENGINE, FixedString SCHEMA, PROTO_MSG_C ...MSG_TYPES>
+template<class ENGINE, const char* SCHEMA, class ...MSG_TYPES>
 class EngineGrpcClient
     : public EngineClient<ENGINE, SCHEMA>
 {
@@ -58,6 +58,8 @@ class EngineGrpcClient
         EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher))
         {
+            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
+
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             std::string serverAddress = this->engineConfig().at("ServerAddress");

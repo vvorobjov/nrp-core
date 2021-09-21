@@ -31,8 +31,10 @@
 /*!
  * \brief Basic Process Launcher, for simple process management
  */
+inline const char Basic[] = "Basic";
+
 class ProcessLauncherBasic
-        : public ProcessLauncher<ProcessLauncherBasic, "Basic", BasicFork, EmptyLaunchCommand>
+        : public ProcessLauncher<ProcessLauncherBasic, Basic, BasicFork, EmptyLaunchCommand>
 {
 	public:	~ProcessLauncherBasic() override = default;
 };

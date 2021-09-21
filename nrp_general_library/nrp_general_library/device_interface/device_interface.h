@@ -22,10 +22,8 @@
 #ifndef DEVICE_INTERFACE_H
 #define DEVICE_INTERFACE_H
 
-#include "nrp_general_library/utils/concepts.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 
-#include <concepts>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -37,6 +35,7 @@
  */
 struct DeviceIdentifier
 {
+    public:
 	/*!
 	 * \brief Device Name. Used by simulator to identify source/sink of device
 	 */
@@ -56,20 +55,25 @@ struct DeviceIdentifier
 
 	DeviceIdentifier(const std::string &_name, const std::string &_engineName, const std::string &_type);
 
-	template<std::constructible_from<std::string> STRING1_T, std::constructible_from<std::string> STRING2_T, std::constructible_from<std::string> STRING3_T>
-	DeviceIdentifier(STRING1_T &&_name, STRING2_T &&_engineName, STRING3_T &&_type)
-	    : Name(std::forward<STRING1_T>(_name)),
-	      EngineName(std::forward<STRING2_T>(_engineName)),
-	      Type(std::forward<STRING3_T>(_type))
+	DeviceIdentifier(std::string &&_name, std::string &&_engineName, std::string &&_type)
+	    : Name(std::forward<std::string>(_name)),
+	      EngineName(std::forward<std::string>(_engineName)),
+	      Type(std::forward<std::string>(_type))
 	{}
 
-	bool operator== (const DeviceIdentifier &) const = default;
-	auto operator<=>(const DeviceIdentifier &) const = default;
+	bool operator == (const DeviceIdentifier & rhs) const {
+	    return (Name == rhs.Name)
+     && (EngineName == rhs.EngineName)
+     && (Type == rhs.Type);
+	}
+
+	bool operator < (const DeviceIdentifier & rhs) const{
+	    return (Name < rhs.Name) || (Name == rhs.Name && EngineName < rhs.EngineName) || (Name == rhs.Name &&
+	    EngineName == rhs.EngineName && Type < rhs.Type);
+	}
+
 };
 
-template<class T>
-concept DEV_ID_C = requires()
-{	std::same_as<T, DeviceIdentifier>;	};
 
 /*!
  * \brief Interface to devices
@@ -80,10 +84,12 @@ class DeviceInterface
 	public:
 		DeviceInterface() = default;
 
-		template<DEV_ID_C DEV_ID_T>
+		template<class DEV_ID_T>
 		DeviceInterface(DEV_ID_T &&id)
-		    : _id(std::forward<DEV_ID_T>(id))
-		{}
+		    : _id(std::forward<DEV_ID_T>(id)){
+		        static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, const DeviceIdentifier> || std::is_same_v< DeviceIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DeviceIdentifier or DeviceIdentifier&");
+		        static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, DeviceIdentifier> || std::is_same_v< const DeviceIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DeviceIdentifier or DeviceIdentifier&");
+		    }
 
 		DeviceInterface(const std::string &name, const std::string &engineName, const std::string &type);
 		virtual ~DeviceInterface() = default;
@@ -102,7 +108,7 @@ class DeviceInterface
 
 		virtual DeviceInterface::const_shared_ptr moveToSharedPtr()
 		{
-			return DeviceInterface::const_shared_ptr(new DeviceInterface(this->_id));
+			return DeviceInterface::const_shared_ptr(new DeviceInterface(std::move(this->_id)));
 		}
 
 		/*!
@@ -133,9 +139,5 @@ class DeviceInterface
 using DeviceInterfaceSharedPtr      = DeviceInterface::shared_ptr;
 using DeviceInterfaceConstSharedPtr = DeviceInterface::const_shared_ptr;
 
-template<class T>
-concept DEVICE_C = requires {
-        std::derived_from<T, DeviceInterface>;
-};
 
 #endif // DEVICE_INTERFACE_H

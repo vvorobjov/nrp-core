@@ -33,13 +33,6 @@ class TransceiverFunctionInterpreter;
 using TransceiverFunctionInterpreterSharedPtr = std::shared_ptr<TransceiverFunctionInterpreter>;
 using TransceiverFunctionInterpreterConstSharedPtr = std::shared_ptr<const TransceiverFunctionInterpreter>;
 
-class TransceiverDeviceInterface;
-
-/*!
- *	\brief Concept defining all TransceiverInterfaces
- */
-template<class T>
-concept TRANSCEIVER_DEVICE_C = std::is_base_of_v<TransceiverDeviceInterface, T> || std::is_same_v<TransceiverDeviceInterface, T>;
 
 /*!
  * \brief Base of TF Decorators.
@@ -56,12 +49,14 @@ class TransceiverDeviceInterface
 		 * \param tfDevice Lower Decorator
 		 * \return shared_ptr referencing data from this object
 		 */
-		template<TRANSCEIVER_DEVICE_C CLASS>
+		template<class TRANSCEIVER_DEVICE>
 		TransceiverDeviceInterface::shared_ptr pySetup(const TransceiverDeviceInterface::shared_ptr &tfDevice)
 		{
+		    static_assert((std::is_base_of_v<TransceiverDeviceInterface, TRANSCEIVER_DEVICE>) || (std::is_same_v<TransceiverDeviceInterface, TRANSCEIVER_DEVICE>),"Parameter TRANSCEIVER_DEVICE must derive from TransceiverDeviceInterface or be same");
+
 			this->_function = tfDevice;
 
-			auto thisPtr = this->moveToSharedPtr<CLASS>();
+			auto thisPtr = this->moveToSharedPtr<TRANSCEIVER_DEVICE>();
 
 			TransceiverDeviceInterface::shared_ptr *const registryPtr = this->_function->getTFInterpreterRegistry();
 			assert(registryPtr != nullptr);
@@ -112,9 +107,12 @@ class TransceiverDeviceInterface
 		 */
 		static TransceiverFunctionInterpreter *TFInterpreter;
 
-		template<TRANSCEIVER_DEVICE_C CLASS>
-		typename PtrTemplates<CLASS>::shared_ptr moveToSharedPtr()
-		{	return typename PtrTemplates<CLASS>::shared_ptr(new CLASS(std::move(static_cast<CLASS&>(*this))));	}
+		template<class TRANSCEIVER_DEVICE>
+		typename PtrTemplates<TRANSCEIVER_DEVICE>::shared_ptr moveToSharedPtr()
+		{
+		    static_assert((std::is_base_of_v<TransceiverDeviceInterface, TRANSCEIVER_DEVICE>) || (std::is_same_v<TransceiverDeviceInterface, TRANSCEIVER_DEVICE>),"Parameter TRANSCEIVER_DEVICE must derive from TransceiverDeviceInterface or be same");
+		    return typename PtrTemplates<TRANSCEIVER_DEVICE>::shared_ptr(new TRANSCEIVER_DEVICE(std::move(static_cast<TRANSCEIVER_DEVICE&>(*this))));
+		}
 
 		/*!
 		 * \brief Gets address of ptr under which the TFInterpreter has registered this TF. Mainly used during setup

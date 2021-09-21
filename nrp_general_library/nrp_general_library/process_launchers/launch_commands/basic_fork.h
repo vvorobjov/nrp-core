@@ -25,7 +25,7 @@
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/process_launchers/launch_commands/launch_command.h"
 
-static constexpr FixedString LAUNCH_COMMAND = "BasicFork";
+inline const char LAUNCH_COMMAND[] = "BasicFork";
 
 class BasicFork
         : public LaunchCommand<LAUNCH_COMMAND>

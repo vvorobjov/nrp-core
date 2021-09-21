@@ -86,8 +86,6 @@ class PythonJSONServer
 		 */
 		boost::python::dict _pyGlobals;
 
-
-
 		/*!
 		 * \brief Python script to execute
 		 */

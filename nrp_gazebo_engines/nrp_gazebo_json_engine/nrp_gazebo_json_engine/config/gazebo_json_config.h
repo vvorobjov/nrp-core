@@ -28,8 +28,8 @@
 
 struct GazeboJSONConfigConst
 {
-    static constexpr FixedString EngineType = "gazebo_json";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_json";
+    static constexpr char EngineType[] = "gazebo_json";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_json";
 
 	/*!
 	 * \brief Gazebo Start Parameters Argument for plugins
