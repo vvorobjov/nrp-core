@@ -21,9 +21,9 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
 	nrp_gazebo_json_engine/config/gazebo_json_config.cpp
 	nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
-	nrp_gazebo_json_engine/engine_server/camera_device_controller.cpp
-	nrp_gazebo_json_engine/engine_server/joint_device_controller.cpp
-	nrp_gazebo_json_engine/engine_server/link_device_controller.cpp
+	nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
+	nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
+	nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp
 	nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.cpp
 )
 
@@ -92,7 +92,7 @@ target_link_libraries(${LIBRARY_NAME}
 
 
 ##########################################
-## NRPGazeboDevicePythonModule
+## NRPGazeboDataPackPythonModule
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
@@ -160,7 +160,7 @@ if(ENABLE_GAZEBO STREQUAL FULL)
 			EXTRA_ARGS -VV)
 
 		# Add tests based on running example experiments
-		add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPSimulation -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
+		add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
 	endif()
 
 endif()

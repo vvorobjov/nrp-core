@@ -7,12 +7,12 @@ The script is going to create the following components:
 - Client class, allowing NRP Core to communicate with the server process.
 - Server class, responsible for direct interactions with the simulator.
 - Server executable, which allows to start the server as a separate process
-- Device controller class, responsible for passing data to and from the simulation.
+- DataPack controller class, responsible for passing data to and from the simulation.
 The class will be used by the engine server.
 - CMakeLists.txt that allows to compile the new code.
 - Minimal experiment, that allows to verify if the newly created code works as expected.
 
-In most cases the only entities that will need further modifications are the server class and the device controller class,
+In most cases the only entities that will need further modifications are the server class and the datapack controller class,
 as they are the two classes that are going to directly interact with your simulator.
 
 <em>Please note that in order to use this engine your simulator has to provide a C/C++ API.</em>
@@ -63,7 +63,7 @@ In order to verify that the newly created engine works, you can run the example 
 
 \code{.sh}
 cd ../test_grpc_engine/example_experiment
-NRPSimulation -c simulation_config.json -p "NRPTestGrpcEngine.so"
+NRPCoreSim -c simulation_config.json -p "NRPTestGrpcEngine.so"
 \endcode
 
 
@@ -92,21 +92,21 @@ The function will receive full simulation configuration as JSON object.
 - EngineGrpcServer::reset() - optional. Should reset the simulation to its initial state.
 
 
-\subsection grpc_engine_creation_server_controllers Device controllers
+\subsection grpc_engine_creation_server_controllers DataPack controllers
 
-Device controllers (DeviceController) are helper classes which facilitate data exchange between the simulator and the server part of the engine.
+DataPack controllers (DataPackController) are helper classes which facilitate data exchange between the simulator and the server part of the engine.
 They can be thought of as adaptors between data arriving from the engine client in form of protobuf messages, and arbitrary
 data from the simulation.
 
-Our minimal gRPC engine comes with a single device controller class, but more may be added if a need arises.
+Our minimal gRPC engine comes with a single datapack controller class, but more may be added if a need arises.
 
 The following methods of the controller should be implemented:
 
-- DeviceController::getDeviceInformationCallback() should return a protobuf object with the most recent simulation results.
+- DataPackController::getDataPackInformationCallback() should return a protobuf object with the most recent simulation results.
 This data will be then passed from the engine server to the client, and from there to the transceiver functions.
 The function will be called before runLoopStep.
 
-- DeviceController::handleDeviceDataCallback() should inject received protobuf data into the simulator.
+- DataPackController::handleDataPackDataCallback() should inject received protobuf data into the simulator.
 The function will be called after runLoopStep.
 
 */

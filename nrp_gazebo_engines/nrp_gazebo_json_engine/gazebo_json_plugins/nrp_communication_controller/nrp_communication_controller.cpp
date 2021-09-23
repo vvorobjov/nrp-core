@@ -62,7 +62,7 @@ void NRPCommunicationController::registerStepController(GazeboStepController *st
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	EngineJSONServer::lock_t lock(this->_deviceLock);
+	EngineJSONServer::lock_t lock(this->_datapackLock);
 	this->_stepController = stepController;
 }
 
@@ -75,7 +75,7 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 
 	try
 	{
-		// Execute loop step (Note: The _deviceLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to devices is possible at this moment)
+		// Execute loop step (Note: The _datapackLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to datapacks is possible at this moment)
 		return this->_stepController->runLoopStep(timeStep);
 	}
 	catch(std::exception &e)
@@ -92,7 +92,7 @@ json NRPCommunicationController::initialize(const json &data, EngineJSONServer::
 	if(waitTime <= 0)
 		waitTime = std::numeric_limits<double>::max();
 
-	// Allow devices to register
+	// Allow datapacks to register
 	lock.unlock();
 
 	// Wait until world plugin loads and forces a load of all other plugins

@@ -27,7 +27,7 @@
 #include "nrp_json_engine_protocol/nrp_client/engine_json_nrp_client.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
-#include "tests/test_engine_json_device_controllers.h"
+#include "tests/test_engine_json_datapack_controllers.h"
 
 #include <future>
 #include <restclient-cpp/restclient.h>
@@ -121,20 +121,20 @@ class TestEngineJSONNRPClient
 	SimulationTime curTime = SimulationTime::zero();
 };
 
-TEST(EngineJSONNRPClientTest, EmptyDevice)
+TEST(EngineJSONNRPClientTest, EmptyDataPack)
 {
 	TestEngineJSONServer server("localhost:5463");
 
 	const auto engineName = "engine1";
 
 	auto data = new nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = JsonDevice("device1", "engine_name_1", data);
+	auto dev1 = JsonDataPack("datapack1", "engine_name_1", data);
 
 	dev1.setEngineName(engineName);
 
-	// Register device controllers
-	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
+	// Register datapack controllers
+	auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+	server.registerDataPack(dev1.name(), &dev1Ctrl);
 
 	nlohmann::json config;
 	config["EngineName"] = engineName;
@@ -144,34 +144,34 @@ TEST(EngineJSONNRPClientTest, EmptyDevice)
 	server.startServerAsync();
 	TestEngineJSONNRPClient client("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
-	TestEngineJSONNRPClient::device_identifiers_set_t devIDs({dev1.id()});
+	TestEngineJSONNRPClient::datapack_identifiers_set_t devIDs({dev1.id()});
 
-	// Return an empty device from the controller, it should end up in the cache on clients side
+	// Return an empty datapack from the controller, it should end up in the cache on clients side
 
-	dev1Ctrl.triggerEmptyDeviceReturn(true);
+	dev1Ctrl.triggerEmptyDataPackReturn(true);
 
-	auto devices = client.updateDevicesFromEngine(devIDs);
+	auto datapacks = client.updateDataPacksFromEngine(devIDs);
 
-	ASSERT_EQ(devices.size(), 1);
-    ASSERT_EQ(devices.at(0)->isEmpty(), true);
+	ASSERT_EQ(datapacks.size(), 1);
+    ASSERT_EQ(datapacks.at(0)->isEmpty(), true);
 
-	// Return a regular device (with data) from the controller. It should replace the empty device
+	// Return a regular datapack (with data) from the controller. It should replace the empty datapack
 
-	dev1Ctrl.triggerEmptyDeviceReturn(false);
+	dev1Ctrl.triggerEmptyDataPackReturn(false);
 
-	devices = client.updateDevicesFromEngine(devIDs);
+	datapacks = client.updateDataPacksFromEngine(devIDs);
 
-	ASSERT_EQ(devices.size(), 1);
-    ASSERT_EQ(devices.at(0)->isEmpty(), false);
+	ASSERT_EQ(datapacks.size(), 1);
+    ASSERT_EQ(datapacks.at(0)->isEmpty(), false);
 
-	// Return another empty device from the controller, it should not overwrite the previous device
+	// Return another empty datapack from the controller, it should not overwrite the previous datapack
 
-	dev1Ctrl.triggerEmptyDeviceReturn(true);
+	dev1Ctrl.triggerEmptyDataPackReturn(true);
 
-	devices = client.updateDevicesFromEngine(devIDs);
+	datapacks = client.updateDataPacksFromEngine(devIDs);
 
-	ASSERT_EQ(devices.size(), 1);
-    ASSERT_EQ(devices.at(0)->isEmpty(), false);
+	ASSERT_EQ(datapacks.size(), 1);
+    ASSERT_EQ(datapacks.at(0)->isEmpty(), false);
 
 	// It seems like the REST server needs some time to release resources before the next test can run...
 	// Without the sleep, it will complain about address already taken
@@ -188,11 +188,11 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	const auto falseEngineName = "engineFalse";
 
 	auto data = new nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = JsonDevice("device1", "engine_name_1", data);
+	auto dev1 = JsonDataPack("datapack1", "engine_name_1", data);
 	data = new nlohmann::json({{"", {{"data", 2}}}});
-	auto dev2 =JsonDevice("device2", "engine_name_2", data);
+	auto dev2 =JsonDataPack("datapack2", "engine_name_2", data);
 	data = new nlohmann::json({{"", {{"data", -1}}}});
-	auto devThrow = JsonDevice("deviceThrow", "engine_throw", data);
+	auto devThrow = JsonDataPack("datapackThrow", "engine_throw", data);
 
 	dev1.setEngineName(engineName);
 	dev2.setEngineName(engineName);
@@ -202,11 +202,11 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	//dev1.data() = 3;
 	//dev2.data() = 5;
 
-	// Register device controllers
-	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
-	auto dev2Ctrl = TestJSONDeviceController(DeviceIdentifier(dev2.id()));
-	server.registerDevice(dev2.name(), &dev2Ctrl);
+	// Register datapack controllers
+	auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+	server.registerDataPack(dev1.name(), &dev1Ctrl);
+	auto dev2Ctrl = TestJSONDataPackController(DataPackIdentifier(dev2.id()));
+	server.registerDataPack(dev2.name(), &dev2Ctrl);
 
 	nlohmann::json config;
 	config["EngineName"] = engineName;
@@ -226,31 +226,31 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 
 	ASSERT_EQ(client.getEngineTime(), server.curTime);
 
-	// Test device retrieval
-	TestEngineJSONNRPClient::device_identifiers_set_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
-	auto devices = client.updateDevicesFromEngine(devIDs);
+	// Test datapack retrieval
+	TestEngineJSONNRPClient::datapack_identifiers_set_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
+	auto datapacks = client.updateDataPacksFromEngine(devIDs);
 
-	// Only two devices (dev1, dev2) should be retrieved, as they are associated with the correct EngineName
-	ASSERT_EQ(devices.size(), 2);
+	// Only two datapacks (dev1, dev2) should be retrieved, as they are associated with the correct EngineName
+	ASSERT_EQ(datapacks.size(), 2);
 
-	// Assign correct devices, order can be arbitrary
-	/*const DeviceInterface *retDev1BasePtr = nullptr, *retDev2BasePtr = nullptr;
-	if(devices.begin()->get()->id() == dev1.id())
+	// Assign correct datapacks, order can be arbitrary
+	/*const DataPackInterface *retDev1BasePtr = nullptr, *retDev2BasePtr = nullptr;
+	if(datapacks.begin()->get()->id() == dev1.id())
 	{
-		retDev1BasePtr = devices.begin()->get();
-		retDev2BasePtr = (++devices.begin())->get();
+		retDev1BasePtr = datapacks.begin()->get();
+		retDev2BasePtr = (++datapacks.begin())->get();
 	}
-	else if(devices.begin()->get()->id() == dev2.id())
+	else if(datapacks.begin()->get()->id() == dev2.id())
 	{
-		retDev2BasePtr = devices.begin()->get();
-		retDev1BasePtr = (++devices.begin())->get();
+		retDev2BasePtr = datapacks.begin()->get();
+		retDev1BasePtr = (++datapacks.begin())->get();
 	}
 
 	ASSERT_NE(retDev1BasePtr, nullptr);
 	ASSERT_NE(retDev2BasePtr, nullptr);
 
-	const auto &retDev1 = dynamic_cast<const JsonDevice&>(*retDev1BasePtr);
-	const auto &retDev2 = dynamic_cast<const JsonDevice&>(*retDev2BasePtr);
+	const auto &retDev1 = dynamic_cast<const JsonDataPack&>(*retDev1BasePtr);
+	const auto &retDev2 = dynamic_cast<const JsonDataPack&>(*retDev2BasePtr);
 
 	ASSERT_EQ(retDev1.data(), dev1Ctrl.data().data());
 	ASSERT_EQ(retDev2.data(), dev2Ctrl.data().data());
@@ -261,12 +261,12 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 	dev1.data() = 6;
 	dev2.data() = -1;
 
-	// Test device sending
-	TestEngineJSONNRPClient::devices_ptr_t inputs;
+	// Test datapack sending
+	TestEngineJSONNRPClient::datapacks_ptr_t inputs;
 	inputs.push_back(&inputDev1);
 	inputs.push_back(&inputDev2);
 	inputs.push_back(&inputDevThrow);
-	ASSERT_NO_THROW(client.sendDevicesToEngine(inputs));
+	ASSERT_NO_THROW(client.sendDataPacksToEngine(inputs));
 
 	ASSERT_EQ(inputDev1.data(), dev1Ctrl.data().data());
 	ASSERT_EQ(inputDev2.data(), dev2Ctrl.data().data());*/

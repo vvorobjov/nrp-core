@@ -26,7 +26,7 @@
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
-#include "nrp_simulation/simulation/simulation_loop.h"
+#include "nrp_simulation/simulation/fti_loop.h"
 
 #include <mutex>
 #include <cxxopts.hpp>
@@ -37,7 +37,7 @@
  */
 struct SimulationParams
 {
-	static constexpr std::string_view NRPProgramName = "NRPSimulation";
+	static constexpr std::string_view NRPProgramName = "NRPCoreSim";
 	static constexpr std::string_view ProgramDescription = "Brain and physics simulator";
 
 	// Simulation Executable parameters
@@ -149,7 +149,7 @@ class SimulationManager
 		 * \brief Get simulation loop
 		 * \return Returns pointer to simulation loop. If no loop is loaded, return nullptr
 		 */
-		SimulationLoopConstSharedPtr simulationLoop() const;
+		FTILoopConstSharedPtr simulationLoop() const;
 
 		/*!
 		 * \brief Get simulation config
@@ -171,7 +171,7 @@ class SimulationManager
 		 * \param simLock Simulation lock
 		 * \exception Throws an exception when the initialization fails
 		 */
-		void initSimulationLoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
+		void initFTILoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
 		                        const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
 
 		/*!
@@ -209,14 +209,14 @@ class SimulationManager
 		/*!
 		 * \brief Simulation loop
 		 */
-		SimulationLoopSharedPtr _loop;
+		FTILoopSharedPtr _loop;
 
 		/*!
 		 * \brief Creates a simulation loop using the engines specified in the config file
 		 * \param engineManager Manager for all available engine launchers and interfaces
 		 * \return Returns simulation loop
 		 */
-		SimulationLoop createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
+		FTILoop createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
 
 		/*!
 		 * \brief Checks whether simulation has timed out. If simTimeout <= 0, continue running indefinitely

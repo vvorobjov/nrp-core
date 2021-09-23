@@ -22,7 +22,7 @@
 #ifndef TRANSCEIVER_FUNCTION_H
 #define TRANSCEIVER_FUNCTION_H
 
-#include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
+#include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
@@ -34,7 +34,7 @@
  * \brief Holds a single transfer function decorator
  */
 class TransceiverFunction
-        : public TransceiverDeviceInterface,
+        : public TransceiverDataPackInterface,
           public PtrTemplates<TransceiverFunction>
 {
 	public:
@@ -55,7 +55,7 @@ class TransceiverFunction
 		 * \param transceiverFunction User defined TF
 		 * \return shared_ptr referencing data from this object
 		 */
-		TransceiverDeviceInterface::shared_ptr pySetup(boost::python::object transceiverFunction);
+		TransceiverDataPackInterface::shared_ptr pySetup(boost::python::object transceiverFunction);
 
 		/*!
 		 * \brief Execute the transfer function
@@ -66,9 +66,9 @@ class TransceiverFunction
 		boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 
 	protected:
-		EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override;
+		EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs) const override;
+		EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const override;
 
 	private:
 		/*!
@@ -89,13 +89,13 @@ class TransceiverFunction
 		/*!
 		 * \brief Pointer to location where TFInterperter has stored this TF
 		 */
-		TransceiverDeviceInterface::shared_ptr *_tfInterpreterRegistryPtr = nullptr;
+		TransceiverDataPackInterface::shared_ptr *_tfInterpreterRegistryPtr = nullptr;
 
 		/*!
 		 * \brief Gets pointer to location where this TF is stored
 		 * \return Returns _tfInterpreterRegistryPtr
 		 */
-		TransceiverDeviceInterface::shared_ptr *getTFInterpreterRegistry() override final;
+		TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry() override final;
 
         /*!
          * \brief Checks that the output of executing this TF is correct. If not raise NRPException

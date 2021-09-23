@@ -99,20 +99,20 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
 	// The data is updated asynchronously, on every new frame. It may happen that on first
 	// acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-    const EngineClientInterface::devices_t * devices;
+    const EngineClientInterface::datapacks_t * datapacks;
     int trial = 0;
 
     do
     {
 		std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        devices = &engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), JsonDevice::getType())});
-        ASSERT_EQ(devices->size(), 1);
+        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("nrp_camera::camera", engine->engineName(), JsonDataPack::getType())});
+        ASSERT_EQ(datapacks->size(), 1);
     }
-    while(dynamic_cast<const DeviceInterface&>(*(devices->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
+    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
 	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-	const JsonDevice &camDat = dynamic_cast<const JsonDevice&>(*(devices->at(0)));
+	const JsonDataPack &camDat = dynamic_cast<const JsonDataPack&>(*(datapacks->at(0)));
 
 	ASSERT_EQ(camDat.getData()["image_height"], 240);
 	ASSERT_EQ(camDat.getData()["image_width" ], 320);
@@ -141,19 +141,19 @@ TEST(TestGazeboJSONEngine, JointPlugin)
 
 	ASSERT_NO_THROW(engine->initialize());
 
-	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDevice::getType())});
-	ASSERT_EQ(devices.size(), 1);
+	// Test datapack data getting
+	auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
+	ASSERT_EQ(datapacks.size(), 1);
 
-	const JsonDevice *pJointDev = dynamic_cast<const JsonDevice*>(devices[0].get());
+	const JsonDataPack *pJointDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
 	ASSERT_EQ(pJointDev->getData()["position"], 0);
 
-	// Test device data setting
+	// Test datapack data setting
 	const auto newTargetPos = 2.0f;
 
-	JsonDevice newJointDev(pJointDev->name(), pJointDev->engineName(), new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} }));
+	JsonDataPack newJointDev(pJointDev->name(), pJointDev->engineName(), new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} }));
 
-	ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
+	ASSERT_NO_THROW(engine->sendDataPacksToEngine({&newJointDev}));
 }
 
 TEST(TestGazeboJSONEngine, LinkPlugin)
@@ -176,11 +176,11 @@ TEST(TestGazeboJSONEngine, LinkPlugin)
 
 	ASSERT_NO_THROW(engine->initialize());
 
-	// Test device data getting
-	auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), JsonDevice::getType())});
-	ASSERT_EQ(devices.size(), 1);
+	// Test datapack data getting
+	auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("link_youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
+	ASSERT_EQ(datapacks.size(), 1);
 
-	const JsonDevice *pLinkDev = dynamic_cast<const JsonDevice*>(devices[0].get());
+	const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
 	ASSERT_NE(pLinkDev, nullptr);
 
 	// TODO: Check that link state is correct

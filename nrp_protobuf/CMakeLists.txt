@@ -92,7 +92,7 @@ function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTH
 			math(EXPR msg_pos "${pos}+1")
 			string(SUBSTRING "${LINE}" "${msg_pos}" -1 msg_name)
 			string(APPEND PROTO_BINDING_DEFS "    proto_python_bindings<${package_name}::${msg_name}>::create();\n")
-			string(APPEND PROTO_BINDING_DEFS "    Device<${package_name}::${msg_name}>::create_python(\"${package_name}${msg_name}Device\");\n\n")
+			string(APPEND PROTO_BINDING_DEFS "    DataPack<${package_name}::${msg_name}>::create_python(\"${package_name}${msg_name}DataPack\");\n\n")
 		endif()
 	endforeach()
 

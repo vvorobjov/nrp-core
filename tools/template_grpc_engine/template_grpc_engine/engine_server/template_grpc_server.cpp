@@ -21,7 +21,7 @@
 //
 
 #include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_server.h"
-#include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_device_controller.h"
+#include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_datapack_controller.h"
 
 ${engine_name}GrpcServer::${engine_name}GrpcServer(const std::string &serverAddress,
                                      const std::string &engineName,
@@ -43,13 +43,13 @@ SimulationTime ${engine_name}GrpcServer::runLoopStep(SimulationTime timeStep)
     return simulationTime;
 }
 
-void ${engine_name}GrpcServer::initialize(const nlohmann::json &/*data*/, EngineGrpcServer::lock_t & /*deviceLock*/)
+void ${engine_name}GrpcServer::initialize(const nlohmann::json &/*data*/, EngineGrpcServer::lock_t & /*datapackLock*/)
 {
     std::cout << "Initializing simulation" << std::endl;
 
-    const auto deviceName = "test_device";
+    const auto datapackName = "test_datapack";
 
-    this->registerDeviceNoLock(deviceName, new ${engine_name}GrpcDeviceController(deviceName, this->_engineName));
+    this->registerDataPackNoLock(datapackName, new ${engine_name}GrpcDataPackController(datapackName, this->_engineName));
 
     this->_initRunFlag = true;
 }

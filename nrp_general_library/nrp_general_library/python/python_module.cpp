@@ -26,31 +26,31 @@
 
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
-#include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
-#include "nrp_general_library/transceiver_function/from_engine_device.h"
+#include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
+#include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
 
 namespace python = boost::python;
 
-using DeviceIdentifiers = EngineClientInterface::device_identifiers_set_t;
+using DataPackIdentifiers = EngineClientInterface::datapack_identifiers_set_t;
 
 /*!
- * \brief Dummy alias class for FromEngineDevice, mapped to PreprocessedDevice python decorator
+ * \brief Dummy alias class for FromEngineDataPack, mapped to PreprocessedDataPack python decorator
  *
- * boost::python doesn't allow to map two different names (FromEngineDevice and
- * PreprocessedDevice in our case) to a single C++ class.
- * This class acts as an 'alias' for FromEngineDevice and allows for two python decorators
+ * boost::python doesn't allow to map two different names (FromEngineDataPack and
+ * PreprocessedDataPack in our case) to a single C++ class.
+ * This class acts as an 'alias' for FromEngineDataPack and allows for two python decorators
  * to be mapped to, effectively, a single class.
  *
- * Although FromEngineDevice and PreprocessedDevice are effectively the same class, they are
+ * Although FromEngineDataPack and PreprocessedDataPack are effectively the same class, they are
  * initialized with different arguments in the python constructors.
  */
-class PreprocessedDevice
-    : public FromEngineDevice
+class PreprocessedDataPack
+    : public FromEngineDataPack
 {
-	using FromEngineDevice::FromEngineDevice;
+	using FromEngineDataPack::FromEngineDataPack;
 };
 
 /*!
@@ -70,44 +70,44 @@ class PreprocessingFunction
 	using TransceiverFunction::TransceiverFunction;
 };
 
-struct TransceiverDeviceInterfaceWrapper
-        : TransceiverDeviceInterface, python::wrapper<TransceiverDeviceInterface>
+struct TransceiverDataPackInterfaceWrapper
+        : TransceiverDataPackInterface, python::wrapper<TransceiverDataPackInterface>
 {
 	python::object runTf(python::tuple &args, python::dict &kwargs) override
 	{
 		if(python::override runTf = this->get_override("runTf"))
 			return runTf(*args, **kwargs);
 
-		return TransceiverDeviceInterface::runTf(args, kwargs);
+		return TransceiverDataPackInterface::runTf(args, kwargs);
 	}
 
 	python::object defaultRunTf(python::tuple &args, python::dict &kwargs)
 	{
-		return TransceiverDeviceInterface::runTf(args, kwargs);
+		return TransceiverDataPackInterface::runTf(args, kwargs);
 	}
 
-	EngineClientInterface::device_identifiers_set_t getRequestedDeviceIDs() const override
+	EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
 	{
-		if(python::override getReqIDs = this->get_override("_getRequestedDeviceIDs"))
+		if(python::override getReqIDs = this->get_override("_getRequestedDataPackIDs"))
 			return getReqIDs();
 
-		return TransceiverDeviceInterface::getRequestedDeviceIDs();
+		return TransceiverDataPackInterface::getRequestedDataPackIDs();
 	}
 
-	EngineClientInterface::device_identifiers_set_t defaultGetRequestedDeviceIDs() const
+	EngineClientInterface::datapack_identifiers_set_t defaultGetRequestedDataPackIDs() const
 	{
-		return TransceiverDeviceInterface::getRequestedDeviceIDs();
+		return TransceiverDataPackInterface::getRequestedDataPackIDs();
 	}
 };
 
-inline std::shared_ptr<DeviceIdentifier> genDevID(const std::string &name, const std::string &engineName)
+inline std::shared_ptr<DataPackIdentifier> genDevID(const std::string &name, const std::string &engineName)
 {
-	return std::shared_ptr<DeviceIdentifier>(new DeviceIdentifier(name, engineName, ""));
+	return std::shared_ptr<DataPackIdentifier>(new DataPackIdentifier(name, engineName, ""));
 }
 
-inline std::shared_ptr<DeviceInterface> genDevInterface(const std::string &name, const std::string &engineName)
+inline std::shared_ptr<DataPackInterface> genDevInterface(const std::string &name, const std::string &engineName)
 {
-	return std::shared_ptr<DeviceInterface>(new DeviceInterface(name, engineName, ""));
+	return std::shared_ptr<DataPackInterface>(new DataPackInterface(name, engineName, ""));
 }
 
 using namespace boost::python;
@@ -115,51 +115,51 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 {
-	// DeviceIdentifier
-	class_<DeviceIdentifier>("DeviceIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
+	// DataPackIdentifier
+	class_<DataPackIdentifier>("DataPackIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
 	        .def("__init__", make_constructor(&genDevID))
-	        .def_readwrite("name", &DeviceIdentifier::Name)
-	        .def_readwrite("type", &DeviceIdentifier::Type)
-	        .def_readwrite("engine_name", &DeviceIdentifier::EngineName);
+	        .def_readwrite("name", &DataPackIdentifier::Name)
+	        .def_readwrite("type", &DataPackIdentifier::Type)
+	        .def_readwrite("engine_name", &DataPackIdentifier::EngineName);
 
-	register_ptr_to_python<std::shared_ptr<DeviceIdentifier> >();
-	register_ptr_to_python<std::shared_ptr<const DeviceIdentifier> >();
+	register_ptr_to_python<std::shared_ptr<DataPackIdentifier> >();
+	register_ptr_to_python<std::shared_ptr<const DataPackIdentifier> >();
 
 
-	// DeviceInterface
-	class_<DeviceInterface>("DeviceInterface", init<const std::string &, const std::string&, const std::string&>())
+	// DataPackInterface
+	class_<DataPackInterface>("DataPackInterface", init<const std::string &, const std::string&, const std::string&>())
 	        .def("__init__", make_constructor(&genDevInterface))
-			.def("isEmpty", &DeviceInterface::isEmpty)
-	        .add_property("name", make_function(&DeviceInterface::name, return_value_policy<copy_const_reference>()), &DeviceInterface::setName)
-	        .add_property("type", make_function(&DeviceInterface::type, return_value_policy<copy_const_reference>()), &DeviceInterface::setType)
-	        .add_property("engine_name", make_function(&DeviceInterface::engineName, return_value_policy<copy_const_reference>()), &DeviceInterface::setEngineName)
-	        .add_property("id", make_function(&DeviceInterface::id, return_value_policy<reference_existing_object>()), &DeviceInterface::setID);
+			.def("isEmpty", &DataPackInterface::isEmpty)
+	        .add_property("name", make_function(&DataPackInterface::name, return_value_policy<copy_const_reference>()), &DataPackInterface::setName)
+	        .add_property("type", make_function(&DataPackInterface::type, return_value_policy<copy_const_reference>()), &DataPackInterface::setType)
+	        .add_property("engine_name", make_function(&DataPackInterface::engineName, return_value_policy<copy_const_reference>()), &DataPackInterface::setEngineName)
+	        .add_property("id", make_function(&DataPackInterface::id, return_value_policy<reference_existing_object>()), &DataPackInterface::setID);
 
-	register_ptr_to_python<DeviceInterfaceSharedPtr>();
-	register_ptr_to_python<DeviceInterfaceConstSharedPtr>();
-
-
-	// TransceiverDeviceInterface
-	class_<TransceiverDeviceInterfaceWrapper, boost::noncopyable>("TransceiverDeviceInterface", init<>())
-	        .def("__call__", &TransceiverDeviceInterface::pySetup<TransceiverDeviceInterface>)
-	        .def("runTf", &TransceiverDeviceInterface::runTf, &TransceiverDeviceInterfaceWrapper::defaultRunTf)
-	        .def("getRequestedDeviceIDs", &TransceiverDeviceInterface::getRequestedDeviceIDs, &TransceiverDeviceInterfaceWrapper::defaultGetRequestedDeviceIDs);
-
-	register_ptr_to_python<TransceiverDeviceInterface::shared_ptr>();
-	register_ptr_to_python<TransceiverDeviceInterface::const_shared_ptr>();
+	register_ptr_to_python<DataPackInterfaceSharedPtr>();
+	register_ptr_to_python<DataPackInterfaceConstSharedPtr>();
 
 
-	// FromEngineDevice
-	class_<FromEngineDevice, bases<TransceiverDeviceInterface> >("FromEngineDevice", init<const std::string&, const DeviceIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
-	        .def("__call__", &TransceiverDeviceInterface::pySetup<FromEngineDevice>);
+	// TransceiverDataPackInterface
+	class_<TransceiverDataPackInterfaceWrapper, boost::noncopyable>("TransceiverDataPackInterface", init<>())
+	        .def("__call__", &TransceiverDataPackInterface::pySetup<TransceiverDataPackInterface>)
+	        .def("runTf", &TransceiverDataPackInterface::runTf, &TransceiverDataPackInterfaceWrapper::defaultRunTf)
+	        .def("getRequestedDataPackIDs", &TransceiverDataPackInterface::getRequestedDataPackIDs, &TransceiverDataPackInterfaceWrapper::defaultGetRequestedDataPackIDs);
 
-	// PreprocessedDevice
-	class_<PreprocessedDevice, bases<FromEngineDevice> >("PreprocessedDevice", init<const std::string&, const DeviceIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
-	        .def("__call__", &TransceiverDeviceInterface::pySetup<PreprocessedDevice>);
+	register_ptr_to_python<TransceiverDataPackInterface::shared_ptr>();
+	register_ptr_to_python<TransceiverDataPackInterface::const_shared_ptr>();
+
+
+	// FromEngineDataPack
+	class_<FromEngineDataPack, bases<TransceiverDataPackInterface> >("FromEngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
+	        .def("__call__", &TransceiverDataPackInterface::pySetup<FromEngineDataPack>);
+
+	// PreprocessedDataPack
+	class_<PreprocessedDataPack, bases<FromEngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
+	        .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);
 
 
 	// TransceiverFunction
-	class_<TransceiverFunction, bases<TransceiverDeviceInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
+	class_<TransceiverFunction, bases<TransceiverDataPackInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
 	        .def("__call__", &TransceiverFunction::pySetup)
 	        .def("runTf", &TransceiverFunction::runTf);
 
@@ -167,7 +167,7 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 	register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
 
 	// PreprocessingFunction
-	class_<PreprocessingFunction, bases<TransceiverDeviceInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
+	class_<PreprocessingFunction, bases<TransceiverDataPackInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
 	        .def("__call__", &PreprocessingFunction::pySetup)
 	        .def("runTf", &PreprocessingFunction::runTf);
 

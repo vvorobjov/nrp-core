@@ -42,14 +42,14 @@ struct EngineGRPCConfigConst
 		static constexpr std::string_view EngineNameArg = "engine";
 
 		/*!
-		 * \brief REST Server Route from which to get device information
+		 * \brief REST Server Route from which to get datapack information
 		 */
-		static constexpr std::string_view EngineServerGetDevicesRoute = "/get_device_information";
+		static constexpr std::string_view EngineServerGetDataPacksRoute = "/get_datapack_information";
 
 		/*!
-		 * \brief REST Server Route to which to send device changes
+		 * \brief REST Server Route to which to send datapack changes
 		 */
-		static constexpr std::string_view EngineServerSetDevicesRoute = "/set_device";
+		static constexpr std::string_view EngineServerSetDataPacksRoute = "/set_datapack";
 
 		/*!
 		 * \brief REST Server Route to execute a single loop

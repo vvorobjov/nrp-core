@@ -118,7 +118,7 @@ void EngineJSONServer::startServerAsync()
 
 	if(!this->_serverRunning)
 	{
-		std::unique_lock devLock(this->_deviceLock);
+		std::unique_lock devLock(this->_datapackLock);
 		this->_pEndpoint->serveThreaded();
 		this->_serverRunning = true;
 	}
@@ -145,9 +145,9 @@ void EngineJSONServer::shutdownServer()
 
 	if(this->_serverRunning)
 	{
-		EngineJSONServer::lock_t devLock(this->_deviceLock, std::defer_lock);
+		EngineJSONServer::lock_t devLock(this->_datapackLock, std::defer_lock);
 		if(!devLock.try_lock_for(ShutdownWaitTime))
-			throw NRPException::logCreate("Couldn't get device lock for shutdown");
+			throw NRPException::logCreate("Couldn't get datapack lock for shutdown");
 
 		this->_pEndpoint->shutdown();
 		this->_serverRunning = false;
@@ -167,49 +167,49 @@ std::string EngineJSONServer::serverAddress() const
 	return this->_serverAddress;
 }
 
-void EngineJSONServer::registerDevice(const std::string &deviceName, JsonDeviceController *interface)
+void EngineJSONServer::registerDataPack(const std::string &datapackName, JsonDataPackController *interface)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	EngineJSONServer::lock_t lock(this->_deviceLock);
-	return this->registerDeviceNoLock(deviceName, interface);
+	EngineJSONServer::lock_t lock(this->_datapackLock);
+	return this->registerDataPackNoLock(datapackName, interface);
 }
 
-void EngineJSONServer::registerDeviceNoLock(const std::string &deviceName, JsonDeviceController *interface)
+void EngineJSONServer::registerDataPackNoLock(const std::string &datapackName, JsonDataPackController *interface)
 {	
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	
-	this->_devicesControllers.emplace(deviceName, interface);
+	this->_datapacksControllers.emplace(datapackName, interface);
 }
 
-void EngineJSONServer::clearRegisteredDevices()
+void EngineJSONServer::clearRegisteredDataPacks()
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 	// Do not lock scope. This method is called from the route handlers, which should already have locked down access.
-	//EngineJSONServer::lock_t lock(this->_deviceLock);
+	//EngineJSONServer::lock_t lock(this->_datapackLock);
 
-	this->_devicesControllers.clear();
+	this->_datapacksControllers.clear();
 }
 
-nlohmann::json EngineJSONServer::getDeviceData(const nlohmann::json &reqData)
+nlohmann::json EngineJSONServer::getDataPackData(const nlohmann::json &reqData)
 {
-	// Prevent other device reading/setting calls as well as loop execution
-	EngineJSONServer::lock_t lock(this->_deviceLock);
+	// Prevent other datapack reading/setting calls as well as loop execution
+	EngineJSONServer::lock_t lock(this->_datapackLock);
 
 	json jres;
 
 	for(auto curRequest = reqData.begin(); curRequest != reqData.end(); ++curRequest)
 	{
 		const auto &devName = EngineJSONServer::getIteratorKey(curRequest);
-		const auto devInterface = this->_devicesControllers.find(devName);
+		const auto devInterface = this->_datapacksControllers.find(devName);
 
-		if(devInterface != this->_devicesControllers.end())
+		if(devInterface != this->_datapacksControllers.end())
 		{
-		    auto dev = devInterface->second->getDeviceInformation();
+		    auto dev = devInterface->second->getDataPackInformation();
 
 			if(dev == nullptr)
 			{
-				jres.update(devInterface->second->getEmptyDevice());
+				jres.update(devInterface->second->getEmptyDataPack());
 			}
 			else
 			{
@@ -225,26 +225,26 @@ nlohmann::json EngineJSONServer::getDeviceData(const nlohmann::json &reqData)
 	return jres;
 }
 
-nlohmann::json EngineJSONServer::setDeviceData(const nlohmann::json &reqData)
+nlohmann::json EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
-	// Prevent other device reading/setting calls as well as loop execution
-	EngineJSONServer::lock_t lock(this->_deviceLock);
+	// Prevent other datapack reading/setting calls as well as loop execution
+	EngineJSONServer::lock_t lock(this->_datapackLock);
 
 	json jres;
 	for(nlohmann::json::const_iterator devDataIterator = reqData.begin(); devDataIterator != reqData.end(); ++devDataIterator)
 	{
 		const std::string &devName = EngineJSONServer::getIteratorKey(devDataIterator);
-		const auto devInterface = this->_devicesControllers.find(devName);
+		const auto devInterface = this->_datapacksControllers.find(devName);
 
 		try
 		{
-			if(devInterface != this->_devicesControllers.end())
-				devInterface->second->handleDeviceData(*devDataIterator);
+			if(devInterface != this->_datapacksControllers.end())
+				devInterface->second->handleDataPackData(*devDataIterator);
 			jres[devName] = "";
 		}
 		catch(std::exception &e)
 		{
-			throw NRPException::logCreate(e, "Couldn't handle device " + devName);
+			throw NRPException::logCreate(e, "Couldn't handle datapack " + devName);
 		}
 	}
 
@@ -256,8 +256,8 @@ Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
 	Pistache::Rest::Router router;
-	Pistache::Rest::Routes::Post(router, EngineJSONServer::GetDeviceInformationRoute.data(), Pistache::Rest::Routes::bind(&EngineJSONServer::getDeviceDataHandler, server));
-	Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDeviceRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDeviceHandler, server));
+	Pistache::Rest::Routes::Post(router, EngineJSONServer::GetDataPackInformationRoute.data(), Pistache::Rest::Routes::bind(&EngineJSONServer::getDataPackDataHandler, server));
+	Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDataPackRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDataPackHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::RunLoopStepRoute.data(),          Pistache::Rest::Routes::bind(&EngineJSONServer::runLoopStepHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::InitializeRoute.data(),           Pistache::Rest::Routes::bind(&EngineJSONServer::initializeHandler, server));
 	Pistache::Rest::Routes::Post(router, EngineJSONServer::ResetRoute.data(),                Pistache::Rest::Routes::bind(&EngineJSONServer::resetHandler, server));
@@ -284,13 +284,13 @@ nlohmann::json EngineJSONServer::parseRequest(const Pistache::Rest::Request &req
 	return jrequest;
 }
 
-void EngineJSONServer::getDeviceDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
+void EngineJSONServer::getDataPackDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
 	const json jrequest(this->parseRequest(req, res));
-	res.send(Pistache::Http::Code::Ok, this->getDeviceData(jrequest).dump());
+	res.send(Pistache::Http::Code::Ok, this->getDataPackData(jrequest).dump());
 }
 
-void EngineJSONServer::setDeviceHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
+void EngineJSONServer::setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -310,11 +310,11 @@ void EngineJSONServer::setDeviceHandler(const Pistache::Rest::Request &req, Pist
 
 	try
 	{
-		res.send(Pistache::Http::Code::Ok, this->setDeviceData(jrequest).dump());
+		res.send(Pistache::Http::Code::Ok, this->setDataPackData(jrequest).dump());
 	}
 	catch(std::exception &e)
 	{
-		// Send back error code if device could not be set
+		// Send back error code if datapack could not be set
 		res.send(Pistache::Http::Code::Internal_Server_Error);
 		throw NRPException::logCreate(e.what());
 	}
@@ -351,8 +351,8 @@ void EngineJSONServer::runLoopStepHandler(const Pistache::Rest::Request &req, Pi
 
 	try
 	{
-		// Prevent other device reading/setting calls as well as loop execution
-		EngineJSONServer::lock_t lock(this->_deviceLock);
+		// Prevent other datapack reading/setting calls as well as loop execution
+		EngineJSONServer::lock_t lock(this->_datapackLock);
 
 		const auto retJson(nlohmann::json({{EngineJSONConfigConst::EngineTimeName.data(), (this->runLoopStep(timeStep)).count()}}));
 		res.send(Pistache::Http::Code::Ok, retJson.dump());
@@ -375,8 +375,8 @@ void EngineJSONServer::initializeHandler(const Pistache::Rest::Request &req, Pis
 	json jresp;
 	try
 	{
-		// Prevent other device reading/setting calls as well as loop execution
-		EngineJSONServer::lock_t lock(this->_deviceLock);
+		// Prevent other datapack reading/setting calls as well as loop execution
+		EngineJSONServer::lock_t lock(this->_datapackLock);
 
 		// Run initialization function
 		jresp = this->initialize(jrequest, lock);
@@ -400,8 +400,8 @@ void EngineJSONServer::resetHandler(const Pistache::Rest::Request &req, Pistache
 	json jresp;
 	try
 	{
-		// Prevent other device reading/setting calls as well as loop execution
-		EngineJSONServer::lock_t lock(this->_deviceLock);
+		// Prevent other datapack reading/setting calls as well as loop execution
+		EngineJSONServer::lock_t lock(this->_datapackLock);
 
 		// Run initialization function
 		jresp = this->reset(lock);
@@ -427,8 +427,8 @@ void EngineJSONServer::shutdownHandler(const Pistache::Rest::Request &req, Pista
 	json jresp;
 	try
 	{
-		// Prevent other device reading/setting calls as well as loop execution
-		EngineJSONServer::lock_t lock(this->_deviceLock);
+		// Prevent other datapack reading/setting calls as well as loop execution
+		EngineJSONServer::lock_t lock(this->_datapackLock);
 
 		// Run shutdown function
 		jresp = this->shutdown(jrequest);

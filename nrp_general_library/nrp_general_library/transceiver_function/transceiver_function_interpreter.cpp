@@ -27,26 +27,26 @@
 
 #include <iostream>
 
-TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables)
+TransceiverFunctionData::TransceiverFunctionData(const std::string &_name, const TransceiverDataPackInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::datapack_identifiers_set_t &_datapackIDs, const boost::python::object &_localVariables)
     : Name(_name),
       TransceiverFunction(_transceiverFunction),
-      DeviceIDs(_deviceIDs),
+      DataPackIDs(_datapackIDs),
       LocalVariables(_localVariables)
 {}
 
-void TransceiverFunctionInterpreter::TFExecutionResult::extractDevices()
+void TransceiverFunctionInterpreter::TFExecutionResult::extractDataPacks()
 {
-	// Extract pointers to retrieved devices
-	const auto devListLength = boost::python::len(this->DeviceList);
-	this->Devices.reserve(devListLength);
+	// Extract pointers to retrieved datapacks
+	const auto devListLength = boost::python::len(this->DataPackList);
+	this->DataPacks.reserve(devListLength);
 	for(unsigned int i = 0; i < devListLength; ++i)
 	{
-		this->Devices.push_back(boost::python::extract<DeviceInterface*>(this->DeviceList[i]));
+		this->DataPacks.push_back(boost::python::extract<DataPackInterface*>(this->DataPackList[i]));
 	}
 }
 
-TransceiverFunctionInterpreter::TFExecutionResult::TFExecutionResult(device_list_t &&_deviceList)
-    : DeviceList(_deviceList)
+TransceiverFunctionInterpreter::TFExecutionResult::TFExecutionResult(datapack_list_t &&_datapackList)
+    : DataPackList(_datapackList)
 {}
 
 TransceiverFunctionInterpreter::TransceiverFunctionInterpreter()
@@ -73,24 +73,24 @@ const TransceiverFunctionInterpreter::transceiver_function_datas_t &TransceiverF
 	return this->_transceiverFunctions;
 }
 
-EngineClientInterface::device_identifiers_set_t TransceiverFunctionInterpreter::updateRequestedDeviceIDs() const
+EngineClientInterface::datapack_identifiers_set_t TransceiverFunctionInterpreter::updateRequestedDataPackIDs() const
 {
-	EngineClientInterface::device_identifiers_set_t devIDs;
+	EngineClientInterface::datapack_identifiers_set_t devIDs;
 
-	// Scan all transceiver functions for requested devices
+	// Scan all transceiver functions for requested datapacks
 
 	for(const auto &curData : this->_transceiverFunctions)
 	{
-		auto newDevIDs = curData.second.TransceiverFunction->updateRequestedDeviceIDs();
+		auto newDevIDs = curData.second.TransceiverFunction->updateRequestedDataPackIDs();
 		devIDs.insert(newDevIDs.begin(), newDevIDs.end());
 	}
 
 	return devIDs;
 }
 
-void TransceiverFunctionInterpreter::setEngineDevices(TransceiverFunctionInterpreter::engines_devices_t &&engineDevices)
+void TransceiverFunctionInterpreter::setEngineDataPacks(TransceiverFunctionInterpreter::engines_datapacks_t &&engineDataPacks)
 {
-	this->_engineDevices = std::move(engineDevices);
+	this->_engineDataPacks = std::move(engineDataPacks);
 }
 
 boost::python::object TransceiverFunctionInterpreter::runSingleTransceiverFunction(const std::string &tfName)
@@ -163,7 +163,7 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 		throw NRPException::logCreate("No TF found for " + tf_name);
 
 	// Update transfer function params
-	this->_newTransceiverFunctionIt->second.DeviceIDs      = this->_newTransceiverFunctionIt->second.TransceiverFunction->updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t());
+	this->_newTransceiverFunctionIt->second.DataPackIDs      = this->_newTransceiverFunctionIt->second.TransceiverFunction->updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t());
 	this->_newTransceiverFunctionIt->second.LocalVariables = localVars;
 	this->_newTransceiverFunctionIt->second.Name           = tf_name;
 
@@ -174,13 +174,13 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 }
 
 TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator TransceiverFunctionInterpreter::loadTransceiverFunction(const std::string &tfName,
-																																const TransceiverDeviceInterfaceSharedPtr &transceiverFunction,
+																																const TransceiverDataPackInterfaceSharedPtr &transceiverFunction,
 																																boost::python::object &&localVars)
 {
 	return this->_transceiverFunctions.emplace(transceiverFunction->linkedEngineName(),
 												TransceiverFunctionData(tfName,
 																		transceiverFunction,
-																		transceiverFunction->updateRequestedDeviceIDs(),
+																		transceiverFunction->updateRequestedDataPackIDs(),
 																		std::move(localVars)));
 }
 
@@ -195,7 +195,7 @@ TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator Transceiv
 	return this->loadTransceiverFunction(transceiverFunction);
 }
 
-TransceiverDeviceInterface::shared_ptr *TransceiverFunctionInterpreter::registerNewTransceiverFunction(const std::string &linkedEngine, const TransceiverDeviceInterface::shared_ptr &transceiverFunction)
+TransceiverDataPackInterface::shared_ptr *TransceiverFunctionInterpreter::registerNewTransceiverFunction(const std::string &linkedEngine, const TransceiverDataPackInterface::shared_ptr &transceiverFunction)
 {
 	// Check that no previous TF has not been processed
 	assert(this->_newTransceiverFunctionIt == this->_transceiverFunctions.end());

@@ -8,7 +8,7 @@
 			"EngineName": "${engine_name_lowercase}_engine"
 		}
 	],
-	"DeviceProcessingFunctions": [
+	"DataPackProcessingFunctions": [
 		{
 			"Name": "tf_1",
 			"FileName": "tf_1.py"

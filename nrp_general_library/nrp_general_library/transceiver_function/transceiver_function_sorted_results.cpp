@@ -26,9 +26,9 @@ void TransceiverFunctionSortedResults::addResults(const TransceiverFunctionManag
 {
 	for(const auto &cR : results)
 	{
-		this->_pyList.push_back(cR.DeviceList);
+		this->_pyList.push_back(cR.DataPackList);
 
-		for(DeviceInterface *const pInt : cR.Devices)
+		for(DataPackInterface *const pInt : cR.DataPacks)
 			this->addResult(pInt);
 	}
 }
@@ -38,13 +38,13 @@ TransceiverFunctionSortedResults TransceiverFunctionSortedResults::sortResults(c
 	return TransceiverFunctionSortedResults().sortResults(results);
 }
 
-TransceiverFunctionSortedResults::interface_results_t::iterator TransceiverFunctionSortedResults::addResult(DeviceInterface *result)
+TransceiverFunctionSortedResults::interface_results_t::iterator TransceiverFunctionSortedResults::addResult(DataPackInterface *result)
 {
 	auto mapIterator = this->find(result->engineName());
 	if(mapIterator == this->end())
 	{
 		// Create new interface map if not yet available
-		auto emplaceRes = this->emplace(result->engineName(), devices_t({result}));
+		auto emplaceRes = this->emplace(result->engineName(), datapacks_t({result}));
 		// TODO: Check if emplace was successful (emplace.second)
 
 		mapIterator = emplaceRes.first;

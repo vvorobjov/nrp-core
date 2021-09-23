@@ -7,10 +7,10 @@ The simulation schema contains all the necessary information to initialize and r
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>SimulationTimeout<td>Experiment Timeout (in seconds). It refers to simulation time. 0 means no timeout<td>integer<td>0<td><td>
-<tr><td>SimulationTimestep<td>Time in seconds the simulation advances in each \ref simulation_loop "Simulation Loop"<td>number<td>0.01<td><td>
+<tr><td>SimulationTimestep<td>Time in seconds the simulation advances in each \ref fti_loop "Simulation Loop"<td>number<td>0.01<td><td>
 <tr><td>ProcessLauncherType<td>ProcessLauncher type to be used for launching engine processes<td>string<td>Basic<td><td>
 <tr><td>EngineConfigs<td>Engines that will be started in the experiment<td>\ref engine_base_schema "EngineBase"<td><td>X<td>X
-<tr><td>DeviceProcessingFunctions<td>Transceiver and Preprocessing functions that will be used in the experiment<td>\ref transceiver_function_schema "TransceiverFunction"<td>[]<td><td>X
+<tr><td>DataPackProcessingFunctions<td>Transceiver and Preprocessing functions that will be used in the experiment<td>\ref transceiver_function_schema "TransceiverFunction"<td>[]<td><td>X
 </table>
 
 \section simulation_schema_example Example

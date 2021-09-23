@@ -23,10 +23,10 @@
 import unittest
 import numpy as np
 
-from test_module import JsonDevice
+from test_module import JsonDataPack
 
 
-def test_input(input_device):
+def test_input(input_datapack):
 
     # Create a test case object, so that we can use unittest assertions
 
@@ -35,7 +35,7 @@ def test_input(input_device):
     # Test that all basic types of objects were translated
     # correctly from nlohmann::json into python objects
 
-    data = input_device.data
+    data = input_datapack.data
 
     tc.assertIsNone     (data["testNull"     ])
     tc.assertEqual      (data["testLong"     ], 100)
@@ -49,77 +49,77 @@ def test_input(input_device):
 
 def test_output():
 
-    # Fill the test device with different types of data
+    # Fill the test datapack with different types of data
     # The C++ caller code will test that they were translated
     # correctly from python objects into nlohmann::json
 
-    test_device = JsonDevice("t", "a")
+    test_datapack = JsonDataPack("t", "a")
 
     # Standard python types
 
-    test_device.data["test_null"]       = None
-    test_device.data["test_long"]       = 1
-    test_device.data["test_double"]     = 43.21
-    test_device.data["test_string"]     = "string"
-    test_device.data["test_bool_true"]  = True
-    test_device.data["test_bool_false"] = False
-    test_device.data["test_array"]      = [5, 1, 6]
-    test_device.data["test_tuple"]      = (1, 2, 3)
-    test_device.data["test_object"]     = {'key1': 'value', 'key2': 600}
+    test_datapack.data["test_null"]       = None
+    test_datapack.data["test_long"]       = 1
+    test_datapack.data["test_double"]     = 43.21
+    test_datapack.data["test_string"]     = "string"
+    test_datapack.data["test_bool_true"]  = True
+    test_datapack.data["test_bool_false"] = False
+    test_datapack.data["test_array"]      = [5, 1, 6]
+    test_datapack.data["test_tuple"]      = (1, 2, 3)
+    test_datapack.data["test_object"]     = {'key1': 'value', 'key2': 600}
 
     # Numpy integer arrays
 
-    test_device.data["test_numpy_array_int8" ] = np.array([ 1,  2,  3], dtype="int8")
-    test_device.data["test_numpy_array_int16"] = np.array([ 4,  5,  6], dtype="int16")
-    test_device.data["test_numpy_array_int32"] = np.array([ 7,  8,  9], dtype="int32")
-    test_device.data["test_numpy_array_int64"] = np.array([10, 11, 12], dtype="int64")
+    test_datapack.data["test_numpy_array_int8" ] = np.array([ 1,  2,  3], dtype="int8")
+    test_datapack.data["test_numpy_array_int16"] = np.array([ 4,  5,  6], dtype="int16")
+    test_datapack.data["test_numpy_array_int32"] = np.array([ 7,  8,  9], dtype="int32")
+    test_datapack.data["test_numpy_array_int64"] = np.array([10, 11, 12], dtype="int64")
 
     # Numpy unsigned integer arrays
 
-    test_device.data["test_numpy_array_uint8" ] = np.array([0,  1,  2], dtype="uint8")
-    test_device.data["test_numpy_array_uint16"] = np.array([3,  4,  5], dtype="uint16")
-    test_device.data["test_numpy_array_uint32"] = np.array([6,  7,  8], dtype="uint32")
-    test_device.data["test_numpy_array_uint64"] = np.array([9, 10, 11], dtype="uint64")
+    test_datapack.data["test_numpy_array_uint8" ] = np.array([0,  1,  2], dtype="uint8")
+    test_datapack.data["test_numpy_array_uint16"] = np.array([3,  4,  5], dtype="uint16")
+    test_datapack.data["test_numpy_array_uint32"] = np.array([6,  7,  8], dtype="uint32")
+    test_datapack.data["test_numpy_array_uint64"] = np.array([9, 10, 11], dtype="uint64")
 
     # Numpy floating-point arrays
 
-    test_device.data["test_numpy_array_float32"] = np.array([0.5, 2.3, 3.55], dtype="float32")
-    test_device.data["test_numpy_array_float64"] = np.array([1.5, 2.3, 3.88], dtype="float64")
+    test_datapack.data["test_numpy_array_float32"] = np.array([0.5, 2.3, 3.55], dtype="float32")
+    test_datapack.data["test_numpy_array_float64"] = np.array([1.5, 2.3, 3.88], dtype="float64")
 
-    return test_device
+    return test_datapack
 
 
 def test_numpy_conversion_failure_unsupported_type():
-    test_device = JsonDevice("t", "a")
+    test_datapack = JsonDataPack("t", "a")
 
     # Try to convert a numpy array with unsupported dtype
     # Should throw. The exception should be caught by C++ part of the test
 
-    test_device.data["test_numpy_array_str"] = np.array(["a", "b", "c"], dtype="str")
+    test_datapack.data["test_numpy_array_str"] = np.array(["a", "b", "c"], dtype="str")
 
-    return test_device
+    return test_datapack
 
 
 def test_numpy_conversion_failure_unsupported_nd():
-    test_device = JsonDevice("t", "a")
+    test_datapack = JsonDataPack("t", "a")
 
     # Try to convert a numpy array with unsupported shape (nd != 1)
     # Should throw. The exception should be caught by C++ part of the test
 
-    test_device.data["test_numpy_array"] = np.array([[1, 2], [3, 4]])
+    test_datapack.data["test_numpy_array"] = np.array([[1, 2], [3, 4]])
 
-    return test_device
+    return test_datapack
 
 
-def test_unsupported_json_type_failure(input_device):
+def test_unsupported_json_type_failure(input_datapack):
 
     # Try to access unsupported data type
     # Should throw. The exception should be caught by C++ part of the test
 
-    data = input_device.data["testBinary"]
+    data = input_datapack.data["testBinary"]
 
 import sys
-def test_str_method(input_device):
+def test_str_method(input_datapack):
 
     # Create a test case object, so that we can use unittest assertions
 
@@ -128,7 +128,7 @@ def test_str_method(input_device):
     # Test that all basic types of objects were translated
     # correctly from nlohmann::json into python objects
 
-    data = input_device.data
+    data = input_datapack.data
 
     expected_string = ('{"testArray":[1,0,2],'
                        '"testBinary":{"bytes":[202,254,186,190],"subtype":null},'

@@ -1,6 +1,6 @@
 /*! \page nrp_engines Engine implementations shipped with NRP-core
 
-This page lists \ref engines "Engine" implementations currently available with NRP-core. For each of these implementations, a general description of the provided functionality is offered first, followed by configuration parameters, and finally a list of device types supported by the engine. These implementations therefore provide out-of-the-box functionality for use with NRP-core, and also represent good examples to study for users interested in implementing their own engines.
+This page lists \ref engines "Engine" implementations currently available with NRP-core. For each of these implementations, a general description of the provided functionality is offered first, followed by configuration parameters, and finally a list of datapack types supported by the engine. These implementations therefore provide out-of-the-box functionality for use with NRP-core, and also represent good examples to study for users interested in implementing their own engines.
 
 Additionally, in order to make it easier to implement such new engines, we propose a way to leverage code reusability: for new engine implementations, interested users can therefore refer to one of the available \subpage engine_comm "Engine Communication Protocols". These are Engine templates implementing all aspects of engine client / server communication for a given protocol.
 

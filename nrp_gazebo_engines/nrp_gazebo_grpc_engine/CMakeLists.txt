@@ -88,7 +88,7 @@ target_link_libraries(${LIBRARY_NAME}
 
 
 ##########################################
-## NRPGazeboDevicePythonModule
+## NRPGazeboDataPackPythonModule
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
@@ -123,7 +123,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 if(ENABLE_GAZEBO STREQUAL FULL)
 
 	##########################################
-	## Gazebo Grpc Device Controllers
+	## Gazebo Grpc DataPack Controllers
 	set(NRP_GAZEBO_GRPC_LIB "${NAMESPACE_NAME}::${LIBRARY_NAME}")
 	add_subdirectory(nrp_gazebo_grpc_engine/engine_server)
 
@@ -131,7 +131,7 @@ if(ENABLE_GAZEBO STREQUAL FULL)
 	## Gazebo plugins
 	set(NRP_GAZEBO_LIB_TARGETS
 			"${NAMESPACE_NAME}::${LIBRARY_NAME}"
-			NRPGazeboGrpcDeviceControllers::NRPGazeboGrpcDeviceControllers)
+			NRPGazeboGrpcDataPackControllers::NRPGazeboGrpcDataPackControllers)
 
 	add_subdirectory(gazebo_grpc_plugins)
 

@@ -67,24 +67,24 @@ class PyEngineScript
 		SimulationTime simTime() const;
 
 		/*!
-		 * \brief Register device
-		 * \param deviceName Name of device
+		 * \brief Register datapack
+		 * \param datapackName Name of datapack
 		 */
-		void registerDevice(std::string deviceName);
+		void registerDataPack(std::string datapackName);
 
 		/*!
-		 * \brief Get Device Data
-		 * \param deviceName Name of device
-		 * \return Returns device data
+		 * \brief Get DataPack Data
+		 * \param datapackName Name of datapack
+		 * \return Returns datapack data
 		 */
-		boost::python::object &getDevice(const std::string &deviceName);
+		boost::python::object &getDataPack(const std::string &datapackName);
 
 		/*!
-		 * \brief Set Device Data
-		 * \param deviceName Name of device
-		 * \param data Data to store in device
+		 * \brief Set DataPack Data
+		 * \param datapackName Name of datapack
+		 * \param data Data to store in datapack
 		 */
-		void setDevice(const std::string &deviceName, boost::python::object data);
+		void setDataPack(const std::string &datapackName, boost::python::object data);
 
 		/*!
 		 * \brief Save ptr to PythonJSONServer instance that owns this script
@@ -111,14 +111,14 @@ class PyEngineScript
 		PythonJSONServer *_pServer = nullptr;
 
 		/*!
-		 * \brief Device Controllers
+		 * \brief DataPack Controllers
 		 */
-		std::list<std::shared_ptr<PythonEngineJSONDeviceController>> _deviceControllers;
+		std::list<std::shared_ptr<PythonEngineJSONDataPackController>> _datapackControllers;
 
 		/*!
-		 * \brief Map from keyword to device data
+		 * \brief Map from keyword to datapack data
 		 */
-		std::map<std::string, boost::python::object*> _nameDeviceMap;
+		std::map<std::string, boost::python::object*> _nameDataPackMap;
 };
 
 using PyEngineScriptSharedPtr = PyEngineScript::shared_ptr;

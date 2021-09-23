@@ -23,7 +23,7 @@
 #define NRP_JOINT_CONTROLLER_H
 
 #include "nrp_gazebo_json_engine/config/cmake_constants.h"
-#include "nrp_gazebo_json_engine/engine_server/joint_device_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/joint_datapack_controller.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include <gazebo/gazebo.hh>
@@ -57,7 +57,7 @@ namespace gazebo
 			/*!
 			 * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
 			 */
-			std::list<JointDeviceController> _jointDeviceControllers;
+			std::list<JointDataPackController> _jointDataPackControllers;
 
 			template<class T>
 			static T getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue);

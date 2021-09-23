@@ -34,33 +34,33 @@ pid_t EngineClientInterface::launchEngine()
 	return this->_process->launchEngineProcess(this->engineConfig(), this->engineProcEnvParams(), this->engineProcStartParams());
 }
 
-const EngineClientInterface::devices_t &EngineClientInterface::updateDevicesFromEngine(const EngineClientInterface::device_identifiers_set_t &deviceIdentifiers)
+const EngineClientInterface::datapacks_t &EngineClientInterface::updateDataPacksFromEngine(const EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers)
 {
-	// Merge cached devices into new list
-	this->updateCachedDevices(this->getDevicesFromEngine(deviceIdentifiers));
+	// Merge cached datapacks into new list
+	this->updateCachedDataPacks(this->getDataPacksFromEngine(datapackIdentifiers));
 
-	return this->_deviceCache;
+	return this->_datapackCache;
 }
 
 inline const int &setCmp(int &ref, int val)
 {	return ref=val;	}
 
-void EngineClientInterface::updateCachedDevices(EngineClientInterface::devices_set_t &&devs)
+void EngineClientInterface::updateCachedDataPacks(EngineClientInterface::datapacks_set_t &&devs)
 {
 	size_t i = 0;
 	for(const auto &dev : devs)
 	{
 		int cmp = -1;
-		while(i < this->_deviceCache.size() && setCmp(cmp, this->_deviceCache[i]->name().compare(dev->name())) < 0)
+		while(i < this->_datapackCache.size() && setCmp(cmp, this->_datapackCache[i]->name().compare(dev->name())) < 0)
 			++i;
 
-		// If there's no device with the name in the cache - insert it
-		// It there already is one - replace it, but only with a non-empty device
+		// If there's no datapack with the name in the cache - insert it
+		// It there already is one - replace it, but only with a non-empty datapack
 
 		if(cmp != 0)
-			this->_deviceCache.insert(this->_deviceCache.begin()+i, dev);
+			this->_datapackCache.insert(this->_datapackCache.begin()+i, dev);
 		else if(!dev->isEmpty())
-			this->_deviceCache[i] = dev;
+			this->_datapackCache[i] = dev;
 
 		++i;
 	}

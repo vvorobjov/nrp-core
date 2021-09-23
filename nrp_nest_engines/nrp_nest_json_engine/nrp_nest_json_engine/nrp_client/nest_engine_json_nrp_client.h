@@ -33,7 +33,7 @@
 #include <unistd.h>
 
 /*!
- * \brief NRP - Nest Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ * \brief NRP - Nest Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  */
 class NestEngineJSONNRPClient
 : public EngineJSONNRPClient<NestEngineJSONNRPClient, NestConfigConst::EngineSchema>

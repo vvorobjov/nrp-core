@@ -22,7 +22,7 @@
 #ifndef TEST_ENV_CMAKE_H
 #define TEST_ENV_CMAKE_H
 
-//#include "nrp_general_library/device_interface/device.h"
+//#include "nrp_general_library/datapack_interface/datapack.h"
 
 #define TEST_TRANSCEIVER_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function.py"
 #define TEST_TRANSCEIVER_FCN2_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function2.py"
@@ -51,7 +51,7 @@
 
 #define TEST_MPI_COMMUNICATION_PROC "@CMAKE_CURRENT_BINARY_DIR@/@TEST_MPI_COMMUNICATION@"
 #define TEST_MPI_COMM_STR "teststr"
-#define TEST_MPI_COMM_DEVID DeviceIdentifier("name", "engine", "type")
-#define TEST_MPI_COMM_DEV1 TestDevice1(3, "ret", boost::python::dict())
+#define TEST_MPI_COMM_DEVID DataPackIdentifier("name", "engine", "type")
+#define TEST_MPI_COMM_DEV1 TestDataPack1(3, "ret", boost::python::dict())
 
 #endif // TEST_ENV_CMAKE_H

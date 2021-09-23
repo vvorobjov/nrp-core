@@ -6,5 +6,5 @@
 			"EngineName": "test"
 		}
 	],
-	"DeviceProcessingFunctions" : []
+	"DataPackProcessingFunctions" : []
 }

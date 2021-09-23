@@ -39,7 +39,7 @@
  * The class is an instance of gRPC Service, which means that it will have a pool of worker threads.
  * Every request coming from the client will be handled by a separate thread from the pool.
  * The natural approach to request handling would be to call proper methods of the SimulationManager directly
- * from the callbacks (for example, SimulationManager::initSimulationLoop() from NrpCoreServer::init()).
+ * from the callbacks (for example, SimulationManager::initFTILoop() from NrpCoreServer::init()).
  * This proved to cause problems with certain python libraries, like OpenCV, that may be used in the transceiver functions.
  * The problem seems to arise from the fact, that the python code was executed in a worker thread, and not
  * in the thread that spawned the python interpreter (the main thread of NRP Core). The solution is to create

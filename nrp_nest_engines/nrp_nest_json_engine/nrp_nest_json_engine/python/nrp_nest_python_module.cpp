@@ -24,29 +24,29 @@
 
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_nest_json_engine/config/cmake_constants.h"
-#include "nrp_nest_json_engine/python/create_device_class.h"
+#include "nrp_nest_json_engine/python/create_datapack_class.h"
 
 
 namespace python = boost::python;
 
-static CreateDeviceClass *pCreateDevice = nullptr;
+static CreateDataPackClass *pCreateDataPack = nullptr;
 
-python::object CreateDevice(python::tuple args, python::dict kwargs)
+python::object CreateDataPack(python::tuple args, python::dict kwargs)
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->createAndRegisterDevice(args, kwargs);
+	assert(pCreateDataPack != nullptr);
+	return pCreateDataPack->createAndRegisterDataPack(args, kwargs);
 }
 
-void RegisterDevice(python::str devName, python::object nodeCollection)
+void RegisterDataPack(python::str devName, python::object nodeCollection)
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->registerDevice(devName, nodeCollection);
+	assert(pCreateDataPack != nullptr);
+	return pCreateDataPack->registerDataPack(devName, nodeCollection);
 }
 
 python::dict GetDevMap()
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->pyDevMap();
+	assert(pCreateDataPack != nullptr);
+	return pCreateDataPack->pyDevMap();
 }
 
 BOOST_PYTHON_MODULE(NRP_NEST_PYTHON_MODULE)
@@ -54,23 +54,23 @@ BOOST_PYTHON_MODULE(NRP_NEST_PYTHON_MODULE)
 	// Import General NRP Python Module
 	python::import(PYTHON_MODULE_NAME_STR);
 
-	// Setup CreateDevice and import Nest
-	python::class_<CreateDeviceClass>("__CreateDeviceClass", python::no_init)
-	        .def("CreateDevice", python::raw_function(&CreateDeviceClass::pyCreateDevice))
-	        .def("RegisterDevice", python::raw_function(&CreateDeviceClass::pyRegisterDevice))
-	        .def("GetDevMap", &CreateDeviceClass::pyDevMap);
+	// Setup CreateDataPack and import Nest
+	python::class_<CreateDataPackClass>("__CreateDataPackClass", python::no_init)
+	        .def("CreateDataPack", python::raw_function(&CreateDataPackClass::pyCreateDataPack))
+	        .def("RegisterDataPack", python::raw_function(&CreateDataPackClass::pyRegisterDataPack))
+	        .def("GetDevMap", &CreateDataPackClass::pyDevMap);
 
 	python::dict devMap;
 	python::dict nestDict(python::import("nest").attr("__dict__"));
 
-	python::object pyCreateDevice(CreateDeviceClass(nestDict, devMap));
-	python::scope().attr("__CreateDevice") = pyCreateDevice;
+	python::object pyCreateDataPack(CreateDataPackClass(nestDict, devMap));
+	python::scope().attr("__CreateDataPack") = pyCreateDataPack;
 
-	CreateDeviceClass &createDevice = python::extract<CreateDeviceClass&>(pyCreateDevice);
-	pCreateDevice = &createDevice;
+	CreateDataPackClass &createDataPack = python::extract<CreateDataPackClass&>(pyCreateDataPack);
+	pCreateDataPack = &createDataPack;
 
-	// Setup Nest Create and Register Device Function
-	python::def("CreateDevice", python::raw_function(CreateDevice));
-	python::def("RegisterDevice", RegisterDevice);
+	// Setup Nest Create and Register DataPack Function
+	python::def("CreateDataPack", python::raw_function(CreateDataPack));
+	python::def("RegisterDataPack", RegisterDataPack);
 	python::def("GetDevMap", GetDevMap);
 }

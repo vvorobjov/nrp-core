@@ -20,17 +20,17 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from libNRPPythonModule import *
-from testModule import TestInputDevice, TestOutputDevice
+from testModule import TestInputDataPack, TestOutputDataPack
 
 # Invalid syntax
 fsdavhufdsihjk = jfdaonv
 
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('dev', 'type', 'engine'))
+@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('dev', 'type', 'engine'))
 @TransceiverFunction()
-def transceiver_function(device):
-    test_val = device.test_value
+def transceiver_function(datapack):
+    test_val = datapack.test_value
     
-    ret_dev = TestInputDevice()
+    ret_dev = TestInputDataPack()
     ret_dev.test_value = str(test_val)
     
     return [ret_dev]

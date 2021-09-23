@@ -44,8 +44,8 @@ class ExampleEngineClient
 		 */
 		void shutdown() override;
 
-		void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
-		devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
+		void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) override;
+		datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
 
 		/*!
 		 * \brief Returns start parameters that should be passed to the engine server
@@ -74,8 +74,8 @@ class ExampleEngineClient
 		/*!
 		 * \brief Runs a single step of the simulation
 		 *
-		 * The function will be called every simulation loop, after getDevicesFromEngine and
-		 * before sendDevicesToEngine. It should execute RPC / REST calls that will advance the simulation
+		 * The function will be called every simulation loop, after getDataPacksFromEngine and
+		 * before sendDataPacksToEngine. It should execute RPC / REST calls that will advance the simulation
 		 * by the requested time step, and that will retrieve current simulation time after the current
 		 * step is completed.
 		 *

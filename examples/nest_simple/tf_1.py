@@ -1,11 +1,11 @@
 from NRPPythonModule import *
 from NRPJSONEngineProtocolPython import *
 
-@FromEngineDevice(keyword='voltage', id=DeviceIdentifier('voltage', 'nest'))
+@FromEngineDataPack(keyword='voltage', id=DataPackIdentifier('voltage', 'nest'))
 @TransceiverFunction("nest")
 def transceiver_function(voltage):
   print(voltage.data[0]["events"])
-  noise_device = JsonDevice("noise", "nest")
-  noise_device.data["rate"] = 15000.0
+  noise_datapack = JsonDataPack("noise", "nest")
+  noise_datapack.data["rate"] = 15000.0
 
-  return [ noise_device ]
+  return [ noise_datapack ]

@@ -6,12 +6,12 @@ package Engine;
 
 
 /*
- * Data of a single device sent by server in response to the getDevice command
- * Contains device metadata and data specific to the device type
+ * Data of a single datapack sent by server in response to the getDataPack command
+ * Contains datapack metadata and data specific to the datapack type
  */
-message DeviceMessage
+message DataPackMessage
 {
-    DeviceIdentifier deviceId = 1;
+    DataPackIdentifier datapackId = 1;
 
     oneof data
     {
@@ -23,12 +23,12 @@ message DeviceMessage
 }
 
 /*
- * Device metadata
+ * DataPack metadata
  */
-message DeviceIdentifier
+message DataPackIdentifier
 {
-    string deviceName = 1;
-    string deviceType = 2;
+    string datapackName = 1;
+    string datapackType = 2;
     string engineName = 3;
 }
 

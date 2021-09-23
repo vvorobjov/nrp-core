@@ -21,7 +21,7 @@
 //
 
 #include "nrp_nest_server_engine/nrp_client/nest_engine_server_nrp_client.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
@@ -79,21 +79,21 @@ namespace
 	}
 
 	/*!
-	 * \brief Checks if device can be processed by the engine
+	 * \brief Checks if datapack can be processed by the engine
 	 *
-	 * \param[in] device     Device ID structure to be verified
+	 * \param[in] datapack     DataPack ID structure to be verified
 	 * \param[in] engineName Name of the current engine
 	 *
-	 * \return True if device may be processed by the engine, false otherwise
+	 * \return True if datapack may be processed by the engine, false otherwise
 	 */
-	bool isDeviceTypeValid(const DeviceIdentifier & device, const std::string & engineName)
+	bool isDataPackTypeValid(const DataPackIdentifier & datapack, const std::string & engineName)
 	{
-		// Check if type matches the NestServerDevice type
+		// Check if type matches the NestServerDataPack type
 		// Skip the check if type was not set
 
-		const bool isTypeValid = (device.Type.empty() || device.Type == JsonDevice::getType());
+		const bool isTypeValid = (datapack.Type.empty() || datapack.Type == JsonDataPack::getType());
 
-		return (isTypeValid && device.EngineName == engineName);
+		return (isTypeValid && datapack.EngineName == engineName);
 	}
 
 	/*!
@@ -119,7 +119,7 @@ namespace
 	 * \brief Extracts populations from NEST server response to brain file execution
 	 *
 	 * The NEST server is supposed to return a dictionary names 'populations'. The dictionary
-	 * should contain a mapping of population (device) names to lists of IDs.
+	 * should contain a mapping of population (datapack) names to lists of IDs.
 	 *
 	 * This is a helper function of initialize().
 	 *
@@ -342,70 +342,70 @@ void NestEngineServerNRPClient::shutdown()
 	// Empty
 }
 
-const std::string & NestEngineServerNRPClient::getDeviceIdList(const std::string & deviceName) const
+const std::string & NestEngineServerNRPClient::getDataPackIdList(const std::string & datapackName) const
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	// Check if the device is in the populations map
+	// Check if the datapack is in the populations map
 
-	if(this->_populations.count(deviceName) == 0)
+	if(this->_populations.count(datapackName) == 0)
 	{
-		throw NRPException::logCreate("Device \"" + deviceName + "\" not in populations map");
+		throw NRPException::logCreate("DataPack \"" + datapackName + "\" not in populations map");
 	}
 
-	// Get list of device IDs mapped to this device name
+	// Get list of datapack IDs mapped to this datapack name
 
-	return this->_populations.at(deviceName);
+	return this->_populations.at(datapackName);
 }
 
-EngineClientInterface::devices_set_t NestEngineServerNRPClient::getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers)
+EngineClientInterface::datapacks_set_t NestEngineServerNRPClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	EngineClientInterface::devices_set_t retVals;
+	EngineClientInterface::datapacks_set_t retVals;
 
-	for(const auto &devID : deviceIdentifiers)
+	for(const auto &devID : datapackIdentifiers)
 	{
-		if(isDeviceTypeValid(devID, this->engineName()))
+		if(isDataPackTypeValid(devID, this->engineName()))
 		{
-			const auto deviceName = devID.Name;
+			const auto datapackName = devID.Name;
 			std::string response;
 
 			// Request status of the IDs from the list
 
 			try
 			{
-				response = nestGetStatus(this->serverAddress(), "{\"nodes\":" + getDeviceIdList(deviceName) + "}");
+				response = nestGetStatus(this->serverAddress(), "{\"nodes\":" + getDataPackIdList(datapackName) + "}");
 			}
 			catch(std::exception& e)
 			{
-				throw NRPException::logCreate(e, "Failed to get NEST status for device \"" + deviceName + "\"");
+				throw NRPException::logCreate(e, "Failed to get NEST status for datapack \"" + datapackName + "\"");
 			}
 
-			// Extract device details from the body
-			// Response from GetStatus is an array of JSON objects, which contains device parameters
+			// Extract datapack details from the body
+			// Response from GetStatus is an array of JSON objects, which contains datapack parameters
 
-			retVals.emplace(new JsonDevice(devID.Name, devID.EngineName, new nlohmann::json(nlohmann::json::parse(response))));
+			retVals.emplace(new JsonDataPack(devID.Name, devID.EngineName, new nlohmann::json(nlohmann::json::parse(response))));
 		}
 	}
 
 	return retVals;
 }
 
-void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devicesArray)
+void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	for(DeviceInterface * const device : devicesArray)
+	for(DataPackInterface * const datapack : datapacksArray)
 	{
-		if(isDeviceTypeValid(device->id(), this->engineName()))
+		if(isDataPackTypeValid(datapack->id(), this->engineName()))
 		{
 			// Send command along with parameters to nest
 
-			const auto deviceName = device->name();
+			const auto datapackName = datapack->name();
 
-			std::string setStatusStr = "{\"nodes\":" + getDeviceIdList(deviceName) + ","
-			                           "\"params\":" + ((JsonDevice const *)device)->getData().dump() + "}";
+			std::string setStatusStr = "{\"nodes\":" + getDataPackIdList(datapackName) + ","
+			                           "\"params\":" + ((JsonDataPack const *)datapack)->getData().dump() + "}";
 
 			try
 			{
@@ -413,7 +413,7 @@ void NestEngineServerNRPClient::sendDevicesToEngine(const devices_ptr_t &devices
 			}
 			catch(std::exception& e)
 			{
-				throw NRPException::logCreate(e, "Failed to set NEST status for device\"" + deviceName + "\"");
+				throw NRPException::logCreate(e, "Failed to set NEST status for datapack\"" + datapackName + "\"");
 			}
 		}
 	}

@@ -21,11 +21,11 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_nest_json_engine/config/nest_config.cpp
-	nrp_nest_json_engine/engine_server/nest_engine_device_controller.cpp
-	nrp_nest_json_engine/engine_server/nest_kernel_device_controller.cpp
+	nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.cpp
+	nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.cpp
 	nrp_nest_json_engine/engine_server/nest_json_server.cpp
 	nrp_nest_json_engine/nrp_client/nest_engine_json_nrp_client.cpp
-	nrp_nest_json_engine/python/create_device_class.cpp
+	nrp_nest_json_engine/python/create_datapack_class.cpp
 )
 
 # List of python module build files
@@ -65,7 +65,7 @@ configure_file("nrp_nest_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BIN
 
 
 ##########################################
-# NRPNestDeviceInterface
+# NRPNestDataPackInterface
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)

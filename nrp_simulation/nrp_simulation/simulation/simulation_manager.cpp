@@ -183,12 +183,12 @@ SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
 
 	// Set default values
 
-	json_utils::set_default<std::vector<std::string>>(*config, "DeviceProcessingFunctions", std::vector<std::string>());
+	json_utils::set_default<std::vector<std::string>>(*config, "DataPackProcessingFunctions", std::vector<std::string>());
 
 	return SimulationManager(config);
 }
 
-SimulationLoopConstSharedPtr SimulationManager::simulationLoop() const
+FTILoopConstSharedPtr SimulationManager::simulationLoop() const
 {
 	return this->_loop;
 }
@@ -203,7 +203,7 @@ jsonConstSharedPtr SimulationManager::simulationConfig() const
 	return this->_simConfig;
 }
 
-void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
+void SimulationManager::initFTILoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
                                            const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -213,7 +213,7 @@ void SimulationManager::initSimulationLoop(const EngineLauncherManagerConstShare
 
 	if(this->_loop == nullptr)
 	{
-		this->_loop.reset(new SimulationLoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
+		this->_loop.reset(new FTILoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
 	}
 	else
 	{
@@ -317,11 +317,11 @@ void SimulationManager::shutdownLoop()
 
 }
 
-SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
+FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
 	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	DeviceHandle::engine_interfaces_t engines;
+	DataPackHandle::engine_interfaces_t engines;
 	auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
 	// Create all engines required by simConfig
@@ -350,5 +350,5 @@ SimulationLoop SimulationManager::createSimLoop(const EngineLauncherManagerConst
 		}
 	}
 
-	return SimulationLoop(this->_simConfig, engines);
+	return FTILoop(this->_simConfig, engines);
 }

@@ -31,7 +31,7 @@
 #include <unistd.h>
 
 /*!
- * \brief NRP - Python Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ * \brief NRP - Python Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  */
 class PythonEngineJSONNRPClient
         : public EngineJSONNRPClient<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema>

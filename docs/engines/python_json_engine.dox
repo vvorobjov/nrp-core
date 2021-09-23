@@ -1,6 +1,6 @@
 /*! \page python_json_engine Python JSON Engine
 
-This versatile engine enables users to execute a user-defined python script as an engine server, thus ensuring synchronization and enabling device data transfer with the Simulation loop process. It can be used to integrate any simulator with a Python API in a nrp-core experiment.
+This versatile engine enables users to execute a user-defined python script as an engine server, thus ensuring synchronization and enabling datapack data transfer with the Simulation loop process. It can be used to integrate any simulator with a Python API in a nrp-core experiment.
 
 Engines based on PythonJSONEngine can be implemented as Python classes based on <b>EngineScript</b> (as in the example listed below). To register the engine with the SimulationManager in an experiment, the decorator <b>@RegisterEngine()</b> must be prepended to the class definition.
 
@@ -12,29 +12,29 @@ Engines based on PythonJSONEngine can be implemented as Python classes based on 
 - `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
 - `shutdown()`: executed when the engine is requested to shutdown
 
-Besides, `EngineScript` provides the following ready-to-use methods to handle device communication:
+Besides, `EngineScript` provides the following ready-to-use methods to handle datapack communication:
 
 - `_time()`: returns the internal simulation time of the Engine.
-- `_getDevice(device_name)`: returns the latest value available of a device with name `device_name`
-- `_setDevice(device_name, data)`: sets a new value for a device with name `device_name`. `data` is always a Python dictionary.
-- `_registerDevice(device_name)`: registers a device with the engine. Just registered devices can be `set` and `get`. Under the hood, registered devices are sent to the corresponding EngineClient upon request and their values updated when the EngineClient send them.
+- `_getDataPack(datapack_name)`: returns the latest value available of a datapack with name `datapack_name`
+- `_setDataPack(datapack_name, data)`: sets a new value for a datapack with name `datapack_name`. `data` is always a Python dictionary.
+- `_registerDataPack(datapack_name)`: registers a datapack with the engine. Just registered datapacks can be `set` and `get`. Under the hood, registered datapacks are sent to the corresponding EngineClient upon request and their values updated when the EngineClient send them.
 
 Below is an example of a class inheriting from `EngineScript`. The example is taken from the `examples/tf_exchange` experiment.
 
 \include tf_exchange/engine_1.py
 
-\section python_json_devices Devices
+\section python_json_datapacks DataPacks
 
-The Python JSON engine supports a unique device type: PyObjectDevice. The data contained in this device can be any JSON-serializable Python object; that is, any object that can be decoded/encoded by <a href="https://docs.python.org/3/library/json.html">JSONDecoder/JSONEncoder</a>.
+The Python JSON engine supports a unique datapack type: PyObjectDataPack. The data contained in this datapack can be any JSON-serializable Python object; that is, any object that can be decoded/encoded by <a href="https://docs.python.org/3/library/json.html">JSONDecoder/JSONEncoder</a>.
 
-PyObjectDevice devices can be accessed in TransceiverFunctions using a Python wrapper `PythonDevice`, as shown in this example TF (also taken from `examples/tf_exchange`):
+PyObjectDataPack datapacks can be accessed in TransceiverFunctions using a Python wrapper `PythonDataPack`, as shown in this example TF (also taken from `examples/tf_exchange`):
 
 \include tf_exchange/tf_1.py
 
   <table>
-  <caption id="python_device_attributes_table">PyObjectDevice Attributes</caption>
+  <caption id="python_datapack_attributes_table">PyObjectDataPack Attributes</caption>
   <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
-  <tr><td>data    <td>data contained in the device as a serializable Python object    <td>object <td>boost::python::object
+  <tr><td>data    <td>data contained in the datapack as a serializable Python object    <td>object <td>boost::python::object
   </table>
 
 \section python_json_configuration Engine Configuration Parameters

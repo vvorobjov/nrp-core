@@ -2,15 +2,15 @@
 
 import nest
 import nest.voltage_trace
-from NRPNestJSONPythonModule import RegisterDevice, CreateDevice
+from NRPNestJSONPythonModule import RegisterDataPack, CreateDataPack
 
 nest.set_verbosity("M_WARNING")
 nest.ResetKernel()
 
-noise = CreateDevice("noise", "poisson_generator", 2)
+noise = CreateDataPack("noise", "poisson_generator", 2)
 neuron = nest.Create("iaf_psc_alpha")
 voltmeter = nest.Create("voltmeter")
-RegisterDevice('voltage', voltmeter)
+RegisterDataPack('voltage', voltmeter)
 
 nest.SetStatus(noise, {"rate": 15000.0})
 

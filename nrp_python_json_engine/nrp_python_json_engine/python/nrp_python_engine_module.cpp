@@ -70,9 +70,9 @@ BOOST_PYTHON_MODULE(NRP_PYTHON_ENGINE_MODULE)
 	        .def("runLoop", python::pure_virtual(&PyEngineScriptWrapper::runLoop))
 	        .def("shutdown", &PyEngineScriptWrapper::shutdown, &PyEngineScriptWrapper::defaultShutdown)
 	        .add_property("_time", &PyEngineScript::simTime)
-	        .def("_registerDevice", &PyEngineScript::registerDevice)
-	        .def("_getDevice", &PyEngineScript::getDevice, python::return_value_policy<python::copy_non_const_reference>())
-	        .def("_setDevice", &PyEngineScript::setDevice);
+	        .def("_registerDataPack", &PyEngineScript::registerDataPack)
+	        .def("_getDataPack", &PyEngineScript::getDataPack, python::return_value_policy<python::copy_non_const_reference>())
+	        .def("_setDataPack", &PyEngineScript::setDataPack);
 
 	python::register_ptr_to_python<PyEngineScriptSharedPtr>();
 	python::register_ptr_to_python<PyEngineScriptConstSharedPtr>();

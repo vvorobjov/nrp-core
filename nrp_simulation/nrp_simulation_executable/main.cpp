@@ -90,7 +90,7 @@ static void runServerMode(EngineLauncherManagerSharedPtr & engines,
 			switch(server.getRequestType())
 			{
 				case NrpCoreServer::RequestType::Init:
-					manager.initSimulationLoop(engines, processLaunchers);
+					manager.initFTILoop(engines, processLaunchers);
 					break;
 				case NrpCoreServer::RequestType::RunLoop:
 					manager.runSimulation(server.getNumIterations());
@@ -126,7 +126,7 @@ static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
 {
 	NRPLogger::info("Config file specified, launching...\n");
 
-	manager.initSimulationLoop(engines, processLaunchers);
+	manager.initFTILoop(engines, processLaunchers);
 	manager.runSimulationUntilTimeout();
 	// NRRPLT-8246: uncomment to test reset
 	// manager.resetSimulation();

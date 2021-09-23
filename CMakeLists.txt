@@ -115,7 +115,7 @@ endfunction(add_doxygen_source)
 
 ##########################################
 ## General NRP library
-## Includes components to create new devices and engines
+## Includes components to create new datapacks and engines
 add_subdirectory(nrp_general_library)
 
 ##########################################
@@ -138,7 +138,7 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ## These flags allow to disable the compilation of those parts of nrp-core that depends on or install a specific simulator (eg. gazebo, nest)
 ##
 ## The expected behavior for each of these flags is as follows:
-## - the NRPSimulation is always built regardless of any of the flags values.
+## - the NRPCoreSim is always built regardless of any of the flags values.
 ## - if a flag is set to OFF:
 ##   - the related simulator won't be assumed to be installed in the system, ie. make won't fail if it isn't. Also it won't be installed in the compilation process if this possibility is available (as in the case of nest)
 ##   - The engines connected with this simulator won't be built (nor client nor server components)
@@ -248,12 +248,12 @@ doxygen_add_docs(doxygen
 		# "docs/architecture_overview/cmake_component.dox"
 
 		"docs/architecture_overview/architecture_overview.dox"
-		"docs/architecture_overview/device.dox"
+		"docs/architecture_overview/datapack.dox"
 		"docs/architecture_overview/engine.dox"
 		"docs/architecture_overview/nrp_simulation.dox"
 		"docs/architecture_overview/plugin_system.dox"
 		"docs/architecture_overview/process_launcher.dox"
-		"docs/architecture_overview/simulation_loop.dox"
+		"docs/architecture_overview/fti_loop.dox"
 		"docs/architecture_overview/sync_model_details.dox"
 		"docs/architecture_overview/transceiver_function.dox"
         "docs/architecture_overview/preprocessing_function.dox"
@@ -268,7 +268,7 @@ doxygen_add_docs(doxygen
 		"docs/engines/engines.dox"
 		"docs/engines/engine_comm.dox"
 		"docs/engines/gazebo/gazebo_engine.dox"
-		"docs/engines/gazebo/gazebo_devices.dox"
+		"docs/engines/gazebo/gazebo_datapacks.dox"
 		"docs/engines/gazebo/gazebo_plugins.dox"
 		"docs/engines/nest/nest_engine.dox"
 		"docs/engines/nest/nest_json.dox"

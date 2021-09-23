@@ -21,7 +21,7 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
 	${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_server.cpp
-	${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_device_controller.cpp
+	${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_datapack_controller.cpp
 	${engine_name_lowercase}_grpc_engine/engine_client/${engine_name_lowercase}_grpc_client.cpp
 )
 

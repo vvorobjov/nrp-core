@@ -5,7 +5,7 @@ This file contains the setup of the neuronal network running the Husky experimen
 # pragma: no cover
 
 import nest
-from NRPNestJSONPythonModule import RegisterDevice, CreateDevice
+from NRPNestJSONPythonModule import RegisterDataPack, CreateDataPack
 
 SENSORPARAMS = {'E_L': -60.5,
                 'C_m': 25.0,
@@ -79,15 +79,15 @@ SYN = {'synapse_model': 'base_synapse', 'weight': WEIGHT_GO_ON_TO_RIGHT_ACTOR, '
 nest.Connect(CIRCUIT[5:6], CIRCUIT[7:8], 'all_to_all', SYN)
 
 # Left side poisson generator
-lpg = CreateDevice('lpg', 'poisson_generator')
+lpg = CreateDataPack('lpg', 'poisson_generator')
 
 # Right side poisson generator
-rpg = CreateDevice('rpg', 'poisson_generator')
+rpg = CreateDataPack('rpg', 'poisson_generator')
 
 # Go poisson generator
-gpg = CreateDevice('gpg', 'poisson_generator')
+gpg = CreateDataPack('gpg', 'poisson_generator')
 
-# Connect devices
+# Connect datapacks
 nest.Connect(lpg, CIRCUIT[slice(0, 3, 2)])
 nest.Connect(rpg, CIRCUIT[slice(1, 4, 2)])
 nest.Connect(gpg, CIRCUIT[4])
@@ -107,7 +107,7 @@ nest.Connect(CIRCUIT[7],
              syn_spec={'synapse_model': 'static_synapse', 'weight': 10.0, 'delay': 0.1})
 
 # Register wheel outputs
-RegisterDevice('actors', leaky_cells)
+RegisterDataPack('actors', leaky_cells)
 
 # Simulate
 # sd = nest.Create('spike_recorder')
@@ -126,7 +126,7 @@ RegisterDevice('actors', leaky_cells)
 #     v3.append(leaky_cells[0].get('V_m'))
 #     v4.append(leaky_cells[1].get('V_m'))
 #
-# # nest.raster_plot.from_device(sd, hist=True)
+# # nest.raster_plot.from_datapack(sd, hist=True)
 # # plt.plot(x,v)
 # # plt.plot(x,v2)
 # plt.plot(x,v3, 'b')

@@ -12,5 +12,5 @@
 			"NestInitFileName": "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/nest_simple.py"
 		}
 	],
-	"DeviceProcessingFunctions" : []
+	"DataPackProcessingFunctions" : []
 }

@@ -26,9 +26,9 @@
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 #include "nrp_nest_json_engine/config/cmake_constants.h"
-#include "nrp_nest_json_engine/engine_server/nest_engine_device_controller.h"
-#include "nrp_nest_json_engine/engine_server/nest_kernel_device_controller.h"
-#include "nrp_nest_json_engine/python/create_device_class.h"
+#include "nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.h"
+#include "nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.h"
+#include "nrp_nest_json_engine/python/create_datapack_class.h"
 
 #include "nrp_nest_json_engine/config/nest_config.h"
 
@@ -142,7 +142,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 		return this->formatInitErrorMessage(msg);
 	}
 
-	// Empty device mapping
+	// Empty datapack mapping
 	this->_devMap.clear();
 
 	// Read init file if present
@@ -176,46 +176,46 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 	nlohmann::json jsonDevMap;
 	try
 	{
-		NRPLogger::debug("NestJSONServer: registering devices");
-		// Read device map
+		NRPLogger::debug("NestJSONServer: registering datapacks");
+		// Read datapack map
 		python::dict jsonModule = static_cast<python::dict>(python::import("json").attr("__dict__"));
 		python::object jsonSerialize = jsonModule["dumps"];
 
 		const std::string jsonStr = python::extract<std::string>(jsonSerialize(this->_devMap));
 		jsonDevMap = nlohmann::json::parse(jsonStr);
 
-		// Register devices
+		// Register datapacks
 		this->_devMap = python::dict(this->_pyNRPNest["GetDevMap"]());
 		python::list devMapKeys = this->_devMap.keys();
-		const long numDevices = python::len(devMapKeys);
+		const long numDataPacks = python::len(devMapKeys);
 
-		for(long i=0; i < numDevices; ++i)
+		for(long i=0; i < numDataPacks; ++i)
 		{
 			const python::object &devKey = devMapKeys[i];
 			const std::string devName = python::extract<std::string>(python::str(devKey));
 			python::object devNodes = this->_devMap[devKey];
-			NRPLogger::debug("NestJSONServer: registering device {:d} {}", i, devName);
+			NRPLogger::debug("NestJSONServer: registering datapack {:d} {}", i, devName);
 
-			auto devController = std::shared_ptr<NestEngineJSONDeviceController>(new
-			            NestEngineJSONDeviceController(JsonDevice::createID(devName, data.at("EngineName")),
+			auto devController = std::shared_ptr<NestEngineJSONDataPackController>(new
+			            NestEngineJSONDataPackController(JsonDataPack::createID(devName, data.at("EngineName")),
 												 devNodes, this->_pyNest));
 
-			this->_deviceControllerPtrs.push_back(devController);
-			this->registerDeviceNoLock(devName, devController.get());
-			NRPLogger::debug("NestJSONServer: device {:d} {} is registered", i, devName);
+			this->_datapackControllerPtrs.push_back(devController);
+			this->registerDataPackNoLock(devName, devController.get());
+			NRPLogger::debug("NestJSONServer: datapack {:d} {} is registered", i, devName);
 		}
 
-		// Register the kernel device
+		// Register the kernel datapack
 
-		const auto kernelDeviceName = "kernel";
+		const auto kernelDataPackName = "kernel";
 
-		auto devController = std::shared_ptr<NestKernelDeviceController>(new
-			            NestKernelDeviceController(JsonDevice::createID(kernelDeviceName, data.at("EngineName")), this->_pyNest));
+		auto devController = std::shared_ptr<NestKernelDataPackController>(new
+			            NestKernelDataPackController(JsonDataPack::createID(kernelDataPackName, data.at("EngineName")), this->_pyNest));
 
-		this->_deviceControllerPtrs.push_back(devController);
-		this->registerDeviceNoLock(kernelDeviceName, devController.get());
+		this->_datapackControllerPtrs.push_back(devController);
+		this->registerDataPackNoLock(kernelDataPackName, devController.get());
 
-		NRPLogger::debug("NestJSONServer: device {} is registered", kernelDeviceName);
+		NRPLogger::debug("NestJSONServer: datapack {} is registered", kernelDataPackName);
 	}
 	catch(python::error_already_set &)
 	{
@@ -282,9 +282,9 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
 		this->_pyNest["Cleanup"]();
 	}
 
-	// Remove device controllers
-	this->clearRegisteredDevices();
-	this->_deviceControllerPtrs.clear();
+	// Remove datapack controllers
+	this->clearRegisteredDataPacks();
+	this->_datapackControllerPtrs.clear();
 
 	return nlohmann::json();
 }
@@ -294,14 +294,14 @@ nlohmann::json NestJSONServer::formatInitErrorMessage(const std::string &errMsg)
 	return nlohmann::json({{NestConfigConst::InitFileExecStatus, 0}, {NestConfigConst::ErrorMsg, errMsg}});
 }
 
-nlohmann::json NestJSONServer::getDeviceData(const nlohmann::json &reqData)
+nlohmann::json NestJSONServer::getDataPackData(const nlohmann::json &reqData)
 {
 	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::getDeviceData(reqData);
+	return this->EngineJSONServer::getDataPackData(reqData);
 }
 
-nlohmann::json NestJSONServer::setDeviceData(const nlohmann::json &reqData)
+nlohmann::json NestJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
 	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::setDeviceData(reqData);
+	return this->EngineJSONServer::setDataPackData(reqData);
 }

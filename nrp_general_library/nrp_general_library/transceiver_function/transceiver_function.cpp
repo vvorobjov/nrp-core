@@ -33,7 +33,7 @@ const std::string &TransceiverFunction::linkedEngineName() const
 bool TransceiverFunction::isPrepocessing() const
 {   return this->_isPreprocessing; }
 
-TransceiverDeviceInterface::shared_ptr TransceiverFunction::pySetup(boost::python::object transceiverFunction)
+TransceiverDataPackInterface::shared_ptr TransceiverFunction::pySetup(boost::python::object transceiverFunction)
 {
 	this->_function = transceiverFunction;
 
@@ -57,7 +57,7 @@ void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::obj
 {
     // error msg
     std::string function_type = this->isPrepocessing() ? "Preprocessing" : "Transceiver";
-    std::string error_msg = function_type + " functions must return a list of Devices";
+    std::string error_msg = function_type + " functions must return a list of DataPacks";
 
     // TFs must returns a list
     if(!boost::python::extract<boost::python::list>(tfOutput).check())
@@ -66,32 +66,32 @@ void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::obj
     const auto devListLength = boost::python::len(tfOutput);
     for(unsigned int i = 0; i < devListLength; ++i)
     {
-        // All elements in the list must be devices
-        if (!boost::python::extract<DeviceInterface *>(tfOutput[i]).check())
+        // All elements in the list must be datapacks
+        if (!boost::python::extract<DataPackInterface *>(tfOutput[i]).check())
             throw NRPException::logCreate(error_msg);
-        // If PF, Device and PF have the same Engine
+        // If PF, DataPack and PF have the same Engine
         else if(this->isPrepocessing())
         {
-            DeviceInterface *dev = boost::python::extract<DeviceInterface *>(tfOutput[i]);
+            DataPackInterface *dev = boost::python::extract<DataPackInterface *>(tfOutput[i]);
             if (dev->engineName() != this->linkedEngineName())
                 throw NRPException::logCreate("Preprocessing function is linked to engine \"" + this->linkedEngineName() +
-                                              "\" but its output device \""+ dev->name() + "\" is linked to engine \"" + dev->engineName() +
-                                              "\". Preprocessing functions can just return devices to their linked engines");
+                                              "\" but its output datapack \""+ dev->name() + "\" is linked to engine \"" + dev->engineName() +
+                                              "\". Preprocessing functions can just return datapacks to their linked engines");
         }
     }
 }
 
-EngineClientInterface::device_identifiers_set_t TransceiverFunction::getRequestedDeviceIDs() const
+EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::getRequestedDataPackIDs() const
 {
-	return EngineClientInterface::device_identifiers_set_t();
+	return EngineClientInterface::datapack_identifiers_set_t();
 }
 
-EngineClientInterface::device_identifiers_set_t TransceiverFunction::updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs) const
+EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
 {
-	return std::move(deviceIDs);
+	return std::move(datapackIDs);
 }
 
-TransceiverDeviceInterface::shared_ptr *TransceiverFunction::getTFInterpreterRegistry()
+TransceiverDataPackInterface::shared_ptr *TransceiverFunction::getTFInterpreterRegistry()
 {
 	return this->_tfInterpreterRegistryPtr;
 }

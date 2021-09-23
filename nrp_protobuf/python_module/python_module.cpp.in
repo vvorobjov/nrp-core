@@ -1,7 +1,7 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
 
 #include "nrp_protobuf/config/cmake_constants.h"
 #include "proto_python_bindings/proto_python_bindings.h"
@@ -24,7 +24,7 @@ BOOST_PYTHON_MODULE(PROTO_PYTHON_MODULE_NAME) {
     RepeatedScalarFieldProxy::create();
     RepeatedScalarFieldIterProxy::create();
 
-    // Proto msg and related Device class python bindings goes below
+    // Proto msg and related DataPack class python bindings goes below
 @PROTO_PYTHON_BODY_STR@
 
 }

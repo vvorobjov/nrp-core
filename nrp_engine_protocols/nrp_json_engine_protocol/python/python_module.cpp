@@ -24,8 +24,8 @@
 #include <nlohmann/json.hpp>
 
 #include "nrp_json_engine_protocol/config/cmake_constants.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_converter.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
 
 #include "nrp_general_library/config/cmake_constants.h"
 
@@ -85,7 +85,7 @@ BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
         .def("__setitem__", &nlohmannJsonSetItem)
         .def("__str__",     &nlohmannJsonDump);
 
-    JsonDevice::create_python("JsonDevice");
+    JsonDataPack::create_python("JsonDataPack");
 }
 
 // EOF

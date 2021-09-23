@@ -25,7 +25,7 @@
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
 
-#include "nrp_general_library/device_interface/device_interface.h"
+#include "nrp_general_library/datapack_interface/datapack_interface.h"
 
 /*!
  *  \brief Singleton. Creates an HTTP REST server to register newly created EngineJSONServers and store their addresses
@@ -48,7 +48,7 @@ class EngineJSONRegistrationServer
 			    EngineJSONRegistrationServer *_pServer = nullptr;
 		};
 
-		using engine_name_t = decltype(DeviceIdentifier::EngineName);
+		using engine_name_t = decltype(DataPackIdentifier::EngineName);
 
 	public:
 		/*!
@@ -169,7 +169,7 @@ class EngineJSONRegistrationServer
 		/*!
 		 * \brief Already registered addresses
 		 */
-		std::map<decltype(DeviceIdentifier::EngineName), std::string> _registeredAddresses;
+		std::map<decltype(DataPackIdentifier::EngineName), std::string> _registeredAddresses;
 
 		/*!
 		 * \brief Only instance of this server

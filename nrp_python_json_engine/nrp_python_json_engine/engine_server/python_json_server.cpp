@@ -26,7 +26,7 @@
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 #include "nrp_python_json_engine/config/cmake_constants.h"
-#include "nrp_python_json_engine/engine_server/python_engine_json_device_controller.h"
+#include "nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.h"
 #include "nrp_python_json_engine/python/py_engine_script.h"
 
 #include <fstream>
@@ -207,9 +207,9 @@ nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
 		}
 	}
 
-	// Remove device controllers
-	this->clearRegisteredDevices();
-	this->_deviceControllerPtrs.clear();
+	// Remove datapack controllers
+	this->clearRegisteredDataPacks();
+	this->_datapackControllerPtrs.clear();
 
 	return nlohmann::json();
 }
@@ -237,14 +237,14 @@ nlohmann::json PythonJSONServer::formatInitErrorMessage(const std::string &errMs
 	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::ErrorMsg, errMsg}});
 }
 
-nlohmann::json PythonJSONServer::getDeviceData(const nlohmann::json &reqData)
+nlohmann::json PythonJSONServer::getDataPackData(const nlohmann::json &reqData)
 {
 	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::getDeviceData(reqData);
+	return this->EngineJSONServer::getDataPackData(reqData);
 }
 
-nlohmann::json PythonJSONServer::setDeviceData(const nlohmann::json &reqData)
+nlohmann::json PythonJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
 	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::setDeviceData(reqData);
+	return this->EngineJSONServer::setDataPackData(reqData);
 }

@@ -57,7 +57,7 @@ export PATH=$PATH:${NRP}/bin
 . /usr/share/gazebo-11/setup.sh
 ```
  * Start the simulation:
-	`NRPSimulation -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
+	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
 
 ## Basic Information
 
@@ -67,9 +67,9 @@ export PATH=$PATH:${NRP}/bin
 	 - nrp_nest_engines: Nest Engine
 	 - nrp_gazebo_engines: Gazebo Engine
 	 - nrp_python_json_engine: Python JSON Engine
-	 - nrp_simulation: Contains the SimulationLoop and -Manager. Creates the NRPSimulation executable
+	 - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
  - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
- - All libraries generate a python module. This can be used to interface with the devices from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
+ - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
 
 ## Examples
 
@@ -77,7 +77,7 @@ export PATH=$PATH:${NRP}/bin
 	 - To run them, first set the environment as described in **Running an experiment**. Then:
 
 			cd examples/<EXAMPLE_NAME>
-			NRPSimulation -c <SIMULATION_CONFIG>
+			NRPCoreSim -c <SIMULATION_CONFIG>
 			
 	 - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
 

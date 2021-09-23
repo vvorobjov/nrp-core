@@ -3,7 +3,7 @@ syntax = "proto3";
 package Gazebo;
 
 /*
- * Data coming from gazebo camera device
+ * Data coming from gazebo camera datapack
  */
 message Camera
 {
@@ -14,7 +14,7 @@ message Camera
 }
 
 /*
- * Data coming from gazebo link device
+ * Data coming from gazebo link datapack
  */
 message Link
 {
@@ -25,7 +25,7 @@ message Link
 }
 
 /*
- * Data coming from gazebo joint device
+ * Data coming from gazebo joint datapack
  */
 message Joint
 {

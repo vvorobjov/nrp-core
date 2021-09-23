@@ -19,14 +19,14 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from NRPPythonModule import *
-from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
+from NRPGeneralPythonTestModule import TestInputDataPack, TestOutputDataPack
 
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('pf_input', 'engine', 'type'))
+@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
 @PreprocessingFunction("engine")
-def transceiver_function(device):
-    test_val = device.test_value
+def transceiver_function(datapack):
+    test_val = datapack.test_value
     
-    ret_dev = PythonDevice("tf_input_preprocessing", "another_engine")
+    ret_dev = PythonDataPack("tf_input_preprocessing", "another_engine")
     ret_dev.data = {"test_value" : str(test_val + 1)}
     
     return [ret_dev]

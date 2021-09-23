@@ -16,12 +16,12 @@ expected_results = []
 with open('expected_results.txt', 'r') as fd:
     expected_results = fd.readlines()
 
-@FromEngineDevice(keyword='device_python1', id=DeviceIdentifier('device1', 'python_1'))
-@FromEngineDevice(keyword='device_python2', id=DeviceIdentifier('device2', 'python_2'))
-@FromEngineDevice(keyword='nest_kernel',    id=DeviceIdentifier('kernel', 'nest'))
-@FromEngineDevice(keyword='device_python3', id=DeviceIdentifier('device3', 'python_3'))
+@FromEngineDataPack(keyword='datapack_python1', id=DataPackIdentifier('datapack1', 'python_1'))
+@FromEngineDataPack(keyword='datapack_python2', id=DataPackIdentifier('datapack2', 'python_2'))
+@FromEngineDataPack(keyword='nest_kernel',    id=DataPackIdentifier('kernel', 'nest'))
+@FromEngineDataPack(keyword='datapack_python3', id=DataPackIdentifier('datapack3', 'python_3'))
 @TransceiverFunction("python_1")
-def transceiver_function(device_python1, device_python2, device_python3, nest_kernel):
+def transceiver_function(datapack_python1, datapack_python2, datapack_python3, nest_kernel):
     """The main transceiver function of the test, performs the actual testing
 
     There are 4 engines in the test. Every engine is running with a timestep
@@ -40,13 +40,13 @@ def transceiver_function(device_python1, device_python2, device_python3, nest_ke
 
     # Update engine times for all engines
     # This must be done in the fastest-running transceiver function in order to check
-    # if the devices from the slower-running engines aren't updated more frequently
+    # if the datapacks from the slower-running engines aren't updated more frequently
     # than expected
 
-    engine_times[0] = device_python1.data["time"]
-    engine_times[1] = device_python2.data["time"]
+    engine_times[0] = datapack_python1.data["time"]
+    engine_times[1] = datapack_python2.data["time"]
     engine_times[2] = int(nest_kernel.data["biological_time"] * 1e6)
-    engine_times[3] = device_python3.data["time"]
+    engine_times[3] = datapack_python3.data["time"]
 
     # Print values from current iterations for all engines
 

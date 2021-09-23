@@ -29,15 +29,15 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(TEST_PYTHON_MODULE_NAME)
 {
-	class_<TestOutputDevice, bases<DeviceInterface> >("TestOutputDevice", init<>())
-	        .def_readwrite("test_value", &TestOutputDevice::TestValue);
+	class_<TestOutputDataPack, bases<DataPackInterface> >("TestOutputDataPack", init<>())
+	        .def_readwrite("test_value", &TestOutputDataPack::TestValue);
 
-	python::register_ptr_to_python<std::shared_ptr<TestOutputDevice> >();
-	python::register_ptr_to_python<std::shared_ptr<const TestOutputDevice> >();
+	python::register_ptr_to_python<std::shared_ptr<TestOutputDataPack> >();
+	python::register_ptr_to_python<std::shared_ptr<const TestOutputDataPack> >();
 
-	class_<TestInputDevice, bases<DeviceInterface> >("TestInputDevice", init<>())
-	        .def_readwrite("test_value", &TestInputDevice::TestValue);
+	class_<TestInputDataPack, bases<DataPackInterface> >("TestInputDataPack", init<>())
+	        .def_readwrite("test_value", &TestInputDataPack::TestValue);
 
-	python::register_ptr_to_python<std::shared_ptr<const TestInputDevice> >();
-	python::register_ptr_to_python<std::shared_ptr<TestInputDevice> >();
+	python::register_ptr_to_python<std::shared_ptr<const TestInputDataPack> >();
+	python::register_ptr_to_python<std::shared_ptr<TestInputDataPack> >();
 }

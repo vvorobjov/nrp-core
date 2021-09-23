@@ -13,8 +13,8 @@ service EngineGrpcService
     rpc init        (InitRequest)        returns (InitReply)        {}
     rpc shutdown    (ShutdownRequest)    returns (ShutdownReply)    {}
     rpc runLoopStep (RunLoopStepRequest) returns (RunLoopStepReply) {}
-    rpc setDevice   (SetDeviceRequest)   returns (SetDeviceReply)   {}
-    rpc getDevice   (GetDeviceRequest)   returns (GetDeviceReply)   {}
+    rpc setDataPack   (SetDataPackRequest)   returns (SetDataPackReply)   {}
+    rpc getDataPack   (GetDataPackRequest)   returns (GetDataPackReply)   {}
     rpc resetHandle (ResetRequest)       returns (ResetReply)       {}
 }
 
@@ -71,38 +71,38 @@ message RunLoopStepReply
 }
 
 /*
- * Message sent by client with the setDevice command
- * Contains data for multiple devices
+ * Message sent by client with the setDataPack command
+ * Contains data for multiple datapacks
  */
-message SetDeviceRequest
+message SetDataPackRequest
 {
-    repeated Engine.DeviceMessage request = 1;
+    repeated Engine.DataPackMessage request = 1;
 }
 
 /*
- * Server's response to the setDevice command
+ * Server's response to the setDataPack command
  */
-message SetDeviceReply
+message SetDataPackReply
 {
     // Empty
 }
 
 /*
- * Message sent by client with the getDevice command
- * Contains metadata of multiple devices
+ * Message sent by client with the getDataPack command
+ * Contains metadata of multiple datapacks
  */
-message GetDeviceRequest
+message GetDataPackRequest
 {
-    repeated Engine.DeviceIdentifier deviceId = 1;
+    repeated Engine.DataPackIdentifier datapackId = 1;
 }
 
 /*
- * Server's response to the getDevice command
- * Contains data of multiple devices
+ * Server's response to the getDataPack command
+ * Contains data of multiple datapacks
  */
-message GetDeviceReply
+message GetDataPackReply
 {
-    repeated Engine.DeviceMessage reply = 1;
+    repeated Engine.DataPackMessage reply = 1;
 }
 
 /*

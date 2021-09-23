@@ -69,7 +69,7 @@ void GazeboEngineGrpcNRPClient::reset()
 		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
 	}
 
-    this->_deviceCache.clear();
+    this->_datapackCache.clear();
 
     this->resetEngineTime();
 }

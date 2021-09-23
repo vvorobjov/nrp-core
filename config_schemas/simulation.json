@@ -26,7 +26,7 @@
       "minItems": 1,
       "description": "Engines that will be started in the experiment"
     },
-    "DeviceProcessingFunctions" : {
+    "DataPackProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
       "description": "Transceiver and Preprocessing functions that will be used in the experiment"

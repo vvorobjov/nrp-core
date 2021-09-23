@@ -28,8 +28,8 @@ To run a single test or a group of tests you can use the ctest regex (-R) option
 (-VV runs the tests in verbose mode):
 
 \code{.sh}
-ctest -VV -R SimulationLoopTest.RunLoop  # Run a single test from the SimulationLoop group
-ctest -VV -R SimulationLoopTest          # Run all tests from the SimulationLoop group
+ctest -VV -R FTILoopTest.RunLoop  # Run a single test from the FTILoop group
+ctest -VV -R FTILoopTest          # Run all tests from the FTILoop group
 \endcode
 
 Every NRP Core module should have its own tests compiled into a single executable.
@@ -49,7 +49,7 @@ which should give an output similar to this:
 ./nrp_general_library/NRPGeneralLibraryTests
 ./nrp_gazebo_engines/nrp_gazebo_grpc_engine/NRPGazeboGrpcEngineTests
 ./nrp_gazebo_engines/nrp_gazebo_json_engine/NRPGazeboJSONEngineTests
-./nrp_simulation/NRPSimulationTests
+./nrp_simulation/NRPCoreSimTests
 ./nrp_python_json_engine/NRPPythonJSONEngineTests
 ./nrp_nest_engines/nrp_nest_json_engine/NRPNestJSONEngineTests
 \endcode
@@ -63,7 +63,7 @@ To run a single executable, which contains all tests for the module:
 To run a single test you can use the gtest filtering capability:
 
 \code{.sh}
-nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTransceiverFcnDevices
+nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTransceiverFcnDataPacks
 \endcode
 
 
@@ -139,7 +139,7 @@ NRPLogger::NRPLogger(
 
 Note, that using this constructor doesn't allow saving the settings of the logger (`doSavePars = false`). This constructor will always try to load them from the memory.
 
-Currently, only the logger in the NRPSimulation executable is initialized with explicit constructor (which is parametrized by the console parameters). And only this logger tries to save its settings to the shared memory object. 
+Currently, only the logger in the NRPCoreSim executable is initialized with explicit constructor (which is parametrized by the console parameters). And only this logger tries to save its settings to the shared memory object. 
 The other loggers (in engine servers) try to fetch the settings from the shared memory object and apply them. In case they can’t, the default settings are applied. Thus, the child processes of the launcher inherit its logger settings by the following workflow:
 
 1. The launcher creates the first logger and initializes it with parameters from the console (if any, or with default ones if they are absent).

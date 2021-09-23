@@ -21,7 +21,7 @@
 //
 
 #include "${engine_name_lowercase}_json_engine/engine_server/${engine_name_lowercase}_json_server.h"
-#include "${engine_name_lowercase}_json_engine/engine_server/${engine_name_lowercase}_json_device_controller.h"
+#include "${engine_name_lowercase}_json_engine/engine_server/${engine_name_lowercase}_json_datapack_controller.h"
 
 ${engine_name}JSONServer::${engine_name}JSONServer(const std::string &serverAddress,
                                      const std::string &engineName,
@@ -47,16 +47,16 @@ SimulationTime ${engine_name}JSONServer::runLoopStep(SimulationTime timeStep)
     return simulationTime;
 }
 
-nlohmann::json ${engine_name}JSONServer::initialize(const nlohmann::json &/*data*/, EngineJSONServer::lock_t &/*deviceLock*/)
+nlohmann::json ${engine_name}JSONServer::initialize(const nlohmann::json &/*data*/, EngineJSONServer::lock_t &/*datapackLock*/)
 {
     std::cout << "Initializing simulation" << std::endl;
 
-    // Register a device with name "test_device"
+    // Register a datapack with name "test_datapack"
     // This will allow to send data to and from the transceiver function
 
-    const auto deviceName = "test_device";
+    const auto datapackName = "test_datapack";
 
-    this->registerDeviceNoLock(deviceName, new ${engine_name}JSONDeviceController(deviceName, this->_engineName));
+    this->registerDataPackNoLock(datapackName, new ${engine_name}JSONDataPackController(datapackName, this->_engineName));
 
     // Mark initialization as complete
 
@@ -75,7 +75,7 @@ nlohmann::json ${engine_name}JSONServer::shutdown(const nlohmann::json &/*data*/
     return "";
 }
 
-nlohmann::json ${engine_name}JSONServer::reset(EngineJSONServer::lock_t &/*deviceLock*/)
+nlohmann::json ${engine_name}JSONServer::reset(EngineJSONServer::lock_t &/*datapackLock*/)
 {
     std::cout << "Resetting simulation" << std::endl;
     return "";

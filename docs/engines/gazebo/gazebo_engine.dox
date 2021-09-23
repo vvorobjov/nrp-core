@@ -2,10 +2,10 @@
 
 This is an engine implementation that integrates the <a href="http://gazebosim.org/">Gazebo physics simulator</a> in nrp-core: the <a href="http://manpages.ubuntu.com/manpages/focal/man1/gzserver.1.html">gzserver executable</a> is running inside the gazebo engine server process.
 
-The integration of gzserver in nrp-core is implemented through gazebo plugins, which must be used in the gazebo simulation sdf file in order to register the engine with the SimulationManager and setup device communication:
+The integration of gzserver in nrp-core is implemented through gazebo plugins, which must be used in the gazebo simulation sdf file in order to register the engine with the SimulationManager and setup datapack communication:
 
 - A description of the implemented <b>gazebo plugins</b> can be found \subpage gazebo_plugins "here"
-- A description of the <b>device types</b> supported by the gazebo engine can be found \subpage gazebo_devices "here"
+- A description of the <b>datapack types</b> supported by the gazebo engine can be found \subpage gazebo_datapacks "here"
 
 Two implementations of the Gazebo engine are provided. One is based on \ref engine_json and another on \ref engine_grpc. The latter performs much better and it is recommended. The former is provided for situations in which gRPC may not be available. The only modifications required in an experiment to shift from one implementation to another are: 1) change the `engine_type` parameter between "gazebo_grpc" and "gazebo_json"; 2) in the sdf file, change the plugin names.
 

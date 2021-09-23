@@ -32,7 +32,7 @@
 
 
 /*!
- *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ *  \brief NRP - Gazebo Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  */
 class GazeboEngineJSONNRPClient
 : public EngineJSONNRPClient<GazeboEngineJSONNRPClient, GazeboJSONConfigConst::EngineSchema>

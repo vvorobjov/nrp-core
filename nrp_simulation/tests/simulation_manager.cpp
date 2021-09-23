@@ -243,13 +243,13 @@ TEST(SimulationManagerTest, SimulationManagerLoop)
 	// Create brain and physics managers
 
 	// Exception if required brain/physics engine launcher is not added
-	ASSERT_THROW(manager.initSimulationLoop(engines, processManager), std::invalid_argument);
+	ASSERT_THROW(manager.initFTILoop(engines, processManager), std::invalid_argument);
 
 	// Add launchers
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new GazeboEngineGrpcLauncher()));
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new NestEngineJSONLauncher()));
 
-	manager.initSimulationLoop(engines, processManager);
+	manager.initFTILoop(engines, processManager);
 
 	ASSERT_NO_THROW(manager.runSimulation(1));
 }
@@ -278,13 +278,13 @@ TEST(SimulationManagerTest, SimulationManagerLoopReset)
 	// Create brain and physics managers
 
 	// Exception if required brain/physics engine launcher is not added
-	ASSERT_THROW(manager.initSimulationLoop(engines, processManager), std::invalid_argument);
+	ASSERT_THROW(manager.initFTILoop(engines, processManager), std::invalid_argument);
 
 	// Add launchers
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new GazeboEngineGrpcLauncher()));
 	engines->registerLauncher(EngineLauncherInterfaceSharedPtr(new NestEngineJSONLauncher()));
 
-	manager.initSimulationLoop(engines, processManager);
+	manager.initFTILoop(engines, processManager);
 
 	ASSERT_NO_THROW(manager.runSimulation(1));
 	ASSERT_TRUE(manager.resetSimulation());

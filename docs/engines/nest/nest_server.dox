@@ -1,27 +1,27 @@
 /*! \page nest_server NEST Server Engine
 
-This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with NEST 3 together with nrp-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting device data to nest-server using its REST API.
+This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with NEST 3 together with nrp-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting datapack data to nest-server using its REST API.
 
-From a user point of view, this engine is very similar to \ref nest_json. At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling device data transfer.
+From a user point of view, this engine is very similar to \ref nest_json. At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling datapack data transfer.
 
-The main difference is that in this case devices can't be registered from within the aforementioned Python script, as it is done in the case of NestJsonEngine. Instead, users rely on the mechanism provided by nest-server to access population status. A dictionary with name <b>populations</b> can be defined in the python script. Afterwards the keys of this dictionary can be accessed as NestServerDevice devices in TransceiverFunctions. The limitations on the objects that can be used as values in this dictionary will be those imposed by nest-server.
+The main difference is that in this case datapacks can't be registered from within the aforementioned Python script, as it is done in the case of NestJsonEngine. Instead, users rely on the mechanism provided by nest-server to access population status. A dictionary with name <b>populations</b> can be defined in the python script. Afterwards the keys of this dictionary can be accessed as NestServerDataPack datapacks in TransceiverFunctions. The limitations on the objects that can be used as values in this dictionary will be those imposed by nest-server.
 
-\section nest_server_devices Devices
+\section nest_server_datapacks DataPacks
 
-This engine supports a unique device type: NestServerDevice. It contains the status of a set of NEST objects as a list of Python dictionaries.
+This engine supports a unique datapack type: NestServerDataPack. It contains the status of a set of NEST objects as a list of Python dictionaries.
 
-The way to register a NestServerDevice device is adding it to the <b>populations</b> dictionary in the initialization Python script. Afterwards, the status of the value to this key in the dictionary can be accessed or set in TransceiverFunctions.
+The way to register a NestServerDataPack datapack is adding it to the <b>populations</b> dictionary in the initialization Python script. Afterwards, the status of the value to this key in the dictionary can be accessed or set in TransceiverFunctions.
 
-The experiment located in `examples/husky_braitenberg_nest_server` shows how the NEST Server Engine can be configured in nrp-core. It can be observed that it is almost indistinguishable from its \ref nest_json version, which can be found in `examples/husky_braitenberg`. The only differences are that devices are registered through the populations dictionary:
+The experiment located in `examples/husky_braitenberg_nest_server` shows how the NEST Server Engine can be configured in nrp-core. It can be observed that it is almost indistinguishable from its \ref nest_json version, which can be found in `examples/husky_braitenberg`. The only differences are that datapacks are registered through the populations dictionary:
 
 \dontinclude husky_braitenberg_nest_server/braitenberg.py
 \skip populations
 \until }
 
-and the device type in TFs changes to NestServerDevice.
+and the datapack type in TFs changes to NestServerDataPack.
 
   <table>
-  <caption id="nest_server_device_attributes_table">NestServerDevice Attributes</caption>
+  <caption id="nest_server_datapack_attributes_table">NestServerDataPack Attributes</caption>
   <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
   <tr><td>data    <td>Contains the status of one or more NEST objects defined in the "populations" dictionary<td>dict or list <td>boost::python::dict or boost::python::list
   </table>

@@ -26,7 +26,7 @@
 #include <boost/python.hpp>
 #include <nlohmann/json.hpp>
 
-#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 #include "python/python_module.cpp"
 
 using namespace boost;
@@ -115,13 +115,13 @@ python::dict   * JsonConverter::globals = nullptr;
 
 
 /*!
- * \brief Tests conversion from nlohmann::json to python using JsonDevice
+ * \brief Tests conversion from nlohmann::json to python using JsonDataPack
  */
 TEST_F(JsonConverter, TestJsonToPython)
 {
 	try
 	{
-        // Create input device with JSON data
+        // Create input datapack with JSON data
 
         nlohmann::json * inputJson = new nlohmann::json();
         (*inputJson)["testNull"     ] = nullptr;
@@ -133,11 +133,11 @@ TEST_F(JsonConverter, TestJsonToPython)
         (*inputJson)["testArray"    ] = { 1, 0, 2 };
         (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
 		(*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
-        JsonDevice inputDevice("a", "b", inputJson);
+        JsonDataPack inputDataPack("a", "b", inputJson);
 
         // Call the test function
 
-        (*globals)["test_input"](boost::ref(inputDevice));
+        (*globals)["test_input"](boost::ref(inputDataPack));
 	}
 	catch(boost::python::error_already_set &)
 	{
@@ -147,25 +147,25 @@ TEST_F(JsonConverter, TestJsonToPython)
 
 
 /*!
- * \brief Tests failure modes of conversion from nlohmann::json to python using JsonDevice
+ * \brief Tests failure modes of conversion from nlohmann::json to python using JsonDataPack
  */
 TEST_F(JsonConverter, TestJsonToPythonFailures)
 {
-	// Create input device with JSON data
+	// Create input datapack with JSON data
 	// Conversion from binary data is not supported and should throw an exception
 
 	nlohmann::json * inputJson = new nlohmann::json();
 	(*inputJson)["testBinary"] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
-	JsonDevice inputDevice("a", "b", inputJson);
+	JsonDataPack inputDataPack("a", "b", inputJson);
 
 	// Call the test function
 
-	ASSERT_ANY_THROW((*globals)["test_unsupported_json_type_failure"](boost::ref(inputDevice)));
+	ASSERT_ANY_THROW((*globals)["test_unsupported_json_type_failure"](boost::ref(inputDataPack)));
 }
 
 
 /*!
- * \brief Tests conversion from python to nlohmann::json using JsonDevice
+ * \brief Tests conversion from python to nlohmann::json using JsonDataPack
  */
 TEST_F(JsonConverter, TestPythonToJson)
 {
@@ -173,7 +173,7 @@ TEST_F(JsonConverter, TestPythonToJson)
 	{
         // Call the test function
 
-        JsonDevice * res = boost::python::extract<JsonDevice *>((*globals)["test_output"]());
+        JsonDataPack * res = boost::python::extract<JsonDataPack *>((*globals)["test_output"]());
 
 		// Check basic data types
 
@@ -224,7 +224,7 @@ TEST_F(JsonConverter, TestPythonToJson)
 
 
 /*!
- * \brief Tests failure modes of conversion from python to nlohmann::json using JsonDevice
+ * \brief Tests failure modes of conversion from python to nlohmann::json using JsonDataPack
  */
 TEST_F(JsonConverter, TestPythonToJsonFailures)
 {
@@ -236,13 +236,13 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 
 
 /*!
- * \brief Tests __str__ method of JsonDevice
+ * \brief Tests __str__ method of JsonDataPack
  */
 TEST_F(JsonConverter, TestJsonStrMethod)
 {
     try
     {
-        // Create input device with JSON data
+        // Create input datapack with JSON data
 
         nlohmann::json * inputJson = new nlohmann::json();
         (*inputJson)["testNull"     ] = nullptr;
@@ -254,11 +254,11 @@ TEST_F(JsonConverter, TestJsonStrMethod)
         (*inputJson)["testArray"    ] = { 1, 0, 2 };
         (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
         (*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
-        JsonDevice inputDevice("a", "b", inputJson);
+        JsonDataPack inputDataPack("a", "b", inputJson);
 
         // Call the test function
 
-        (*globals)["test_str_method"](boost::ref(inputDevice));
+        (*globals)["test_str_method"](boost::ref(inputDataPack));
     }
     catch(boost::python::error_already_set &)
     {

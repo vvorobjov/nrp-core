@@ -52,10 +52,10 @@ class TransceiverFunctionManager
 		TransceiverFunctionManager(boost::python::dict tfGlobals);
 
 		/*!
-		 * \brief Return list of devices that the TFs request
-		 * \return Returns container with all requested device IDs
+		 * \brief Return list of datapacks that the TFs request
+		 * \return Returns container with all requested datapack IDs
 		 */
-		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs() const;
+		EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs() const;
 
 		/*!
 		 * \brief Load TF from given configuration

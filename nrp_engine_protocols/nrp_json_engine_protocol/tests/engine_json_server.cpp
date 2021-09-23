@@ -24,9 +24,9 @@
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_server.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 
-#include "tests/test_engine_json_device_controllers.h"
+#include "tests/test_engine_json_datapack_controllers.h"
 
 #include <future>
 #include <restclient-cpp/restclient.h>
@@ -86,71 +86,71 @@ TEST(EngineJSONServerTest, Functions)
     const std::string address = "localhost:5434";
 	TestEngineJSONServer server(address);
 
-	// Create test device
+	// Create test datapack
 
-	const std::string deviceName = "test_name";
+	const std::string datapackName = "test_name";
 	const std::string engineName = "test_engine_name";
-	auto data = new nlohmann::json({{deviceName, {{"data", 1}}}});
-	auto dev1 = JsonDevice(deviceName, engineName, data);
+	auto data = new nlohmann::json({{datapackName, {{"data", 1}}}});
+	auto dev1 = JsonDataPack(datapackName, engineName, data);
 
-	// Register device controllers
+	// Register datapack controllers
 
-	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
+	auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+	server.registerDataPack(dev1.name(), &dev1Ctrl);
 
 	// Test setting empty data
 	// The JSON object in the controller should not be updated
 
-	auto retData = server.setDeviceData(nlohmann::json());
+	auto retData = server.setDataPackData(nlohmann::json());
 	ASSERT_FALSE(dev1Ctrl.data().contains("data"));
 	ASSERT_TRUE(retData.empty());
 
-	// Test setting data for an unregistered device
+	// Test setting data for an unregistered datapack
 	// The JSON object in the controller should not be updated
 
-	retData = server.setDeviceData(nlohmann::json({{"fakeDevice", {}}}));
+	retData = server.setDataPackData(nlohmann::json({{"fakeDataPack", {}}}));
 	ASSERT_FALSE(dev1Ctrl.data().contains("data"));
-	ASSERT_STREQ(retData.find("fakeDevice")->get<std::string>().data(), "");
+	ASSERT_STREQ(retData.find("fakeDataPack")->get<std::string>().data(), "");
 	ASSERT_EQ(retData.size(), 1);
 
-	// Test setting data for a registered device
+	// Test setting data for a registered datapack
 	// The JSON object in the controller should be updated
 
-	retData = server.setDeviceData(*data);
+	retData = server.setDataPackData(*data);
 	ASSERT_EQ(retData.size(), 1);
-	ASSERT_TRUE(dev1Ctrl.data().contains(deviceName));
-	ASSERT_EQ(dev1Ctrl.data()[deviceName]["type"       ], JsonDevice::getType());
-	ASSERT_EQ(dev1Ctrl.data()[deviceName]["engine_name"], engineName);
-	ASSERT_EQ(dev1Ctrl.data()[deviceName]["data"       ], dev1.getData()[deviceName]["data"]);
+	ASSERT_TRUE(dev1Ctrl.data().contains(datapackName));
+	ASSERT_EQ(dev1Ctrl.data()[datapackName]["type"       ], JsonDataPack::getType());
+	ASSERT_EQ(dev1Ctrl.data()[datapackName]["engine_name"], engineName);
+	ASSERT_EQ(dev1Ctrl.data()[datapackName]["data"       ], dev1.getData()[datapackName]["data"]);
 
 	// Test getting empty data
 
-	retData = server.getDeviceData(nlohmann::json());
+	retData = server.getDataPackData(nlohmann::json());
 	ASSERT_TRUE(retData.empty());
 
-	// Test getting data for an unregistered device
+	// Test getting data for an unregistered datapack
 	// The response should contain an empty JSON
 
-	retData = server.getDeviceData(nlohmann::json({{"fakeDevice", {}}}));
-	ASSERT_TRUE(retData.find("fakeDevice")->empty());
+	retData = server.getDataPackData(nlohmann::json({{"fakeDataPack", {}}}));
+	ASSERT_TRUE(retData.find("fakeDataPack")->empty());
 	ASSERT_EQ(retData.size(), 1);
 
-	// Test getting data for a registered device
+	// Test getting data for a registered datapack
 	// The response should contain an empty JSON
 
 	auto request = nlohmann::json();
-	request[deviceName] = {{"engine_name", engineName}};
-	retData = server.getDeviceData(request);
+	request[datapackName] = {{"engine_name", engineName}};
+	retData = server.getDataPackData(request);
 	ASSERT_EQ(retData.size(), 1);
 	ASSERT_TRUE(retData.contains("test_name"));
-	ASSERT_EQ(retData[deviceName]["type"       ], JsonDevice::getType());
-	ASSERT_EQ(retData[deviceName]["engine_name"], engineName);
-	ASSERT_EQ(retData[deviceName]["data"       ], (*data)[deviceName]["data"]);
+	ASSERT_EQ(retData[datapackName]["type"       ], JsonDataPack::getType());
+	ASSERT_EQ(retData[datapackName]["engine_name"], engineName);
+	ASSERT_EQ(retData[datapackName]["data"       ], (*data)[datapackName]["data"]);
 
-	// Clear devices
+	// Clear datapacks
 
-	server.clearRegisteredDevices();
-	ASSERT_EQ(server._devicesControllers.size(), 0);
+	server.clearRegisteredDataPacks();
+	ASSERT_EQ(server._datapacksControllers.size(), 0);
 }
 
 TEST(EngineJSONServerTest, HttpRequests)
@@ -158,17 +158,17 @@ TEST(EngineJSONServerTest, HttpRequests)
 	const std::string address = "localhost:5434";
 	TestEngineJSONServer server(address);
 
-	// Create test device
+	// Create test datapack
 
-	const std::string deviceName = "test_name";
+	const std::string datapackName = "test_name";
 	const std::string engineName = "test_engine_name";
-	auto devData = new nlohmann::json({{deviceName, {{"data", 1}}}});
-	auto dev1 = JsonDevice(deviceName, "test_engine_name", devData);
+	auto devData = new nlohmann::json({{datapackName, {{"data", 1}}}});
+	auto dev1 = JsonDataPack(datapackName, "test_engine_name", devData);
 
-	// Register device controllers
+	// Register datapack controllers
 
-	auto dev1Ctrl = TestJSONDeviceController(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
+	auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+	server.registerDataPack(dev1.name(), &dev1Ctrl);
 
 	ASSERT_FALSE(server.isServerRunning());
 	server.startServerAsync();
@@ -190,22 +190,22 @@ TEST(EngineJSONServerTest, HttpRequests)
 
 	// Run set server command
 	auto request = nlohmann::json();
-	request[deviceName] = {{"engine_name", engineName}, {"data", 2}};
-	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerSetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
+	request[datapackName] = {{"engine_name", engineName}, {"data", 2}};
+	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
 	retData = nlohmann::json::parse(resp.body);
-	// Device name with no data should be returned as confirmation
+	// DataPack name with no data should be returned as confirmation
 	ASSERT_EQ(retData.size(), 1);
-	ASSERT_EQ(retData[deviceName], "");
+	ASSERT_EQ(retData[datapackName], "");
 
 	// Run get server command
 	request.clear();
-	request[deviceName] = {{"engine_name", engineName}};
-	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
+	request[datapackName] = {{"engine_name", engineName}};
+	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
 	retData = nlohmann::json::parse(resp.body);
 	ASSERT_EQ(retData.size(), 1);
-	ASSERT_TRUE(retData.contains(deviceName));
-	ASSERT_EQ(retData[deviceName]["type"       ], JsonDevice::getType());
-	ASSERT_EQ(retData[deviceName]["engine_name"], engineName);
-	// We should get the same value as was set by the setDevices function above
-	ASSERT_EQ(retData[deviceName]["data"       ], 2);
+	ASSERT_TRUE(retData.contains(datapackName));
+	ASSERT_EQ(retData[datapackName]["type"       ], JsonDataPack::getType());
+	ASSERT_EQ(retData[datapackName]["engine_name"], engineName);
+	// We should get the same value as was set by the setDataPacks function above
+	ASSERT_EQ(retData[datapackName]["data"       ], 2);
 }

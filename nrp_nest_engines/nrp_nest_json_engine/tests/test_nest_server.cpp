@@ -45,7 +45,7 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_nest";
-    config["NestInitFileName"] = TEST_NEST_DEVICE_FILE_NAME;
+    config["NestInitFileName"] = TEST_NEST_DATAPACK_FILE_NAME;
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
@@ -66,15 +66,15 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
 	SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
 	ASSERT_EQ(server.runLoopStep(timeStep).count(), timeStep.count());
 
-	// Test getDevice REST call EngineServerGetDevicesRoute
+	// Test getDataPack REST call EngineServerGetDataPacksRoute
 	server.startServerAsync();
 
 	auto req = nlohmann::json({{"voltmeter", 0}});
-	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
+	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
 	respParse = nlohmann::json::parse(resp.body);
 
 	// TODO The test is disabled, not sure what the correct behaviour should be
-	/*const std::string jsonDat = respParse["voltmeter"][PyObjectDeviceConst::Object.m_data]["element_type"].get<std::string>();
+	/*const std::string jsonDat = respParse["voltmeter"][PyObjectDataPackConst::Object.m_data]["element_type"].get<std::string>();
 	ASSERT_STREQ(jsonDat.data(), "recorder");*/
 
 	pyState.endAllowThreads();

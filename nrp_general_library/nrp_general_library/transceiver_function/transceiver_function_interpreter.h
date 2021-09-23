@@ -23,7 +23,7 @@
 #define TRANSCEIVER_FUNCTION_INTERPRETER_H
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-#include "nrp_general_library/transceiver_function/transceiver_device_interface.h"
+#include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
 #include <vector>
 #include <map>
@@ -44,12 +44,12 @@ struct TransceiverFunctionData
 	/*!
 	* \brief Pointer to TransceiverFunction
 	*/
-	TransceiverDeviceInterface::shared_ptr TransceiverFunction = nullptr;
+	TransceiverDataPackInterface::shared_ptr TransceiverFunction = nullptr;
 
 	/*!
-	* \brief Devices requested by TF
+	* \brief DataPacks requested by TF
 	*/
-	EngineClientInterface::device_identifiers_set_t DeviceIDs;
+	EngineClientInterface::datapack_identifiers_set_t DataPackIDs;
 
 	/*!
 	* \brief Local variables used by this TransceiverFunction
@@ -57,7 +57,7 @@ struct TransceiverFunctionData
 	boost::python::object LocalVariables;
 
 	TransceiverFunctionData() = default;
-	TransceiverFunctionData(const std::string &_name, const TransceiverDeviceInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::device_identifiers_set_t &_deviceIDs, const boost::python::object &_localVariables);
+	TransceiverFunctionData(const std::string &_name, const TransceiverDataPackInterface::shared_ptr &_transceiverFunction, const EngineClientInterface::datapack_identifiers_set_t &_datapackIDs, const boost::python::object &_localVariables);
 };
 
 /*!
@@ -66,8 +66,8 @@ struct TransceiverFunctionData
 class TransceiverFunctionInterpreter
 {
 	public:
-		using device_list_t = boost::python::list;
-		using engines_devices_t = std::map<std::string, const EngineClientInterface::devices_t*>;
+		using datapack_list_t = boost::python::list;
+		using engines_datapacks_t = std::map<std::string, const EngineClientInterface::datapacks_t*>;
 		using transceiver_function_datas_t = std::multimap<std::string, TransceiverFunctionData>;
 		using linked_tfs_t = std::pair<TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator, TransceiverFunctionInterpreter::transceiver_function_datas_t::iterator>;
 
@@ -77,21 +77,21 @@ class TransceiverFunctionInterpreter
 		struct TFExecutionResult
 		{
 			/*!
-			 * \brief Python Device List
+			 * \brief Python DataPack List
 			 */
-			device_list_t DeviceList;
+			datapack_list_t DataPackList;
 
 			/*!
-			 * \brief Extracted Pointers to devices in DeviceList
+			 * \brief Extracted Pointers to datapacks in DataPackList
 			 */
-			std::vector<DeviceInterface*> Devices;
+			std::vector<DataPackInterface*> DataPacks;
 
 			/*!
-			 * \brief Extract devices from DeviceList and insert them into Devices
+			 * \brief Extract datapacks from DataPackList and insert them into DataPacks
 			 */
-			void extractDevices();
+			void extractDataPacks();
 
-			TFExecutionResult(device_list_t &&_deviceList);
+			TFExecutionResult(datapack_list_t &&_datapackList);
 		};
 
 		TransceiverFunctionInterpreter();
@@ -111,34 +111,34 @@ class TransceiverFunctionInterpreter
 		const transceiver_function_datas_t &getLoadedTransceiverFunctions() const;
 
 		/*!
-		 * \brief Get Device IDs requested by TFs
+		 * \brief Get DataPack IDs requested by TFs
 		 * \return
 		 */
-		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs() const;
+		EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs() const;
 
 		/*!
-		 * \brief Set EngineClientInterface pointers. Used by TransceiverFunctions to access devices
+		 * \brief Set EngineClientInterface pointers. Used by TransceiverFunctions to access datapacks
 		 * \param engines Mapping from engine name to engine ptr
 		 */
-		void setEngineDevices(engines_devices_t &&engineDevices);
+		void setEngineDataPacks(engines_datapacks_t &&engineDataPacks);
 
 		/*!
 		 * \brief Access engine map
 		 */
-		constexpr const engines_devices_t &getEngineDevices() const
-		{	return this->_engineDevices;	}
+		constexpr const engines_datapacks_t &getEngineDataPacks() const
+		{	return this->_engineDataPacks;	}
 
 		/*!
 		 * \brief Execute one transfer function.
 		 * \param tfName Name of function to execute
-		 * \return Returns result of execution. Contains a list of device commands
+		 * \return Returns result of execution. Contains a list of datapack commands
 		 */
 		boost::python::object runSingleTransceiverFunction(const std::string &tfName);
 
 		/*!
 		 * \brief Execute one transfer function
 		 * \param tfData TransceiverFunction to execute
-		 * \return Returns result of execution. Contains a list of device commands
+		 * \return Returns result of execution. Contains a list of datapack commands
 		 */
 		boost::python::object runSingleTransceiverFunction(const TransceiverFunctionData &tfData);
 
@@ -163,7 +163,7 @@ class TransceiverFunctionInterpreter
 		 * \param localVars Local Python variables required by this TF
 		 * \return Returns iterator to loaded TF
 		 */
-		transceiver_function_datas_t::iterator loadTransceiverFunction(const std::string &tfName, const TransceiverDeviceInterfaceSharedPtr &transceiverFunction, boost::python::object &&localVars = boost::python::object());
+		transceiver_function_datas_t::iterator loadTransceiverFunction(const std::string &tfName, const TransceiverDataPackInterfaceSharedPtr &transceiverFunction, boost::python::object &&localVars = boost::python::object());
 
 		/*!
 		 * \brief Updates TF with the given name
@@ -178,9 +178,9 @@ class TransceiverFunctionInterpreter
 		 * \brief Registers a new transfer function. Used by TransceiverFunction to automatically register itself with the interpreter upon creation
 		 * \param linkedEngine Name of linked engine
 		 * \param transceiverFunction Transfer Function to register
-		 * \return Returns pointer to stored location. Used by TransceiverDeviceInterfaceGeneral to automatically update the registered function when an upper decorator runs pySetup
+		 * \return Returns pointer to stored location. Used by TransceiverDataPackInterfaceGeneral to automatically update the registered function when an upper decorator runs pySetup
 		 */
-		TransceiverDeviceInterfaceSharedPtr *registerNewTransceiverFunction(const std::string &linkedEngine, const TransceiverDeviceInterfaceSharedPtr &transceiverFunction);
+		TransceiverDataPackInterfaceSharedPtr *registerNewTransceiverFunction(const std::string &linkedEngine, const TransceiverDataPackInterfaceSharedPtr &transceiverFunction);
 
 	private:
 		/*!
@@ -194,9 +194,9 @@ class TransceiverFunctionInterpreter
 		transceiver_function_datas_t _transceiverFunctions;
 
 		/*!
-		 * \brief Engine Map. From engine name to devices
+		 * \brief Engine Map. From engine name to datapacks
 		 */
-		engines_devices_t _engineDevices;
+		engines_datapacks_t _engineDataPacks;
 
 		/*!
 		 * \brief Pointer to newly created TransceiverFunction

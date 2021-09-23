@@ -31,12 +31,12 @@
 #include <nlohmann/json.hpp>
 
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
-#include "nrp_general_library/engine_interfaces/device_controller.h"
+#include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "proto_python_bindings/proto_field_ops.h"
 
 
-using ProtoDeviceController = DeviceController<google::protobuf::Message>;
+using ProtoDataPackController = DataPackController<google::protobuf::Message>;
 
 using EngineGrpc::EngineGrpcService;
 
@@ -145,38 +145,38 @@ class EngineGrpcServer : public EngineGrpcService::Service
         }
 
         /*!
-         * \brief Registers a device controller with the given name in the engine
+         * \brief Registers a datapack controller with the given name in the engine
          *
-         * \param[in] deviceName       Name of the device to be registered
-         * \param[in] deviceController Pointer to the device controller object that's supposed to be
+         * \param[in] datapackName       Name of the datapack to be registered
+         * \param[in] datapackController Pointer to the datapack controller object that's supposed to be
          *                             registered in the engine
          */
-        void registerDevice(const std::string & deviceName, ProtoDeviceController *interface)
+        void registerDataPack(const std::string & datapackName, ProtoDataPackController *interface)
         {
-            EngineGrpcServer::lock_t lock(this->_deviceLock);
-            this->_devicesControllers.emplace(deviceName, interface);
+            EngineGrpcServer::lock_t lock(this->_datapackLock);
+            this->_datapacksControllers.emplace(datapackName, interface);
         }
 
-        void registerDeviceNoLock(const std::string & deviceName, ProtoDeviceController *interface)
+        void registerDataPackNoLock(const std::string & datapackName, ProtoDataPackController *interface)
         {
-            this->_devicesControllers.emplace(deviceName, interface);
+            this->_datapacksControllers.emplace(datapackName, interface);
         }
 
         // TODO used only in tests, try to remove it?
-        unsigned getNumRegisteredDevices()
+        unsigned getNumRegisteredDataPacks()
         {
-            return this->_devicesControllers.size();
+            return this->_datapacksControllers.size();
         }
 
     protected:
-        mutex_t                       _deviceLock;
-        void clearRegisteredDevices()
+        mutex_t                       _datapackLock;
+        void clearRegisteredDataPacks()
         {
             // TODO Check if it's true
             // Do not lock scope. This method is called from the route handlers, which should already have locked down access.
-            //EngineJSONServer::lock_t lock(this->_deviceLock);
+            //EngineJSONServer::lock_t lock(this->_datapackLock);
 
-            this->_devicesControllers.clear();
+            this->_datapacksControllers.clear();
         }
 
     private:
@@ -200,7 +200,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
          * \brief Name of the simulation engine
          *
          * Must be the same on the server and the client side. It should be imprinted
-         * in the device metadata, which allows for additional consistency checks.
+         * in the datapack metadata, which allows for additional consistency checks.
          */
         std::string _engineName;
 
@@ -210,17 +210,17 @@ class EngineGrpcServer : public EngineGrpcService::Service
         std::unique_ptr<grpc::Server> _server;
 
         /*!
-         * \brief Map of device names and device controllers used by the engine
+         * \brief Map of datapack names and datapack controllers used by the engine
          */
-         std::map<std::string, ProtoDeviceController*> _devicesControllers;
+         std::map<std::string, ProtoDataPackController*> _datapacksControllers;
 
         /*!
          * \brief Initializes the simulation
          *
          * \param[in] data       Simulation configuration data
-         * \param[in] deviceLock ???
+         * \param[in] datapackLock ???
          */
-        virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &deviceLock) = 0;
+        virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) = 0;
 
         /*!
          * \brief Resets the simulation
@@ -260,7 +260,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_deviceLock);
+                EngineGrpcServer::lock_t lock(this->_datapackLock);
 
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
@@ -295,7 +295,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             try
             {
-                EngineGrpcServer::lock_t lock(this->_deviceLock);
+                EngineGrpcServer::lock_t lock(this->_datapackLock);
                 
                 // Run engine-specific reset function
                 this->reset();
@@ -326,7 +326,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_deviceLock);
+                EngineGrpcServer::lock_t lock(this->_datapackLock);
 
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
@@ -360,7 +360,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_deviceLock);
+                EngineGrpcServer::lock_t lock(this->_datapackLock);
 
                 int64_t engineTime = (this->runLoopStep(SimulationTime(request->timestep()))).count();
 
@@ -375,124 +375,124 @@ class EngineGrpcServer : public EngineGrpcService::Service
         }
 
         /*!
-         * \brief Sets received data into proper devices
+         * \brief Sets received data into proper datapacks
          *
-         * The function implements the setDevice method of the EngineGrpcService.
-         * It acts as a wrapper around the virtual setDeviceData method, which should set received data into proper devices.
+         * The function implements the setDataPack method of the EngineGrpcService.
+         * It acts as a wrapper around the virtual setDataPackData method, which should set received data into proper datapacks.
          * On error, it will return a status object with error message and grpc::StatusCode::CANCELLED error code.
          *
          * \param      context Pointer to gRPC server context structure
-         * \param[in]  request Pointer to protobuf setDevice request message. Contains device data and metadata
-         * \param[out] reply   Pointer to protobuf setDevice reply message. Currently no data is returned.
+         * \param[in]  request Pointer to protobuf setDataPack request message. Contains datapack data and metadata
+         * \param[out] reply   Pointer to protobuf setDataPack reply message. Currently no data is returned.
          *
          * \return gRPC request status
          */
-        grpc::Status setDevice(grpc::ServerContext * /*context*/, const EngineGrpc::SetDeviceRequest * request, EngineGrpc::SetDeviceReply * /*reply*/) override
+        grpc::Status setDataPack(grpc::ServerContext * /*context*/, const EngineGrpc::SetDataPackRequest * request, EngineGrpc::SetDataPackReply * /*reply*/) override
         {
             try
             {
-                this->setDeviceData(*request);
+                this->setDataPackData(*request);
             }
             catch(const std::exception &e)
             {
-                return handleGrpcError("Error while executing setDevice", e.what());
+                return handleGrpcError("Error while executing setDataPack", e.what());
             }
 
             return grpc::Status::OK;
         }
 
         /*!
-         * \brief Gets data from requested devices
+         * \brief Gets data from requested datapacks
          *
-         * The function implements the getDevice method of the EngineGrpcService.
-         * It acts as a wrapper around the virtual getDeviceData method, which should get data from requested devices.
+         * The function implements the getDataPack method of the EngineGrpcService.
+         * It acts as a wrapper around the virtual getDataPackData method, which should get data from requested datapacks.
          * On error, it will return a status object with error message and grpc::StatusCode::CANCELLED error code.
          *
          * \param      context Pointer to gRPC server context structure
-         * \param[in]  request Pointer to protobuf setDevice request message. Contains metadata of requested devices.
-         * \param[out] reply   Pointer to protobuf setDevice reply message. Contains device data and metadata.
+         * \param[in]  request Pointer to protobuf setDataPack request message. Contains metadata of requested datapacks.
+         * \param[out] reply   Pointer to protobuf setDataPack reply message. Contains datapack data and metadata.
          *
          * \return gRPC request status
          */
-        grpc::Status getDevice(grpc::ServerContext * /*context*/, const EngineGrpc::GetDeviceRequest * request, EngineGrpc::GetDeviceReply * reply) override
+        grpc::Status getDataPack(grpc::ServerContext * /*context*/, const EngineGrpc::GetDataPackRequest * request, EngineGrpc::GetDataPackReply * reply) override
         {
             try
             {
-                this->getDeviceData(*request, reply);
+                this->getDataPackData(*request, reply);
             }
             catch(const std::exception &e)
             {
-                return handleGrpcError("Error while executing getDevice", e.what());
+                return handleGrpcError("Error while executing getDataPack", e.what());
             }
 
             return grpc::Status::OK;
         }
 
-        virtual void setDeviceData(const EngineGrpc::SetDeviceRequest & data)
+        virtual void setDataPackData(const EngineGrpc::SetDataPackRequest & data)
         {
-            EngineGrpcServer::lock_t lock(this->_deviceLock);
+            EngineGrpcServer::lock_t lock(this->_datapackLock);
 
-            const auto numDevices = data.request_size();
+            const auto numDataPacks = data.request_size();
 
-            for(int i = 0; i < numDevices; i++)
+            for(int i = 0; i < numDataPacks; i++)
             {
                 const auto &r = data.request(i);
-                const auto &devInterface = this->_devicesControllers.find(r.deviceid().devicename());
+                const auto &devInterface = this->_datapacksControllers.find(r.datapackid().datapackname());
 
-                if(devInterface != _devicesControllers.end())
+                if(devInterface != _datapacksControllers.end())
                 {
                     const google::protobuf::OneofDescriptor *fieldOne = r.GetDescriptor()->FindOneofByName("data");
                     const google::protobuf::FieldDescriptor *field = r.GetReflection()->GetOneofFieldDescriptor(r,fieldOne);
                     if(!field) {
-                        const auto errorMessage = "Device " + r.deviceid().devicename() + " has been sent with no data";
+                        const auto errorMessage = "DataPack " + r.datapackid().datapackname() + " has been sent with no data";
                         throw std::invalid_argument(errorMessage);
                     }
-                    devInterface->second->handleDeviceData(r.GetReflection()->GetMessage(r,field));
+                    devInterface->second->handleDataPackData(r.GetReflection()->GetMessage(r,field));
                 }
                 else
                 {
-                    const auto errorMessage = "Device " + r.deviceid().devicename() + " is not registered in engine " + this->_engineName;
+                    const auto errorMessage = "DataPack " + r.datapackid().datapackname() + " is not registered in engine " + this->_engineName;
                     throw std::invalid_argument(errorMessage);
                 }
             }
         }
-        virtual void getDeviceData(const EngineGrpc::GetDeviceRequest & request, EngineGrpc::GetDeviceReply * reply)
+        virtual void getDataPackData(const EngineGrpc::GetDataPackRequest & request, EngineGrpc::GetDataPackReply * reply)
         {
-            EngineGrpcServer::lock_t lock(this->_deviceLock);
+            EngineGrpcServer::lock_t lock(this->_datapackLock);
 
-            const auto numDevices = request.deviceid_size();
+            const auto numDataPacks = request.datapackid_size();
 
-            for(int i = 0; i < numDevices; i++)
+            for(int i = 0; i < numDataPacks; i++)
             {
-                const auto &devInterface = this->_devicesControllers.find(request.deviceid(i).devicename());
-                if(devInterface != _devicesControllers.end())
+                const auto &devInterface = this->_datapacksControllers.find(request.datapackid(i).datapackname());
+                if(devInterface != _datapacksControllers.end())
                 {
                     auto r = reply->add_reply();
-                    r->mutable_deviceid()->set_devicename(request.deviceid(i).devicename());
-                    // ask controller to fetch device data. nullptr means there is no new data available
-                    auto d = devInterface->second->getDeviceInformation();
+                    r->mutable_datapackid()->set_datapackname(request.datapackid(i).datapackname());
+                    // ask controller to fetch datapack data. nullptr means there is no new data available
+                    auto d = devInterface->second->getDataPackInformation();
                     if(d != nullptr)
-                        setDeviceMessageData<MSG_TYPES...>(request.deviceid(i).devicename(), d, r);
+                        setDataPackMessageData<MSG_TYPES...>(request.datapackid(i).datapackname(), d, r);
                 }
                 else
                 {
-                    const auto errorMessage = "Device " + request.deviceid(i).devicename() + " is not registered in engine " + this->_engineName;
+                    const auto errorMessage = "DataPack " + request.datapackid(i).datapackname() + " is not registered in engine " + this->_engineName;
                     throw std::invalid_argument(errorMessage);
                 }
             }
         }
 
         template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        void setDeviceMessageData(const std::string &dev_name, google::protobuf::Message *dev_data, Engine::DeviceMessage *m)
+        void setDataPackMessageData(const std::string &dev_name, google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
         {
             if(dynamic_cast< MSG_TYPE *>(dev_data)) {
                 auto d = dynamic_cast< MSG_TYPE *>(dev_data);
                 auto n = m->GetDescriptor()->field_count();
-                auto device_type = d->GetDescriptor()->full_name();
+                auto datapack_type = d->GetDescriptor()->full_name();
 
                 for(int i=0;i<n;++i) {
                     auto field_type = m->GetDescriptor()->field(i)->message_type()->full_name();
-                    if (device_type == field_type) {
+                    if (datapack_type == field_type) {
                         m->GetReflection()->SetAllocatedMessage(m, d, m->GetDescriptor()->field(i));
                         return;
                     }
@@ -500,9 +500,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
             }
 
             if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-                return setDeviceMessageData<REMAINING_MSG_TYPES...>(dev_name, dev_data, m);
+                return setDataPackMessageData<REMAINING_MSG_TYPES...>(dev_name, dev_data, m);
             else {
-                const auto errorMessage = "Device " + dev_name + " has type not supported by engine " + this->_engineName;
+                const auto errorMessage = "DataPack " + dev_name + " has type not supported by engine " + this->_engineName;
                 throw std::invalid_argument(errorMessage);
             }
 

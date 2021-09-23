@@ -1,13 +1,13 @@
 /*! \page engines Engines
-Engines are a core aspect of the nrp-core framework. They run the actual simulation software (which can be comprised of any number of heterogeneous modules), with the SimulationLoop and TransceiverFunctions merely being a way to synchronize and exchange data between them. The data exchange is carried out through an <b>engine client</b> (see paragraph below). An Engine can run any type of software, from physics engines to brain simulators. The only requirement is that they should be able to manage progressing through time with fixed-duration time steps.
+Engines are a core aspect of the nrp-core framework. They run the actual simulation software (which can be comprised of any number of heterogeneous modules), with the FTILoop and TransceiverFunctions merely being a way to synchronize and exchange data between them. The data exchange is carried out through an <b>engine client</b> (see paragraph below). An Engine can run any type of software, from physics engines to brain simulators. The only requirement is that they should be able to manage progressing through time with fixed-duration time steps.
 
-From the nrp-core perspective, the core component of the engine is its communication interface, which enables it to communicate with the SimulationLoop. Different engine types can have different communication protocols. Nevertheless, all protocols are envisioned as a server-client architecture, with the Engine server running as a separate process, and a client running inside the SimulationLoop process. As such, all \ref EngineClient "EngineClients" must at least support the following functionalities:
+From the nrp-core perspective, the core component of the engine is its communication interface, which enables it to communicate with the FTILoop. Different engine types can have different communication protocols. Nevertheless, all protocols are envisioned as a server-client architecture, with the Engine server running as a separate process, and a client running inside the FTILoop process. As such, all \ref EngineClient "EngineClients" must at least support the following functionalities:
 
 - LaunchEngine: A function to launch the engine process. This will usually in some way use the ProcessLauncherInterface
 - Initialize: A function that initializes the engine after launch
 - RunLoopStep: A function that will advance the engine for a given time step
-- UpdateDevicesFromEngine: A function to retrieve Device data from the Engine
-- SendDevicesToEngine: A function to send Device data to the Engine
+- UpdateDataPacksFromEngine: A function to retrieve DataPack data from the Engine
+- SendDataPacksToEngine: A function to send DataPack data to the Engine
 - Shutdown: A function that gracefully stops the Engine
 
 This \ref nrp_engines "page" contains a list of currently supported Engines.
@@ -18,7 +18,7 @@ The architecture has been designed in a modular way that allow to implement new 
 
 Most of the engine implementations distributed alongside nrp-core are bound to a specific simulator, eg. NEST or Gazebo. There is one important exception, however: the \ref python_json_engine "Python JSON Engine".
 
-This versatile engine allows one to execute a user-defined Python script as an engine server, thus ensuring synchronization and enabling device data transfer with the SimulationLoop process. It can be used as a quick way of integrating a not-yet supported simulator in a nrp-core experiment. In \ref python_json_engine "this page", interested users will find more information on how to use it.
+This versatile engine allows one to execute a user-defined Python script as an engine server, thus ensuring synchronization and enabling datapack data transfer with the FTILoop process. It can be used as a quick way of integrating a not-yet supported simulator in a nrp-core experiment. In \ref python_json_engine "this page", interested users will find more information on how to use it.
 
 \section engine_launchers Engine Launchers
 

@@ -16,9 +16,9 @@ class NrpCore:
         is_child = (self.child_pid == 0)
 
         if is_child:
-            args_final = ["NRPSimulation"] + args + ["-m", "server", "--server_address", address]
+            args_final = ["NRPCoreSim"] + args + ["-m", "server", "--server_address", address]
 
-            os.execvp("NRPSimulation", args_final)
+            os.execvp("NRPCoreSim", args_final)
         else:
             channel = grpc.insecure_channel(address)
             self.stub = NrpCoreStub(channel)

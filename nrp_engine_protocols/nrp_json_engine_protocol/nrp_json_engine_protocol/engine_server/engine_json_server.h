@@ -23,9 +23,9 @@
 #define ENGINE_JSON_SERVER_H
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
-#include "nrp_json_engine_protocol/engine_server/json_device_controller.h"
+#include "nrp_json_engine_protocol/engine_server/json_datapack_controller.h"
 
-#include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "nrp_general_library/utils/nrp_logger.h"
 
@@ -46,8 +46,8 @@ class EngineJSONServer
 		static constexpr auto ShutdownWaitTime = std::chrono::milliseconds(10*1000);
 
 	protected:
-		static constexpr std::string_view GetDeviceInformationRoute = EngineJSONConfigConst::EngineServerGetDevicesRoute;
-		static constexpr std::string_view SetDeviceRoute = EngineJSONConfigConst::EngineServerSetDevicesRoute;
+		static constexpr std::string_view GetDataPackInformationRoute = EngineJSONConfigConst::EngineServerGetDataPacksRoute;
+		static constexpr std::string_view SetDataPackRoute = EngineJSONConfigConst::EngineServerSetDataPacksRoute;
 		static constexpr std::string_view RunLoopStepRoute = EngineJSONConfigConst::EngineServerRunLoopStepRoute;
 		static constexpr std::string_view InitializeRoute = EngineJSONConfigConst::EngineServerInitializeRoute;
 		static constexpr std::string_view ResetRoute = EngineJSONConfigConst::EngineServerResetRoute;
@@ -111,19 +111,19 @@ class EngineJSONServer
 		std::string serverAddress() const;
 
 		/*!
-		 * \brief Registers a device
-		 * \param deviceName Name of device
+		 * \brief Registers a datapack
+		 * \param datapackName Name of datapack
 		 * \param interface Pointer to interface
 		 */
-		void registerDevice(const std::string &deviceName, JsonDeviceController *interface);
+		void registerDataPack(const std::string &datapackName, JsonDataPackController *interface);
 
 		/*!
-		 * \brief Registers a device. Skips locking the mutex.
-		 * Should only be used if thread-safe access to _devicesControllers can be guaranteed
-		 * \param deviceName Name of device
+		 * \brief Registers a datapack. Skips locking the mutex.
+		 * Should only be used if thread-safe access to _datapacksControllers can be guaranteed
+		 * \param datapackName Name of datapack
 		 * \param interface Pointer to interface
 		 */
-		void registerDeviceNoLock(const std::string &deviceName, JsonDeviceController *interface);
+		void registerDataPackNoLock(const std::string &datapackName, JsonDataPackController *interface);
 
 		/*!
 		 * \brief Run a single loop step
@@ -135,17 +135,17 @@ class EngineJSONServer
 		/*!
 		 * \brief Engine Initialization routine
 		 * \param data Initialization data
-		 * \param deviceLock Device Lock. Prevents access to _devicesControllers
+		 * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
 		 * \return Returns data about initialization status
 		 */
-		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &deviceLock) = 0;
+		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) = 0;
 
 		/*!
 		 * \brief Engine reset routine
-		 * \param deviceLock Device Lock. Prevents access to _devicesControllers
+		 * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
 		 * \return Returns data about initialization status
 		 */
-		virtual nlohmann::json reset(EngineJSONServer::lock_t &deviceLock) = 0;
+		virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) = 0;
 
 		/*!
 		 * \brief Engine Shutdown routine
@@ -156,30 +156,30 @@ class EngineJSONServer
 
 	protected:
 		/*!
-		 * \brief Lock access to _devices to make execution thread-safe
+		 * \brief Lock access to _datapacks to make execution thread-safe
 		 */
-		mutex_t _deviceLock;
+		mutex_t _datapackLock;
 
 		/*!
-		 * \brief Remove all registered devices
+		 * \brief Remove all registered datapacks
 		 */
-		void clearRegisteredDevices();
+		void clearRegisteredDataPacks();
 
 
 		/*!
-		 * \brief Retrieves device data. Takes an array of device names for which to get data.
-		 * \param reqData A JSON array containing device names.
-		 * \return Device data, formatted as a JSON array
+		 * \brief Retrieves datapack data. Takes an array of datapack names for which to get data.
+		 * \param reqData A JSON array containing datapack names.
+		 * \return DataPack data, formatted as a JSON array
 		 */
-		virtual nlohmann::json getDeviceData(const nlohmann::json &reqData);
+		virtual nlohmann::json getDataPackData(const nlohmann::json &reqData);
 
 		/*!
-		 * \brief Set device data
-		 * \param reqData A JSON array containing device names linked to the individual device's data
+		 * \brief Set datapack data
+		 * \param reqData A JSON array containing datapack names linked to the individual datapack's data
 		 * \return Execution result
 		 */
 		// TODO What is this function supposed to return?
-		virtual nlohmann::json setDeviceData(const nlohmann::json &reqData);
+		virtual nlohmann::json setDataPackData(const nlohmann::json &reqData);
 
 	private:
 		/*!
@@ -205,9 +205,9 @@ class EngineJSONServer
 		enpoint_ptr_t _pEndpoint = nullptr;
 
 		/*!
-		 * \brief Available devices
+		 * \brief Available datapacks
 		 */
-		std::map<std::string, JsonDeviceController*> _devicesControllers;
+		std::map<std::string, JsonDataPackController*> _datapacksControllers;
 
 		NRPLogger _loggerCfg;
 
@@ -225,18 +225,18 @@ class EngineJSONServer
 		static nlohmann::json parseRequest(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter &res);
 
 		/*!
-		 * \brief Callback function to retrieve device data. Takes an array of device names for which to get data.
-		 * \param req Device data request. A JSON array containing device names.
-		 * \param res Response writer that sends device data back to NRP, formatted as a JSON array.
+		 * \brief Callback function to retrieve datapack data. Takes an array of datapack names for which to get data.
+		 * \param req DataPack data request. A JSON array containing datapack names.
+		 * \param res Response writer that sends datapack data back to NRP, formatted as a JSON array.
 		 */
-		void getDeviceDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+		void getDataPackDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
 
 		/*!
-		 * \brief Callback function to set device data
-		 * \param req Device Data. A JSON array containing device names linked to the individual device's data
+		 * \brief Callback function to set datapack data
+		 * \param req DataPack Data. A JSON array containing datapack names linked to the individual datapack's data
 		 * \param res Response writer that sends execution result back to the NRP
 		 */
-		void setDeviceHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+		void setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
 
 		/*!
 		 * \brief Try to get iterator key, print error message and throw exception if no key is available

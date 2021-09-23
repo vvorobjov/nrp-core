@@ -21,7 +21,7 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_nest_server_engine/nrp_client/nest_engine_server_nrp_client.cpp
-	nrp_nest_server_engine/python/create_device_class.cpp
+	nrp_nest_server_engine/python/create_datapack_class.cpp
 	nrp_nest_server_engine/config/nest_server_config.cpp
 )
 
@@ -56,7 +56,7 @@ configure_file("nrp_nest_server_engine/python/__init__.py.in" "${CMAKE_CURRENT_B
 
 
 ##########################################
-# NRPNestDeviceInterface
+# NRPNestDataPackInterface
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)

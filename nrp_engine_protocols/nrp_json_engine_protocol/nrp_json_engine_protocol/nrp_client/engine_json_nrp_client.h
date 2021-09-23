@@ -25,7 +25,7 @@
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/restclient_setup.h"
 
@@ -38,7 +38,7 @@
 #include <restclient-cpp/restclient.h>
 
 /*!
- *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ *  \brief NRP - Gazebo Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  *  \tparam ENGINE_INTERFACE Class derived from GeneralInterface. Currently either PhysicsInterface or BrainInterface
  */
 template<class ENGINE, const char* SCHEMA>
@@ -100,45 +100,45 @@ class EngineJSONNRPClient
 			return enginePID;
 		}
 
-		virtual void sendDevicesToEngine(const typename EngineClientInterface::devices_ptr_t &devicesArray) override
+		virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			// Convert devices to JSON format
+			// Convert datapacks to JSON format
 			nlohmann::json request;
-			for(const auto &curDevice : devicesArray)
+			for(const auto &curDataPack : datapacksArray)
 			{
-				if(curDevice->engineName().compare(this->engineName()) == 0)
+				if(curDataPack->engineName().compare(this->engineName()) == 0)
 				{
-					if(curDevice->type() != JsonDevice::getType())
+					if(curDataPack->type() != JsonDataPack::getType())
 					{
 						throw NRPException::logCreate("Engine \"" +
 													this->engineName() +
-													"\" cannot handle device type '" +
-													curDevice->type() + "'");
+													"\" cannot handle datapack type '" +
+													curDataPack->type() + "'");
 					}
 
-					// We get ownership of the device's data
+					// We get ownership of the datapack's data
 					// We'll have to delete the object after we're done
 
-					nlohmann::json * data = (dynamic_cast<JsonDevice *>(curDevice))->releaseData();
+					nlohmann::json * data = (dynamic_cast<JsonDataPack *>(curDataPack))->releaseData();
 
-					const auto & name = curDevice->name();
+					const auto & name = curDataPack->name();
 
-					request[name]["engine_name"] = curDevice->engineName();
-					request[name]["type"]        = curDevice->type();
+					request[name]["engine_name"] = curDataPack->engineName();
+					request[name]["type"]        = curDataPack->type();
 					request[name]["data"].swap(*data);
 
 					delete data;
 				}
 			}
 
-			// Send updated devices to Engine JSON server
-			EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerSetDevicesRoute.data(),
+			// Send updated datapacks to Engine JSON server
+			EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(),
 			                                 EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
-			                                 "Engine server \"" + this->engineName() + "\" failed during device handling");
+			                                 "Engine server \"" + this->engineName() + "\" failed during datapack handling");
 
-			// TODO: Check if engine has processed all sent devices
+			// TODO: Check if engine has processed all sent datapacks
 		}
 
         virtual const std::vector<std::string> engineProcStartParams() const override
@@ -167,12 +167,12 @@ class EngineJSONNRPClient
         }
 
 	protected:
-		virtual typename EngineClientInterface::devices_set_t getDevicesFromEngine(const typename EngineClientInterface::device_identifiers_set_t &deviceIdentifiers) override
+		virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
 			nlohmann::json request;
-			for(const auto &devID : deviceIdentifiers)
+			for(const auto &devID : datapackIdentifiers)
 			{
 				if(this->engineName().compare(devID.EngineName) == 0)
 				{
@@ -182,11 +182,11 @@ class EngineJSONNRPClient
 			}
 
 			// Post request to Engine JSON server
-			const auto resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(),
+			const auto resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(),
 			                                                 EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
-			                                                 "Engine server \"" + this->engineName() + "\" failed during device retrieval"));
+			                                                 "Engine server \"" + this->engineName() + "\" failed during datapack retrieval"));
 
-			return this->getDeviceInterfacesFromJSON(resp);
+			return this->getDataPackInterfacesFromJSON(resp);
 		}
 
 		/*!
@@ -342,31 +342,31 @@ class EngineJSONNRPClient
 		}
 
 		/*!
-		 * \brief Extracts devices from given JSON
-		 * \param devices JSON data of devices
-		 * \return Returns list of devices
+		 * \brief Extracts datapacks from given JSON
+		 * \param datapacks JSON data of datapacks
+		 * \return Returns list of datapacks
 		 */
-		typename EngineClientInterface::devices_set_t getDeviceInterfacesFromJSON(const nlohmann::json &devices) const
+		typename EngineClientInterface::datapacks_set_t getDataPackInterfacesFromJSON(const nlohmann::json &datapacks) const
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			typename EngineClientInterface::devices_set_t interfaces;
+			typename EngineClientInterface::datapacks_set_t interfaces;
 
-			for(auto curDeviceIterator = devices.begin(); curDeviceIterator != devices.end(); ++curDeviceIterator)
+			for(auto curDataPackIterator = datapacks.begin(); curDataPackIterator != datapacks.end(); ++curDataPackIterator)
 			{
 				try
 				{
-					DeviceIdentifier deviceID(curDeviceIterator.key(),
-											  (*curDeviceIterator)["engine_name"],
-											  (*curDeviceIterator)["type"]);
+					DataPackIdentifier datapackID(curDataPackIterator.key(),
+											  (*curDataPackIterator)["engine_name"],
+											  (*curDataPackIterator)["type"]);
 
-					deviceID.EngineName = this->engineName();
-					interfaces.insert(this->getSingleDeviceInterfaceFromJSON(curDeviceIterator, deviceID));
+					datapackID.EngineName = this->engineName();
+					interfaces.insert(this->getSingleDataPackInterfaceFromJSON(curDataPackIterator, datapackID));
 				}
 				catch(std::exception &e)
 				{
-					// TODO: Handle json device parsing error
-					throw NRPException::logCreate(e, "Failed to parse JSON Device Interface");
+					// TODO: Handle json datapack parsing error
+					throw NRPException::logCreate(e, "Failed to parse JSON DataPack Interface");
 				}
 			}
 
@@ -374,40 +374,40 @@ class EngineJSONNRPClient
 		}
 
 		/*!
-		 * \brief Go through given DEVICES and try to create a DeviceInterface from the JSON object
-		 * \tparam DEVICE DeviceInterface Class to check
-		 * \tparam REMAINING_DEVICES Remaining DeviceInterface Classes to check
-		 * \param deviceData Device data as JSON object
-		 * \param deviceID ID of device
-		 * \return Returns pointer to created device
+		 * \brief Go through given DATAPACKS and try to create a DataPackInterface from the JSON object
+		 * \tparam DATAPACK DataPackInterface Class to check
+		 * \tparam REMAINING_DATAPACKS Remaining DataPackInterface Classes to check
+		 * \param datapackData DataPack data as JSON object
+		 * \param datapackID ID of datapack
+		 * \return Returns pointer to created datapack
 		 */
 
-		inline DeviceInterfaceConstSharedPtr getSingleDeviceInterfaceFromJSON(const nlohmann::json::const_iterator &deviceData, DeviceIdentifier &deviceID) const
+		inline DataPackInterfaceConstSharedPtr getSingleDataPackInterfaceFromJSON(const nlohmann::json::const_iterator &datapackData, DataPackIdentifier &datapackID) const
 		{
 			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            if(deviceID.Type == JsonDevice::getType())
+            if(datapackID.Type == JsonDataPack::getType())
             {
-				// Check whether the requested device has new data
-				// A device that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of device ID)
+				// Check whether the requested datapack has new data
+				// A datapack that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of datapack ID)
 
-				if(deviceData->size() == 2)
+				if(datapackData->size() == 2)
 				{
-					// There's no meaningful data in the device, so create an empty device with device ID only
+					// There's no meaningful data in the datapack, so create an empty datapack with datapack ID only
 
-					return DeviceInterfaceSharedPtr(new DeviceInterface(std::move(deviceID)));
+					return DataPackInterfaceSharedPtr(new DataPackInterface(std::move(datapackID)));
 				}
 
-                nlohmann::json * data = new nlohmann::json(std::move((*deviceData)["data"]));
+                nlohmann::json * data = new nlohmann::json(std::move((*datapackData)["data"]));
 
-                DeviceInterfaceSharedPtr newDevice(new JsonDevice(deviceID.Name, deviceID.EngineName, data));
-                newDevice->setEngineName(this->engineName());
+                DataPackInterfaceSharedPtr newDataPack(new JsonDataPack(datapackID.Name, datapackID.EngineName, data));
+                newDataPack->setEngineName(this->engineName());
 
-                return newDevice;
+                return newDataPack;
             }
 			else
 			{
-				throw NRPException::logCreate("Device type \"" + deviceID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
+				throw NRPException::logCreate("DataPack type \"" + datapackID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
 			}
 		}
 };

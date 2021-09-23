@@ -53,7 +53,7 @@ class TestEngine
         virtual const std::vector<std::string> engineProcEnvParams() const override
         { return std::vector<std::string>(); }
 
-		virtual void sendDevicesToEngine(const devices_ptr_t &) override
+		virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
 		{}
 
 		SimulationTime runLoopStepCallback(SimulationTime /*timeStep*/) override
@@ -61,12 +61,12 @@ class TestEngine
 			return SimulationTime::zero();
 		}
 
-		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override
+		virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
 		{
-			devices_set_t retVal;
-			for(const auto &devID : deviceIdentifiers)
+			datapacks_set_t retVal;
+			for(const auto &devID : datapackIdentifiers)
 			{
-				retVal.emplace(new DeviceInterface(devID));
+				retVal.emplace(new DataPackInterface(devID));
 			}
 
 			return retVal;

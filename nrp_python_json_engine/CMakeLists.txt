@@ -21,7 +21,7 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
 	nrp_python_json_engine/config/python_config.cpp
-	nrp_python_json_engine/engine_server/python_engine_json_device_controller.cpp
+	nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.cpp
 	nrp_python_json_engine/engine_server/python_json_server.cpp
 	nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.cpp
 	nrp_python_json_engine/python/py_engine_script.cpp

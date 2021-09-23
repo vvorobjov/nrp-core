@@ -19,9 +19,9 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_general_library/device_interface/device_interface.cpp
-	nrp_general_library/device_interface/device.cpp
-	nrp_general_library/engine_interfaces/device_controller.cpp
+	nrp_general_library/datapack_interface/datapack_interface.cpp
+	nrp_general_library/datapack_interface/datapack.cpp
+	nrp_general_library/engine_interfaces/datapack_controller.cpp
 	nrp_general_library/engine_interfaces/engine_client_interface.cpp
 	nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
 	nrp_general_library/plugin_system/plugin.cpp
@@ -31,9 +31,9 @@ set(LIB_SRC_FILES
 	nrp_general_library/process_launchers/process_launcher.cpp
 	nrp_general_library/process_launchers/process_launcher_basic.cpp
 	nrp_general_library/process_launchers/process_launcher_manager.cpp
-	nrp_general_library/transceiver_function/from_engine_device.cpp
+	nrp_general_library/transceiver_function/from_engine_datapack.cpp
 	nrp_general_library/transceiver_function/transceiver_function.cpp
-	nrp_general_library/transceiver_function/transceiver_device_interface.cpp
+	nrp_general_library/transceiver_function/transceiver_datapack_interface.cpp
 	nrp_general_library/transceiver_function/transceiver_function_interpreter.cpp
 	nrp_general_library/transceiver_function/transceiver_function_manager.cpp
 	nrp_general_library/transceiver_function/transceiver_function_sorted_results.cpp
@@ -62,8 +62,8 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/device_interface.cpp
-	tests/device_data.cpp
+	tests/datapack_interface.cpp
+	tests/datapack.cpp
 	tests/engine_launcher_manager.cpp
 	tests/plugin_manager.cpp
 	tests/test_process_launcher_basic.cpp

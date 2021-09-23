@@ -9,7 +9,7 @@
 			"NestInitFileName": "nest_simple.py"
 		}
 	],
-	"DeviceProcessingFunctions": [
+	"DataPackProcessingFunctions": [
 		{
 			"Name": "tf_1",
 			"FileName": "tf_1.py"

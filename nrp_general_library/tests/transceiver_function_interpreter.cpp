@@ -24,10 +24,10 @@
 
 #include "nrp_general_library/config/cmake_constants.h"
 #include "tests/test_transceiver_function_interpreter.h"
-#include "nrp_general_library/device_interface/device.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
 #include "tests/test_env_cmake.h"
 
-using JsonDevice = Device<nlohmann::json>;
+using JsonDataPack = DataPack<nlohmann::json>;
 
 using namespace boost;
 
@@ -67,12 +67,12 @@ TEST(TransceiverFunctionInterpreterTest, TestSimplePythonFcn)
 
 	TransceiverFunctionInterpreterSharedPtr interpreter(new TransceiverFunctionInterpreter(globals));
 
-	TransceiverDeviceInterface::setTFInterpreter(interpreter.get());
+	TransceiverDataPackInterface::setTFInterpreter(interpreter.get());
 
 	// Load and execute simple python function
 	const std::string tfName = "testTF";
-	TestSimpleTransceiverDevice::shared_ptr tfDevice(new TestSimpleTransceiverDevice(globals["simple_fcn"]));
-	interpreter->loadTransceiverFunction(tfName, tfDevice);
+	TestSimpleTransceiverDataPack::shared_ptr tfDataPack(new TestSimpleTransceiverDataPack(globals["simple_fcn"]));
+	interpreter->loadTransceiverFunction(tfName, tfDataPack);
 
 	// Test execution result
 	boost::python::list res(interpreter->runSingleTransceiverFunction(tfName));
@@ -81,7 +81,7 @@ TEST(TransceiverFunctionInterpreterTest, TestSimplePythonFcn)
 	// Test invalid TF name
 	ASSERT_THROW(interpreter->runSingleTransceiverFunction("invalidTFName"), NRPExceptionNonRecoverable);
 
-	TransceiverDeviceInterface::setTFInterpreter(nullptr);
+	TransceiverDataPackInterface::setTFInterpreter(nullptr);
 }
 
 /*!
@@ -104,14 +104,14 @@ class InterpreterTest : public testing::Test {
 
 			interpreter.reset(new TransceiverFunctionInterpreter(globals));
 
-			TransceiverDeviceInterface::setTFInterpreter(interpreter.get());
+			TransceiverDataPackInterface::setTFInterpreter(interpreter.get());
 
-			interpreter->setEngineDevices({{this->engineName, &this->devs}});
+			interpreter->setEngineDataPacks({{this->engineName, &this->devs}});
 		}
 
 		void TearDown() override
 		{
-			TransceiverDeviceInterface::setTFInterpreter(nullptr);
+			TransceiverDataPackInterface::setTFInterpreter(nullptr);
   		}
 
 		void prepareTransceiverFunctionConfig(const std::string & name, const std::string & filename)
@@ -130,9 +130,9 @@ class InterpreterTest : public testing::Test {
 			this->pfCfg["IsPreprocessing"] = true;
 		}
 
-		void prepareInputDevice(const std::string & name, int testValue)
+		void prepareInputDataPack(const std::string & name, int testValue)
 		{
-			std::shared_ptr<TestOutputDevice> dev(new TestOutputDevice(TestOutputDevice::ID(name)));
+			std::shared_ptr<TestOutputDataPack> dev(new TestOutputDataPack(TestOutputDataPack::ID(name)));
 			dev->TestValue = testValue;
 
 			devs.push_back(dev);
@@ -144,24 +144,24 @@ class InterpreterTest : public testing::Test {
 		nlohmann::json tfCfg;
 		nlohmann::json pfCfg;
 		TransceiverFunctionInterpreterSharedPtr interpreter;
-		EngineClientInterface::devices_t devs;
+		EngineClientInterface::datapacks_t devs;
 };
 
-TEST_F(InterpreterTest, TestTransceiverFcnDevices)
+TEST_F(InterpreterTest, TestTransceiverFcnDataPacks)
 {
 	const int testValue = 0;
 	const std::string devName = "tf_input";
 
-	this->prepareInputDevice("tf_input", testValue);
+	this->prepareInputDataPack("tf_input", testValue);
 
 	// Load and execute simple python function
 	const std::string tfName = "testTF";
-	TestTransceiverDevice::shared_ptr tfDevice(new TestTransceiverDevice());
-	interpreter->loadTransceiverFunction(tfName, tfDevice);
+	TestTransceiverDataPack::shared_ptr tfDataPack(new TestTransceiverDataPack());
+	interpreter->loadTransceiverFunction(tfName, tfDataPack);
 
-	const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+	const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 	ASSERT_EQ(reqIDs.size(), 1);
-	ASSERT_EQ(*(reqIDs.begin()), TestOutputDevice::ID());
+	ASSERT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID());
 
 	// Test execution result
 	boost::python::list res;
@@ -169,14 +169,14 @@ TEST_F(InterpreterTest, TestTransceiverFcnDevices)
 
 	ASSERT_EQ(boost::python::len(res), 1);
 
-	const TestInputDevice &inDevice = boost::python::extract<TestInputDevice>(res[0]);
-	ASSERT_EQ(inDevice.id(), TestInputDevice::ID());
-	ASSERT_EQ(testValue, std::stoi(inDevice.TestValue));
+	const TestInputDataPack &inDataPack = boost::python::extract<TestInputDataPack>(res[0]);
+	ASSERT_EQ(inDataPack.id(), TestInputDataPack::ID());
+	ASSERT_EQ(testValue, std::stoi(inDataPack.TestValue));
 }
 
 /*
  * Setup:
- * - One transceiver function that takes a single device as input and returns a single device
+ * - One transceiver function that takes a single datapack as input and returns a single datapack
  */
 TEST_F(InterpreterTest, TestTransceiverFunction)
 {
@@ -186,27 +186,27 @@ TEST_F(InterpreterTest, TestTransceiverFunction)
 
 	this->prepareTransceiverFunctionConfig(tfName, TEST_TRANSCEIVER_FCN_FILE_NAME);
 
-	this->prepareInputDevice(devName, testValue);
+	this->prepareInputDataPack(devName, testValue);
 
 	// Load and execute simple python function
 	interpreter->loadTransceiverFunction(this->tfCfg);
 
-	const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+	const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 	ASSERT_EQ(reqIDs.size(), 1);
-	ASSERT_EQ(*(reqIDs.begin()), TestOutputDevice::ID(devName));
+	ASSERT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
 	// Test execution result
 	boost::python::list res(interpreter->runSingleTransceiverFunction(tfName));
 	ASSERT_EQ(boost::python::len(res), 1);
 
-	const TestInputDevice &inDevice = boost::python::extract<TestInputDevice>(res[0]);
-	ASSERT_EQ(inDevice.id(), TestInputDevice::ID());
-	ASSERT_EQ(testValue, std::stoi(inDevice.TestValue));
+	const TestInputDataPack &inDataPack = boost::python::extract<TestInputDataPack>(res[0]);
+	ASSERT_EQ(inDataPack.id(), TestInputDataPack::ID());
+	ASSERT_EQ(testValue, std::stoi(inDataPack.TestValue));
 }
 
 /*
  * Setup:
- * - One preprocessing function that takes a single device as input and returns a single device
+ * - One preprocessing function that takes a single datapack as input and returns a single datapack
  */
 TEST_F(InterpreterTest, TestPreprocessingFunction)
 {
@@ -215,15 +215,15 @@ TEST_F(InterpreterTest, TestPreprocessingFunction)
 
 	this->preparePreprocessingFunctionConfig(tfName, TEST_PREPROCESSING_FCN_FILE_NAME);
 
-	this->prepareInputDevice(devName, 5);
+	this->prepareInputDataPack(devName, 5);
 
 	// Load simple preprocessing function
 
 	interpreter->loadTransceiverFunction(this->pfCfg);
-	const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+	const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 
 	ASSERT_EQ(reqIDs.size(), 1);
-	ASSERT_EQ(*(reqIDs.begin()), TestOutputDevice::ID(devName));
+	ASSERT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
 	// Run the preprocessing funtion
 
@@ -232,15 +232,15 @@ TEST_F(InterpreterTest, TestPreprocessingFunction)
 	// Test execution result
 
 	ASSERT_EQ(boost::python::len(res), 1);
-	const JsonDevice &retDevice = boost::python::extract<JsonDevice>(res[0]);
-	ASSERT_EQ(retDevice.getData()["test_value"], "6");
+	const JsonDataPack &retDataPack = boost::python::extract<JsonDataPack>(res[0]);
+	ASSERT_EQ(retDataPack.getData()["test_value"], "6");
 }
 
 /*
  * Setup:
- * - One preprocessing function that takes a multiple devices as input and returns multiple devices
+ * - One preprocessing function that takes a multiple datapacks as input and returns multiple datapacks
  */
-TEST_F(InterpreterTest, TestPreprocessingFunctionMultipleDevices)
+TEST_F(InterpreterTest, TestPreprocessingFunctionMultipleDataPacks)
 {
 	const std::string tfName = "testTF";
 	const std::string devName1 = "pf_input1";
@@ -249,21 +249,21 @@ TEST_F(InterpreterTest, TestPreprocessingFunctionMultipleDevices)
 
 	this->preparePreprocessingFunctionConfig(tfName, TEST_PREPROCESSING_FCN2_FILE_NAME);
 
-	this->prepareInputDevice(devName1, 5);
-	this->prepareInputDevice(devName2, 15);
-	this->prepareInputDevice(devName3, 25);
+	this->prepareInputDataPack(devName1, 5);
+	this->prepareInputDataPack(devName2, 15);
+	this->prepareInputDataPack(devName3, 25);
 
 	// Load the preprocessing function
 
 	interpreter->loadTransceiverFunction(this->pfCfg);
-	const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+	const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 
-	// 3 devices should be requested by the preprocessing function from the engine
+	// 3 datapacks should be requested by the preprocessing function from the engine
 
 	ASSERT_EQ(reqIDs.size(), 3);
-	ASSERT_NE(reqIDs.find(TestOutputDevice::ID(devName1)), reqIDs.end());
-	ASSERT_NE(reqIDs.find(TestOutputDevice::ID(devName2)), reqIDs.end());
-	ASSERT_NE(reqIDs.find(TestOutputDevice::ID(devName3)), reqIDs.end());
+	ASSERT_NE(reqIDs.find(TestOutputDataPack::ID(devName1)), reqIDs.end());
+	ASSERT_NE(reqIDs.find(TestOutputDataPack::ID(devName2)), reqIDs.end());
+	ASSERT_NE(reqIDs.find(TestOutputDataPack::ID(devName3)), reqIDs.end());
 
 	// Run the preprocessing funtion
 
@@ -273,21 +273,21 @@ TEST_F(InterpreterTest, TestPreprocessingFunctionMultipleDevices)
 
 	ASSERT_EQ(boost::python::len(res), 1);
 
-	// TODO How to extract the devices and test return values?
+	// TODO How to extract the datapacks and test return values?
 }
 
 /*
  * Setup:
- * - PF raises exception because of wrong input device
+ * - PF raises exception because of wrong input datapack
  */
-TEST_F(InterpreterTest, TestPreprocessingFunctionWrongInputDevice)
+TEST_F(InterpreterTest, TestPreprocessingFunctionWrongInputDataPack)
 {
     const std::string tfName = "testTFFail";
     const std::string devName = "pf_input";
 
     this->preparePreprocessingFunctionConfig(tfName, TEST_INVALID_INPUT_PREPROCESSING_FCN_FILE_NAME);
 
-    this->prepareInputDevice(devName, 5);
+    this->prepareInputDataPack(devName, 5);
 
     // Load simple preprocessing function and fail
 
@@ -296,24 +296,24 @@ TEST_F(InterpreterTest, TestPreprocessingFunctionWrongInputDevice)
 
 /*
  * Setup:
- * - PF raises exception because of wrong output device
+ * - PF raises exception because of wrong output datapack
  */
-TEST_F(InterpreterTest, TestPreprocessingFunctionWrongOutputDevice)
+TEST_F(InterpreterTest, TestPreprocessingFunctionWrongOutputDataPack)
 {
     const std::string tfName = "testTF";
     const std::string devName = "pf_input";
 
     this->preparePreprocessingFunctionConfig(tfName, TEST_INVALID_OUTPUT_PREPROCESSING_FCN_FILE_NAME);
 
-    this->prepareInputDevice(devName, 5);
+    this->prepareInputDataPack(devName, 5);
 
     // Load simple preprocessing function
 
     interpreter->loadTransceiverFunction(this->pfCfg);
-    const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+    const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 
     EXPECT_EQ(reqIDs.size(), 1);
-    EXPECT_EQ(*(reqIDs.begin()), TestOutputDevice::ID(devName));
+    EXPECT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
     // Run the preprocessing funtion and fail
 
@@ -324,9 +324,9 @@ TEST_F(InterpreterTest, TestPreprocessingFunctionWrongOutputDevice)
  * Setup:
  * - One preprocessing function and one transceiver function
  * - The preprocessing function runs before the transceiver function
- * - The preprocessing function takes one input device from the engine and return one device
- * - The transceiver function takes one input device from the engine and
- *   one input device from the preprocessing function. It returns one device
+ * - The preprocessing function takes one input datapack from the engine and return one datapack
+ * - The transceiver function takes one input datapack from the engine and
+ *   one input datapack from the preprocessing function. It returns one datapack
  */
 TEST_F(InterpreterTest, TestFunctionChain)
 {
@@ -338,16 +338,16 @@ TEST_F(InterpreterTest, TestFunctionChain)
 	this->preparePreprocessingFunctionConfig(pfName, TEST_PREPROCESSING_FCN_FILE_NAME);
 	this->prepareTransceiverFunctionConfig(tfName, TEST_TRANSCEIVER_FCN2_FILE_NAME);
 
-	this->prepareInputDevice("pf_input", 4);
-	this->prepareInputDevice("tf_input_engine", 10);
+	this->prepareInputDataPack("pf_input", 4);
+	this->prepareInputDataPack("tf_input_engine", 10);
 
 	// Load simple preprocessing function
 
 	interpreter->loadTransceiverFunction(this->tfCfg);
 	interpreter->loadTransceiverFunction(this->pfCfg);
-	const auto &reqIDs = interpreter->updateRequestedDeviceIDs();
+	const auto &reqIDs = interpreter->updateRequestedDataPackIDs();
 
-	// There shoud be two devices requested by the function from the engine
+	// There shoud be two datapacks requested by the function from the engine
 
 	ASSERT_EQ(reqIDs.size(), 2);
 
@@ -358,13 +358,13 @@ TEST_F(InterpreterTest, TestFunctionChain)
 	// Test the results
 
 	ASSERT_EQ(boost::python::len(resPf), 1);
-	const JsonDevice & tmpDevice = boost::python::extract<JsonDevice>(resPf[0]);
-	JsonDevice retDevice(tmpDevice.name(), tmpDevice.engineName(), new nlohmann::json(tmpDevice.getData()));
-	ASSERT_EQ(retDevice.getData()["test_value"], "5");
+	const JsonDataPack & tmpDataPack = boost::python::extract<JsonDataPack>(resPf[0]);
+	JsonDataPack retDataPack(tmpDataPack.name(), tmpDataPack.engineName(), new nlohmann::json(tmpDataPack.getData()));
+	ASSERT_EQ(retDataPack.getData()["test_value"], "5");
 
-	// Inject the returned device to the pool of devices, so that it's accesible by the transceiver function
+	// Inject the returned datapack to the pool of datapacks, so that it's accesible by the transceiver function
 
-	this->devs.push_back(retDevice.moveToSharedPtr());
+	this->devs.push_back(retDataPack.moveToSharedPtr());
 
 	// Run the transceiver function
 
@@ -372,10 +372,10 @@ TEST_F(InterpreterTest, TestFunctionChain)
 
 	// Test the results
 
-	const JsonDevice &retDeviceTf = boost::python::extract<JsonDevice>(resTf[0]);
+	const JsonDataPack &retDataPackTf = boost::python::extract<JsonDataPack>(resTf[0]);
 
-	ASSERT_EQ(retDeviceTf.getData()["test_value1"], "10");
-	ASSERT_EQ(retDeviceTf.getData()["test_value2"], "5");
+	ASSERT_EQ(retDataPackTf.getData()["test_value1"], "10");
+	ASSERT_EQ(retDataPackTf.getData()["test_value2"], "5");
 }
 
 // EOF

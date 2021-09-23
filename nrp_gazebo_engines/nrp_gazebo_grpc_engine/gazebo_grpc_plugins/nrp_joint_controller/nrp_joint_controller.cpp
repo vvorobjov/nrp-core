@@ -100,7 +100,7 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 	// Initiate PID controllers with read values
 	auto jointControllerPtr = model->GetJointController();
 
-	// Initiate device interfaces for joints
+	// Initiate datapack interfaces for joints
 	const auto &joints = model->GetJoints();
 	for(const auto &joint : joints)
 	{
@@ -126,12 +126,12 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
 			{	/* TODO: Handle invalid controller type (Should already have been done with PIDConfig::convertStringToType, but maybe make sure here as well?) */}
 		}
 
-		// Create device
-		const auto deviceName = NRPCommunicationController::createDeviceName(*this, joint->GetName());
+		// Create datapack
+		const auto datapackName = NRPCommunicationController::createDataPackName(*this, joint->GetName());
 
 		NRPLogger::info("Registering joint controller for joint [ {} ]", jointName);
-		this->_jointDeviceControllers.push_back(JointGrpcDeviceController(jointName, joint, jointControllerPtr));
-		NRPCommunicationController::getInstance().registerDevice(deviceName, &(this->_jointDeviceControllers.back()));
+		this->_jointDataPackControllers.push_back(JointGrpcDataPackController(jointName, joint, jointControllerPtr));
+		NRPCommunicationController::getInstance().registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
 	}
 
 	// Register plugin

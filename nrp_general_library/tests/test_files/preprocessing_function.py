@@ -21,12 +21,12 @@
 from NRPPythonModule import *
 from NRPJSONEngineProtocolPython import *
 
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('pf_input', 'engine', 'type'))
+@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
 @PreprocessingFunction("engine")
-def transceiver_function(device):
-    test_val = device.test_value
+def transceiver_function(datapack):
+    test_val = datapack.test_value
     
-    ret_dev = JsonDevice("tf_input_preprocessing", "engine")
+    ret_dev = JsonDataPack("tf_input_preprocessing", "engine")
     ret_dev.data["test_value"] = str(test_val + 1)
     
     return [ret_dev]

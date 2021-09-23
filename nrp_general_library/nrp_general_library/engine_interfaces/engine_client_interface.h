@@ -27,7 +27,7 @@
 #include "nrp_general_library/utils/ptr_templates.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
-#include "nrp_general_library/device_interface/device_interface.h"
+#include "nrp_general_library/datapack_interface/datapack_interface.h"
 
 #include <set>
 #include <vector>
@@ -43,24 +43,24 @@ class EngineLauncherInterface;
 class EngineClientInterface
         : public PtrTemplates<EngineClientInterface>
 {
-		/*! \brief DeviceInterfaceConstSharedPtr comparison. Used for set sorting */
+		/*! \brief DataPackInterfaceConstSharedPtr comparison. Used for set sorting */
 		struct CompareDevInt : public std::less<>
 		{
-			public: bool operator()(const DeviceInterfaceConstSharedPtr &lhs, const DeviceInterfaceConstSharedPtr &rhs) const
+			public: bool operator()(const DataPackInterfaceConstSharedPtr &lhs, const DataPackInterfaceConstSharedPtr &rhs) const
 			{	return lhs->name() < rhs->name();	}
 
-			public: bool operator()(const DeviceInterfaceConstSharedPtr &lhs, const std::string &name) const
+			public: bool operator()(const DataPackInterfaceConstSharedPtr &lhs, const std::string &name) const
 			{	return lhs->name() < name;	}
 
-			public: bool operator()(const std::string &name, const DeviceInterfaceConstSharedPtr &rhs) const
+			public: bool operator()(const std::string &name, const DataPackInterfaceConstSharedPtr &rhs) const
 			{	return name < rhs->name();	}
 		};
 
 	public:
-		using device_identifiers_set_t = std::set<DeviceIdentifier>;
-		using devices_t = std::vector<DeviceInterfaceConstSharedPtr>;
-		using devices_set_t = std::set<DeviceInterfaceConstSharedPtr, CompareDevInt>;
-		using devices_ptr_t = std::vector<DeviceInterface*>;
+		using datapack_identifiers_set_t = std::set<DataPackIdentifier>;
+		using datapacks_t = std::vector<DataPackInterfaceConstSharedPtr>;
+		using datapacks_set_t = std::set<DataPackInterfaceConstSharedPtr, CompareDevInt>;
+		using datapacks_ptr_t = std::vector<DataPackInterface*>;
 
 		explicit EngineClientInterface(ProcessLauncherInterface::unique_ptr &&launcher);
 		virtual ~EngineClientInterface();
@@ -158,44 +158,44 @@ class EngineClientInterface
 		virtual void runLoopStepAsyncGet(SimulationTime timeOut) = 0;
 
 		/*!
-		 * \brief Gets requested devices from engine and updates _deviceCache with the results
-		 * Uses getDevicesFromEngine override for the actual communication
-		 * \param deviceNames All requested names. NOTE: can also include IDs of other engines. A check must be added that only the corresponding IDs are retrieved
-		 * \return Returns all devices returned by the engine
+		 * \brief Gets requested datapacks from engine and updates _datapackCache with the results
+		 * Uses getDataPacksFromEngine override for the actual communication
+		 * \param datapackNames All requested names. NOTE: can also include IDs of other engines. A check must be added that only the corresponding IDs are retrieved
+		 * \return Returns all datapacks returned by the engine
 		 */
-		const devices_t &updateDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers);
+		const datapacks_t &updateDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers);
 
 		/*!
-		 * \brief get cached engine devices
+		 * \brief get cached engine datapacks
 		 */
-		constexpr const devices_t &getCachedDevices() const
-		{	return this->_deviceCache;	}
+		constexpr const datapacks_t &getCachedDataPacks() const
+		{	return this->_datapackCache;	}
 
 		/*!
-		 * \brief Sends devices to engine
-		 * \param devicesArray Array of devices that will be send to the engine
-		 * \return Returns SUCCESS if all devices could be handles, ERROR otherwise
+		 * \brief Sends datapacks to engine
+		 * \param datapacksArray Array of datapacks that will be send to the engine
+		 * \return Returns SUCCESS if all datapacks could be handles, ERROR otherwise
 		 * \throw Throws on error
 		 */
-		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) = 0;
+		virtual void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) = 0;
 
 		/*!
-		 * \brief Update _deviceCache from devices
+		 * \brief Update _datapackCache from datapacks
 		 *
-		 * If the device with a particular name is already in the cache, the function will
-		 * replace it. If the device isn't in the cache, the function will insert it.
+		 * If the datapack with a particular name is already in the cache, the function will
+		 * replace it. If the datapack isn't in the cache, the function will insert it.
 		 *
-		 * \param devs Devices to insert
+		 * \param devs DataPacks to insert
 		 */
-		void updateCachedDevices(devices_set_t &&devs);
+		void updateCachedDataPacks(datapacks_set_t &&devs);
 
 		/*!
-		 * \brief Gets requested devices from engine
-		 * \param deviceNames All requested device ids
-		 * \return Returns all requested devices
+		 * \brief Gets requested datapacks from engine
+		 * \param datapackNames All requested datapack ids
+		 * \return Returns all requested datapacks
 		 * \throw Throws on error
 		 */
-		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) = 0;
+		virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) = 0;
 
 protected:
 
@@ -205,9 +205,9 @@ protected:
 		ProcessLauncherInterface::unique_ptr _process;
 
 		/*!
-		 * \brief Engine device cache. Stores retrieved devices
+		 * \brief Engine datapack cache. Stores retrieved datapacks
 		 */
-		devices_t _deviceCache;
+		datapacks_t _datapackCache;
 };
 
 using EngineClientInterfaceSharedPtr = EngineClientInterface::shared_ptr;
@@ -217,7 +217,7 @@ class EngineLauncherInterface
         : public PtrTemplates<EngineLauncherInterface>
 {
 	public:
-		using engine_type_t = decltype(DeviceIdentifier::Type);
+		using engine_type_t = decltype(DataPackIdentifier::Type);
 
 		EngineLauncherInterface(const engine_type_t &engineType);
 		virtual ~EngineLauncherInterface() = default;

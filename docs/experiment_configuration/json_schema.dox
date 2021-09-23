@@ -16,7 +16,7 @@ Each JSON schema can have an <a href="https://json-schema.org/understanding-json
 
 \section schema_reference Referencing schemas
 
-The `type` of a parameter can be a simple type or a reference to another schema, which is precisely the case of the elements of the arrays `EngineConfigs` and `DeviceProcessingFunctions` in the schema given above. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
+The `type` of a parameter can be a simple type or a reference to another schema, which is precisely the case of the elements of the arrays `EngineConfigs` and `DataPackProcessingFunctions` in the schema given above. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
 
 - authority: identifying the institution responsible for the schema. For the schemas developed by the <a href="https://neurorobotics.net/who-we-are.html">NRP Team</a> this will always be https://neurorobotics.net
 - path: this is the path to the file containing the referenced schema from `config_schemas` folder

@@ -46,8 +46,8 @@ class ${engine_name}GrpcServer
 		/*!
 		 * \brief Runs a single step of the simulation
 		 *
-		 * The function will be called every simulation loop, after getDevicesFromEngine and
-		 * before sendDevicesToEngine. It should advance the simulation by the requested time step,
+		 * The function will be called every simulation loop, after getDataPacksFromEngine and
+		 * before sendDataPacksToEngine. It should advance the simulation by the requested time step,
 		 *
 		 * \param[in] timeStep Requested time step, by which the simulation should advance
 		 *
@@ -64,7 +64,7 @@ class ${engine_name}GrpcServer
 		 *
 		 * \param[in] data Engine configuration data in form of JSON object
 		 */
-		void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &deviceLock) override;
+		void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
 
 		/*!
 		 * \brief Shutdowns the engine
