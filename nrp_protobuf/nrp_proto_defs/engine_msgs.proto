@@ -9,7 +9,7 @@ package Engine;
  * Data of a single device sent by server in response to the getDevice command
  * Contains device metadata and data specific to the device type
  */
- message DeviceMessage
+message DeviceMessage
 {
     DeviceIdentifier deviceId = 1;
 
@@ -38,4 +38,5 @@ message DeviceIdentifier
 message TestPayload
 {
     uint32 integer = 1;
+    string str     = 2;
 }

@@ -1,15 +1,24 @@
-/*! \page tutorial_engine_creation Creating a new engine
+/*! \page tutorial_engine_creation Creating a new Engine from scratch
 
 As explained in \ref engines "apposite section of the architecture overview", engines are a core aspect of the nrp-core framework. They run the various (and possibly heterogeneous) components/modules of the simulations, with the SimulationLoop and TransceiverFunctions merely being a way to synchronize and exchange data therebetween. In other terms, the NRP-core facilitates communication between differing simulator types in order to integrate them into a single coherent simulation. We aim to achieve predictable behaviour even in cases where simulators with different execution schemes are deployed.
 This requires a strict engine interface, which will properly synchronize runtime and data exchange.
 
-The NRP has adopted a client-server approach to this problem, together with constraints in terms of synchronous communications. Each simulator runs in its own process, and acts a server. The Simulation Loop manages synchronization, and accesses each engine as a client.
-Data exchange is facilitated via \ref Device "Devices". Therefore, a developer wishing to create a new engine <b>must supply five components</b>: an EngineConfig, an EngineClient, an Engine Server, a process launcher, and device structures.
+The NRP has adopted a client-server approach to this problem, together with constraints in terms of synchronous communications. Each simulator runs in its own process, and acts a server. The SimulationLoop manages synchronization, and accesses each engine as a client.
+Data exchange is facilitated via \ref Device "Devices". Therefore, a developer wishing to create a new engine <b>must supply five components</b>: 
 
-Please note that, should you wish to integrate a new Engine based on Python, we already supply a PythonJSONEngine, which can execute arbitrary Python scripts.
+- \ref tutorial_engine_creation_engine_server "Engine Server"
+- \ref tutorial_engine_creation_engine_client "EngineClient"
+- \ref tutorial_engine_creation_engine_proc_launcher "ProcessLauncher"
+- \ref tutorial_engine_creation_engine_config "Engine configuration schema"
+- Only if required, custom \ref tutorial_engine_creation_engine_device "Device python bindings"
 
-To simplify the development process of these components, we have supplied base classes that can be used with minimal modifications. In the following sections, we will go through each of the components and detail how they can be implemented.
-The example code is located under docs/example_engine.
+In the next sections we comment how to proceed to implement each of this components. The code samples in these sections are based on a bare bone example engine included in the folder *docs/example_engine*.
+
+Please note that this guide describes the steps needed to create an engine <em>from scratch</em>.
+It will take a considerable amount of development time, and the exact implementation will depend on the communication protocol and data structures of your choice.
+
+We provide generic engines that support \ref json_engine_creation "JSON over REST" and \ref grpc_engine_creation "protobuf over gRPC", which already implement the bulk of functionality.
+Should you wish to integrate a simulator with a Python interface in nrp-core, we also supply a \ref python_json_engine "PythonJSONEngine", which can execute arbitrary Python scripts.
 
 \section tutorial_engine_creation_directories Directory tree
 
@@ -18,7 +27,6 @@ We propose to structure source files of the new engine in the following way:
 \code
 example_engine/
 ├── cmake
-│   ├── FindPythonInterp.cmake
 │   └── ProjectConfig.cmake.in
 ├── CMakeLists.txt
 ├── example_engine_server_executable
@@ -26,32 +34,25 @@ example_engine/
 │   ├── example_engine_server_executable.h
 │   └── main.cpp
 └── nrp_example_engine
-    ├── config
-    │   ├── cmake_constants.h.in
-    │   ├── example_config.h
-    │   └── example_config.json
-    ├── devices
-    │   ├── example_device.cpp
-    │   └── example_device.h
-    ├── engine_server
-    │   ├── example_engine_device_controller.cpp
-    │   ├── example_engine_device_controller.h
-    │   ├── example_engine_server.cpp
-    │   └── example_engine_server.h
-    ├── nrp_client
-    │   ├── example_engine_client.cpp
-    │   └── example_engine_client.h
-    └── python
-        ├── example_engine_python.cpp
-        └── __init__.py.in
-
+    ├── config
+    │   ├── cmake_constants.h.in
+    │   ├── example_config.h
+    │   └── example_config.json
+    ├── engine_server
+    │   ├── example_engine_server.cpp
+    │   └── example_engine_server.h
+    ├── nrp_client
+    │   ├── example_engine_client.cpp
+    │   └── example_engine_client.h
+    └── python
+        ├── example_engine_python.cpp
+        └── __init__.py.in
 \endcode
 
 - root - root directory of the new engine, the right place to put your `CMakeLists.txt`
 - cmake - helper files for cmake
 - example_engine_server_executable - source files related to server executable
 - config - source files related to engine configuration
-- devices - device-related source files
 - engine_server - source code of the server side of the engine
 - nrp_client - source code of the client side of the engine
 - python - Python module with Python wrappers for device classes
@@ -59,10 +60,11 @@ example_engine/
 
 \section tutorial_engine_creation_cmake Setting up CMake
 
-We use CMake to manage project compilation. \subpage tutorial_engine_creation_engine_cmake_example_explanation "This example" creates all necessary libraries and executables for a new engine and can be used as a template.
+We use CMake to manage project compilation. 
+In this \subpage tutorial_engine_creation_engine_cmake_example_explanation "page", it is explained the basic structure used in an Engine cmake configuration file in order to create all libraries and executables necessary for the new engine. 
 
 
-\section tutorial_engine_creation_engine_config Creating an EngineConfig
+\section tutorial_engine_creation_engine_config Creating an Engine configuration schema
 
 Engines should be configurable by users. Configuration is based on JSON documents, which
 are validated using <a href="https://json-schema.org/">JSON schemas</a>. This \ref simulation_configuration "page" offers more details on configuration management in nrp-core.
@@ -75,9 +77,11 @@ The new engine schema can be afterwards placed into a separate JSON file in <i>c
 
 Here is an example of how this might look like:
 
+
 \subsection tutorial_engine_creation_engine_config_example Example
 
 \include nrp_example_engine/config/example_config.json
+
 
 \subsection tutorial_engine_creation_engine_config_linking Linking configuration schema to the engine
 
@@ -91,48 +95,55 @@ class ExampleEngineClient
 
 A further explanation of how schema URIs are structured can be found in the section \ref schema_reference.
 
-\section tutorial_engine_creation_engine_device Creating Devices
 
-To properly exchange data between the NRP and simulations, both systems must agree on data formats. Device structures are used for this purpose. They can be adapted to serialize and deserialize arbitrary data, and send information over communication protocol.
-Their precise makeup is described \ref devices "here". An extensive tutorial on creating devices can be found \ref tutorial_device_creation "here".
+\section tutorial_engine_creation_engine_device Device data
+
+Devices are object that facilitate exchange of data between transceiver functions and simulators.
+A more detailed description of devices can be found in this \ref devices "page".
+
+They consists of some \ref devices_data "data structure", used as payload in data exchanges between Engine servers and clients, and \ref devices_id "metadata", used to uniquely identify the datapack and relate it to a specific engine.
+There is in principle no restrictions in the type a Device can store, as long as Engine client and server are able to exchange them over the wire.
+But since Devices also must be available inside of TransceiverFunctions, python bindings must be available for each data type used in Devices.
+To reduce the complexity of developping new engines, it is strongly recommended to use one of the data types for which nrp-core already provide python bindings.
+These are: nlohmann::json and protobuf messages.
+However, if you decide to use another data type you must implement Python bindings for it and make them available to nrp-core as a Python module.
 
 
 \section tutorial_engine_creation_engine_client Creating an EngineClient
 
-An EngineClient is used by the Simulation Loop to interface with a simulator via an Engine Server. A communication protocol is required to facilitate data exchange. We provide a set of predefined protocol implementations \ref engine_types "here".
-In most cases, using one of these as a base template suffices and greatly reduces development efforts. Should you be unsure, we recommend using the EngineGrpcClient as a base template.
+An EngineClient is used by the SimulationLoop to interface with a simulator via an Engine Server. A communication protocol is required to facilitate data exchange. We provide a set of predefined protocol implementations \ref engine_types "here".
+In most cases, using one of these as a base template suffices and greatly reduces development efforts.
 
 A new engine client must inherit from the EngineClient class. As such, it may look as shown below. A detailed function description can be found in \ref EngineClientInterface.
 
-A set of methods need to be implemented in the new client class. These methods will be called by the Simulation Loop in various points of the simulation loop.
+A set of methods need to be implemented in the new client class. These methods will be called by the SimulationLoop in various points of the simulation loop.
+
 
 \subsection tutorial_engine_creation_simulation_control_methods Simulation control and state methods
 
 - EngineClientInterface::initialize() - should perform all necessary steps (requests to the server) to initialize the simulation. The function is called
 before the simulation loop starts.
 
-- EngineClientInterface::runLoopStep() - should requests the server to run a simulation step with specified timestep.
-The request ought to be performed in a separate thread. This will allow all engines to run their steps in parallel. EngineClientInterface::waitForStepCompletion()
-may be used to join the threads again.
-
-- EngineClientInterface::waitForStepCompletion() - will be called after EngineClientInterface::runLoopStep(), may be used to join
-the worker thread spawned in runLoopStep function.
+- EngineClient::runLoopStepCallback() - callback method called from EngineClient::runLoopStepAsync() which should request the server to run a simulation step with specified timestep.
+The request is performed in a separate thread. This allows all engines to run their steps in parallel. EngineClientInterface::runLoopStepAsyncGet()
+must be used to join the threads again.
 
 - EngineClientInterface::shutdown() - should request the server to perform cleanup, before the server process is requested to terminate.
 
-- EngineClientInterface::getEngineTime() - returns current simulation time. Will be used by the Simulation Loop to determine
-when to run next step of the simulation.
+- EngineClientInterface::reset() - should request the server to reset the simulation.
+
 
 \subsection tutorial_engine_creation_data_exchange_methods Data exchange methods
 
 - EngineClientInterface::getDevicesFromEngine() - may be used to request results of the latest step from the simulator.
 Received data should be deserialized into proper device types, which will be consumed by transceiver functions.
-The function will be called before runLoopStep.
+The function will be called before runLoopStepAsync.
 
 - EngineClientInterface::sendDevicesToEngine() - may be used to pass relevant data, like reference values, to the simulator.
 Input to the functions will be a list of devices, (results of transceiver function execution). The devices need to be serialized
 into structures used by the communication protocol between engine client and server.
-The function will be called after runLoopStep.
+The function will be called after runLoopStepAsync.
+
 
 \subsection tutorial_engine_creation_simulation_spawning_methods Simulation process spawning methods
 
@@ -144,16 +155,14 @@ Related to \ref engine_proc_start_params "EngineProcStartParams" config paramete
 - EngineClientInterface::engineProcEnvParams() - should return any extra environment variables needed to run the simulation process.
 Related to \ref engine_env_params "EngineEnvParams" config parameter.
 
+
 \subsection tutorial_engine_creation_engine_client_example Example
 
 \include nrp_example_engine/nrp_client/example_engine_client.h
 
-An explanation of the code can be found in this page \subpage tutorial_engine_creation_engine_client_example_explanation "page".
-
-
 \section tutorial_engine_creation_python Creating a Python module
 
-The Simulation Loop and engines are written in C++, but transceiver functions are written in Python. We need a way of wrapping
+The SimulationLoop and engines are written in C++, but transceiver functions are written in Python. We need a way of wrapping
 C++ code with Python. This is done inside so called Python module. Most of the wrappers are already defined in the base
 Python module, but wrappers for new device types must be added.
 
@@ -171,7 +180,7 @@ We recommend using the BasicFork class as a starting template, and modify it to 
 
 \section tutorial_engine_creation_engine_server Creating an Engine Server
 
-An Engine Server runs in its own process, executes the simulation, and exchanges data with the Simulation Loop via the EngineClient.
+An Engine Server runs in its own process, executes the simulation, and exchanges data with the SimulationLoop via the EngineClient.
 To interface with said client, a communication protocol is required.
 We provide a set of predefined protocol implementations \ref engine_types "here".
 
@@ -183,7 +192,8 @@ If no dedicated server exists for your simulator, you will need to create it.
 Generally, the server must be able to handle requests from the following client methods:
 - initialize - initialize the simulation with parameters coming from the client
 - shutdown - shutdown the simulation
-- runLoopStep - run step of the simulation with step duration requested by the client
+- reset - reset the simulation
+- runLoopStepAsync - run step of the simulation with step duration requested by the client
 - getDevicesFromEngine - return data from the last simulation step to the client
 - sendDevicesToEngine - retrieve data for the next simulation step from the client
 
@@ -193,62 +203,11 @@ The Engine Server must also define a main() function to execute. Path to the exe
 
 
 /**********************************************************************************************************************************************************************************************************/
-/*! \page tutorial_engine_creation_engine_client_example_explanation Explanation of ExampleEngineClient
-\dontinclude nrp_example_engine/nrp_client/example_engine_client.h
-
-Add base Engine client header
-\skip #include
-\until engine_client_interface
-
-Create new client class, derived from the base engine. Include ExampleConfig into template to link the configuration class to this client.
-
-\skip class
-\until {
-
-Add standard constructor. Pass arguments to base engine class
-
-\until {}
-
-Override initialization and shutdown functions. They should send commands to the engine server to initialize/shutdown its simulator. A more in-depth explanation can be found in \ref EngineClientInterface.
-
-\skip initialize
-\until shutdown
-
-Manage simulation execution. These functions are used to execute the Engine Server's simulation asynchronously and wait for it to complete.
-
-\skip getEngineTime
-\until waitForStepCompletion
-\until }
-\until }
-
-Handle sending and receiving of devices. The sendDevicesToEngine function takes a list of \ref DeviceInterface "DeviceInterfaces" and sends them to the Engine Server, which will then process them.
-The getDevicesFromEngine takes a list of \ref DeviceIdentifier "DeviceIdentifiers", and requests their data from the Engine Server.
-
-\skip sendDevicesToEngine
-\until getDevicesFromEngine
-
-Add functions to handle server process start parameters and environment variables
-
-\skip engineProcStartParams
-\until engineProcEnvParams
-
-Add variables to track runtime of this Engine's simulation as well as the runLoopStep thread.
-
-\skip private
-\until };
-
-Create an engine launcher. This launcher will use the default process launcher available to fork the Engine Server process on startup.
-The CREATE_NRP_ENGINE_LAUNCHER() macro generates a C function, which allows the ExampleEngine to be included as a plugin.
-
-\skip ExampleEngineLauncher
-\until CREATE_NRP_ENGINE_LAUNCHER
-*/
-
-
-/**********************************************************************************************************************************************************************************************************/
-/*! \page tutorial_engine_creation_engine_cmake_example_explanation Explanation of CMakeLists.txt
+/*! \page tutorial_engine_creation_engine_cmake_example_explanation Explanation of Engine CMakeLists.txt
 
 \dontinclude example_engine/CMakeLists.txt
+
+Below is described the basic structure expected in an Engine cmake configuration file. The code samples are taken from *docs/example_engine/CMakeLists.txt*, which can be used as a template.
 
 Create basic variable definitions. These will be used in the code later on
 

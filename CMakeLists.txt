@@ -230,8 +230,8 @@ set(DOXYGEN_EXAMPLE_PATH
 		"examples"
 		"config_schemas"
 		"nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
+		"nrp_protobuf/nrp_proto_defs"
 		"nrp_general_library/CMakeLists.txt"
-		"nrp_general_library/nrp_general_library/property_template/serializers/property_serializer.h"
 		"CMakeLists.txt"
 		"README.md")
 
@@ -253,8 +253,6 @@ doxygen_add_docs(doxygen
 		"docs/architecture_overview/nrp_simulation.dox"
 		"docs/architecture_overview/plugin_system.dox"
 		"docs/architecture_overview/process_launcher.dox"
-		"docs/architecture_overview/property_serializer.dox"
-		"docs/architecture_overview/property_template.dox"
 		"docs/architecture_overview/simulation_loop.dox"
 		"docs/architecture_overview/sync_model_details.dox"
 		"docs/architecture_overview/transceiver_function.dox"
@@ -284,8 +282,7 @@ doxygen_add_docs(doxygen
 		"docs/guides/guides.dox"
 		"docs/guides/general_developer_guide.dox"
 		"docs/guides/helpful_info.dox"
-		"docs/guides/device_creation.dox"
-		"docs/guides/device_integration_gazebo_grpc.dox"
+		"docs/guides/add_proto_definition.dox"
 		"docs/guides/engine_creation.dox"
 		"docs/guides/grpc_engine_creation.dox"
 		"docs/guides/json_engine_creation.dox"

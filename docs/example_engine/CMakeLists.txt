@@ -20,7 +20,6 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_example_engine/engine_server/example_engine_device_controller.cpp
 	nrp_example_engine/engine_server/example_engine_server.cpp
 	nrp_example_engine/nrp_client/example_engine_client.cpp
 )

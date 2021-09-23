@@ -69,7 +69,7 @@ This will as well start nest-server in a separate process.
 
 This simple example shows two instances of \ref python_json_engine exchanging device data. The data exchange is mediated by a \ref transceiver_function "Transceiver Function".
 
-The PythonJSONEngine implements a Python class, <i>EngineScript</i>, which methods <i>initialize</i>, <i>runLoop</i> and <i>shutdown</i> can be overriden to execute any arbitrary piece of Python code synchronously in a NRP experiment. This opens the possibility of easily integrating any simulator with a Python API in an experiment (eg.opensim, openai). Under the hood <i>EngineScript</i> manages Device I/O operations with the Simulation Loop.
+The PythonJSONEngine implements a Python class, <i>EngineScript</i>, which methods <i>initialize</i>, <i>runLoop</i> and <i>shutdown</i> can be overriden to execute any arbitrary piece of Python code synchronously in a NRP experiment. This opens the possibility of easily integrating any simulator with a Python API in an experiment (eg.opensim, openai). Under the hood <i>EngineScript</i> manages Device I/O operations with the SimulationLoop.
 
 In the example, which can be found in <i>examples/tf_exchange</i> folder, an engine defined in <i>engine_1.py</i> file registers a device of type <i>PythonDevice</i> and id "device1". The device stores a dictionary with the current simulation time in the engine and the number of simulation steps the engine has already advanced. Then a TF defined in <i>tf_1.py</i> get this device and relay it to a second engine defined in <i>engine_2.py</i> which simply prints out its data.
 

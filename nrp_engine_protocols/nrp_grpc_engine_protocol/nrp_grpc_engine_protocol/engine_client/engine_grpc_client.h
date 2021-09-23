@@ -99,7 +99,7 @@ class EngineGrpcClient
         void sendInitCommand(const nlohmann::json & data)
         {
 		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
+            sleep(1);
             EngineGrpc::InitRequest  request;
             EngineGrpc::InitReply    reply;
             grpc::ClientContext      context;

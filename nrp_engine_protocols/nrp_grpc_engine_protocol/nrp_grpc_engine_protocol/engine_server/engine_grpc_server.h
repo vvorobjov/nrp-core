@@ -157,6 +157,11 @@ class EngineGrpcServer : public EngineGrpcService::Service
             this->_devicesControllers.emplace(deviceName, interface);
         }
 
+        void registerDeviceNoLock(const std::string & deviceName, ProtoDeviceController *interface)
+        {
+            this->_devicesControllers.emplace(deviceName, interface);
+        }
+
         // TODO used only in tests, try to remove it?
         unsigned getNumRegisteredDevices()
         {

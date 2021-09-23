@@ -3,11 +3,10 @@
 For users interested in creating their own engine for an as-of-yet unsupported simulator, the following guides / tutorials will be helpful.
 
 - \subpage tutorial_developer_guide
-- \subpage tutorial_device_creation
-- \subpage tutorial_device_integration_gazebo_grpc
 - \subpage tutorial_engine_creation
-- \subpage grpc_engine_creation
 - \subpage json_engine_creation 
+- \subpage grpc_engine_creation
+- \subpage tutorial_add_proto_definition
 - \subpage tutorial_helpful_info
 
 */

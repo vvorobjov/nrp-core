@@ -32,7 +32,6 @@
 #include <set>
 #include <vector>
 #include <future>
-#include <functional>
 
 class EngineClientInterface;
 class EngineLauncherInterface;

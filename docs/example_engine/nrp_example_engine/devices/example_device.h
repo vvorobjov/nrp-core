@@ -1,4 +1,4 @@
-/* NRP Core - Backend infrastructure to synchronize simulations
+/* * NRP Core - Backend infrastructure to synchronize simulations
  *
  * Copyright 2020 Michael Zechmair
  *
@@ -19,13 +19,19 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#include "nrp_grpc_engine_protocol/device_interfaces/grpc_device_serializer.h"
-#include "nrp_example_engine/devices/example_device.h"
+#ifndef DUMMY_DEVICE_H
+#define DUMMY_DEVICE_H
 
-template<>
-GRPCDevice DeviceSerializerMethods<GRPCDevice>::serialize<MyDevice>(const MyDevice &device);
+#include "nrp_general_library/device_interface/device.h"
 
-template<>
-MyDevice DeviceSerializerMethods<GRPCDevice>::deserialize<MyDevice>(DeviceIdentifier &&devID, deserialization_t data);
 
-// EOF
+struct ExampleData
+{
+    int a;
+    float b;
+};
+
+
+using ExampleDevice = Device<ExampleData>;
+
+#endif // DUMMY_DEVICE_H

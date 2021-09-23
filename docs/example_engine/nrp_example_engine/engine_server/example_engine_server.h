@@ -2,7 +2,6 @@
 #define EXAMPLE_ENGINE_SERVER_H
 
 #include "nrp_json_engine_protocol/device_interfaces/json_device.h"
-#include "nrp_example_engine/engine_server/example_engine_device_controller.h"
 
 class ExampleEngineServer
 {

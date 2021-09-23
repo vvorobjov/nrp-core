@@ -24,6 +24,8 @@
 
 #include "google/protobuf/message.h"
 #include <boost/python.hpp>
+#include <algorithm>
+
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "proto_python_bindings/proto_field_ops.h"
 #include "proto_python_bindings/repeated_field_proxy.h"
@@ -187,8 +189,11 @@ public:
         std::shared_ptr<gpb::Message> m(new MSG_TYPE());
         const gpb::Descriptor *desc = m->GetDescriptor();
 
-        bpy::class_<MSG_TYPE> binder(desc->name().c_str());
-        binder.def(bpy::init<const MSG_TYPE &>());
+        auto py_name = desc->full_name();
+        py_name.erase(std::remove(py_name.begin(), py_name.end(), '.'), py_name.end());
+
+        bpy::class_<MSG_TYPE> binder(py_name.c_str());
+        binder.def(bpy::init<const MSG_TYPE &>(py_name.c_str()));
         binder.def("__str__", &MSG_TYPE::DebugString);
         binder.def("__getattr__", GetAttribute);
         binder.def("__setattr__", SetAttribute);

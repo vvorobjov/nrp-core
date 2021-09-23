@@ -1,7 +1,10 @@
 #include "nrp_example_engine/nrp_client/example_engine_client.h"
 
-ExampleEngineClient::~ExampleEngineClient()
-{}
+ExampleEngineClient::ExampleEngineClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+        : EngineClient(config, std::move(launcher))
+{
+
+}
 
 void ExampleEngineClient::initialize()
 {
@@ -38,3 +41,10 @@ const std::vector<std::string> ExampleEngineClient::engineProcEnvParams() const
 {
     return std::vector<std::string>();
 }
+
+SimulationTime ExampleEngineClient::runLoopStepCallback(SimulationTime)
+{
+    return getEngineTime();
+}
+
+// EOF

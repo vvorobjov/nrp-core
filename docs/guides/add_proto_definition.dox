@@ -1,0 +1,20 @@
+/*! \page tutorial_add_proto_definition Adding new protobuf message definitions
+
+This guide shows how to extend the protobuf message definitions availabe in nrp-core. Afterwards, the new definitions become available to use in TransceiverFunctions and Grpc Engines.
+
+The process is very simple and consists only of two steps:
+
+1. Add your new message definitions into a separate *.proto* file. Refer to <a href="https://developers.google.com/protocol-buffers/docs/proto3">proto3 language guide</a> to check available possibilities.
+2. Place the new *.proto* file in the folder *nrp_protobuf/engine_proto_defs*. In this way your message defitinions will be automatically compiled during the nrp-core build process. Also the Python bindings required (see \ref devices_protobuf section) to use these new proto classes in nrp-core will be generated and compiled.
+
+
+Optionally, those new message definitions which will be used to exchange data with Grpc Engines must be manually added to the *Engine.DeviceMessage* message oneof *data* field definition.
+*Engine.DeviceMessage* is the message type used by Grpc Engine servers to send data to Grpc Engine clients. It contains a Device Id and the data itself, stored in a oneof *data* field. *Oneof* is a kind of XOR type of field (please refer to the guide listed above for more information). So in the end only those message types listed in the oneof *data* field are those which can be sent by Grpc Engine servers.
+
+The *Engine.DeviceMessage* can be found in the folder *nrp_protobuf/nrp_proto_defs*. As shipped with nrp-core, it contains only a message definition used for testing and those messages used by the GazeboGrpcEngine.
+
+\dontinclude engine_msgs.proto
+\skip message DeviceMessage
+\until }
+\until }
+*/

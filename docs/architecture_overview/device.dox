@@ -1,64 +1,215 @@
 /*! \page devices Devices
 
-\ref transceiver_function "Transceiver functions" use devices to relay data between engines. Devices are simple data structures, which can contain scalar types, strings or arrays and vectors of these elements. Each engine type is designed to accept only certain types of devices. To discover which device types can be processed by an engine, check out the engine's documentation \ref nrp_engines "here". In each engine type page, the Python modules which make devices accessible from Python are  also listed. These modules can be a useful source of information for the user looking into the structure of devices.
+Devices are simple objects which wrap around arbitrary data structures, like JSON objects or protobuf messages.
+They provide the necessary abstract interface, which is understood by all components of NRP-Core, while still
+allowing to pass data in various formats.
 
-Along with the actual data, every device contains one DeviceIdentifier. It uniquely identifies a device both on the engine and simulation loop sides and specifies to which engine the device should be sent to or requested from. It consists of three string: the device's name, its type, and the corresponding engine's name.
+A Device consists of two parts:
 
-The Device base class is DeviceInterface, which contains the DeviceIdentifier necessary for identifying the corresponding engine. Additionally, devices must be de-/serializable in a manner that makes communication with an Engine possible. The mechanism for device de-/serialization is based on the use of PropertyTemplates. De-/serialization of devices is discussed \ref device_serialization "below".
+- Device ID: which allows to uniquely indentify the object 
+- Device data: this is the data stored by the Device, which can be in principle of any type
 
-To implement new device types, developers can use the Device template as a base. It derives a DeviceInterface as well as a PropertyTemplate containing all requested properties. An example device class is listed below. It implements a device with two properties, `string` and `number`, of types string and int.
+Devices are mainly used by \ref transceiver_function "Transceiver functions" to relay data between engines. 
+Each engine type is designed to accept only devices of a certain type and structure.
+To discover which device types can be processed by an engine, check out the engine's documentation \ref nrp_engines "here".
 
-\code{.cpp}
-#include "nrp_general_library/device_interface/device.h"
 
-class ExampleDevice
-        : public Device<ExampleDevice, "ExampleDevice", PropNames<"number", "string">, int, std::string>
-{
-	public:
-		// Constructor. property_template_t refers to the PropertyTemplate<> base class.
-		// Note the default property values. If no property_template_t is specified, they will be used
-		ExampleDevice(DeviceIdentifier &&devID, property_template_t &&props = property_template_t(0, "empty"))
-		    : Device(std::move(devID), std::move(props))
-		{}
+\section devices_id Device ID
 
-		// Property Deserializer. The base Device::deserializeProperties references the DeviceSerializerMethods template specialized by DESERIALIZER_T
-		// Note the default property values. If no property_template_t is specified, they will be used. They should be the same as the ones in the constructor above
-		// Also note that this function override must only be provided if default property values should be set on instantiation
-		template<class DESERIALIZE_T>
-		static auto deserializeProperties(DESERIALIZE_T &&data)
-		{	return Device::deserializeProperties(std::forward<DESERIALIZE_T>(data), 0, "empty");	}
+Every device contains a DeviceIdentifier, which uniquely identifies the device object and allows
+for routing of the data between transceiver functions, engine clients and engine servers.
+A device identifier consists of three fields:
 
-		const int &number() const
-		{	return this->getPropertyByName<"number">();	}
+- name - name of the device. Must be unique.
+- type - string representation of the Device data type. This field will most probably will be of no concern for the users.
+It is set and used internally and is not in human-readable form.
+- engine name - name of the engine to which the device is bound.
 
-		int &number()
-		{	return this->getPropertyByName<"number">();	}
-
-		const std::string &string() const
-		{	return this->getPropertyByName<"string">(); }
-
-		std::string &string()
-		{	return this->getPropertyByName<"string">();	}
-
-};
-\endcode
-
-Finally, Devices are both the input and output of TransceiverFunctions. To this end, Python wrappers are provided for each device type. Devices can be declared as TransceiverFunction inputs using the dedicated decorator:
+These fields can be accessed from the transceiver functions:
 
 \code{.py}
-@FromEngineDevice(keyword='device_name', id=DeviceIdentifier('device_name', 'engine_name'))
+print(device.name)
+print(device.type)
+print(device.engine_name)
 \endcode
 
-After that they can be accessed in TFs as input arguments. More details are provided in this \ref transceiver_function "page". When passed as TF arguments, Devices behave at all effect as read-only objects. Even though it is possible to modify their data or to add new attributes to them inside of a TransceiverFunction, these changes will have no effect outside of the TransceiverFunction.
 
-\section device_serialization Device Serialization
+\section devices_data Device data
 
-The base classes which handle the de-/serialization of Device data are PropertyTemplate, PropertySerializer and DeviceSerializerMethods.
+Device is a template class with a single template parameter, which specifies the type of the data contained by the Device. 
+This Device data can be in principle of any type. 
+In practice there are some limitations though, since Devices, which are C++ objects, must be accessible from TransceiverFunctions, which are written in Python. 
+Therefore the only Device data types which can be actually used in nrp-core are those for which Python bindings are provided. 
+These are commented \ref supported_device_types "below".
 
-PropertyTemplate implement heterogeneous data structures which elements can be iterated. That makes them suitable for de-/serialization operations. See this \subpage property_template "page" for further details.
+In TransceiverFunctions, the Device data can always be accessed using the device "data" attribute.
 
-PropertySerializer provides static methods for de-/serializing property templates from and to any serialization data type, with PropertySerializerMethods handling concrete implementations for concrete serialization data types. See this \subpage property_serializer "page" for further details.
+\section empty_device Empty Devices
 
-Finally, DeviceSerializerMethods class template implements methods to deserialize Devices from and to concrete serialization data types. Since Device class inherits from PropertyTemplate, DeviceSerializerMethods specializations can internally use PropertySerializer to handle the actual data de-/serialization operations. An example can be found in the DeviceSerializerMethods<nlohmann::json> implemenation in file \ref nrp_json_engine_protocol/device_interfaces/json_device_serializer.h.
+It is possible for a device to contain no data. 
+This is useful for example when an Engine is asked for a certain Device but there it is not able to provide it. 
+In this case, an Engine can return an empty device.
+This type of device contains only a device identifier and no data. 
+
+Attempting to retrieve the data from an empty Device will result in an exception.
+A method "isEmpty" is provided to check whether a Device is empty or not before attempting to access its data:
+
+\code{.py}
+if(not device.isEmpty()):
+	# It's safe to get the data
+	print(device.data)
+else:
+	# This will raise an exception
+	print(device.data)
+\endcode
+
+
+\section devices_tfs Role of Devices in TransceiverFunctions
+
+Devices are both the input and output of TransceiverFunctions.
+When a device is declared as input of a TF, this device is always requested to the corresponding Engine when the latter is synchronized.
+When a device is returned by a TF, it is sent to the corresponding Engine \ref transceiver_function_synchronization "after the TF is executed".
+
+The subsections below elaborate on the details of to use Devices in TFs.
+
+\subsection devices_tfs_input Devices as input to transceiver functions
+
+Devices can be declared as TransceiverFunction inputs using the dedicated decorator.
+After that they can be accessed in TFs as input arguments.
+
+\code{.py}
+# Declare device with "device_name" name from engine "engine_name" as input using the @FromEngineDevice decorator
+# The trasceiver function must accept an argument with the same name as "keyword" in the device decorator
+
+@FromEngineDevice(keyword="device", id=DeviceIdentifier("device_name", "engine_name"))
+@TransceiverFunction("engine_name")
+def transceiver_function(device):
+	print(device.data)
+
+# Multiple input devices from different engines can be declared
+
+@FromEngineDevice(keyword="device1", id=DeviceIdentifier("device_name1", "engine_name1"))
+@FromEngineDevice(keyword="device2", id=DeviceIdentifier("device_name2", "engine_name2"))
+@TransceiverFunction("engine_name1")
+def transceiver_function(device1, device2):
+	print(device1.data)
+	print(device2.data)
+\endcode
+
+When passed as TF arguments, Devices behave at all effect as read-only objects.
+Even though it is possible to modify their data or to add new attributes to them inside of a TransceiverFunction,
+these changes will have no effect outside of the TransceiverFunction.
+
+
+\subsection devices_tfs_output Devices as output of transceiver functions
+
+Devices can be returned from the transceiver function.
+
+\code{.py}
+# NRP-Core expects transceiver functions to always return a list of devices
+
+@TransceiverFunction("engine_name")
+def transceiver_function():
+	device = JsonDevice("device_name", "engine_name")
+
+	return [ device ]
+
+# Multiple devices can be returned
+
+@TransceiverFunction("engine_name")
+def transceiver_function():
+	device1 = JsonDevice("device_name1", "engine_name")
+	device2 = JsonDevice("device_name2", "engine_name")
+
+	return [ device1, device2 ]
+\endcode
+
+\section supported_device_types Supported Device data types
+
+As commented in the section above, Devices are both the input and output of TFs. Therefore, a conversion mechanism between C++ and Python is required for each supported Device data type. The types currently supported are nlohmann::json and protobuf messages. The subsections below give details of the Python API provided for each of these types.
+
+\subsection devices_json JsonDevice
+
+JsonDevice type wraps around <a href="https://github.com/nlohmann/json">nlohmann::json</a> objects.
+This type of device is very flexible and allows to pass most types of data between the simulators and transceiver function
+without writing any additional code.
+The JsonDevice can contain all basic Python types.
+
+Inside transceiver functions the data can be accessed like a python dictionary:
+
+\code{.py}
+# To set the data
+
+device = JsonDevice("device_name", "engine_name")
+
+device.data["null"]   = None
+device.data["long"]   = 1
+device.data["double"] = 43.21
+device.data["string"] = "string"
+device.data["bool"]   = True
+device.data["array"]  = [5, 1, 6]
+device.data["tuple"]  = (1, 2, 3)
+device.data["object"] = {"key1": "value", "key2": 600}
+
+# To retrieve the data
+
+print(device.data["string"])
+print(device.data["object"])
+
+\endcode
+
+
+\subsection devices_protobuf Protobuf devices
+
+In contrast with JsonDevice, which can wrap any nlohmann::json C++ object, a Python wrapper class is generated for each Protobuf definition.
+For example, for the *Camera* message listed below (which is used by the \ref gazebo_engine), a python class *GazeboCameraDevice* is generated.
+
+\code{.proto}
+package Gazebo;
+
+// Data coming from gazebo camera device
+message Camera
+{
+    uint32 imageWidth  = 1;
+    uint32 imageHeight = 2;
+    uint32 imageDepth  = 3;
+    bytes  imageData   = 4;
+}
+\endcode
+
+This class contains a *data* attribute which is of type *GazeboCamera* and gives access to the wrapped device data. 
+The generated Python classes match the original Protobuf Python API as described in the <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated">protobuf documentation</a>.
+There are some known limitations with respect to the original Protobuf Python API which are listed below with references to the protobuf documentation:
+
+1. Well Known Types not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">ref</a>
+2. Repeated Message field not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#repeated-message-fields">ref</a>
+3. Map field type not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#map-fields">ref</a>
+4. Only basic Enum support. To set or get *Enum* fields only *int* can be used. *Enum constants* can't be accessed from python <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#enum">ref</a>
+5. The *Message* Python wrapper only supports a subset of the methods listed <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html">here</a>. These are: 'Clear', 'ClearField', 'HasField', 'IsInitialized' and 'WhichOneof'.
+
+Finally, these Python wrappers are automatically generated in the nrp-core build process. See this \ref tutorial_add_proto_definition "guide" to know how to add custom message definitions so they become afterwards available to Engines and TFs.
+
+
+\section devices_implementation Implementation details
+
+All concrete device classes should be based on the Device class. It is a template class,
+and the single template argument specifies the data structure type, which is going to be held by the class instances.
+
+The Device class design is somewhat similar to that of std::unique_ptr. Whenever a device object is constructed,
+it takes ownership of the input data structure. This structure may be then accessed and modified,
+or the ownership may be released.
+
+The Device class inherits from DeviceInterface. This class may also be instantiated, but the object will not carry any data (ie. it's an empty Device).
+
+\subsection devices_implementation_empty Empty devices
+
+A Device class is considered empty when its data is released. Every instance of the base class, DeviceInterface, is also
+considered empty, because there is no data stored in it.
+
+\subsection devices_implementation_python Python interface
+
+In order to be accessible to transceiver functions, a conversion mechanism between C++ and Python must be specified for each Device data type.
+Currently nrp-core provides Python bindings for nlohmann::json and protobuf messages.
+In case you wished to integrate a different data type, you would have to implement Python bindings for this type and make them available to nrp-core as a Python module.
 
  */
