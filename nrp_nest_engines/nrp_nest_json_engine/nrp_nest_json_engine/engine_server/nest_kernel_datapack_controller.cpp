@@ -21,7 +21,7 @@
 //
 
 #include "nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.h"
-#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
+#include "nrp_general_library/utils/json_converter.h"
 
 NestKernelDataPackController::NestKernelDataPackController(const DataPackIdentifier & devID, boost::python::dict nest)
     : JsonDataPackController(devID),

@@ -89,6 +89,21 @@ def test_output():
     return test_datapack
 
 
+def test_conversion_failure_unsupported_type():
+    test_device = JsonDevice("t", "a")
+
+    class UnsupportedType:
+        def __init__(self):
+            pass
+
+    # Try to convert an unsupported type
+    # Should throw. The exception should be caught by C++ part of the test
+
+    test_device.data["test_unsupported"] = UnsupportedType()
+
+    return test_device
+
+
 def test_numpy_conversion_failure_unsupported_type():
     test_datapack = JsonDataPack("t", "a")
 

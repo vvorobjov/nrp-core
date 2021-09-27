@@ -22,8 +22,7 @@
 
 #include "nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.h"
 
-#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
-
+#include "nrp_general_library/utils/json_converter.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_error_handler.h"
 

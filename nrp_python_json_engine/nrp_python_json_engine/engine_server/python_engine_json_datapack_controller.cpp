@@ -21,7 +21,7 @@
 //
 
 #include "nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.h"
-#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
+#include "nrp_general_library/utils/json_converter.h"
 
 #include "python/python_module.h"
 

@@ -20,7 +20,15 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
+/*!
+ * \brief Suppresses numpy warnings about deprecated API
+ */
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
+#include <numpy/arrayobject.h>
+
+#include "nrp_general_library/utils/json_converter.h"
+#include "nrp_general_library/utils/nrp_exceptions.h"
 
 
 namespace json_converter
@@ -191,6 +199,12 @@ static nlohmann::json convertPyDictToJson(PyObject* value)
 }
 
 
+static bool isNumpyInitialized()
+{
+    return (PyArray_API != NULL);
+}
+
+
 nlohmann::json convertPyObjectToJson(PyObject* value)
 {
     if(value == Py_None)            return nullptr;
@@ -201,7 +215,42 @@ nlohmann::json convertPyObjectToJson(PyObject* value)
     else if(PyList_Check(value))    return convertPyListToJson(value);
     else if(PyTuple_Check(value))   return convertPyTupleToJson(value);
     else if(PyDict_Check(value))    return convertPyDictToJson(value);
-    else                            return convertNumpyArrayToJson(value);
+    else
+    {
+        std::string errorMessage = "Attempted to convert unsupported python type into nlohmann::json.";
+
+        if(isNumpyInitialized())
+        {
+            if(PyArray_Check(value))
+            {
+                return convertNumpyArrayToJson(value);
+            }
+        }
+        else
+        {
+            errorMessage += " Numpy support in the python module is disabled, which may be the cause of failure.";
+        }
+
+        generatePythonError(errorMessage);
+
+        return nullptr;
+    }
+}
+
+
+void initNumpy()
+{
+    // Early return if the function has already been called
+
+    if(PyArray_API != NULL)
+    {
+        return;
+    }
+
+    if(_import_array() < 0)
+    {
+        throw NRPException::logCreate("Numpy _import_array() failed");
+    }
 }
 
 } // namespace json_converter

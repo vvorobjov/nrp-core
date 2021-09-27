@@ -21,6 +21,7 @@
 //
 
 #include "nrp_general_library/utils/python_interpreter_state.h"
+#include "nrp_general_library/utils/json_converter.h"
 
 #include <boost/python/numpy.hpp>
 
@@ -32,6 +33,7 @@ PythonInterpreterState::PythonInterpreterState(int argc, const char *const *argv
 	Py_SetProgramName(this->_wcharArgs.getWCharTPointers()[0]);
 
 	Py_Initialize();
+	json_converter::initNumpy();
 	boost::python::numpy::initialize();
 
 	PySys_SetArgv(this->_wcharArgs.getWCharSize(), this->_wcharArgs.getWCharTPointers());
@@ -50,6 +52,7 @@ PythonInterpreterState::PythonInterpreterState(bool allowThreads)
     : _wcharArgs(0, nullptr)
 {
 	Py_Initialize();
+	json_converter::initNumpy();
 	boost::python::numpy::initialize();
 
 	if(allowThreads)

@@ -25,8 +25,8 @@
 
 #include "nrp_json_engine_protocol/config/cmake_constants.h"
 #include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
-#include "nrp_json_engine_protocol/datapack_interfaces/json_converter.h"
 
+#include "nrp_general_library/utils/json_converter.h"
 #include "nrp_general_library/config/cmake_constants.h"
 
 #include "python/python_module.h"
@@ -77,6 +77,16 @@ static PyObject * nlohmannJsonDump(nlohmann::json & json)
 
 BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
 {
+    if(Py_IsInitialized())
+    {
+        json_converter::initNumpy();
+        boost::python::numpy::initialize();
+    }
+    else
+    {
+        std::cerr << "Python interpreter has not been initialized, numpy support in " JSON_PYTHON_MODULE_NAME_STR " will be disabled" << std::endl;
+    }
+
     // Import General NRP Python Module
     boost::python::import(PYTHON_MODULE_NAME_STR);
 

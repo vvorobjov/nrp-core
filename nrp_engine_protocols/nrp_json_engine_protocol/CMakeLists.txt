@@ -21,7 +21,6 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
 	nrp_json_engine_protocol/config/engine_json_config.cpp
 	nrp_json_engine_protocol/datapack_interfaces/json_datapack.cpp
-	nrp_json_engine_protocol/datapack_interfaces/json_converter.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_server.cpp
 	nrp_json_engine_protocol/engine_server/engine_json_opts_parser.cpp
 	nrp_json_engine_protocol/nrp_client/engine_json_nrp_client.cpp

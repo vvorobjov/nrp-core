@@ -21,7 +21,6 @@
 //
 
 #include <array>
-
 #include <gtest/gtest.h>
 #include <boost/python.hpp>
 #include <nlohmann/json.hpp>
@@ -53,6 +52,7 @@ class JsonConverter : public testing::Test
 		{
 			PyImport_AppendInittab("test_module", CONCATENATE_TOKENS(PyInit_, JSON_PYTHON_MODULE_NAME));
 			Py_Initialize();
+			json_converter::initNumpy();
 			python::numpy::initialize();
 			main    = new python::object(python::import("__main__"));
 			globals = new python::dict(main->attr("__dict__"));
@@ -230,6 +230,7 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 {
     // Call the test function
 
+	ASSERT_ANY_THROW((*globals)["test_conversion_failure_unsupported_type"]());
     ASSERT_ANY_THROW((*globals)["test_numpy_conversion_failure_unsupported_type"]());
     ASSERT_ANY_THROW((*globals)["test_numpy_conversion_failure_unsupported_nd"]());
 }

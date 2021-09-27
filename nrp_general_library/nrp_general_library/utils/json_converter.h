@@ -31,6 +31,15 @@ namespace json_converter
 {
 
 /*!
+ * \brief Initializes numpy array API for this module
+ *
+ * The function must be called before using the module.
+ * If it's not done, some of the other functions in the module may fail with an exception.
+ * The function must be called after Py_Initialize().
+ */
+void initNumpy();
+
+/*!
  * \brief Converts given JSON object into a python object
  */
 PyObject * convertJsonToPyObject(const nlohmann::json & json);

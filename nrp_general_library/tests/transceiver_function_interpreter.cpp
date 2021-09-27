@@ -25,6 +25,7 @@
 #include "nrp_general_library/config/cmake_constants.h"
 #include "tests/test_transceiver_function_interpreter.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
+#include "nrp_general_library/utils/json_converter.h"
 #include "tests/test_env_cmake.h"
 
 using JsonDataPack = DataPack<nlohmann::json>;
@@ -43,6 +44,9 @@ void appendPythonPath(const std::string &path)
 TEST(TransceiverFunctionInterpreterTest, TestSimplePythonFcn)
 {
 	Py_Initialize();
+	json_converter::initNumpy();
+    boost::python::numpy::initialize();
+
 	python::object main(python::import("__main__"));
 	python::dict globals(main.attr("__dict__"));
 	try
@@ -92,6 +96,9 @@ class InterpreterTest : public testing::Test {
   		void SetUp() override
 		{
 			Py_Initialize();
+			json_converter::initNumpy();
+            boost::python::numpy::initialize();
+
 			python::object main(python::import("__main__"));
 			python::object nrpModule(python::import(PYTHON_MODULE_NAME_STR));
 
