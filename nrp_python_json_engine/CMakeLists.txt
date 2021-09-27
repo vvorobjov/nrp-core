@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "nrp_python_json_engine")
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPPythonEngineModule")
+set(PYTHON_MODULE_NAME "python_json")
 set(EXECUTABLE_NAME "NRPPythonExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -102,7 +102,7 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 
 
 ##########################################
-## NRPPythonEngineModule
+## nrp_core.engines.python_json
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
@@ -195,10 +195,10 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files

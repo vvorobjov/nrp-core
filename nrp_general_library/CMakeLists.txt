@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "nrp_general_library")
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPPythonModule")
+set(PYTHON_MODULE_NAME "nrp_core")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -210,6 +210,8 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 
 ##########################################
 ## NRPGeneralPythonModule
+set(NRP_PYTHON_MODULE_NAME "${PYTHON_MODULE_NAME}" CACHE INTERNAL "NRP Python module name")
+
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})

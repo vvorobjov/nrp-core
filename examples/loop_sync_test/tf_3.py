@@ -1,4 +1,4 @@
-from NRPPythonModule import *
+from nrp_core import *
 
 @TransceiverFunction("nest")
 def transceiver_function():

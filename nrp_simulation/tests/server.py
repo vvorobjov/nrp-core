@@ -1,4 +1,4 @@
-from nrp_core_client import NrpCore
+from nrp_core.client import NrpCore
 
 import sys
 import os

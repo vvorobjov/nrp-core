@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "nrp_protobuf")
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPProtobufPythonModule")
+set(PYTHON_MODULE_NAME "nrp_protobuf")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -277,7 +277,7 @@ target_link_libraries(${LIBRARY_NAME}
 
 
 ##########################################
-## NRPProtobufPythonModule
+## nrp_core.data.nrp_protobuf
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
@@ -368,10 +368,10 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/data/${PYTHON_MODULE_NAME}")
 
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/data/${PYTHON_MODULE_NAME}")
 
 	# Install automatically generated python modules with proto and gRPC
 	if(PROTO_PYTHON_FILES)

@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "${engine_name_lowercase}_grpc_engine")
 set(NAMESPACE_NAME "$${PROJECT_NAME}")
 
 set(LIBRARY_NAME "$${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRP${engine_name}GrpcPythonModule")
+set(PYTHON_MODULE_NAME "${engine_name}_grpc")
 set(EXECUTABLE_NAME "NRP${engine_name}GrpcServerExecutable")
 set(TEST_NAME "$${PROJECT_NAME}Tests")
 
@@ -82,7 +82,7 @@ target_include_directories($${LIBRARY_NAME} BEFORE
 
 
 ##########################################
-## NRPExamplePythonModule
+## example_engine
 if(NOT $${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library($${PYTHON_MODULE_NAME} SHARED $${PYTHON_MODULE_SRC_FILES})
 	add_library($${NAMESPACE_NAME}::$${PYTHON_MODULE_NAME} ALIAS $${PYTHON_MODULE_NAME})
@@ -175,10 +175,10 @@ install(DIRECTORY "$${HEADER_DIRECTORY}" "$${CMAKE_CURRENT_BINARY_DIR}/include/$
 # Install Python module
 if(TARGET $${PYTHON_MODULE_NAME})
 	install(TARGETS $${PYTHON_MODULE_NAME}
-		DESTINATION "$${PYTHON_INSTALL_DIR_REL}/$${PYTHON_MODULE_NAME}")
+		DESTINATION "$${PYTHON_INSTALL_DIR_REL}/$${NRP_PYTHON_MODULE_NAME}/engines/$${PYTHON_MODULE_NAME}")
 
 	install(FILES "$${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "$${PYTHON_INSTALL_DIR_REL}/$${PYTHON_MODULE_NAME}")
+		DESTINATION "$${PYTHON_INSTALL_DIR_REL}/$${NRP_PYTHON_MODULE_NAME}/engines/$${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files

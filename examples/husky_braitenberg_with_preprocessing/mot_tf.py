@@ -1,5 +1,5 @@
-from NRPPythonModule import *
-from NRPProtobufPythonModule import GazeboJointDataPack
+from nrp_core import *
+from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 
 @FromEngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")

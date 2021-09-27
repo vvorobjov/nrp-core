@@ -34,7 +34,7 @@
 /*!
  * \brief Name of python module library as string
  */
-#define JSON_PYTHON_MODULE_NAME_STR "@PYTHON_MODULE_NAME@"
+#define JSON_PYTHON_MODULE_NAME_STR "nrp_core.data.@PYTHON_MODULE_NAME@"
 
 /*!
  * \brief Path of python functions used in tests

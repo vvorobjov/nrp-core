@@ -73,10 +73,10 @@ The PythonJSONEngine implements a Python class, <i>EngineScript</i>, which metho
 
 In the example, which can be found in <i>examples/tf_exchange</i> folder, an engine defined in <i>engine_1.py</i> file registers a datapack of type <i>PythonDataPack</i> and id "datapack1". The datapack stores a dictionary with the current simulation time in the engine and the number of simulation steps the engine has already advanced. Then a TF defined in <i>tf_1.py</i> get this datapack and relay it to a second engine defined in <i>engine_2.py</i> which simply prints out its data.
 
-\ref python_json_engine only supports <i>PythonDataPack</i> datapack type, which stores a Python dictionary in an attribute <i>data</i>. Therefore it allows to send any kind of data between Engines and TFs with the only constraint of it being JSON serializable. <i>PythonDataPack</i> is defined in the <i>NRPPythonModule</i> module from which it can be imported. Eg:
+\ref python_json_engine only supports <i>PythonDataPack</i> datapack type, which stores a Python dictionary in an attribute <i>data</i>. Therefore it allows to send any kind of data between Engines and TFs with the only constraint of it being JSON serializable. <i>PythonDataPack</i> is defined in the <i>nrp_core</i> module from which it can be imported. Eg:
 
 \code{.py}
-from NRPPythonModule import PythonDataPack
+from nrp_core import PythonDataPack
 \endcode
 
 To launch the example just execute:

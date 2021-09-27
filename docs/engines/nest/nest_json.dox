@@ -8,7 +8,7 @@ At initialization time, it loads a NEST simulation model described in a python s
 
 This engine supports a unique datapack type: NestDataPack. The latter contains the status of a set of neurons, detectors or synapsis as a python dictionary or list of dictionaries. In fact, it can store the status of any NEST object which can be passed as argument to `nest.GetStatus()` and `nest.SetStatus()` functions.
 
-NRPNestJSONPythonModule contains two functions that can be used to register datapacks with a NEST Json Engine:
+nrp_core.engines.nest_json contains two functions that can be used to register datapacks with a NEST Json Engine:
 
 - RegisterDataPack: takes as arguments a string indicating the datapack name and a NEST object which status will be linked to the datapack
 - CreateDataPack: convenience function that internally calls nest.Create() and then RegisterDataPack(). Its first argument is the datapack name. The rest of the arguments the function is called with will be passed to nest.Create(). Both the datapack name and the return value of nest.Create() are then passed to RegisterDataPack().

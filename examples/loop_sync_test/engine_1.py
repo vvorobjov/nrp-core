@@ -1,6 +1,6 @@
 """Python Engine 1. Will get current engine time and make it accessible as a datapack"""
 
-from NRPPythonEngineModule import EngineScript,RegisterEngine
+from nrp_core.engines.python_json import EngineScript,RegisterEngine
 
 @RegisterEngine()
 class Script(EngineScript):

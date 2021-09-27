@@ -109,12 +109,25 @@ public:
         }
     }
 
+    /*!
+     * \brief Returns a python string representation of this object content
+     *
+     * \return Python string
+     */
+    PyObject * toPythonString()
+    {
+        std::string dataStr = boost::python::extract<std::string>(boost::python::str(this->data.get()));
+        std::string dataPackStr = "- name: '" + this->name() + "'\n- engine: '" + this->engineName() + "'\n- data:\n" + dataStr;
+        return PyUnicode_FromString(dataPackStr.c_str());
+    }
+
     static void create_python(const std::string &name)
     {
         using namespace boost::python;
         class_< DataPack<DATA_TYPE>, DataPack<DATA_TYPE> *, bases<DataPackInterface>, boost::noncopyable >
             binder(name.data(), init<const std::string&, const std::string& >((boost::python::arg("name"), boost::python::arg("engine_name"))));
         binder.add_property("data", make_function(&DataPack<DATA_TYPE>::getData, return_internal_reference<>()));
+        binder.def("__str__", &DataPack<DATA_TYPE>::toPythonString);
     }
 
     DataPackInterfaceConstSharedPtr moveToSharedPtr() final

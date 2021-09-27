@@ -24,7 +24,7 @@
 import numpy
 import nest
 import nest.voltage_trace
-from NRPNestJSONPythonModule import CreateDataPack
+from nrp_core.engines.nest_json import CreateDataPack
 
 numpy.random.random()
 

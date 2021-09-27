@@ -4,7 +4,7 @@ set(HEADER_DIRECTORY "nrp_nest_server_engine")
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPNestServerPythonModule")
+set(PYTHON_MODULE_NAME "nest_server")
 set(EXECUTABLE_NAME "NRPNestServerExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -176,13 +176,13 @@ install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_nest_server_engine/python/numpy_json_serializer.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files

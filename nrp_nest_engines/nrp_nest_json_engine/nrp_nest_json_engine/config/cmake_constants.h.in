@@ -46,7 +46,7 @@
 /*!
  * \brief Name of python module (as string)
  */
-#define NRP_NEST_PYTHON_MODULE_STR "@PYTHON_MODULE_NAME@"
+#define NRP_NEST_PYTHON_MODULE_STR "nrp_core.engines.@PYTHON_MODULE_NAME@"
 
 /*!
  * \brief Name of NRP Nest Executable

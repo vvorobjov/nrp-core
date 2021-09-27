@@ -41,7 +41,7 @@
 /*!
  * \brief Name of python module (as string)
  */
-#define NRP_PYTHON_ENGINE_MODULE_STR "@PYTHON_MODULE_NAME@"
+#define NRP_PYTHON_ENGINE_MODULE_STR "nrp_core.engines.@PYTHON_MODULE_NAME@"
 
 /*!
  * \brief Name of NRP Python server Executable

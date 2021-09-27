@@ -5,7 +5,7 @@ This file contains the setup of the neuronal network running the Husky experimen
 # pragma: no cover
 
 import nest
-from NRPNestJSONPythonModule import RegisterDataPack, CreateDataPack
+from nrp_core.engines.nest_json import RegisterDataPack, CreateDataPack
 
 SENSORPARAMS = {'E_L': -60.5,
                 'C_m': 25.0,

@@ -18,8 +18,8 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from NRPPythonModule import *
-from NRPJSONEngineProtocolPython import *
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
 @FromEngineDataPack(keyword='datapack1', id=DataPackIdentifier('pf_input1', 'engine', 'type'))
 @FromEngineDataPack(keyword='datapack2', id=DataPackIdentifier('pf_input2', 'engine', 'type'))

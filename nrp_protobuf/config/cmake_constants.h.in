@@ -34,7 +34,7 @@
 /*!
  * \brief Name of python module library as string
  */
-#define PROTO_PYTHON_MODULE_NAME_STR "@PYTHON_MODULE_NAME@"
+#define PROTO_PYTHON_MODULE_NAME_STR "nrp_core.data.@PYTHON_MODULE_NAME@"
 
 
 #endif // NRP_PROTOBUF_MSGS_CMAKE_CONSTANTS_H

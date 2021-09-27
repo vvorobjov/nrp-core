@@ -1,5 +1,5 @@
-from NRPPythonModule import *
-from NRPJSONEngineProtocolPython import *
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
 # Engine time from the last transceiver function call
 

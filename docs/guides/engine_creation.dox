@@ -234,7 +234,7 @@ Add a library target. This instructs CMake to create a library object containing
 
 Add a Python module target. With this, a new library will be created which can be used as a Python module. The proceeding install code will install the new module at the correct location, so that it can be accessed by \ref TransceiverFunction "TransceiverFunctions".
 
-\skip ## NRPExamplePythonModule
+\skip ## example_engine
 \until endif
 
 Add an executable target. This will compile a new executable which can be executed in a forked process to run an Engine Server along with a simulation.

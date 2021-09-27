@@ -1,4 +1,4 @@
-from NRPPythonModule import *
+from nrp_core import *
 import numpy as np
 
 @FromEngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))

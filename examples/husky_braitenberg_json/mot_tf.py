@@ -1,4 +1,4 @@
-from NRPPythonModule import *
+from nrp_core import *
 
 @FromEngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")

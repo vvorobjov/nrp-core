@@ -1,6 +1,6 @@
 """Python Engine 2. Will get time from Engine 1 and print it"""
 
-from NRPPythonEngineModule import EngineScript,RegisterEngine
+from nrp_core.engines.python_json import EngineScript,RegisterEngine
 
 @RegisterEngine()
 class Script(EngineScript):

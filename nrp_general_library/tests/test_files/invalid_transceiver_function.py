@@ -19,7 +19,7 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from libNRPPythonModule import *
+from libnrp_core import *
 from testModule import TestInputDataPack, TestOutputDataPack
 
 # Invalid syntax

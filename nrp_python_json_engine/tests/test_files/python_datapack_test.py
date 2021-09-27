@@ -21,7 +21,7 @@
 
 """Simple python script file"""
 
-from NRPPythonEngineModule import EngineScript,RegisterEngine
+from nrp_core.engines.python_json import EngineScript,RegisterEngine
 
 @RegisterEngine()
 class Script(EngineScript):

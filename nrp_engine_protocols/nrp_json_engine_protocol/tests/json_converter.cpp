@@ -272,7 +272,7 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_2", &inputDataPackArray), "list indices must be integers");
 	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_3", &inputDataPackArray), "setting json array elements not supported");
 
-	ASSERT_EQ(runAndExtractExceptionMessage("test_conversion_failure_unsupported_type",       nullptr), "Attempted to convert unsupported python type into nlohmann::json");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_conversion_failure_unsupported_type",       nullptr), "Attempted to convert unsupported python type into nlohmann::json.");
 	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_type", nullptr), "Conversion of numpy dtype '<U1' not implemented");
 	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_nd",   nullptr), "Conversion of numpy array with nd = 2 not implemented");
 }

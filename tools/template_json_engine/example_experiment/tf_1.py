@@ -1,5 +1,5 @@
-from NRPPythonModule import *
-from NRPJSONEngineProtocolPython import *
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
 @FromEngineDataPack(keyword='input_datapack', id=DataPackIdentifier('test_datapack', '${engine_name_lowercase}_engine'))
 @TransceiverFunction("${engine_name_lowercase}_engine")

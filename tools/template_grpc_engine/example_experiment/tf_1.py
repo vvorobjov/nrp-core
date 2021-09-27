@@ -1,4 +1,4 @@
-from NRPPythonModule import *
+from nrp_core import *
 from NRPProtoPythonModule import *
 
 @FromEngineDataPack(keyword='input_datapack', id=DataPackIdentifier('test_datapack', '${engine_name_lowercase}_engine'))
