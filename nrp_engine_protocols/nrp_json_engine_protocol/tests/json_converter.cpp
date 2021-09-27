@@ -78,6 +78,35 @@ class JsonConverter : public testing::Test
 
 
 		/*!
+		 * \brief Runs python function with given name, extracts the exception message and returns it as string
+		 */
+		static const std::string runAndExtractExceptionMessage(const std::string & functionName, const JsonDataPack * inputDataPack)
+		{
+			try
+			{
+				if(inputDataPack != nullptr)
+				{
+					(*globals)[functionName](boost::ref(inputDataPack));
+				}
+				else
+				{
+					(*globals)[functionName]();
+				}
+			}
+			catch(boost::python::error_already_set &)
+			{
+				PyObject *ptype, *pvalue, *ptraceback;
+				PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+
+				const char *pStrErrorMessage = PyUnicode_AsUTF8(pvalue);
+				return std::string(pStrErrorMessage);
+			}
+
+			return "";
+		}
+
+
+		/*!
 		 * \brief Asserts that two arrays are identical with respect to size and values
 		 */
 		template <typename TYPE>
@@ -230,9 +259,22 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 {
     // Call the test function
 
-	ASSERT_ANY_THROW((*globals)["test_conversion_failure_unsupported_type"]());
-    ASSERT_ANY_THROW((*globals)["test_numpy_conversion_failure_unsupported_type"]());
-    ASSERT_ANY_THROW((*globals)["test_numpy_conversion_failure_unsupported_nd"]());
+	nlohmann::json * inputJsonArray = new nlohmann::json({ 1, 0, 2 });
+    JsonDataPack inputDataPackArray("a", "b", inputJsonArray);
+
+	nlohmann::json * inputJsonObject = new nlohmann::json({ {"key1", "value"}, {"key2", 600} });
+    JsonDataPack inputDataPackObject("a", "b", inputJsonObject);
+
+	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_1", &inputDataPackObject), "object indices must be str");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_2", &inputDataPackObject), "key 'non_existent' doesn't exist");
+
+	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_1", &inputDataPackArray), "list index out of range");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_2", &inputDataPackArray), "list indices must be integers");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_3", &inputDataPackArray), "setting json array elements not supported");
+
+	ASSERT_EQ(runAndExtractExceptionMessage("test_conversion_failure_unsupported_type",       nullptr), "Attempted to convert unsupported python type into nlohmann::json");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_type", nullptr), "Conversion of numpy dtype '<U1' not implemented");
+	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_nd",   nullptr), "Conversion of numpy array with nd = 2 not implemented");
 }
 
 
@@ -260,6 +302,77 @@ TEST_F(JsonConverter, TestJsonStrMethod)
         // Call the test function
 
         (*globals)["test_str_method"](boost::ref(inputDataPack));
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
+}
+
+
+/*!
+ * \brief Tests __len__ method of JsonDataPack
+ */
+TEST_F(JsonConverter, TestJsonLenMethod)
+{
+    try
+    {
+        // Create input device with JSON data
+
+        nlohmann::json * inputJson = new nlohmann::json();
+        (*inputJson)["testNull"     ] = nullptr;
+        (*inputJson)["testLong"     ] = 100;
+        (*inputJson)["testArray"    ] = { 1, 0, 2 };
+        (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
+        JsonDataPack inputDataPack("a", "b", inputJson);
+
+        // Call the test function
+
+        (*globals)["test_len_method"](boost::ref(inputDataPack));
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
+}
+
+
+/*!
+ * \brief Tests keys() method of JsonDataPack
+ */
+TEST_F(JsonConverter, TestJsonKeysMethod)
+{
+    try
+    {
+        // Create input devices with JSON data
+
+        nlohmann::json * inputJsonArray = new nlohmann::json({ 1, 0, 2 });
+        JsonDataPack inputDataPackArray("a", "b", inputJsonArray);
+
+        nlohmann::json * inputJsonObject = new nlohmann::json({ {"key1", "value"}, {"key2", 600} });
+        JsonDataPack inputDataPackObject("a", "b", inputJsonObject);
+
+        // Call the test function
+
+        (*globals)["test_keys_method"](boost::ref(inputDataPackArray), boost::ref(inputDataPackObject));
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
+}
+
+
+/*!
+ * \brief Tests append() method of JsonDataPack
+ */
+TEST_F(JsonConverter, TestJsonAppendMethod)
+{
+    try
+    {
+        // Call the test function
+
+        (*globals)["test_append_method"]();
     }
     catch(boost::python::error_already_set &)
     {

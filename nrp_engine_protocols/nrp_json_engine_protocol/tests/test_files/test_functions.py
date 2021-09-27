@@ -89,8 +89,43 @@ def test_output():
     return test_datapack
 
 
+def test_index_out_of_range_array_1(input_data_pack):
+    # Access index out of range
+    # Should throw. The exception should be caught by C++ part of the test
+
+    input_data_pack.data[3]
+
+
+def test_index_out_of_range_array_2(input_data_pack):
+    # Access array with string as index
+    # Should throw. The exception should be caught by C++ part of the test
+
+    input_data_pack.data["test"]
+
+
+def test_index_out_of_range_array_3(input_data_pack):
+    # Try to set element of array
+    # Should throw. The exception should be caught by C++ part of the test
+
+    input_data_pack.data[0] = 1
+
+
+def test_index_out_of_range_object_1(input_data_pack):
+    # Try to access object with integer as key
+    # Should throw. The exception should be caught by C++ part of the test
+
+    input_data_pack.data[0]
+
+
+def test_index_out_of_range_object_2(input_data_pack):
+    # Try to access a non-existent key
+    # Should throw. The exception should be caught by C++ part of the test
+
+    input_data_pack.data["non_existent"]
+
+
 def test_conversion_failure_unsupported_type():
-    test_device = JsonDevice("t", "a")
+    test_data_pack = JsonDataPack("t", "a")
 
     class UnsupportedType:
         def __init__(self):
@@ -99,9 +134,9 @@ def test_conversion_failure_unsupported_type():
     # Try to convert an unsupported type
     # Should throw. The exception should be caught by C++ part of the test
 
-    test_device.data["test_unsupported"] = UnsupportedType()
+    test_data_pack.data["test_unsupported"] = UnsupportedType()
 
-    return test_device
+    return test_data_pack
 
 
 def test_numpy_conversion_failure_unsupported_type():
@@ -133,7 +168,7 @@ def test_unsupported_json_type_failure(input_datapack):
 
     data = input_datapack.data["testBinary"]
 
-import sys
+
 def test_str_method(input_datapack):
 
     # Create a test case object, so that we can use unittest assertions
@@ -156,5 +191,54 @@ def test_str_method(input_datapack):
                        '"testString":"Armageddon"}')
 
     tc.assertEqual(str(data), expected_string)
+
+
+def test_len_method(input_data_pack):
+
+    # Create a test case object, so that we can use unittest assertions
+
+    tc = unittest.TestCase()
+
+    data = input_data_pack.data
+
+    tc.assertEqual(len(data), 4)
+    tc.assertEqual(len(data["testArray"]), 3)
+    tc.assertEqual(len(data["testObject"]), 2)
+
+
+def test_keys_method(input_array, input_object):
+
+    # Create a test case object, so that we can use unittest assertions
+
+    tc = unittest.TestCase()
+
+    # For arrays, keys() should raise an Exception, for objects - a list of keys
+
+    tc.assertRaises(AttributeError, input_array.data.keys)
+    # tc.assertEqual(sorted(input_array.data.keys()), sorted(["0", "1", "2"]))
+    tc.assertEqual(sorted(input_object.data.keys()), sorted(["key1", "key2"]))
+
+
+def test_append_method():
+
+    # Create a test case object, so that we can use unittest assertions
+
+    tc = unittest.TestCase()
+
+    test_datapack = JsonDataPack("t", "a")
+    test_datapack.data.append(1)
+    test_datapack.data.append({'key1': 'value', 'key2': 600})
+
+    tc.assertEqual(test_datapack.data[0], 1)
+    tc.assertEqual(test_datapack.data[1], {'key1': 'value', 'key2': 600})
+
+    # append() isn't allowed for json objects
+
+    test_object = JsonDataPack("t", "a")
+    test_object.data["test"] = 1
+
+    with tc.assertRaises(AttributeError):
+        test_object.data.append(1)
+
 
 # EOF
