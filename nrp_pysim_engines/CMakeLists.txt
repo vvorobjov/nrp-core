@@ -1,11 +1,11 @@
-set(PROJECT_NAME "NRPPythonJSONEngine")
-set(HEADER_DIRECTORY "nrp_python_json_engine")
+set(PROJECT_NAME "NRPOpenSimEngine")
+set(HEADER_DIRECTORY "nrp_opensim_engine")
 
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "python_json")
-set(EXECUTABLE_NAME "NRPPythonExecutable")
+set(PYTHON_MODULE_NAME "opensim")
+set(EXECUTABLE_NAME "NRPOpenSimExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
@@ -20,31 +20,20 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_python_json_engine/config/python_config.cpp
-	nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.cpp
-	nrp_python_json_engine/engine_server/python_json_server.cpp
-	nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.cpp
-	nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.cpp
-	nrp_python_json_engine/python/py_engine_script.cpp
-	nrp_python_json_engine/python/py_engine_script_wrapper.cpp
+	nrp_opensim_engine/config/opensim_config.cpp
+	nrp_opensim_engine/nrp_client/opensim_nrp_client.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-	nrp_python_json_engine/python/nrp_python_engine_module.cpp
 )
 
 # List executable build files
 set(EXEC_SRC_FILES
-	python_server_executable/main.cpp
-	python_server_executable/python_server_executable.cpp
 )
 
 # List testing build files
 set(TEST_SRC_FILES
-	python_server_executable/python_server_executable.cpp
-	tests/test_python_executable.cpp
-	tests/test_python_server.cpp
 )
 
 
@@ -67,27 +56,18 @@ endif()
 ##########################################
 ## Header configuration
 
-# General Python Header defines
-set(PYTHON_CMAKE_HEADER_CONFIG_FILE "nrp_python_json_engine/config/cmake_constants.h.in")
-set(NRP_PYTHON_CMAKE_INSTALL_BINDIR "${NRP_PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(NRP_PYTHON_EXECUTABLE ${EXECUTABLE_NAME})
-configure_file(${PYTHON_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
-
-# Python module dependencies
-configure_file("nrp_python_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
-
 ##########################################
-# NRPPythonJSONEngine
+# Library
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
-target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
 	    NRPJSONEngineProtocol::NRPJSONEngineProtocol
+		NRPPythonJSONEngine::NRPPythonJSONEngine
 
 	PRIVATE
 )
@@ -103,11 +83,11 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 
 
 ##########################################
-## nrp_core.engines.python_json
+## NRPPythonEngineModule
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
 	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
-	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 	set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
 
 	target_include_directories(${PYTHON_MODULE_NAME}
@@ -136,26 +116,6 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-	# Create testing env files
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
-
-	# Create testing executable
-	enable_testing()
-	add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-	target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-	target_link_libraries(${TEST_NAME}
-		PUBLIC
-		${NAMESPACE_NAME}::${LIBRARY_NAME}
-		GTest::GTest
-		GTest::Main)
-
-	gtest_discover_tests(${TEST_NAME}
-		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-		EXTRA_ARGS -VV)
-endif()
-
 
 ##########################################
 ## Installation
@@ -197,10 +157,16 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 if(TARGET ${PYTHON_MODULE_NAME})
 	install(TARGETS ${PYTHON_MODULE_NAME}
 		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
+
+install(FILES "nrp_opensim_engine/python/__init__.py"
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+
+install(FILES "nrp_opensim_engine/python/SimManager.py"
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+
+install(FILES "nrp_opensim_engine/python/OpensimLib.py"
+		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})

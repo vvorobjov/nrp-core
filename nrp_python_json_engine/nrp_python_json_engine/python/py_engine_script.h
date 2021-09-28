@@ -66,6 +66,11 @@ class PyEngineScript
 		 */
 		SimulationTime simTime() const;
 
+        /*!
+         * \brief Get this engine configuration
+         */
+        nlohmann::json engineConfig() const;
+
 		/*!
 		 * \brief Register datapack
 		 * \param datapackName Name of datapack

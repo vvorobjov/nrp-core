@@ -23,6 +23,7 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
+#include "nrp_json_engine_protocol/config/cmake_constants.h"
 #include "nrp_python_json_engine/config/cmake_constants.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
 #include "nrp_python_json_engine/python/py_engine_script.h"
@@ -59,6 +60,7 @@ BOOST_PYTHON_MODULE(NRP_PYTHON_ENGINE_MODULE)
 
 	// Import General NRP Python Module
 	python::import(PYTHON_MODULE_NAME_STR);
+    python::import(JSON_PYTHON_MODULE_NAME_STR);
 
 	python::class_<SimulationTime>("SimulationTime")
 		.def("count", &SimulationTime::count)
@@ -70,6 +72,7 @@ BOOST_PYTHON_MODULE(NRP_PYTHON_ENGINE_MODULE)
 	        .def("runLoop", python::pure_virtual(&PyEngineScriptWrapper::runLoop))
 	        .def("shutdown", &PyEngineScriptWrapper::shutdown, &PyEngineScriptWrapper::defaultShutdown)
 	        .add_property("_time", &PyEngineScript::simTime)
+	        .add_property("_config", &PyEngineScript::engineConfig)
 	        .def("_registerDataPack", &PyEngineScript::registerDataPack)
 	        .def("_getDataPack", &PyEngineScript::getDataPack, python::return_value_policy<python::copy_non_const_reference>())
 	        .def("_setDataPack", &PyEngineScript::setDataPack);

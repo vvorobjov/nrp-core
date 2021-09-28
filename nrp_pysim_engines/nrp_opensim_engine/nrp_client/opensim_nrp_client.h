@@ -1,4 +1,3 @@
-
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
  * Copyright 2020-2021 NRP Team
@@ -20,21 +19,19 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef PYTHON_ENGINE_JSON_NRP_CLIENT_H
-#define PYTHON_ENGINE_JSON_NRP_CLIENT_H
+#ifndef PYSIM_NRP_CLIENT_H
+#define PYSIM_NRP_CLIENT_H
 
-#include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.h"
 #include "nrp_general_library/plugin_system/plugin.h"
+#include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.h"
 
+#include <nrp_opensim_engine/config/opensim_config.h>
 
-/*!
- * \brief PythonJSONEngine client
- */
-class PythonEngineJSONNRPClient: public PythonEngineJSONNRPClientBase<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema>
+class OpenSimNRPClient: public PythonEngineJSONNRPClientBase<OpenSimNRPClient, OpenSimConfigConst::EngineSchema>
 {
 public:
 
-    PythonEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+    OpenSimNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : PythonEngineJSONNRPClientBase(config, std::move(launcher))
     {
         NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -43,10 +40,9 @@ public:
     }
 };
 
-using PythonEngineJSONLauncher = PythonEngineJSONNRPClient::EngineLauncher<PythonConfigConst::EngineType>;
+using OpenSimJSONLauncher = OpenSimNRPClient::EngineLauncher<OpenSimConfigConst::EngineType>;
+
+CREATE_NRP_ENGINE_LAUNCHER(OpenSimJSONLauncher);
 
 
-CREATE_NRP_ENGINE_LAUNCHER(PythonEngineJSONLauncher);
-
-
-#endif // PYTHON_ENGINE_JSON_NRP_CLIENT_H
+#endif // PYSIM_NRP_CLIENT_H

@@ -19,29 +19,17 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef PY_ENGINE_SCRIPT_WRAPPER_H
-#define PY_ENGINE_SCRIPT_WRAPPER_H
+#ifndef PYSIM_CONFIG_H
+#define PYSIM_CONFIG_H
 
-#include "nrp_python_json_engine/python/py_engine_script.h"
+#include <string_view>
 
-/*!
- * \brief Wrapper around PyEngineScript.
- * Used to make derived python classes available from C++
- */
-struct PyEngineScriptWrapper
-        : PyEngineScript, boost::python::wrapper<PyEngineScript>
+#include "nrp_general_library/utils/fixed_string.h"
+
+struct OpenSimConfigConst
 {
-	void initialize() override;
-
-	void defaultInitialize();
-
-	void runLoopFcn(SimulationTime timestep) override;
-
-	void shutdown() override;
-
-	void defaultShutdown();
-
-
+    static constexpr char EngineType[] = "opensim";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/opensim";
 };
 
-#endif // PY_ENGINE_SCRIPT_WRAPPER_H
+#endif // PYSIM_CONFIG_H

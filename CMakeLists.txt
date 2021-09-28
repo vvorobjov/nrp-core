@@ -175,6 +175,7 @@ endif()
 ## Python Engine
 add_subdirectory(nrp_python_json_engine)
 
+add_subdirectory(nrp_pysim_engines)
 
 ##########################################
 ## NRP Simulation

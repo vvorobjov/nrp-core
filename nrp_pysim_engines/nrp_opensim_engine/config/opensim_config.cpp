@@ -20,4 +20,5 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.h"
+
+#include "nrp_opensim_engine/config/opensim_config.h"

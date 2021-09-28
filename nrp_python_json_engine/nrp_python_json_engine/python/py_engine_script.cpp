@@ -40,6 +40,12 @@ void PyEngineScript::shutdown()
 SimulationTime PyEngineScript::simTime() const
 {	return this->_time;	}
 
+nlohmann::json PyEngineScript::engineConfig() const
+{
+    assert(this->_pServer != nullptr);
+    return this->_pServer->getEngineConfig();
+}
+
 void PyEngineScript::registerDataPack(std::string datapackName)
 {
 	//std::cout << "Registering datapack \"" + datapackName + "\"\n";

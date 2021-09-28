@@ -29,7 +29,7 @@
 struct PythonConfigConst
 {
     static constexpr char EngineType[] = "python_json";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#PythonJSONEngine";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/python_json";
 
 	/*!
 	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).

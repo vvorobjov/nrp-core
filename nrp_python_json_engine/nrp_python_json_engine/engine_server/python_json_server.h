@@ -64,6 +64,12 @@ class PythonJSONServer
 		 */
 		static PyEngineScript *registerScript(const boost::python::object &pythonScript);
 
+        /*!
+         * \brief Returns this Engine configuration
+         * \return Returns this Engine configuration
+         */
+        nlohmann::json getEngineConfig() const;
+
 	private:
 		/*!
 		 * \brief Ptr to current PythonJSONServer.

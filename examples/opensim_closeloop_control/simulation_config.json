@@ -1,0 +1,31 @@
+{
+	"SimulationName": "tf_exchange",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a device. tf_1 will request said device and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 10,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "opensim",
+			"EngineName": "server",
+			"PythonFileName": "server.py",
+			"WorldFileName":"arm26/arm26_ground_offset.osim",
+			"Visualizer":true
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "client",
+			"PythonFileName": "client.py"
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "rec_joints",
+			"FileName": "rec_joints.py"
+		},
+		{
+			"Name": "send_cmd",
+			"FileName": "send_cmd.py"
+		}
+	]
+}

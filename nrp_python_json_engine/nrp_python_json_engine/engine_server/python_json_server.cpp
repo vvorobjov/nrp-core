@@ -248,3 +248,6 @@ nlohmann::json PythonJSONServer::setDataPackData(const nlohmann::json &reqData)
 	PythonGILLock lock(this->_pyGILState, true);
 	return this->EngineJSONServer::setDataPackData(reqData);
 }
+
+nlohmann::json PythonJSONServer::getEngineConfig() const
+{ return this->_initData; }
