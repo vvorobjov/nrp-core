@@ -31,28 +31,28 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 ## Unit testing library
 option(ENABLE_TESTING "Build tests" ON)
 if(${ENABLE_TESTING})
-	enable_testing()
+    enable_testing()
 
-	include(GoogleTest)
+    include(GoogleTest)
 
-	find_package(GTest 1.10 QUIET)
-	if(NOT ${GTest_FOUND})
-		message("Please wait. Downloading GTest...")
-		FetchContent_Declare(GTest
-			GIT_REPOSITORY https://github.com/google/googletest.git
-			GIT_TAG v1.10.x)
+    find_package(GTest 1.10 QUIET)
+    if(NOT ${GTest_FOUND})
+        message("Please wait. Downloading GTest...")
+        FetchContent_Declare(GTest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG v1.10.x)
 
-		FetchContent_GetProperties(GTest)
-		if(NOT GTest_POPULATED)
-			FetchContent_Populate(GTest)
+        FetchContent_GetProperties(GTest)
+        if(NOT GTest_POPULATED)
+            FetchContent_Populate(GTest)
 
-			set(INSTALL_GTEST OFF)
-			add_subdirectory(${gtest_SOURCE_DIR} ${gtest_BINARY_DIR})
+            set(INSTALL_GTEST OFF)
+            add_subdirectory(${gtest_SOURCE_DIR} ${gtest_BINARY_DIR})
 
-			add_library(GTest::GTest ALIAS gtest)
-			add_library(GTest::Main  ALIAS gtest_main)
-		endif()
-	endif()
+            add_library(GTest::GTest ALIAS gtest)
+            add_library(GTest::Main  ALIAS gtest_main)
+        endif()
+    endif()
 endif()
 
 
@@ -66,9 +66,9 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
 find_package(Boost REQUIRED)
 if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
-	set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
 else()
-	set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}" "numpy${Python3_VERSION_MAJOR}")
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}" "numpy${Python3_VERSION_MAJOR}")
 endif()
 find_package(Boost REQUIRED COMPONENTS ${BOOST_PYTHON_COMPONENT} filesystem)
 set(BOOST_PYTHON ${BOOST_PYTHON_COMPONENT})
@@ -81,20 +81,20 @@ set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJO
 ## Log library
 find_package(spdlog 1.8.1 QUIET)
 if(NOT ${spdlog_FOUND})
-	message("Please wait. Downloading spdlog...")
-	FetchContent_Declare(spdlog
-		GIT_REPOSITORY https://github.com/gabime/spdlog.git
-		GIT_TAG v1.8.1)
+    message("Please wait. Downloading spdlog...")
+    FetchContent_Declare(spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.8.1)
 
-	FetchContent_GetProperties(spdlog)
-	if(NOT spdlog_POPULATED)
-		FetchContent_Populate(spdlog)
+    FetchContent_GetProperties(spdlog)
+    if(NOT spdlog_POPULATED)
+        FetchContent_Populate(spdlog)
 
-		set(SPDLOG_BUILD_SHARED ON)
-		set(SPDLOG_INSTALL ON)
+        set(SPDLOG_BUILD_SHARED ON)
+        set(SPDLOG_INSTALL ON)
 
-		add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
-	endif()
+        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
+    endif()
 endif()
 
 
@@ -103,13 +103,13 @@ endif()
 find_package(Doxygen REQUIRED)
 set_property(GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
 function(add_doxygen_source directory)
-	set(NUM_SOURCES ${ARGC}-1)
-	list(SUBLIST ARGV 1 ${NUM_SOURCES} ADD_SOURCES)
-	get_property(tmp GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
-	foreach(arg ${ADD_SOURCES})
-		set(tmp ${tmp} "${directory}/${arg}")
-	endforeach()
-	set_property(GLOBAL PROPERTY DOXYGEN_SOURCE_LIST "${tmp}")
+    set(NUM_SOURCES ${ARGC}-1)
+    list(SUBLIST ARGV 1 ${NUM_SOURCES} ADD_SOURCES)
+    get_property(tmp GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
+    foreach(arg ${ADD_SOURCES})
+        set(tmp ${tmp} "${directory}/${arg}")
+    endforeach()
+    set_property(GLOBAL PROPERTY DOXYGEN_SOURCE_LIST "${tmp}")
 endfunction(add_doxygen_source)
 
 
@@ -159,17 +159,17 @@ set(ENABLE_GAZEBO FULL)
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
-	add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
-	add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
+    add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
+    add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
 else()
-	message(STATUS "Gazebo engines will not be built")
+    message(STATUS "Gazebo engines will not be built")
 endif()
 
 ## Nest Engines
 if(NOT ENABLE_NEST STREQUAL OFF)
-	add_subdirectory(nrp_nest_engines)
+    add_subdirectory(nrp_nest_engines)
 else()
-	message(STATUS "Nest engines will not be built")
+    message(STATUS "Nest engines will not be built")
 endif()
 
 ## Python Engine
@@ -180,7 +180,7 @@ add_subdirectory(nrp_pysim_engines)
 ##########################################
 ## NRP Simulation
 set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
-	CACHE STRING "Default engines which will always be available in the NRP simulation")
+    CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
@@ -192,9 +192,9 @@ add_subdirectory(nrp_simulation)
 # Their absolute paths are saved in cppcheck_suppress.txt file, which will be used by cppcheck --suppressions
 add_custom_target(cppcheck-base
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	COMMAND mkdir -p cppcheck
-	COMMAND ${CMAKE_COMMAND} .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	COMMAND find _deps/ -type f \( -iname \*.cpp -o -iname \*.cc -o -iname \*.hpp -o -iname \*.h \) -exec sh -c "printf \"*:${CMAKE_BINARY_DIR}/{}\\n\"" \; > cppcheck/cppcheck_suppress.txt
+    COMMAND mkdir -p cppcheck
+    COMMAND ${CMAKE_COMMAND} .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    COMMAND find _deps/ -type f \( -iname \*.cpp -o -iname \*.cc -o -iname \*.hpp -o -iname \*.h \) -exec sh -c "printf \"*:${CMAKE_BINARY_DIR}/{}\\n\"" \; > cppcheck/cppcheck_suppress.txt
     COMMENT "Generating compile_commands.json and cppcheck/cppcheck_suppress.txt"
     VERBATIM
 )
@@ -204,7 +204,7 @@ add_custom_target(cppcheck-ci
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json --xml --xml-version=2 2> cppcheck/cppcheck_results.xml
     COMMENT "Running cppcheck and generating cppcheck/cppcheck_results.xml"
-	DEPENDS cppcheck-base
+    DEPENDS cppcheck-base
     VERBATIM
 )
 
@@ -213,9 +213,29 @@ add_custom_target(cppcheck
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json
     COMMENT "Running cppcheck"
-	DEPENDS cppcheck-base
+    DEPENDS cppcheck-base
     VERBATIM
 )
+
+##########################################
+## Template engines
+
+# All execute_process() commands will be executed sequentially during the configuration step
+
+# Generate code from the template JSON engine
+execute_process(
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND tools/create_new_engine.py --name Build --type json
+)
+
+# Generate code from the template gRPC engine
+execute_process(
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND tools/create_new_engine.py --name Build --type grpc
+)
+
+add_subdirectory("tools/build_grpc_engine")
+add_subdirectory("tools/build_json_engine")
 
 ##########################################
 ## Doxygen
@@ -226,66 +246,68 @@ set(DOXYGEN_DISABLE_INDEX YES)
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
 set(DOXYGEN_IMAGE_PATH "docs/images")
 set(DOXYGEN_EXAMPLE_PATH
-		${DOXYGEN_EXAMPLE_PATH}
-		"docs/example_engine"
-		"examples"
-		"config_schemas"
-		"nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
-		"nrp_protobuf/nrp_proto_defs"
-		"nrp_general_library/CMakeLists.txt"
-		"CMakeLists.txt"
-		"README.md")
+        ${DOXYGEN_EXAMPLE_PATH}
+        "docs/example_engine"
+        "examples"
+        "config_schemas"
+        "nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
+        "nrp_protobuf/nrp_proto_defs"
+        "nrp_protobuf/engine_proto_defs"
+        "nrp_general_library/CMakeLists.txt"
+        "CMakeLists.txt"
+        "README.md")
 
 ## Example Engine. It is built to ensure the examples are not out of date in the documentation
 add_subdirectory("docs/example_engine")
 
 get_property(DOXYGEN_SOURCES GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
 doxygen_add_docs(doxygen
-		${DOXYGEN_SOURCES}
-		"docs/main_page.dox"
+        ${DOXYGEN_SOURCES}
+        "docs/main_page.dox"
 
-		# TODO: review, complete and enable this section. Include information about the variable system to enable or
-		#  disable the compilation of engines
-		# "docs/architecture_overview/cmake_component.dox"
+        # TODO: review, complete and enable this section. Include information about the variable system to enable or
+        #  disable the compilation of engines
+        # "docs/architecture_overview/cmake_component.dox"
 
-		"docs/architecture_overview/architecture_overview.dox"
-		"docs/architecture_overview/datapack.dox"
-		"docs/architecture_overview/engine.dox"
-		"docs/architecture_overview/nrp_simulation.dox"
-		"docs/architecture_overview/plugin_system.dox"
-		"docs/architecture_overview/process_launcher.dox"
-		"docs/architecture_overview/fti_loop.dox"
-		"docs/architecture_overview/sync_model_details.dox"
-		"docs/architecture_overview/transceiver_function.dox"
+        "docs/architecture_overview/architecture_overview.dox"
+        "docs/architecture_overview/datapack.dox"
+        "docs/architecture_overview/engine.dox"
+        "docs/architecture_overview/nrp_simulation.dox"
+        "docs/architecture_overview/plugin_system.dox"
+        "docs/architecture_overview/process_launcher.dox"
+        "docs/architecture_overview/simulation_loop.dox"
+        "docs/architecture_overview/sync_model_details.dox"
+        "docs/architecture_overview/transceiver_function.dox"
         "docs/architecture_overview/preprocessing_function.dox"
-		"docs/architecture_overview/lifecycle_components.dox"
+        "docs/architecture_overview/lifecycle_components.dox"
 
-		"docs/experiment_configuration/experiment_configuration.dox"
-		"docs/experiment_configuration/engine_schema.dox"
-		"docs/experiment_configuration/transceiver_function_schema.dox"
-		"docs/experiment_configuration/simulation_schema.dox"
-		"docs/experiment_configuration/json_schema.dox"
+        "docs/experiment_configuration/experiment_configuration.dox"
+        "docs/experiment_configuration/engine_schema.dox"
+        "docs/experiment_configuration/transceiver_function_schema.dox"
+        "docs/experiment_configuration/simulation_schema.dox"
+        "docs/experiment_configuration/json_schema.dox"
 
-		"docs/engines/engines.dox"
-		"docs/engines/engine_comm.dox"
-		"docs/engines/gazebo/gazebo_engine.dox"
-		"docs/engines/gazebo/gazebo_datapacks.dox"
-		"docs/engines/gazebo/gazebo_plugins.dox"
-		"docs/engines/nest/nest_engine.dox"
-		"docs/engines/nest/nest_json.dox"
-		"docs/engines/nest/nest_server.dox"
-		"docs/engines/python_json_engine.dox"
+        "docs/engines/nrp_engines.dox"
+        "docs/engines/engine_comm.dox"
+        "docs/engines/gazebo/gazebo_engine.dox"
+        "docs/engines/gazebo/gazebo_datapacks.dox"
+        "docs/engines/gazebo/gazebo_plugins.dox"
+        "docs/engines/nest/nest_engine.dox"
+        "docs/engines/nest/nest_json.dox"
+        "docs/engines/nest/nest_server.dox"
+        "docs/engines/python_json_engine.dox"
+        "docs/engines/opensim/opensim_engine.dox"
 
-		"docs/getting_started/getting_started.dox"
-		"docs/getting_started/installation.dox"
-		"docs/getting_started/running_example_exp.dox"
+        "docs/getting_started/getting_started.dox"
+        "docs/getting_started/installation.dox"
+        "docs/getting_started/running_example_exp.dox"
 
-		"docs/guides/guides.dox"
-		"docs/guides/general_developer_guide.dox"
-		"docs/guides/helpful_info.dox"
-		"docs/guides/add_proto_definition.dox"
-		"docs/guides/engine_creation.dox"
-		"docs/guides/grpc_engine_creation.dox"
-		"docs/guides/json_engine_creation.dox"
+        "docs/guides/guides.dox"
+        "docs/guides/general_developer_guide.dox"
+        "docs/guides/helpful_info.dox"
+        "docs/guides/add_proto_definition.dox"
+        "docs/guides/engine_creation_scratch.dox"
+        "docs/guides/engine_creation_template.dox"
+        "docs/guides/python_engine_creation.dox"
 
-		COMMENT "Generating documentation")
+        COMMENT "Generating documentation")

@@ -33,52 +33,52 @@ DataPackInterface::DataPackInterface(const std::string &name, const std::string 
 
 const std::string &DataPackInterface::name() const
 {
-	return this->_id.Name;
+    return this->_id.Name;
 }
 
 void DataPackInterface::setName(const std::string &name)
 {
-	this->_id.Name = name;
+    this->_id.Name = name;
 }
 
 const std::string &DataPackInterface::type() const
 {
-	return this->_id.Type;
+    return this->_id.Type;
 }
 
 void DataPackInterface::setType(const std::string &type)
 {
-	this->_id.Type = type;
+    this->_id.Type = type;
 }
 
 const std::string &DataPackInterface::engineName() const
 {
-	return this->_id.EngineName;
+    return this->_id.EngineName;
 }
 
 void DataPackInterface::setEngineName(const std::string &engineName)
 {
-	this->_id.EngineName = engineName;
+    this->_id.EngineName = engineName;
 }
 
 const DataPackIdentifier &DataPackInterface::id() const
 {
-	return this->_id;
+    return this->_id;
 }
 
 void DataPackInterface::setID(const DataPackIdentifier &id)
 {
-	this->_id = id;
+    this->_id = id;
 }
 
 bool DataPackInterface::isEmpty() const
 {
-	return this->_isEmpty;
+    return this->_isEmpty;
 }
 
 void DataPackInterface::setIsEmpty(bool value)
 {
-	this->_isEmpty = value;
+    this->_isEmpty = value;
 }
 
 // EOF

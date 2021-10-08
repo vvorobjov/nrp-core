@@ -28,27 +28,27 @@
 class ${engine_name}JSONDataPackController
     : public JsonDataPackController
 {
-	public:
-		${engine_name}JSONDataPackController(const std::string & datapackName,
+    public:
+        ${engine_name}JSONDataPackController(const std::string & datapackName,
                                     const std::string & engineName);
 
-		/*!
-		 * \brief Processes data coming from the transceiver function
-		 *
-		 * \param[in] data The latest data from the transceiver function
-		 */
-		void handleDataPackData(const nlohmann::json &data) override;
+        /*!
+         * \brief Processes data coming from the transceiver function
+         *
+         * \param[in] data The latest data from the transceiver function
+         */
+        void handleDataPackData(const nlohmann::json &data) override;
 
-		/*!
-		 * \brief Returns the newest simulation data
-		 *
-		 * The data will be passed to the engine client through REST.
-		 * There it will be wrapped in a datapack object and passed to the transceiver functions.
-		 *
-		 * \return Pointer to the latest simulation data. The returned pointer should point
-		 *         to the cachedData object. nullptr can be returned when no new data is available.
-		 */
-		nlohmann::json * getDataPackInformation() override;
+        /*!
+         * \brief Returns the newest simulation data
+         *
+         * The data will be passed to the engine client through REST.
+         * There it will be wrapped in a datapack object and passed to the transceiver functions.
+         *
+         * \return Pointer to the latest simulation data. The returned pointer should point
+         *         to the cachedData object. nullptr can be returned when no new data is available.
+         */
+        nlohmann::json * getDataPackInformation() override;
 };
 
 #endif // ${engine_name_uppercase}_JSON_DATAPACK_CONTROLLER_SERVER_H

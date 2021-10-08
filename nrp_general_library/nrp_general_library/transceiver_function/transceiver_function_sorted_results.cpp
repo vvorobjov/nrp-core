@@ -24,33 +24,33 @@
 
 void TransceiverFunctionSortedResults::addResults(const TransceiverFunctionManager::tf_results_t &results)
 {
-	for(const auto &cR : results)
-	{
-		this->_pyList.push_back(cR.DataPackList);
+    for(const auto &cR : results)
+    {
+        this->_pyList.push_back(cR.DataPackList);
 
-		for(DataPackInterface *const pInt : cR.DataPacks)
-			this->addResult(pInt);
-	}
+        for(DataPackInterface *const pInt : cR.DataPacks)
+            this->addResult(pInt);
+    }
 }
 
 TransceiverFunctionSortedResults TransceiverFunctionSortedResults::sortResults(const TransceiverFunctionManager::tf_results_t &results)
 {
-	return TransceiverFunctionSortedResults().sortResults(results);
+    return TransceiverFunctionSortedResults().sortResults(results);
 }
 
 TransceiverFunctionSortedResults::interface_results_t::iterator TransceiverFunctionSortedResults::addResult(DataPackInterface *result)
 {
-	auto mapIterator = this->find(result->engineName());
-	if(mapIterator == this->end())
-	{
-		// Create new interface map if not yet available
-		auto emplaceRes = this->emplace(result->engineName(), datapacks_t({result}));
-		// TODO: Check if emplace was successful (emplace.second)
+    auto mapIterator = this->find(result->engineName());
+    if(mapIterator == this->end())
+    {
+        // Create new interface map if not yet available
+        auto emplaceRes = this->emplace(result->engineName(), datapacks_t({result}));
+        // TODO: Check if emplace was successful (emplace.second)
 
-		mapIterator = emplaceRes.first;
-	}
-	else
-		mapIterator->second.push_back(result);
+        mapIterator = emplaceRes.first;
+    }
+    else
+        mapIterator->second.push_back(result);
 
-	return mapIterator;
+    return mapIterator;
 }

@@ -22,7 +22,7 @@
 from nrp_core import *
 from NRPGeneralPythonTestModule import TestInputDataPack, TestOutputDataPack
 
-@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('tf_input', 'engine', 'type'))
+@EngineDataPack(keyword='datapack', id=DataPackIdentifier('tf_input', 'engine', 'type'))
 @TransceiverFunction("engine")
 def transceiver_function(datapack):
     test_val = datapack.test_value

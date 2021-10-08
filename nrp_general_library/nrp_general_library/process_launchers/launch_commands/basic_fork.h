@@ -30,32 +30,32 @@ inline const char LAUNCH_COMMAND[] = "BasicFork";
 class BasicFork
         : public LaunchCommand<LAUNCH_COMMAND>
 {
-		/*!
-		 *	\brief Command to set environment variables. More versatile than the C function setenv
-		 */
-		static constexpr std::string_view EnvCfgCmd = NRP_ENGINE_SET_ENV_CMD;
+        /*!
+         *  \brief Command to set environment variables. More versatile than the C function setenv
+         */
+        static constexpr std::string_view EnvCfgCmd = NRP_ENGINE_SET_ENV_CMD;
 
     public:
-		~BasicFork() override;
+        ~BasicFork() override;
 
-		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-		                          const std::vector<std::string> &startParams, bool appendParentEnv = true) override;
+        pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override;
 
-		pid_t stopEngineProcess(unsigned int killWait) override;
+        pid_t stopEngineProcess(unsigned int killWait) override;
 
-		ENGINE_RUNNING_STATUS getProcessStatus() override;
+        ENGINE_RUNNING_STATUS getProcessStatus() override;
 
-	private:
-		/*!
-		 * \brief PID of child process running the engine
-		 */
-		pid_t _enginePID;
+    private:
+        /*!
+         * \brief PID of child process running the engine
+         */
+        pid_t _enginePID;
 
-		/*!
-		 * \brief Add environment variables to environ
-		 * \param envVars Environment variables
-		 */
-		static void appendEnvVars(const std::vector<std::string> &envVars);
+        /*!
+         * \brief Add environment variables to environ
+         * \param envVars Environment variables
+         */
+        static void appendEnvVars(const std::vector<std::string> &envVars);
 };
 
 #endif // BASIC_FORK_H

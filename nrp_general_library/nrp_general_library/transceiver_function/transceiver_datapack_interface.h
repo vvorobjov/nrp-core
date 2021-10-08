@@ -40,91 +40,91 @@ using TransceiverFunctionInterpreterConstSharedPtr = std::shared_ptr<const Trans
 class TransceiverDataPackInterface
         : public PtrTemplates<TransceiverDataPackInterface>
 {
-	public:
-		TransceiverDataPackInterface() = default;
-		virtual ~TransceiverDataPackInterface() = default;
+    public:
+        TransceiverDataPackInterface() = default;
+        virtual ~TransceiverDataPackInterface() = default;
 
-		/*!
-		 * \brief Decorator __call__() function. Takes the lower decorator as a parameter. Moves the given class into a shared_ptr, which will be managed by the next decorator
-		 * \param tfDataPack Lower Decorator
-		 * \return shared_ptr referencing data from this object
-		 */
-		template<class TRANSCEIVER_DATAPACK>
-		TransceiverDataPackInterface::shared_ptr pySetup(const TransceiverDataPackInterface::shared_ptr &tfDataPack)
-		{
-		    static_assert((std::is_base_of_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>) || (std::is_same_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>),"Parameter TRANSCEIVER_DATAPACK must derive from TransceiverDataPackInterface or be same");
+        /*!
+         * \brief Decorator __call__() function. Takes the lower decorator as a parameter. Moves the given class into a shared_ptr, which will be managed by the next decorator
+         * \param tfDataPack Lower Decorator
+         * \return shared_ptr referencing data from this object
+         */
+        template<class TRANSCEIVER_DATAPACK>
+        TransceiverDataPackInterface::shared_ptr pySetup(const TransceiverDataPackInterface::shared_ptr &tfDataPack)
+        {
+            static_assert((std::is_base_of_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>) || (std::is_same_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>),"Parameter TRANSCEIVER_DATAPACK must derive from TransceiverDataPackInterface or be same");
 
-			this->_function = tfDataPack;
+            this->_function = tfDataPack;
 
-			auto thisPtr = this->moveToSharedPtr<TRANSCEIVER_DATAPACK>();
+            auto thisPtr = this->moveToSharedPtr<TRANSCEIVER_DATAPACK>();
 
-			TransceiverDataPackInterface::shared_ptr *const registryPtr = this->_function->getTFInterpreterRegistry();
-			assert(registryPtr != nullptr);
+            TransceiverDataPackInterface::shared_ptr *const registryPtr = this->_function->getTFInterpreterRegistry();
+            assert(registryPtr != nullptr);
 
-			*registryPtr = thisPtr;
-			return thisPtr;
-		}
+            *registryPtr = thisPtr;
+            return thisPtr;
+        }
 
-		/*!
-		 * \brief Get name of engine this transceiver is linked to
-		 */
-		virtual const std::string &linkedEngineName() const;
+        /*!
+         * \brief Get name of engine this transceiver is linked to
+         */
+        virtual const std::string &linkedEngineName() const;
 
         /*!
          * \brief Indicates if this is a preprocessing function
          */
         virtual bool isPrepocessing() const;
 
-		/*!
-		 * \brief Execute Transceiver Function. Base class will simply call runTf on _function
-		 * \param args Arguments for execution. Can be altered by any TransceiverDataPackInterfaces. Base class will only pass them along
-		 * \param kwargs Keyword arguments for execution. Can be altered by any TransceiverDataPackInterfaces. Base class will only pass them along
-		 * \return Returns result of TransceiverFunction execution.
-		 */
-		virtual boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs);
+        /*!
+         * \brief Execute Transceiver Function. Base class will simply call runTf on _function
+         * \param args Arguments for execution. Can be altered by any TransceiverDataPackInterfaces. Base class will only pass them along
+         * \param kwargs Keyword arguments for execution. Can be altered by any TransceiverDataPackInterfaces. Base class will only pass them along
+         * \return Returns result of TransceiverFunction execution.
+         */
+        virtual boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs);
 
-		/*!
-		 *	\brief Appends its own datapack requests onto datapackIDs. Uses getRequestedDataPackIDs to check which IDs are requested by this datapack
-		 *	\param datapackIDs Container with datapack IDs that gets expanded
-		 *	\return Returns datapackIDs, with own datapackIDs appended
-		 */
-		virtual EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs = EngineClientInterface::datapack_identifiers_set_t()) const;
+        /*!
+         *  \brief Appends its own datapack requests onto datapackIDs. Uses getRequestedDataPackIDs to check which IDs are requested by this datapack
+         *  \param datapackIDs Container with datapack IDs that gets expanded
+         *  \return Returns datapackIDs, with own datapackIDs appended
+         */
+        virtual EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs = EngineClientInterface::datapack_identifiers_set_t()) const;
 
-		/*!
-		 * \brief Returns datapack IDs of this DataPack that should be requested from the engines. TODO: Make protected
-		 */
-		virtual EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const;
+        /*!
+         * \brief Returns datapack IDs of this DataPack that should be requested from the engines. TODO: Make protected
+         */
+        virtual EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const;
 
-		/*!
-		 * \brief Set global TF Interpreter. All Transceiver Functions will register themselves with it upon creation
-		 * \param interpreter Interpreter to use
-		 */
-		static void setTFInterpreter(TransceiverFunctionInterpreter *interpreter);
+        /*!
+         * \brief Set global TF Interpreter. All Transceiver Functions will register themselves with it upon creation
+         * \param interpreter Interpreter to use
+         */
+        static void setTFInterpreter(TransceiverFunctionInterpreter *interpreter);
 
-	protected:
-		/*!
-		 * \brief Pointer to TF Interpreter. Will be used to register a new TF function
-		 */
-		static TransceiverFunctionInterpreter *TFInterpreter;
+    protected:
+        /*!
+         * \brief Pointer to TF Interpreter. Will be used to register a new TF function
+         */
+        static TransceiverFunctionInterpreter *TFInterpreter;
 
-		template<class TRANSCEIVER_DATAPACK>
-		typename PtrTemplates<TRANSCEIVER_DATAPACK>::shared_ptr moveToSharedPtr()
-		{
-		    static_assert((std::is_base_of_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>) || (std::is_same_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>),"Parameter TRANSCEIVER_DATAPACK must derive from TransceiverDataPackInterface or be same");
-		    return typename PtrTemplates<TRANSCEIVER_DATAPACK>::shared_ptr(new TRANSCEIVER_DATAPACK(std::move(static_cast<TRANSCEIVER_DATAPACK&>(*this))));
-		}
+        template<class TRANSCEIVER_DATAPACK>
+        typename PtrTemplates<TRANSCEIVER_DATAPACK>::shared_ptr moveToSharedPtr()
+        {
+            static_assert((std::is_base_of_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>) || (std::is_same_v<TransceiverDataPackInterface, TRANSCEIVER_DATAPACK>),"Parameter TRANSCEIVER_DATAPACK must derive from TransceiverDataPackInterface or be same");
+            return typename PtrTemplates<TRANSCEIVER_DATAPACK>::shared_ptr(new TRANSCEIVER_DATAPACK(std::move(static_cast<TRANSCEIVER_DATAPACK&>(*this))));
+        }
 
-		/*!
-		 * \brief Gets address of ptr under which the TFInterpreter has registered this TF. Mainly used during setup
-		 * \return Returns address of ptr under which the TFInterpreter has registered this TF
-		 */
-		virtual TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry();
+        /*!
+         * \brief Gets address of ptr under which the TFInterpreter has registered this TF. Mainly used during setup
+         * \return Returns address of ptr under which the TFInterpreter has registered this TF
+         */
+        virtual TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry();
 
-	private:
-		/*!
-		 * \brief Function to execute
-		 */
-		TransceiverDataPackInterface::shared_ptr _function;
+    private:
+        /*!
+         * \brief Function to execute
+         */
+        TransceiverDataPackInterface::shared_ptr _function;
 };
 
 using TransceiverDataPackInterfaceSharedPtr = TransceiverDataPackInterface::shared_ptr;

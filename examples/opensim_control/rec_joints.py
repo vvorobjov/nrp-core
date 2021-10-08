@@ -1,8 +1,8 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@FromEngineDataPack(keyword='joints', id=DataPackIdentifier('joints', 'server'))
-@FromEngineDataPack(keyword='infos', id=DataPackIdentifier('infos', 'server'))
+@EngineDataPack(keyword='joints', id=DataPackIdentifier('joints', 'server'))
+@EngineDataPack(keyword='infos', id=DataPackIdentifier('infos', 'server'))
 @TransceiverFunction("client")
 def transceiver_function(infos, joints):
     rec_joints = JsonDataPack("joint_data", "client")

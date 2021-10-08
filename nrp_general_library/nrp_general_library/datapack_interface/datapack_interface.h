@@ -36,41 +36,41 @@
 struct DataPackIdentifier
 {
     public:
-	/*!
-	 * \brief DataPack Name. Used by simulator to identify source/sink of datapack
-	 */
-	std::string Name;
+    /*!
+     * \brief DataPack Name. Used by simulator to identify source/sink of datapack
+     */
+    std::string Name;
 
-	/*!
-	 * \brief Corresponding engine
-	 */
-	std::string EngineName;
+    /*!
+     * \brief Corresponding engine
+     */
+    std::string EngineName;
 
-	/*!
-	 * \brief DataPack Type
-	 */
-	std::string Type;
+    /*!
+     * \brief DataPack Type
+     */
+    std::string Type;
 
-	DataPackIdentifier() = default;
+    DataPackIdentifier() = default;
 
-	DataPackIdentifier(const std::string &_name, const std::string &_engineName, const std::string &_type);
+    DataPackIdentifier(const std::string &_name, const std::string &_engineName, const std::string &_type);
 
-	DataPackIdentifier(std::string &&_name, std::string &&_engineName, std::string &&_type)
-	    : Name(std::forward<std::string>(_name)),
-	      EngineName(std::forward<std::string>(_engineName)),
-	      Type(std::forward<std::string>(_type))
-	{}
+    DataPackIdentifier(std::string &&_name, std::string &&_engineName, std::string &&_type)
+        : Name(std::forward<std::string>(_name)),
+          EngineName(std::forward<std::string>(_engineName)),
+          Type(std::forward<std::string>(_type))
+    {}
 
-	bool operator == (const DataPackIdentifier & rhs) const {
-	    return (Name == rhs.Name)
+    bool operator == (const DataPackIdentifier & rhs) const {
+        return (Name == rhs.Name)
      && (EngineName == rhs.EngineName)
      && (Type == rhs.Type);
-	}
+    }
 
-	bool operator < (const DataPackIdentifier & rhs) const{
-	    return (Name < rhs.Name) || (Name == rhs.Name && EngineName < rhs.EngineName) || (Name == rhs.Name &&
-	    EngineName == rhs.EngineName && Type < rhs.Type);
-	}
+    bool operator < (const DataPackIdentifier & rhs) const{
+        return (Name < rhs.Name) || (Name == rhs.Name && EngineName < rhs.EngineName) || (Name == rhs.Name &&
+        EngineName == rhs.EngineName && Type < rhs.Type);
+    }
 
 };
 
@@ -81,59 +81,59 @@ struct DataPackIdentifier
 class DataPackInterface
         : public PtrTemplates<DataPackInterface>
 {
-	public:
-		DataPackInterface() = default;
+    public:
+        DataPackInterface() = default;
 
-		template<class DEV_ID_T>
-		DataPackInterface(DEV_ID_T &&id)
-		    : _id(std::forward<DEV_ID_T>(id)){
-		        static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, const DataPackIdentifier> || std::is_same_v< DataPackIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DataPackIdentifier or DataPackIdentifier&");
-		        static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, DataPackIdentifier> || std::is_same_v< const DataPackIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DataPackIdentifier or DataPackIdentifier&");
-		    }
+        template<class DEV_ID_T>
+        DataPackInterface(DEV_ID_T &&id)
+            : _id(std::forward<DEV_ID_T>(id)){
+                static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, const DataPackIdentifier> || std::is_same_v< DataPackIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DataPackIdentifier or DataPackIdentifier&");
+                static_assert(std::is_same_v<std::remove_reference_t<DEV_ID_T>, DataPackIdentifier> || std::is_same_v< const DataPackIdentifier, std::remove_reference_t<DEV_ID_T> >,"Parameter DEV_ID_T must be type DataPackIdentifier or DataPackIdentifier&");
+            }
 
-		DataPackInterface(const std::string &name, const std::string &engineName, const std::string &type);
-		virtual ~DataPackInterface() = default;
+        DataPackInterface(const std::string &name, const std::string &engineName, const std::string &type);
+        virtual ~DataPackInterface() = default;
 
-		const std::string &name() const;
-		void setName(const std::string &name);
+        const std::string &name() const;
+        void setName(const std::string &name);
 
-		const std::string &type() const;
-		void setType(const std::string &type);
+        const std::string &type() const;
+        void setType(const std::string &type);
 
-		const std::string &engineName() const;
-		void setEngineName(const std::string &engineName);
+        const std::string &engineName() const;
+        void setEngineName(const std::string &engineName);
 
-		const DataPackIdentifier &id() const;
-		void setID(const DataPackIdentifier &id);
+        const DataPackIdentifier &id() const;
+        void setID(const DataPackIdentifier &id);
 
-		virtual DataPackInterface::const_shared_ptr moveToSharedPtr()
-		{
-			return DataPackInterface::const_shared_ptr(new DataPackInterface(std::move(this->_id)));
-		}
+        virtual DataPackInterface::const_shared_ptr moveToSharedPtr()
+        {
+            return DataPackInterface::const_shared_ptr(new DataPackInterface(std::move(this->_id)));
+        }
 
-		/*!
-		 * \brief Indicates if the datapack contains any data aside from datapack ID
-		 *
-		 * The function will return true, if the datapack is of DataPackInterface type, which
-		 * contains only datapack ID. For any concrete implementation of DataPack class, it
-		 * should return false.
-		 */
-		bool isEmpty() const;
+        /*!
+         * \brief Indicates if the datapack contains any data aside from datapack ID
+         *
+         * The function will return true, if the datapack is of DataPackInterface type, which
+         * contains only datapack ID. For any concrete implementation of DataPack class, it
+         * should return false.
+         */
+        bool isEmpty() const;
 
-	protected:
+    protected:
 
-		void setIsEmpty(bool value);
+        void setIsEmpty(bool value);
 
-	private:
-		/*!
-		 * \brief Identifies DataPack. Contains name and type of this datapack
-		 */
-		DataPackIdentifier _id;
+    private:
+        /*!
+         * \brief Identifies DataPack. Contains name and type of this datapack
+         */
+        DataPackIdentifier _id;
 
-		/*!
-		 * \brief Indicates if the datapack contains any data aside from datapack ID
-		 */
-		bool _isEmpty = true;
+        /*!
+         * \brief Indicates if the datapack contains any data aside from datapack ID
+         */
+        bool _isEmpty = true;
 };
 
 using DataPackInterfaceSharedPtr      = DataPackInterface::shared_ptr;

@@ -33,61 +33,61 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for a single joint
-	 */
-	class JointDataPackController
-	        : public JsonDataPackController
-	{
-			using fcn_ptr_t = void(physics::JointPtr, double, int);
+    /*!
+     * \brief Interface for a single joint
+     */
+    class JointDataPackController
+            : public JsonDataPackController
+    {
+            using fcn_ptr_t = void(physics::JointPtr, double, int);
 
-		public:
-			JointDataPackController(const physics::JointPtr &joint, const physics::JointControllerPtr &jointController, const std::string &jointName)
-				: JsonDataPackController(JsonDataPack::createID(jointName, "")),
-			      _joint(joint),
-			      _jointController(jointController)
-			{}
+        public:
+            JointDataPackController(const physics::JointPtr &joint, const physics::JointControllerPtr &jointController, const std::string &jointName)
+                : JsonDataPackController(JsonDataPack::createID(jointName, "")),
+                  _joint(joint),
+                  _jointController(jointController)
+            {}
 
-			void handleDataPackData(const nlohmann::json &data) override
-			{
-				setCachedData(data);
+            void handleDataPackData(const nlohmann::json &data) override
+            {
+                setCachedData(data);
 
-				const auto &jointName = this->_datapackId.Name;
-				const auto cachedData = getCachedData();
+                const auto &jointName = this->_datapackId.Name;
+                const auto cachedData = getCachedData();
 
-				if(!(*cachedData)["position"].is_null())
-					this->_jointController->SetPositionTarget(jointName, (*cachedData)["position"].get<float>());
+                if(!(*cachedData)["position"].is_null())
+                    this->_jointController->SetPositionTarget(jointName, (*cachedData)["position"].get<float>());
 
-				if(!(*cachedData)["velocity"].is_null())
-					this->_jointController->SetVelocityTarget(jointName, (*cachedData)["velocity"].get<float>());
+                if(!(*cachedData)["velocity"].is_null())
+                    this->_jointController->SetVelocityTarget(jointName, (*cachedData)["velocity"].get<float>());
 
-				if(!(*cachedData)["effort"].is_null())
-					this->_joint->SetForce(0, (*cachedData)["effort"].get<float>());
-			}
+                if(!(*cachedData)["effort"].is_null())
+                    this->_joint->SetForce(0, (*cachedData)["effort"].get<float>());
+            }
 
-			nlohmann::json * getDataPackInformation() override
-			{
-				auto data = getCachedData();
+            nlohmann::json * getDataPackInformation() override
+            {
+                auto data = getCachedData();
 
-				(*data)["position"] = this->_joint->Position(0);
-				(*data)["velocity"] = this->_joint->GetVelocity(0);
-				(*data)["effort"]   = this->_joint->GetForce(0);
+                (*data)["position"] = this->_joint->Position(0);
+                (*data)["velocity"] = this->_joint->GetVelocity(0);
+                (*data)["effort"]   = this->_joint->GetForce(0);
 
-				return &(this->_data);
-			}
+                return &(this->_data);
+            }
 
-		private:
+        private:
 
-			/*!
-			 * \brief Pointer to joint
-			 */
-			physics::JointPtr _joint;
+            /*!
+             * \brief Pointer to joint
+             */
+            physics::JointPtr _joint;
 
-			/*!
-			 * \brief Pointer to joint controller of the joint's model
-			 */
-			physics::JointControllerPtr _jointController = nullptr;
-	};
+            /*!
+             * \brief Pointer to joint controller of the joint's model
+             */
+            physics::JointControllerPtr _jointController = nullptr;
+    };
 }
 
 #endif // JOINT_DATAPACK_CONTROLLER_H

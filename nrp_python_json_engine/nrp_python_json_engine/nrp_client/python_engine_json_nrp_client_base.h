@@ -45,12 +45,12 @@ template<class ENGINE, const char* SCHEMA>
 class PythonEngineJSONNRPClientBase
         : public EngineJSONNRPClient<ENGINE, SCHEMA>
 {
-		/*!
-		 * \brief Time (in seconds) to wait for Python to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
-		 */
-		static constexpr size_t _killWait = 10;
+        /*!
+         * \brief Time (in seconds) to wait for Python to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
+         */
+        static constexpr size_t _killWait = 10;
 
-	public:
+    public:
 
         PythonEngineJSONNRPClientBase(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
                 : EngineJSONNRPClient<ENGINE, SCHEMA>(config, std::move(launcher))
@@ -58,12 +58,12 @@ class PythonEngineJSONNRPClientBase
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
         }
 
-		virtual ~PythonEngineJSONNRPClientBase() override
+        virtual ~PythonEngineJSONNRPClientBase() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
         }
 
-		virtual void initialize() override
+        virtual void initialize() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -80,7 +80,7 @@ class PythonEngineJSONNRPClientBase
             NRPLogger::debug("PythonEngineJSONNRPClientBase::initialize(...) completed with no errors.");
         }
 
-		virtual void reset() override
+        virtual void reset() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -99,7 +99,7 @@ class PythonEngineJSONNRPClientBase
             this->resetEngineTime();
         }
 
-		virtual void shutdown() override
+        virtual void shutdown() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -122,11 +122,11 @@ class PythonEngineJSONNRPClientBase
             return startParams;
         }
 
-	private:
-		/*!
-		 * \brief Error message returned by init command
-		 */
-		std::string _initErrMsg = "";
+    private:
+        /*!
+         * \brief Error message returned by init command
+         */
+        std::string _initErrMsg = "";
 };
 
 #endif // PYTHON_ENGINE_JSON_NRP_CLIENT_BASE_H

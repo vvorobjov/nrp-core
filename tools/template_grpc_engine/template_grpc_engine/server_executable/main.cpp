@@ -25,38 +25,38 @@
 
 int main(int argc, char * argv[])
 {
-	// Parse the command line arguments
+    // Parse the command line arguments
 
-	cxxopts::ParseResult options = EngineGRPCOptsParser::parseOpts(argc, argv, EngineGRPCOptsParser::createOptionParser());
+    cxxopts::ParseResult options = EngineGRPCOptsParser::parseOpts(argc, argv, EngineGRPCOptsParser::createOptionParser());
 
-	// Spawn the server
+    // Spawn the server
 
-	const auto serverAddress = options[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
-	const auto engineName    = options[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
+    const auto serverAddress = options[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
+    const auto engineName    = options[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
 
-	auto server = ${engine_name}GrpcServer(serverAddress, engineName, "");
+    auto server = ${engine_name}GrpcServer(serverAddress, engineName, "");
 
-	// Start the server
+    // Start the server
 
-	server.startServerAsync();
+    server.startServerAsync();
 
-	// Wait for initialization call
+    // Wait for initialization call
 
-	while(!server.initRunFlag() || server.shutdownFlag())
-	{
-		sleep(0);
-	}
+    while(!server.initRunFlag() || server.shutdownFlag())
+    {
+        sleep(0);
+    }
 
-	// Continue handling requests until a shutdown command has been received
+    // Continue handling requests until a shutdown command has been received
 
-	while(!server.shutdownFlag())
-	{
-		sleep(1);
-	}
+    while(!server.shutdownFlag())
+    {
+        sleep(1);
+    }
 
-	// Shutdown
+    // Shutdown
 
-	server.shutdownServer();
+    server.shutdownServer();
 
-	return 0;
+    return 0;
 }

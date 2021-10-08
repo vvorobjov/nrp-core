@@ -25,7 +25,7 @@
 
 NestKernelDataPackController::NestKernelDataPackController(const DataPackIdentifier & devID, boost::python::dict nest)
     : JsonDataPackController(devID),
-	  _nest(nest)
+      _nest(nest)
 {
 
 }
@@ -39,9 +39,9 @@ void NestKernelDataPackController::handleDataPackData(const nlohmann::json &)
 
 nlohmann::json *NestKernelDataPackController::getDataPackInformation()
 {
-	*(getCachedData()) = json_converter::convertPyObjectToJson((boost::python::dict(this->_nest["GetKernelStatus"]())).ptr());
+    *(getCachedData()) = json_converter::convertPyObjectToJson((boost::python::dict(this->_nest["GetKernelStatus"]())).ptr());
 
-	return &(this->_data);
+    return &(this->_data);
 }
 
 // EOF

@@ -28,37 +28,37 @@
 #include "nrp_general_library/plugin_system/plugin.h"
 
 class ${engine_name}EngineGrpcClient
-	: public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema, EngineGrpc::TestPayload>
+    : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema, EngineTest::TestPayload>
 {
-	public:
-		${engine_name}EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		~${engine_name}EngineGrpcClient() override = default;
+    public:
+        ${engine_name}EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        ~${engine_name}EngineGrpcClient() override = default;
 
-		/*!
-		 * \brief Initializes the engine
-		 *
-		 * The function will be called at the start of the simulation. It should
-		 * execute RPC / REST calls that will prepare the engine server and simulator
-		 * to run the simulation.
-		 */
-		void initialize() override;
+        /*!
+         * \brief Initializes the engine
+         *
+         * The function will be called at the start of the simulation. It should
+         * execute RPC / REST calls that will prepare the engine server and simulator
+         * to run the simulation.
+         */
+        void initialize() override;
 
-		/*!
-		 * \brief Shutdowns the engine
-		 *
-		 * The function will be called at the end of the simulation. It should
-		 * execute RPC / REST calls that will shutdown the simulator and engine
-		 * server gracefully.
-		 */
-		void shutdown() override;
+        /*!
+         * \brief Shutdowns the engine
+         *
+         * The function will be called at the end of the simulation. It should
+         * execute RPC / REST calls that will shutdown the simulator and engine
+         * server gracefully.
+         */
+        void shutdown() override;
 
-		/*!
-		 * \brief Resets the engine
-		 *
-		 * The function should execute RPC / REST calls that will reset the simulation
-		 * to its initial state.
-		 */
-		void reset() override;
+        /*!
+         * \brief Resets the engine
+         *
+         * The function should execute RPC / REST calls that will reset the simulation
+         * to its initial state.
+         */
+        void reset() override;
 };
 
 using ${engine_name}EngineGrpcLauncher = ${engine_name}EngineGrpcClient::EngineLauncher<${engine_name}GrpcConfigConst::EngineType>;

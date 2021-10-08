@@ -60,7 +60,7 @@ class EngineGrpcClient
         {
             static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
 
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             std::string serverAddress = this->engineConfig().at("ServerAddress");
 
@@ -88,7 +88,7 @@ class EngineGrpcClient
 
         grpc_connectivity_state connect()
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             _channel->GetState(true);
             _channel->WaitForConnected(gpr_time_add(
@@ -98,7 +98,7 @@ class EngineGrpcClient
 
         void sendInitCommand(const nlohmann::json & data)
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             sleep(1);
             EngineGrpc::InitRequest  request;
             EngineGrpc::InitReply    reply;
@@ -120,7 +120,7 @@ class EngineGrpcClient
 
         void sendResetCommand()
         {
-	        NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             EngineGrpc::ResetRequest  request;
             EngineGrpc::ResetReply    reply;
             grpc::ClientContext       context;
@@ -139,7 +139,7 @@ class EngineGrpcClient
 
         void sendShutdownCommand(const nlohmann::json & data)
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             EngineGrpc::ShutdownRequest request;
             EngineGrpc::ShutdownReply   reply;
@@ -161,7 +161,7 @@ class EngineGrpcClient
 
         SimulationTime runLoopStepCallback(const SimulationTime timeStep) override
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             EngineGrpc::RunLoopStepRequest request;
             EngineGrpc::RunLoopStepReply   reply;
@@ -202,9 +202,9 @@ class EngineGrpcClient
             return engineTime;
         }
 
-		virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
+        virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             EngineGrpc::SetDataPackRequest request;
             EngineGrpc::SetDataPackReply   reply;
@@ -236,7 +236,7 @@ class EngineGrpcClient
 
         virtual const std::vector<std::string> engineProcStartParams() const override
         {
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
 
@@ -309,40 +309,40 @@ class EngineGrpcClient
         }
 
 
-		virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
-		{
-		    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			EngineGrpc::GetDataPackRequest request;
-			EngineGrpc::GetDataPackReply   reply;
-			grpc::ClientContext          context;
+            EngineGrpc::GetDataPackRequest request;
+            EngineGrpc::GetDataPackReply   reply;
+            grpc::ClientContext          context;
 
-			for(const auto &devID : datapackIdentifiers)
-			{
-				if(this->engineName().compare(devID.EngineName) == 0)
-				{
-					auto r = request.add_datapackid();
+            for(const auto &devID : datapackIdentifiers)
+            {
+                if(this->engineName().compare(devID.EngineName) == 0)
+                {
+                    auto r = request.add_datapackid();
 
-					r->set_datapackname(devID.Name);
-					r->set_datapacktype(devID.Type);
-					r->set_enginename(devID.EngineName);
-				}
-			}
+                    r->set_datapackname(devID.Name);
+                    r->set_datapacktype(devID.Type);
+                    r->set_enginename(devID.EngineName);
+                }
+            }
 
-			grpc::Status status = _stub->getDataPack(&context, request, &reply);
+            grpc::Status status = _stub->getDataPack(&context, request, &reply);
 
-			if(!status.ok())
-			{
-				const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
-				throw std::runtime_error(errMsg);
-			}
+            if(!status.ok())
+            {
+                const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                throw std::runtime_error(errMsg);
+            }
 
             typename EngineClientInterface::datapacks_set_t interfaces;
             for(int i = 0; i < reply.reply_size(); i++)
                 interfaces.insert(this->getDataPackInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
 
             return interfaces;
-		}
+        }
 
     protected:
 

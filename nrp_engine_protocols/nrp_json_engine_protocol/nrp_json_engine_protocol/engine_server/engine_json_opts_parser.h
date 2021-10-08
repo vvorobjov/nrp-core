@@ -29,9 +29,9 @@
  */
 class EngineJSONOptsParser
 {
-	public:
-		static cxxopts::Options createOptionParser(bool allowUnrecognised = false);
-		static cxxopts::ParseResult parseOpts(int argc, char *argv[], cxxopts::Options parser = EngineJSONOptsParser::createOptionParser());
+    public:
+        static cxxopts::Options createOptionParser(bool allowUnrecognised = false);
+        static cxxopts::ParseResult parseOpts(int argc, char *argv[], cxxopts::Options parser = EngineJSONOptsParser::createOptionParser());
 };
 
 #endif

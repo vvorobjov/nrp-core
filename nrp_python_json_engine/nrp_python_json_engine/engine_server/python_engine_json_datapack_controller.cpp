@@ -33,22 +33,22 @@ PythonEngineJSONDataPackController::PythonEngineJSONDataPackController(const Dat
 
 void PythonEngineJSONDataPackController::handleDataPackData(const nlohmann::json &data)
 {
-	this->_datapackData = boost::python::object(boost::python::handle<>(json_converter::convertJsonToPyObject(data["data"])));
+    this->_datapackData = boost::python::object(boost::python::handle<>(json_converter::convertJsonToPyObject(data["data"])));
 }
 
 nlohmann::json * PythonEngineJSONDataPackController::getDataPackInformation()
 {
-	*(getCachedData()) = json_converter::convertPyObjectToJson(this->_datapackData.ptr());
+    *(getCachedData()) = json_converter::convertPyObjectToJson(this->_datapackData.ptr());
 
-	return &(this->_data);
+    return &(this->_data);
 }
 
 boost::python::object & PythonEngineJSONDataPackController::data()
 {
-	return this->_datapackData;
+    return this->_datapackData;
 }
 
 boost::python::object PythonEngineJSONDataPackController::data() const
 {
-	return this->_datapackData;
+    return this->_datapackData;
 }

@@ -30,21 +30,21 @@
 
 namespace gazebo
 {
-	class NRPCameraController
-	        : public CameraPlugin
-	{
-		public:
-			virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
+    class NRPCameraController
+            : public CameraPlugin
+    {
+        public:
+            virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
 
-			virtual void Reset() override;
+            virtual void Reset() override;
 
-			void OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &format) override;
+            void OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &format) override;
 
-		private:
-			std::unique_ptr<CameraDataPackController> _cameraInterface;
-	};
+        private:
+            std::unique_ptr<CameraDataPackController> _cameraInterface;
+    };
 
-	GZ_REGISTER_SENSOR_PLUGIN(NRPCameraController)
+    GZ_REGISTER_SENSOR_PLUGIN(NRPCameraController)
 }
 
 #endif

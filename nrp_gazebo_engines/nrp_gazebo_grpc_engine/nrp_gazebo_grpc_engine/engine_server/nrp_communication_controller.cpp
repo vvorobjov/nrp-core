@@ -30,108 +30,108 @@ std::unique_ptr<NRPCommunicationController> NRPCommunicationController::_instanc
 
 NRPCommunicationController::~NRPCommunicationController()
 {
-	this->_stepController = nullptr;
+    this->_stepController = nullptr;
 }
 
 NRPCommunicationController &NRPCommunicationController::getInstance()
 {
-	return *(NRPCommunicationController::_instance.get());
+    return *(NRPCommunicationController::_instance.get());
 }
 
 NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL)
 {
-	// Remove old server, start new one with given server URL
-	NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL));
-	return NRPCommunicationController::getInstance();
+    // Remove old server, start new one with given server URL
+    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL));
+    return NRPCommunicationController::getInstance();
 }
 
 NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
 {
-	NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, registrationURL));
-	return NRPCommunicationController::getInstance();
+    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, registrationURL));
+    return NRPCommunicationController::getInstance();
 }
 
 void NRPCommunicationController::registerStepController(GazeboStepController *stepController)
 {
     lock_t lock(this->_datapackLock);
-	this->_stepController = stepController;
+    this->_stepController = stepController;
 }
 
 SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 {
-	if(this->_stepController == nullptr)
-	{
-		auto err = std::out_of_range("Tried to run loop while the controller has not yet been initialized");
-		NRPLogger::error(err.what());
+    if(this->_stepController == nullptr)
+    {
+        auto err = std::out_of_range("Tried to run loop while the controller has not yet been initialized");
+        NRPLogger::error(err.what());
 
-		throw err;
-	}
+        throw err;
+    }
 
-	try
-	{
-		// Execute loop step (Note: The _datapackLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to datapacks is possible at this moment)
-		return this->_stepController->runLoopStep(timeStep);
-	}
-	catch(const std::exception &e)
-	{
-		NRPLogger::error("Error during Gazebo stepping: [ {} ]",  e.what());
-		throw;
-	}
+    try
+    {
+        // Execute loop step (Note: The _datapackLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to datapacks is possible at this moment)
+        return this->_stepController->runLoopStep(timeStep);
+    }
+    catch(const std::exception &e)
+    {
+        NRPLogger::error("Error during Gazebo stepping: [ {} ]",  e.what());
+        throw;
+    }
 }
 
 void NRPCommunicationController::initialize(const json &data, lock_t &lock)
 {
     double waitTime = data.at("WorldLoadTime");
-	if(waitTime <= 0)
-		waitTime = std::numeric_limits<double>::max();
+    if(waitTime <= 0)
+        waitTime = std::numeric_limits<double>::max();
 
-	// Allow datapacks to register
-	lock.unlock();
+    // Allow datapacks to register
+    lock.unlock();
 
-	// Wait until world plugin loads and forces a load of all other plugins
-	while(this->_stepController == nullptr ? 1 : !this->_stepController->finishWorldLoading())
-	{
-		// Wait for 100ms before retrying
-		waitTime -= 0.1;
-		usleep(100*1000);
+    // Wait until world plugin loads and forces a load of all other plugins
+    while(this->_stepController == nullptr ? 1 : !this->_stepController->finishWorldLoading())
+    {
+        // Wait for 100ms before retrying
+        waitTime -= 0.1;
+        usleep(100*1000);
 
-		if(waitTime <= 0)
-		{
-			lock.lock();
+        if(waitTime <= 0)
+        {
+            lock.lock();
 
-			const auto errMsg = "Couldn't load world";
+            const auto errMsg = "Couldn't load world";
             throw std::runtime_error(errMsg);
-		}
-	}
+        }
+    }
 
-	lock.lock();
+    lock.lock();
 }
 
 void NRPCommunicationController::reset()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	try{
-		// Is it enough to reset just the world?
-		this->_stepController->resetWorld();
-		for (size_t i = 0; i < this->_sensorPlugins.size(); i++){
-			this->_sensorPlugins[i]->Reset();
-		}
-		for (size_t i = 0; i < this->_modelPlugins.size(); i++){
-			this->_modelPlugins[i]->Reset();
-		}
-	}
-	catch(const std::exception &e)
-	{
-		NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
+    try{
+        // Is it enough to reset just the world?
+        this->_stepController->resetWorld();
+        for (size_t i = 0; i < this->_sensorPlugins.size(); i++){
+            this->_sensorPlugins[i]->Reset();
+        }
+        for (size_t i = 0; i < this->_modelPlugins.size(); i++){
+            this->_modelPlugins[i]->Reset();
+        }
+    }
+    catch(const std::exception &e)
+    {
+        NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
 
-		throw;
-	}
+        throw;
+    }
 }
 
 void NRPCommunicationController::shutdown(const json&)
 {
-	// Do nothing
+    // Do nothing
 }
 
 NRPCommunicationController::NRPCommunicationController(const std::string &address)

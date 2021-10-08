@@ -36,7 +36,7 @@ inline const char Basic[] = "Basic";
 class ProcessLauncherBasic
         : public ProcessLauncher<ProcessLauncherBasic, Basic, BasicFork, EmptyLaunchCommand>
 {
-	public:	~ProcessLauncherBasic() override = default;
+    public: ~ProcessLauncherBasic() override = default;
 };
 
 #endif // PROCESS_LAUNCHER_BASIC_H

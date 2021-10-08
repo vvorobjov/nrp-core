@@ -28,22 +28,22 @@ TransceiverFunction::TransceiverFunction(std::string linkedEngine, bool isPrepro
 {}
 
 const std::string &TransceiverFunction::linkedEngineName() const
-{	return this->_linkedEngine;	}
+{   return this->_linkedEngine; }
 
 bool TransceiverFunction::isPrepocessing() const
 {   return this->_isPreprocessing; }
 
 TransceiverDataPackInterface::shared_ptr TransceiverFunction::pySetup(boost::python::object transceiverFunction)
 {
-	this->_function = transceiverFunction;
+    this->_function = transceiverFunction;
 
-	auto tf = this->moveToSharedPtr<TransceiverFunction>();
+    auto tf = this->moveToSharedPtr<TransceiverFunction>();
 
-	assert(tf->_tfInterpreterRegistryPtr == nullptr);
-	if(tf->_tfInterpreterRegistryPtr == nullptr)
-		tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewTransceiverFunction(this->linkedEngineName(), tf);
+    assert(tf->_tfInterpreterRegistryPtr == nullptr);
+    if(tf->_tfInterpreterRegistryPtr == nullptr)
+        tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewTransceiverFunction(this->linkedEngineName(), tf);
 
-	return tf;
+    return tf;
 }
 
 boost::python::object TransceiverFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
@@ -83,15 +83,15 @@ void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::obj
 
 EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::getRequestedDataPackIDs() const
 {
-	return EngineClientInterface::datapack_identifiers_set_t();
+    return EngineClientInterface::datapack_identifiers_set_t();
 }
 
 EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
 {
-	return std::move(datapackIDs);
+    return std::move(datapackIDs);
 }
 
 TransceiverDataPackInterface::shared_ptr *TransceiverFunction::getTFInterpreterRegistry()
 {
-	return this->_tfInterpreterRegistryPtr;
+    return this->_tfInterpreterRegistryPtr;
 }

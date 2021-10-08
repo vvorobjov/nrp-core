@@ -25,24 +25,24 @@
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
 /*!
- * \brief Class for input datapacks for transceiver functions, mapped to FromEngineDataPack python decorator
+ * \brief Class for input datapacks for transceiver functions, mapped to EngineDataPack python decorator
  */
-class FromEngineDataPack
+class EngineDataPack
     : public TransceiverDataPackInterface
 {
-	public:
-		FromEngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed);
-		virtual ~FromEngineDataPack() override = default;
+    public:
+        EngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed);
+        virtual ~EngineDataPack() override = default;
 
-		EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+        EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-		boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
 
-	private:
+    private:
 
-		std::string      _keyword;
-		DataPackIdentifier _datapackID;
-		bool             _isPreprocessed;
+        std::string      _keyword;
+        DataPackIdentifier _datapackID;
+        bool             _isPreprocessed;
 };
 
 #endif // SINGLE_TRANSCEIVER_DATAPACK_H

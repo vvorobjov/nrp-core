@@ -19,12 +19,12 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_gazebo_json_engine/config/gazebo_json_config.cpp
-	nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
-	nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
-	nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
-	nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp
-	nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.cpp
+    nrp_gazebo_json_engine/config/gazebo_json_config.cpp
+    nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
+    nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
+    nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
+    nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp
+    nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.cpp
 )
 
 # List of python module build files
@@ -37,7 +37,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-	tests/test_gazebo_engine.cpp
+    tests/test_gazebo_engine.cpp
 )
 
 
@@ -45,7 +45,7 @@ set(TEST_SRC_FILES
 ## Dependencies
 
 if(ENABLE_GAZEBO STREQUAL FULL)
-	find_package(Gazebo REQUIRED)
+    find_package(Gazebo REQUIRED)
 endif()
 
 ##########################################
@@ -56,7 +56,7 @@ set(NRP_GAZEBO_COMMUNICATION_PLUGIN NRPGazeboJSONCommunicationPlugin)
 
 set(NRP_GAZEBO_PLUGINS_INSTALL_DIR_ABSOLUTE ${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
 if(NOT IS_ABSOLUTE ${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
-	set(NRP_GAZEBO_PLUGINS_INSTALL_DIR_ABSOLUTE ${CMAKE_INSTALL_PREFIX}/${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
+    set(NRP_GAZEBO_PLUGINS_INSTALL_DIR_ABSOLUTE ${CMAKE_INSTALL_PREFIX}/${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
 endif()
 
 list(JOIN GAZEBO_LIBRARY_DIRS ":" DEFAULT_GAZEBO_LIB_DIRS)
@@ -77,44 +77,44 @@ target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-	PUBLIC 
-	    $<INSTALL_INTERFACE:include>
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
-		${GAZEBO_INCLUDE_DIRS}
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+        ${GAZEBO_INCLUDE_DIRS}
 )
 
 target_link_libraries(${LIBRARY_NAME}
-	PUBLIC
-	    NRPJSONEngineProtocol::NRPJSONEngineProtocol
-		${GAZEBO_LIBRARIES}
+    PUBLIC
+        NRPJSONEngineProtocol::NRPJSONEngineProtocol
+        ${GAZEBO_LIBRARIES}
 )
 
 
 ##########################################
 ## NRPGazeboDataPackPythonModule
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
-	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
-	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
-	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-	set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
+    add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
+    add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
+    target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
 
-	target_include_directories(${PYTHON_MODULE_NAME}
-		PUBLIC
-	)
+    target_include_directories(${PYTHON_MODULE_NAME}
+        PUBLIC
+    )
 
     target_link_libraries(${PYTHON_MODULE_NAME}
-		PUBLIC
-		    ${NAMESPACE_NAME}::${LIBRARY_NAME}
-	)
+        PUBLIC
+            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+    )
 endif()
 
 
 ##########################################
 ## Executable
 if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
-	add_executable("${EXECUTABLE_NAME}" ${EXEC_SRC_FILES})
-	target_link_libraries("${EXECUTABLE_NAME}" "${LIBRARY_NAME}")
+    add_executable("${EXECUTABLE_NAME}" ${EXEC_SRC_FILES})
+    target_link_libraries("${EXECUTABLE_NAME}" "${LIBRARY_NAME}")
 endif()
 
 
@@ -126,42 +126,42 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 ## This section needs Gazebo libraries installed
 if(ENABLE_GAZEBO STREQUAL FULL)
 
-	##########################################
-	## Gazebo plugins
-	set(NRP_GAZEBO_LIB_TARGETS
-			"${NAMESPACE_NAME}::${LIBRARY_NAME}")
-	add_subdirectory(gazebo_json_plugins)
+    ##########################################
+    ## Gazebo plugins
+    set(NRP_GAZEBO_LIB_TARGETS
+            "${NAMESPACE_NAME}::${LIBRARY_NAME}")
+    add_subdirectory(gazebo_json_plugins)
 
 
-	##########################################
-	## Tests
-	if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-		# Create testing env files
-		configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-		configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+    ##########################################
+    ## Tests
+    if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+        # Create testing env files
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
+        configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
 
-		# Create testing executable
-		enable_testing()
-		add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-		target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-		target_link_libraries(${TEST_NAME}
-			PUBLIC
-			${NAMESPACE_NAME}::${LIBRARY_NAME}
-			GTest::GTest
-			GTest::Main
-			NRPGazeboJSONPlugins::NRPGazeboJSONJointControllerPlugin
-			NRPGazeboJSONPlugins::NRPGazeboJSONLinkControllerPlugin
-			NRPGazeboJSONPlugins::NRPGazeboJSONCameraControllerPlugin
-			NRPGazeboJSONPlugins::NRPGazeboJSONWorldPlugin
-			NRPGazeboJSONPlugins::NRPGazeboJSONCommunicationPlugin)
+        # Create testing executable
+        enable_testing()
+        add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+        target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+        target_link_libraries(${TEST_NAME}
+            PUBLIC
+            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            GTest::GTest
+            GTest::Main
+            NRPGazeboJSONPlugins::NRPGazeboJSONJointControllerPlugin
+            NRPGazeboJSONPlugins::NRPGazeboJSONLinkControllerPlugin
+            NRPGazeboJSONPlugins::NRPGazeboJSONCameraControllerPlugin
+            NRPGazeboJSONPlugins::NRPGazeboJSONWorldPlugin
+            NRPGazeboJSONPlugins::NRPGazeboJSONCommunicationPlugin)
 
-		gtest_discover_tests(${TEST_NAME}
-			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-			EXTRA_ARGS -VV)
+        gtest_discover_tests(${TEST_NAME}
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+            EXTRA_ARGS -VV)
 
-		# Add tests based on running example experiments
-		add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
-	endif()
+        # Add tests based on running example experiments
+        add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
+    endif()
 
 endif()
 
@@ -172,67 +172,67 @@ set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 # Install library files
 install(TARGETS
-		${LIBRARY_NAME}
-	EXPORT
-		${LIB_EXPORT_NAME}
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ${LIBRARY_NAME}
+    EXPORT
+        ${LIB_EXPORT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}
 )
 
 # Install export target
 install(EXPORT ${LIB_EXPORT_NAME}
-	DESTINATION
-		${INSTALL_CONFIGDIR}
-	FILE
-		"${LIB_EXPORT_NAME}.cmake"
-	NAMESPACE
-		"${NAMESPACE_NAME}::"
+    DESTINATION
+        ${INSTALL_CONFIGDIR}
+    FILE
+        "${LIB_EXPORT_NAME}.cmake"
+    NAMESPACE
+        "${NAMESPACE_NAME}::"
 )
 
 # Install headers
 install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
-	DESTINATION
-	    ${CMAKE_INSTALL_INCLUDEDIR}
-	FILES_MATCHING
-	    PATTERN "*.h"
-		PATTERN "*.hpp"
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.hpp"
 )
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
-	install(TARGETS ${PYTHON_MODULE_NAME}
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+    install(TARGETS ${PYTHON_MODULE_NAME}
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
-	install(TARGETS ${EXECUTABLE_NAME}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS ${EXECUTABLE_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # create cmake version and config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
-	VERSION ${PROJECT_VERSION}
-	COMPATIBILITY AnyNewerVersion
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake.in"
-	"${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
-	INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # Install cmake version and config files
 install(
-	FILES
-		"${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
-		"${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
-	DESTINATION ${INSTALL_CONFIGDIR}
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+    DESTINATION ${INSTALL_CONFIGDIR}
 )

@@ -29,11 +29,11 @@ using namespace testing;
 
 TEST(PluginManagerTest, TestLoadPlugin)
 {
-	PluginManager pluginMan;
+    PluginManager pluginMan;
 
-	ASSERT_NO_THROW(pluginMan.addPluginPath(TEST_PLUGIN_DIR));
+    ASSERT_NO_THROW(pluginMan.addPluginPath(TEST_PLUGIN_DIR));
 
-	// Test loading plugin
-	auto engineLauncher = pluginMan.loadPlugin(TEST_NRP_PLUGIN);
-	ASSERT_NE(engineLauncher, nullptr);
+    // Test loading plugin
+    auto engineLauncher = pluginMan.loadPlugin(TEST_NRP_PLUGIN);
+    ASSERT_NE(engineLauncher, nullptr);
 }

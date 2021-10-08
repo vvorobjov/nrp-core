@@ -38,15 +38,15 @@
 class GazeboEngineGrpcNRPClient
 : public EngineGrpcClient<GazeboEngineGrpcNRPClient, GazeboGrpcConfigConst::EngineSchema, Gazebo::Camera, Gazebo::Joint, Gazebo::Link>
 {
-	public:
-		GazeboEngineGrpcNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~GazeboEngineGrpcNRPClient() override = default;
+    public:
+        GazeboEngineGrpcNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        virtual ~GazeboEngineGrpcNRPClient() override = default;
 
-		virtual void initialize() override;
+        virtual void initialize() override;
 
-		virtual void reset() override;
+        virtual void reset() override;
 
-		virtual void shutdown() override;
+        virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 

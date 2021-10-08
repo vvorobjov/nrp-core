@@ -6,32 +6,32 @@ ExampleEngineServer::ExampleEngineServer(const std::string &engineName, const st
 
 bool ExampleEngineServer::initRunFlag() const
 {
-	return this->_initRunFlag;
+    return this->_initRunFlag;
 }
 
 bool ExampleEngineServer::shutdownFlag() const
 {
-	return this->_shutdownFlag;
+    return this->_shutdownFlag;
 }
 
 bool ExampleEngineServer::isServerRunning() const
 {
-	return this->_isServerRunning;
+    return this->_isServerRunning;
 }
 
 void ExampleEngineServer::shutdown()
 {
-	this->_shutdownFlag = true;
+    this->_shutdownFlag = true;
 }
 
 void ExampleEngineServer::initialize()
 {
-	this->_initRunFlag = true;
+    this->_initRunFlag = true;
 }
 
 void ExampleEngineServer::startServerAsync()
 {
-	// This method should start a server in asynchronous mode
+    // This method should start a server in asynchronous mode
 }
 
 // EOF

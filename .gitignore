@@ -15,3 +15,5 @@ test_env_cmake.h
 .idea
 .cache
 *.log
+tools/build_grpc_engine/
+tools/build_json_engine/

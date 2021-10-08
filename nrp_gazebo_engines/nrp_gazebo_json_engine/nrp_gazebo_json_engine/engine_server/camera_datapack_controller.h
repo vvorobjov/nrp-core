@@ -33,66 +33,66 @@
 
 namespace gazebo
 {
-	class CameraDataPackController
-	        : public JsonDataPackController
-	{
-		public:
-			CameraDataPackController(const std::string &devName, const rendering::CameraPtr &camera, const sensors::SensorPtr &parent)
-			    : JsonDataPackController(JsonDataPack::createID(devName, "")),
-			      _parentSensor(parent)
-			{}
+    class CameraDataPackController
+            : public JsonDataPackController
+    {
+        public:
+            CameraDataPackController(const std::string &devName, const rendering::CameraPtr &camera, const sensors::SensorPtr &parent)
+                : JsonDataPackController(JsonDataPack::createID(devName, "")),
+                  _parentSensor(parent)
+            {}
 
-			void handleDataPackData(const nlohmann::json &data) override
-			{
-				// Empty
-			}
+            void handleDataPackData(const nlohmann::json &data) override
+            {
+                // Empty
+            }
 
-			nlohmann::json * getDataPackInformation() override
-			{
-				if(this->_newDataAvailable)
-				{
-					this->_newDataAvailable = false;
-					return &this->_data;
-				}
+            nlohmann::json * getDataPackInformation() override
+            {
+                if(this->_newDataAvailable)
+                {
+                    this->_newDataAvailable = false;
+                    return &this->_data;
+                }
 
-				return nullptr;
-			}
+                return nullptr;
+            }
 
-			void updateCamData(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth)
-			{
-				const common::Time sensorUpdateTime = this->_parentSensor->LastMeasurementTime();
+            void updateCamData(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth)
+            {
+                const common::Time sensorUpdateTime = this->_parentSensor->LastMeasurementTime();
 
-				if(sensorUpdateTime > this->_lastSensorUpdateTime)
-				{
-					//std::cout << "Updating camera data\n";
-					this->_lastSensorUpdateTime = sensorUpdateTime;
+                if(sensorUpdateTime > this->_lastSensorUpdateTime)
+                {
+                    //std::cout << "Updating camera data\n";
+                    this->_lastSensorUpdateTime = sensorUpdateTime;
 
-					auto cachedData = getCachedData();
+                    auto cachedData = getCachedData();
 
-					(*cachedData)["image_height"] = height;
-					(*cachedData)["image_width" ] = width;
-					(*cachedData)["image_depth" ] = depth;
+                    (*cachedData)["image_height"] = height;
+                    (*cachedData)["image_width" ] = width;
+                    (*cachedData)["image_depth" ] = depth;
 
-					const auto imageSize = width * height * depth;
-					(*cachedData)["image_data"  ] = std::vector<unsigned char>(image, image + imageSize);
+                    const auto imageSize = width * height * depth;
+                    (*cachedData)["image_data"  ] = std::vector<unsigned char>(image, image + imageSize);
 
-					this->_newDataAvailable = true;
-				}
-			}
+                    this->_newDataAvailable = true;
+                }
+            }
 
-			void resetTime(){
-				this->_lastSensorUpdateTime = 0;
-				this->_newDataAvailable = false;
-			}
+            void resetTime(){
+                this->_lastSensorUpdateTime = 0;
+                this->_newDataAvailable = false;
+            }
 
-		private:
+        private:
 
-			sensors::SensorPtr _parentSensor;
+            sensors::SensorPtr _parentSensor;
 
-			common::Time _lastSensorUpdateTime = 0;
+            common::Time _lastSensorUpdateTime = 0;
 
-			bool _newDataAvailable = false;
-	};
+            bool _newDataAvailable = false;
+    };
 }
 
 #endif // CAMERA_DATAPACK_CONTROLLER_H

@@ -24,50 +24,50 @@
 #define ${engine_name_uppercase}_GRPC_DATAPACK_CONTROLLER_SERVER_H
 
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
-#include "nrp_grpc_engine_protocol/grpc_server/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 class ${engine_name}GrpcDataPackController
     : public DataPackController<google::protobuf::Message>
 {
-	public:
-		${engine_name}GrpcDataPackController(const std::string & datapackName,
+    public:
+        ${engine_name}GrpcDataPackController(const std::string & datapackName,
                                     const std::string & engineName);
 
-		/*!
-		 * \brief Processes data coming from the transceiver function
-		 *
-		 * \param[in] data The latest data from the transceiver function
-		 */
-		void handleDataPackData(const google::protobuf::Message &data) override;
+        /*!
+         * \brief Processes data coming from the transceiver function
+         *
+         * \param[in] data The latest data from the transceiver function
+         */
+        void handleDataPackData(const google::protobuf::Message &data) override;
 
-		/*!
-		 * \brief Returns the newest simulation data
-		 *
-		 * The data will be passed to the engine client through gRPC.
-		 * There it will be wrapped in a datapack object and passed to the transceiver functions.
-		 *
-		 * \return Pointer to the latest simulation data. The returned object should NOT
-		 *         be cached by the controller, its destruction will be handled by the caller.
-		 *         nullptr can be returned when no new data is available.
-		 */
-		google::protobuf::Message * getDataPackInformation() override;
+        /*!
+         * \brief Returns the newest simulation data
+         *
+         * The data will be passed to the engine client through gRPC.
+         * There it will be wrapped in a datapack object and passed to the transceiver functions.
+         *
+         * \return Pointer to the latest simulation data. The returned object should NOT
+         *         be cached by the controller, its destruction will be handled by the caller.
+         *         nullptr can be returned when no new data is available.
+         */
+        google::protobuf::Message * getDataPackInformation() override;
 
-	private:
+    private:
 
-		/*!
-		 * \brief Name of the datapack that is handled by this controller object
-		 */
-		std::string _datapackName;
+        /*!
+         * \brief Name of the datapack that is handled by this controller object
+         */
+        std::string _datapackName;
 
-		/*!
-		 * \brief Name of the engine to which the controller is bound
-		 */
-		std::string _engineName;
+        /*!
+         * \brief Name of the engine to which the controller is bound
+         */
+        std::string _engineName;
 
-		/*!
-		 * \brief Cached message, can be used for storing incoming or outgoing simulation data
-		 */
-		EngineGrpc::TestPayload data;
+        /*!
+         * \brief Cached message, can be used for storing incoming or outgoing simulation data
+         */
+        EngineTest::TestPayload data;
 };
 
 #endif // ${engine_name_uppercase}_GRPC_DATAPACK_CONTROLLER_SERVER_H

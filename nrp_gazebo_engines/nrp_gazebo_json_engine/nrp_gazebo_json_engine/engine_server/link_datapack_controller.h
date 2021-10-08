@@ -32,49 +32,49 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for links
-	 */
-	class LinkDataPackController
-	        : public JsonDataPackController
-	{
-			template<class T>
-			constexpr static float ToFloat(const T &val)
-			{	return static_cast<float>(val);	}
+    /*!
+     * \brief Interface for links
+     */
+    class LinkDataPackController
+            : public JsonDataPackController
+    {
+            template<class T>
+            constexpr static float ToFloat(const T &val)
+            {   return static_cast<float>(val); }
 
-		public:
-			LinkDataPackController(const std::string &linkName, const physics::LinkPtr &link)
-			    : JsonDataPackController(JsonDataPack::createID(linkName, "")),
-			      _link(link)
-			{}
+        public:
+            LinkDataPackController(const std::string &linkName, const physics::LinkPtr &link)
+                : JsonDataPackController(JsonDataPack::createID(linkName, "")),
+                  _link(link)
+            {}
 
-			void handleDataPackData(const nlohmann::json &data) override
-			{}
+            void handleDataPackData(const nlohmann::json &data) override
+            {}
 
-			virtual nlohmann::json * getDataPackInformation() override
-			{
-				const auto &pose = this->_link->WorldCoGPose();
-				auto cachedData = getCachedData();
+            virtual nlohmann::json * getDataPackInformation() override
+            {
+                const auto &pose = this->_link->WorldCoGPose();
+                auto cachedData = getCachedData();
 
-				(*cachedData)["pos"] = { ToFloat(pose.Pos().X()), ToFloat(pose.Pos().Y()), ToFloat(pose.Pos().Z())	};
-				(*cachedData)["rot"] = { ToFloat(pose.Rot().X()), ToFloat(pose.Rot().Y()), ToFloat(pose.Rot().Z())	};
+                (*cachedData)["pos"] = { ToFloat(pose.Pos().X()), ToFloat(pose.Pos().Y()), ToFloat(pose.Pos().Z())  };
+                (*cachedData)["rot"] = { ToFloat(pose.Rot().X()), ToFloat(pose.Rot().Y()), ToFloat(pose.Rot().Z())  };
 
-				const auto &linVel = this->_link->WorldLinearVel();
-				(*cachedData)["lin_vel"] = { ToFloat(linVel.X()), ToFloat(linVel.Y()), ToFloat(linVel.Z())	};
+                const auto &linVel = this->_link->WorldLinearVel();
+                (*cachedData)["lin_vel"] = { ToFloat(linVel.X()), ToFloat(linVel.Y()), ToFloat(linVel.Z())  };
 
-				const auto &angVel = this->_link->WorldAngularVel();
-				(*cachedData)["ang_vel"] = { ToFloat(angVel.X()), ToFloat(angVel.Y()), ToFloat(angVel.Z())	};
+                const auto &angVel = this->_link->WorldAngularVel();
+                (*cachedData)["ang_vel"] = { ToFloat(angVel.X()), ToFloat(angVel.Y()), ToFloat(angVel.Z())  };
 
-				return &(this->_data);
-			}
+                return &(this->_data);
+            }
 
-		private:
+        private:
 
-			/*!
-			 * \brief Pointer to link
-			 */
-			physics::LinkPtr _link;
-	};
+            /*!
+             * \brief Pointer to link
+             */
+            physics::LinkPtr _link;
+    };
 }
 
 #endif // LINK_DATAPACK_CONTROLLER_H

@@ -48,205 +48,205 @@ PythonJSONServer::PythonJSONServer(const std::string &serverAddress, const std::
 
 bool PythonJSONServer::initRunFlag() const
 {
-	return this->_initRunFlag;
+    return this->_initRunFlag;
 }
 
 bool PythonJSONServer::shutdownFlag() const
 {
-	return this->_shutdownFlag;
+    return this->_shutdownFlag;
 }
 
 SimulationTime PythonJSONServer::runLoopStep(SimulationTime timestep)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
-	PythonGILLock lock(this->_pyGILState, true);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    PythonGILLock lock(this->_pyGILState, true);
 
-	try
-	{
-		PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
-		return script.runLoop(timestep);
-	}
-	catch(python::error_already_set &)
-	{
-		// If an error occured, return the message to the NRP server
-		throw NRPExceptionNonRecoverable(handle_pyerror());
-	}
+    try
+    {
+        PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
+        return script.runLoop(timestep);
+    }
+    catch(python::error_already_set &)
+    {
+        // If an error occured, return the message to the NRP server
+        throw NRPExceptionNonRecoverable(handle_pyerror());
+    }
 }
 
 nlohmann::json PythonJSONServer::initialize(const nlohmann::json &data, EngineJSONServer::lock_t&)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	PythonGILLock lock(this->_pyGILState, true);
-	_initData = data;
-	try
-	{
-		// Load python
-		this->_pyGlobals.update(python::dict(python::import(NRP_PYTHON_ENGINE_MODULE_STR).attr("__dict__")));
-	}
-	catch(python::error_already_set &)
-	{
-		// If an error occured, return the message to the NRP server without setting the initRunFlag
-		return this->formatInitErrorMessage(handle_pyerror());
-	}
+    PythonGILLock lock(this->_pyGILState, true);
+    _initData = data;
+    try
+    {
+        // Load python
+        this->_pyGlobals.update(python::dict(python::import(NRP_PYTHON_ENGINE_MODULE_STR).attr("__dict__")));
+    }
+    catch(python::error_already_set &)
+    {
+        // If an error occured, return the message to the NRP server without setting the initRunFlag
+        return this->formatInitErrorMessage(handle_pyerror());
+    }
 
-	// Read python script file if present
-	const std::filesystem::path fileName = data.at("PythonFileName");
-	if(fileName.empty())
-	{
-		const auto errMsg = "No python filename given. Aborting...";
-		NRPLogger::error(errMsg);
-		return this->formatInitErrorMessage(errMsg);
-	}
+    // Read python script file if present
+    const std::filesystem::path fileName = data.at("PythonFileName");
+    if(fileName.empty())
+    {
+        const auto errMsg = "No python filename given. Aborting...";
+        NRPLogger::error(errMsg);
+        return this->formatInitErrorMessage(errMsg);
+    }
 
-	if(!std::filesystem::exists(fileName))
-	{
-		const auto errMsg = "Could not find init file " + std::string(fileName);
-		NRPLogger::error(errMsg);
-		return this->formatInitErrorMessage(errMsg);
-	}
+    if(!std::filesystem::exists(fileName))
+    {
+        const auto errMsg = "Could not find init file " + std::string(fileName);
+        NRPLogger::error(errMsg);
+        return this->formatInitErrorMessage(errMsg);
+    }
 
-	// Prepare registration
-	PythonJSONServer::_registrationPyServer = this;
+    // Prepare registration
+    PythonJSONServer::_registrationPyServer = this;
 
-	// Read python file
-	try
-	{
-		python::exec_file(fileName.c_str(), this->_pyGlobals, this->_pyGlobals);
-	}
-	catch(python::error_already_set &)
-	{
-		// If an error occured, return the message to the NRP server without setting the initRunFlag
-		const auto msg = handle_pyerror();
-		NRPLogger::error(msg);
-		return this->formatInitErrorMessage(msg);
-	}
+    // Read python file
+    try
+    {
+        python::exec_file(fileName.c_str(), this->_pyGlobals, this->_pyGlobals);
+    }
+    catch(python::error_already_set &)
+    {
+        // If an error occured, return the message to the NRP server without setting the initRunFlag
+        const auto msg = handle_pyerror();
+        NRPLogger::error(msg);
+        return this->formatInitErrorMessage(msg);
+    }
 
-	// Check that executed file also
-	if(PythonJSONServer::_registrationPyServer != nullptr)
-	{
-		PythonJSONServer::_registrationPyServer = nullptr;
-		const auto errMsg = "Failed to initialize Python server. Given python file \"" + std::string(fileName) + "\" does not register a script";
-		NRPLogger::error(errMsg);
-		return this->formatInitErrorMessage(errMsg);
-	}
+    // Check that executed file also
+    if(PythonJSONServer::_registrationPyServer != nullptr)
+    {
+        PythonJSONServer::_registrationPyServer = nullptr;
+        const auto errMsg = "Failed to initialize Python server. Given python file \"" + std::string(fileName) + "\" does not register a script";
+        NRPLogger::error(errMsg);
+        return this->formatInitErrorMessage(errMsg);
+    }
 
-	// Run user-defined initialize function
-	try
-	{
-		PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
-		script.initialize();
-	}
-	catch(python::error_already_set &)
-	{
-		// If an error occured, return the message to the NRP server without setting the initRunFlag
-		const auto msg = handle_pyerror();
-		NRPLogger::error(msg);
-		return this->formatInitErrorMessage(msg);
+    // Run user-defined initialize function
+    try
+    {
+        PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
+        script.initialize();
+    }
+    catch(python::error_already_set &)
+    {
+        // If an error occured, return the message to the NRP server without setting the initRunFlag
+        const auto msg = handle_pyerror();
+        NRPLogger::error(msg);
+        return this->formatInitErrorMessage(msg);
 
-	}
+    }
 
-	// Init has run once
-	this->_initRunFlag = true;
+    // Init has run once
+    this->_initRunFlag = true;
 
-	NRPLogger::debug("PythonJSONServer::initialize(...) completed with no errors.");
+    NRPLogger::debug("PythonJSONServer::initialize(...) completed with no errors.");
 
-	// Return success and parsed devmap
-	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, true}});
+    // Return success and parsed devmap
+    return nlohmann::json({{PythonConfigConst::InitFileExecStatus, true}});
 }
 
 
 nlohmann::json PythonJSONServer::reset(EngineJSONServer::lock_t &lock)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	if (!this->initRunFlag())
-	{
-		return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, "Cannot reset non-initialized instance"}});
-	}
+    if (!this->initRunFlag())
+    {
+        return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, "Cannot reset non-initialized instance"}});
+    }
 
-	try
-	{
-		this->shutdown(_initData);
+    try
+    {
+        this->shutdown(_initData);
 
-		this->_shutdownFlag = false;
+        this->_shutdownFlag = false;
 
-		this->initialize(_initData, lock);
+        this->initialize(_initData, lock);
 
-		return nlohmann::json({{PythonConfigConst::ResetExecStatus, true}});
-	}
-	catch (python::error_already_set &)
-	{
-		const auto msg = handle_pyerror();
-		NRPLogger::error("Failed to reset Python Engine instance: {}", msg);
-		return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, msg}});
-	}
+        return nlohmann::json({{PythonConfigConst::ResetExecStatus, true}});
+    }
+    catch (python::error_already_set &)
+    {
+        const auto msg = handle_pyerror();
+        NRPLogger::error("Failed to reset Python Engine instance: {}", msg);
+        return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, msg}});
+    }
 }
 
 nlohmann::json PythonJSONServer::shutdown(const nlohmann::json &)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	PythonGILLock lock(this->_pyGILState, true);
+    PythonGILLock lock(this->_pyGILState, true);
 
-	this->_shutdownFlag = true;
+    this->_shutdownFlag = true;
 
-	if(this->_initRunFlag)
-	{
-		// Run user-defined Shutdown fcn
-		try
-		{
-			PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
-			script.shutdown();
-		}
-		catch(python::error_already_set &)
-		{
-			// If an error occured, return the message to the NRP server
-			throw NRPExceptionNonRecoverable(handle_pyerror());
-		}
-	}
+    if(this->_initRunFlag)
+    {
+        // Run user-defined Shutdown fcn
+        try
+        {
+            PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
+            script.shutdown();
+        }
+        catch(python::error_already_set &)
+        {
+            // If an error occured, return the message to the NRP server
+            throw NRPExceptionNonRecoverable(handle_pyerror());
+        }
+    }
 
-	// Remove datapack controllers
-	this->clearRegisteredDataPacks();
-	this->_datapackControllerPtrs.clear();
+    // Remove datapack controllers
+    this->clearRegisteredDataPacks();
+    this->_datapackControllerPtrs.clear();
 
-	return nlohmann::json();
+    return nlohmann::json();
 }
 
 PyEngineScript *PythonJSONServer::registerScript(const boost::python::object &pythonScript)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
-	assert(PythonJSONServer::_registrationPyServer != nullptr);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    assert(PythonJSONServer::_registrationPyServer != nullptr);
 
-	// Register script with server
-	PythonJSONServer::_registrationPyServer->_pyEngineScript = pythonScript();
+    // Register script with server
+    PythonJSONServer::_registrationPyServer->_pyEngineScript = pythonScript();
 
-	// Register server with script
-	PyEngineScript &script = boost::python::extract<PyEngineScript&>(PythonJSONServer::_registrationPyServer->_pyEngineScript);
-	script.setPythonJSONServer(PythonJSONServer::_registrationPyServer);
+    // Register server with script
+    PyEngineScript &script = boost::python::extract<PyEngineScript&>(PythonJSONServer::_registrationPyServer->_pyEngineScript);
+    script.setPythonJSONServer(PythonJSONServer::_registrationPyServer);
 
-	PythonJSONServer::_registrationPyServer = nullptr;
+    PythonJSONServer::_registrationPyServer = nullptr;
 
-	return &script;
+    return &script;
 }
 
 nlohmann::json PythonJSONServer::formatInitErrorMessage(const std::string &errMsg)
 {
-	return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::ErrorMsg, errMsg}});
+    return nlohmann::json({{PythonConfigConst::InitFileExecStatus, 0}, {PythonConfigConst::ErrorMsg, errMsg}});
 }
 
 nlohmann::json PythonJSONServer::getDataPackData(const nlohmann::json &reqData)
 {
-	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::getDataPackData(reqData);
+    PythonGILLock lock(this->_pyGILState, true);
+    return this->EngineJSONServer::getDataPackData(reqData);
 }
 
 nlohmann::json PythonJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
-	PythonGILLock lock(this->_pyGILState, true);
-	return this->EngineJSONServer::setDataPackData(reqData);
+    PythonGILLock lock(this->_pyGILState, true);
+    return this->EngineJSONServer::setDataPackData(reqData);
 }
 
 nlohmann::json PythonJSONServer::getEngineConfig() const

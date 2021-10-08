@@ -1,6 +1,6 @@
 from nrp_core import *
 
-@FromEngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
+@EngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")
 def transceiver_function(actors):
     back_left_j   = JsonDataPack("husky::back_left_joint", "gazebo")

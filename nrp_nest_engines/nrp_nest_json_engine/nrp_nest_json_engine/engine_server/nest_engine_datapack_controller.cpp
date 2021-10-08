@@ -28,44 +28,44 @@
 
 NestEngineJSONDataPackController::NestEngineJSONDataPackController(const DataPackIdentifier & devID, boost::python::object nodeCollection, boost::python::dict nest)
     : JsonDataPackController(devID),
-	  _nest(nest),
-	  _nodeCollection(nodeCollection)
+      _nest(nest),
+      _nodeCollection(nodeCollection)
 {
 
 }
 
 void NestEngineJSONDataPackController::handleDataPackData(const nlohmann::json &data)
 {
-	setCachedData(data);
+    setCachedData(data);
 
-	this->_nest["SetStatus"](this->_nodeCollection, boost::python::handle<>(json_converter::convertJsonToPyObject(*(getCachedData()))));
+    this->_nest["SetStatus"](this->_nodeCollection, boost::python::handle<>(json_converter::convertJsonToPyObject(*(getCachedData()))));
 }
 
 nlohmann::json *NestEngineJSONDataPackController::getDataPackInformation()
 {
-	// Get datapack status from Nest
-	try
-	{
-		*(getCachedData()) = json_converter::convertPyObjectToJson(this->getStatusFromNest().ptr());
-	}
-	catch(boost::python::error_already_set &)
-	{
-		throw NRPException::logCreate("Failed to get Nest datapack status: " + handle_pyerror());
-	}
+    // Get datapack status from Nest
+    try
+    {
+        *(getCachedData()) = json_converter::convertPyObjectToJson(this->getStatusFromNest().ptr());
+    }
+    catch(boost::python::error_already_set &)
+    {
+        throw NRPException::logCreate("Failed to get Nest datapack status: " + handle_pyerror());
+    }
 
-	return &(this->_data);
+    return &(this->_data);
 }
 
 void NestEngineJSONDataPackController::setNestID(boost::python::dict nest, boost::python::object nodeCollection)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
-	this->_nest = nest;
-	this->_nodeCollection = nodeCollection;
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    this->_nest = nest;
+    this->_nodeCollection = nodeCollection;
 }
 
 boost::python::list NestEngineJSONDataPackController::getStatusFromNest()
-{	return getStatusFromNest(this->_nest, this->_nodeCollection);	}
+{   return getStatusFromNest(this->_nest, this->_nodeCollection);   }
 
 boost::python::list NestEngineJSONDataPackController::getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection)
-{	return boost::python::list(nest["GetStatus"](nodeCollection));	}
+{   return boost::python::list(nest["GetStatus"](nodeCollection));  }

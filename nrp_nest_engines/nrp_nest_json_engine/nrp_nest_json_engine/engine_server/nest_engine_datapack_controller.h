@@ -32,44 +32,44 @@
 class NestEngineJSONDataPackController
         : public JsonDataPackController
 {
-	public:
-		NestEngineJSONDataPackController(const DataPackIdentifier & devID, boost::python::object nodeCollection, boost::python::dict nest);
+    public:
+        NestEngineJSONDataPackController(const DataPackIdentifier & devID, boost::python::object nodeCollection, boost::python::dict nest);
 
-		void handleDataPackData(const nlohmann::json &data) override;
-		virtual nlohmann::json * getDataPackInformation() override;
+        void handleDataPackData(const nlohmann::json &data) override;
+        virtual nlohmann::json * getDataPackInformation() override;
 
         /*!
-		 * \brief Set Nest properties
-		 * \param nest Nest instance
-		 * \param nodeCollection Nest GIDs of model managed by this controller
-		 */
-		void setNestID(boost::python::dict nest, boost::python::object nodeCollection);
+         * \brief Set Nest properties
+         * \param nest Nest instance
+         * \param nodeCollection Nest GIDs of model managed by this controller
+         */
+        void setNestID(boost::python::dict nest, boost::python::object nodeCollection);
 
-	protected:
+    protected:
 
-		/*!
-		 * \brief Currently running Nest instance
-		 */
-		boost::python::dict _nest;
+        /*!
+         * \brief Currently running Nest instance
+         */
+        boost::python::dict _nest;
 
-		/*!
-		 * \brief Nest GID of model managed by this controller
-		 */
-		boost::python::object _nodeCollection;
+        /*!
+         * \brief Nest GID of model managed by this controller
+         */
+        boost::python::object _nodeCollection;
 
-		/*!
-		 * \brief Retrieves datapack status from Nest
-		 * \return Returns dictionary containing datapack status
-		 */
-		boost::python::list getStatusFromNest();
+        /*!
+         * \brief Retrieves datapack status from Nest
+         * \return Returns dictionary containing datapack status
+         */
+        boost::python::list getStatusFromNest();
 
-		/*!
-		 * \brief Retrieves datapack status from Nest
-		 * \param nest NEST object
-		 * \param nodeCollection Nodes of datapack
-		 * \return Returns dictionary with data
-		 */
-		static boost::python::list getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection);
+        /*!
+         * \brief Retrieves datapack status from Nest
+         * \param nest NEST object
+         * \param nodeCollection Nodes of datapack
+         * \return Returns dictionary with data
+         */
+        static boost::python::list getStatusFromNest(boost::python::dict &nest, const boost::python::object &nodeCollection);
 };
 
 #endif // NEST_ENGINE_DATAPACK_CONTROLLER_H

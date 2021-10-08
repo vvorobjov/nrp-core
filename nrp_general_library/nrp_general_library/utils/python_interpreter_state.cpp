@@ -26,22 +26,22 @@
 #include <boost/python/numpy.hpp>
 
 PythonInterpreterState::PythonInterpreterState(int argc, const char *const *argv, bool allowThreads)
-	: _wcharArgs(argc, argv)
+    : _wcharArgs(argc, argv)
 {
-	assert(argc >= 1);
+    assert(argc >= 1);
 
-	Py_SetProgramName(this->_wcharArgs.getWCharTPointers()[0]);
+    Py_SetProgramName(this->_wcharArgs.getWCharTPointers()[0]);
 
-	Py_Initialize();
-	json_converter::initNumpy();
-	boost::python::numpy::initialize();
+    Py_Initialize();
+    json_converter::initNumpy();
+    boost::python::numpy::initialize();
 
-	PySys_SetArgv(this->_wcharArgs.getWCharSize(), this->_wcharArgs.getWCharTPointers());
+    PySys_SetArgv(this->_wcharArgs.getWCharSize(), this->_wcharArgs.getWCharTPointers());
 
-	if(allowThreads)
-		this->_state = PyEval_SaveThread();
-	else
-		this->_state = nullptr;
+    if(allowThreads)
+        this->_state = PyEval_SaveThread();
+    else
+        this->_state = nullptr;
 }
 
 PythonInterpreterState::PythonInterpreterState(int argc, const std::vector<const char*> &argv, bool allowThreads)
@@ -51,60 +51,60 @@ PythonInterpreterState::PythonInterpreterState(int argc, const std::vector<const
 PythonInterpreterState::PythonInterpreterState(bool allowThreads)
     : _wcharArgs(0, nullptr)
 {
-	Py_Initialize();
-	json_converter::initNumpy();
-	boost::python::numpy::initialize();
+    Py_Initialize();
+    json_converter::initNumpy();
+    boost::python::numpy::initialize();
 
-	if(allowThreads)
-		this->_state = PyEval_SaveThread();
-	else
-		this->_state = nullptr;
+    if(allowThreads)
+        this->_state = PyEval_SaveThread();
+    else
+        this->_state = nullptr;
 }
 
 void PythonInterpreterState::allowThreads()
 {
-	if(this->_state == nullptr)
-		this->_state = PyEval_SaveThread();
+    if(this->_state == nullptr)
+        this->_state = PyEval_SaveThread();
 }
 
 bool PythonInterpreterState::threadsAllowed() const
 {
-	return (this->_state != nullptr);
+    return (this->_state != nullptr);
 }
 
 void PythonInterpreterState::endAllowThreads()
 {
-	if(this->_state != nullptr)
-	{
-		PyEval_RestoreThread(this->_state);
-		this->_state = nullptr;
-	}
+    if(this->_state != nullptr)
+    {
+        PyEval_RestoreThread(this->_state);
+        this->_state = nullptr;
+    }
 }
 
 PythonInterpreterState::~PythonInterpreterState()
 {
-	this->endAllowThreads();
+    this->endAllowThreads();
 }
 
 PythonGILLock::PythonGILLock(PyGILState_STATE &state, const bool acquire)
-	: _state(&state)
+    : _state(&state)
 {
-	if(acquire)
-		this->acquire();
+    if(acquire)
+        this->acquire();
 }
 
 PythonGILLock::~PythonGILLock()
 {
-	this->release();
-	this->_state = nullptr;
+    this->release();
+    this->_state = nullptr;
 }
 
 void PythonGILLock::acquire()
 {
-	*(this->_state) = PyGILState_Ensure();
+    *(this->_state) = PyGILState_Ensure();
 }
 
 void PythonGILLock::release()
 {
-	PyGILState_Release(*(this->_state));
+    PyGILState_Release(*(this->_state));
 }

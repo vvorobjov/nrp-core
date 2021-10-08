@@ -79,7 +79,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
             grpc::EnableDefaultHealthCheckService(true);
 
-	        NRPLogger::info("EngineGrpcServer {} has been created", engineName);
+            NRPLogger::info("EngineGrpcServer {} has been created", engineName);
         }
 
         /*!
@@ -194,7 +194,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         /*!
          * \brief Conbfiguration of the process logger
          */
-		NRPLogger _loggerCfg;
+        NRPLogger _loggerCfg;
 
         /*!
          * \brief Name of the simulation engine

@@ -21,9 +21,9 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@FromEngineDataPack(keyword='datapack1', id=DataPackIdentifier('pf_input1', 'engine', 'type'))
-@FromEngineDataPack(keyword='datapack2', id=DataPackIdentifier('pf_input2', 'engine', 'type'))
-@FromEngineDataPack(keyword='datapack3', id=DataPackIdentifier('pf_input3', 'engine', 'type'))
+@EngineDataPack(keyword='datapack1', id=DataPackIdentifier('pf_input1', 'engine', 'type'))
+@EngineDataPack(keyword='datapack2', id=DataPackIdentifier('pf_input2', 'engine', 'type'))
+@EngineDataPack(keyword='datapack3', id=DataPackIdentifier('pf_input3', 'engine', 'type'))
 @PreprocessingFunction("engine")
 def transceiver_function(datapack1, datapack2, datapack3):
     ret_dev1 = JsonDataPack("tf_input_preprocessing", "engine")

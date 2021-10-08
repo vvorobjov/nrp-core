@@ -29,102 +29,102 @@
 
 void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementPtr sdf)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	NRPLogger::info("NRPWorldPlugin: Loading world plugin...");
+    NRPLogger::info("NRPWorldPlugin: Loading world plugin...");
 
-	this->_initialWorldState = gazebo::physics::WorldState(world);
-	this->_world             = world;
-	this->_worldSDF          = sdf;
+    this->_initialWorldState = gazebo::physics::WorldState(world);
+    this->_world             = world;
+    this->_worldSDF          = sdf;
 
-	// Pause simulation
-	world->SetPaused(true);
+    // Pause simulation
+    world->SetPaused(true);
 
-	// Tell simulation to go as fast as possible
-//	world->Physics()->SetRealTimeUpdateRate(0);
+    // Tell simulation to go as fast as possible
+//  world->Physics()->SetRealTimeUpdateRate(0);
 
-	NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
-	NRPCommunicationController::getInstance().registerStepController(this);
+    NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
+    NRPCommunicationController::getInstance().registerStepController(this);
 }
 
 void gazebo::NRPWorldPlugin::Reset()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	// Reset the world to the initial state
-	// Reset doesn't take into account the <state> tag, so we have to reload it manually
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    // Reset the world to the initial state
+    // Reset doesn't take into account the <state> tag, so we have to reload it manually
 
-	WorldPlugin::Reset(); // <- does nothing
-	this->_world->SetState(this->_initialWorldState);
+    WorldPlugin::Reset(); // <- does nothing
+    this->_world->SetState(this->_initialWorldState);
 }
 
 SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
 {
-	NRP_LOGGER_TRACE("{} called [ timeStep: {} ]", __FUNCTION__, timeStep.count());
-	
-	std::scoped_lock lock(this->_lockLoop);
+    NRP_LOGGER_TRACE("{} called [ timeStep: {} ]", __FUNCTION__, timeStep.count());
+    
+    std::scoped_lock lock(this->_lockLoop);
 
-	//std::cout << "NRPWorldPlugin: Executing loop step\n";
+    //std::cout << "NRPWorldPlugin: Executing loop step\n";
 
-	try
-	{
-		const auto     maxStepSizeUs = toSimulationTime<double, std::ratio<1>>(this->_world->Physics()->GetMaxStepSize());
-		const unsigned numIterations = std::max(static_cast<unsigned int>(static_cast<double>(timeStep.count()) / static_cast<double>(maxStepSizeUs.count())), 1u);
+    try
+    {
+        const auto     maxStepSizeUs = toSimulationTime<double, std::ratio<1>>(this->_world->Physics()->GetMaxStepSize());
+        const unsigned numIterations = std::max(static_cast<unsigned int>(static_cast<double>(timeStep.count()) / static_cast<double>(maxStepSizeUs.count())), 1u);
 
-		this->startLoop(numIterations);
-	}
-	catch(const std::exception &e)
-	{
-		NRPLogger::error("Error while executing gazebo step: [ {} ]",  e.what());
-		throw;
-	}
+        this->startLoop(numIterations);
+    }
+    catch(const std::exception &e)
+    {
+        NRPLogger::error("Error while executing gazebo step: [ {} ]",  e.what());
+        throw;
+    }
 
-	//std::cout << "NRPWorldPlugin: Finished loop step. Time:" <<  this->_world->SimTime().Double() << "\n";
+    //std::cout << "NRPWorldPlugin: Finished loop step. Time:" <<  this->_world->SimTime().Double() << "\n";
 
-	const auto simTime = this->_world->SimTime();
+    const auto simTime = this->_world->SimTime();
 
-	return toSimulationTime<int32_t, std::ratio<1>>(simTime.sec) + toSimulationTime<int32_t, std::nano>(simTime.nsec);
+    return toSimulationTime<int32_t, std::ratio<1>>(simTime.sec) + toSimulationTime<int32_t, std::nano>(simTime.nsec);
 }
 
 bool gazebo::NRPWorldPlugin::finishWorldLoading()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	NRPLogger::info("Finalizing gazebo loading... Time: {}",  this->_world->SimTime().Double());
-	
-	// Run a single iteration and reset the world
-	// This should force all plugins to load
+    NRPLogger::info("Finalizing gazebo loading... Time: {}",  this->_world->SimTime().Double());
+    
+    // Run a single iteration and reset the world
+    // This should force all plugins to load
 
-	this->startLoop(1);
-	this->Reset();
+    this->startLoop(1);
+    this->Reset();
 
-	NRPLogger::info("Gazebo loading finalized Time: {}",  this->_world->SimTime().Double());
+    NRPLogger::info("Gazebo loading finalized Time: {}",  this->_world->SimTime().Double());
 
-	return true;
+    return true;
 }
 
 bool gazebo::NRPWorldPlugin::resetWorld()
 {
-	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time before: {}", this->_world->SimTime().Double());
+    NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time before: {}", this->_world->SimTime().Double());
 
-	// There is a World::Reset() function:
-	// this->_world->Reset() 
-	// that is supposed to call Reset() functions for all plugins, including model and sensor plugins.
-	// But for some reason this->_world->Reset()  just calls NRPWorldPlugin::Reset() function
-	// i.e. only WorldPlugin is affected.
-	// it would be cool to use this feature when the problem is fixed:
-	// this->_world->Reset();
+    // There is a World::Reset() function:
+    // this->_world->Reset() 
+    // that is supposed to call Reset() functions for all plugins, including model and sensor plugins.
+    // But for some reason this->_world->Reset()  just calls NRPWorldPlugin::Reset() function
+    // i.e. only WorldPlugin is affected.
+    // it would be cool to use this feature when the problem is fixed:
+    // this->_world->Reset();
 
-	this->Reset();
+    this->Reset();
 
-	NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time after: {}", this->_world->SimTime().Double());
+    NRPLogger::debug("gazebo::NRPWorldPlugin::resetWorld(): Time after: {}", this->_world->SimTime().Double());
 
-	return true;
+    return true;
 }
 
 void gazebo::NRPWorldPlugin::startLoop(unsigned int numIterations)
 {
-	NRP_LOGGER_TRACE("{} called [ numIterations: {} ]", __FUNCTION__, numIterations);
+    NRP_LOGGER_TRACE("{} called [ numIterations: {} ]", __FUNCTION__, numIterations);
 
-	this->_world->Step(numIterations);
-	this->_world->SetPaused(true);
+    this->_world->Step(numIterations);
+    this->_world->SetPaused(true);
 }

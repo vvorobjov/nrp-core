@@ -1,7 +1,7 @@
 from nrp_core import *
 from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 
-@FromEngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
+@EngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")
 def transceiver_function(actors):
     back_left_j   = GazeboJointDataPack("husky::back_left_joint", "gazebo")

@@ -21,7 +21,7 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
+@EngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
 @PreprocessingFunction("engine")
 def transceiver_function(datapack):
     test_val = datapack.test_value

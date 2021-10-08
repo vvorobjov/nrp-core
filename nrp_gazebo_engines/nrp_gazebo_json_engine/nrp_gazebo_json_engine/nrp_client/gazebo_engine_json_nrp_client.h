@@ -37,15 +37,15 @@
 class GazeboEngineJSONNRPClient
 : public EngineJSONNRPClient<GazeboEngineJSONNRPClient, GazeboJSONConfigConst::EngineSchema>
 {
-	public:
-		GazeboEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~GazeboEngineJSONNRPClient() override = default;
+    public:
+        GazeboEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        virtual ~GazeboEngineJSONNRPClient() override = default;
 
-		virtual void initialize() override;
+        virtual void initialize() override;
 
-		virtual void reset() override;
+        virtual void reset() override;
 
-		virtual void shutdown() override;
+        virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 

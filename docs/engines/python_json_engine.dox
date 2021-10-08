@@ -1,10 +1,10 @@
 /*! \page python_json_engine Python JSON Engine
 
-This versatile engine enables users to execute a user-defined python script as an engine server, thus ensuring synchronization and enabling datapack data transfer with the Simulation loop process. It can be used to integrate any simulator with a Python API in a nrp-core experiment.
+This versatile engine enables users to execute a user-defined python script as an engine server, thus ensuring synchronization and enabling datapack data transfer with the Simulation Loop process. It can be used to integrate any simulator with a Python API in a NRP-core experiment.
 
 Engines based on PythonJSONEngine can be implemented as Python classes based on <b>EngineScript</b> (as in the example listed below). To register the engine with the SimulationManager in an experiment, the decorator <b>@RegisterEngine()</b> must be prepended to the class definition.
 
-\section engine_script EngineScript
+\section python_json_engine_script EngineScript
 
 `EngineScript` provides a base class from which custom Engines can inherit. The derived class must implement methods:
 
@@ -18,6 +18,7 @@ Besides, `EngineScript` provides the following ready-to-use methods to handle da
 - `_getDataPack(datapack_name)`: returns the latest value available of a datapack with name `datapack_name`
 - `_setDataPack(datapack_name, data)`: sets a new value for a datapack with name `datapack_name`. `data` is always a Python dictionary.
 - `_registerDataPack(datapack_name)`: registers a datapack with the engine. Just registered datapacks can be `set` and `get`. Under the hood, registered datapacks are sent to the corresponding EngineClient upon request and their values updated when the EngineClient send them.
+- `_config`: returns the engine configuration as a \ref datapacks_json "JsonDataPack" object
 
 Below is an example of a class inheriting from `EngineScript`. The example is taken from the `examples/tf_exchange` experiment.
 
@@ -25,16 +26,15 @@ Below is an example of a class inheriting from `EngineScript`. The example is ta
 
 \section python_json_datapacks DataPacks
 
-The Python JSON engine supports a unique datapack type: PyObjectDataPack. The data contained in this datapack can be any JSON-serializable Python object; that is, any object that can be decoded/encoded by <a href="https://docs.python.org/3/library/json.html">JSONDecoder/JSONEncoder</a>.
-
-PyObjectDataPack datapacks can be accessed in TransceiverFunctions using a Python wrapper `PythonDataPack`, as shown in this example TF (also taken from `examples/tf_exchange`):
+The Python JSON engine supports a unique datapack type: *JsonDataPack*, which can be used to transfer information between the engine and TFs. The data contained in this datapack can be any JSON-serializable Python object; that is, any object that can be decoded/encoded by <a href="https://docs.python.org/3/library/json.html">JSONDecoder/JSONEncoder</a>.
+This data can be accessed in TransceiverFunctions from the datapack *data* attribute, as shown in this example TF (also taken from `examples/tf_exchange`):
 
 \include tf_exchange/tf_1.py
 
   <table>
-  <caption id="python_datapack_attributes_table">PyObjectDataPack Attributes</caption>
+  <caption id="python_datapack_attributes_table">JsonDataPack Attributes</caption>
   <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
-  <tr><td>data    <td>data contained in the datapack as a serializable Python object    <td>object <td>boost::python::object
+  <tr><td>data    <td>data contained in the datapack as a NlohmannJson object    <td>NlohmannJson <td>nlohmann::json
   </table>
 
 \section python_json_configuration Engine Configuration Parameters
@@ -74,7 +74,7 @@ To use the Python JSON engine in an experiment, set `EngineType` to <b>"python_j
 
 \section python_json_schema Schema
 
-Inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas.
+As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below: 
 
 \include engines/engine_python.json
 

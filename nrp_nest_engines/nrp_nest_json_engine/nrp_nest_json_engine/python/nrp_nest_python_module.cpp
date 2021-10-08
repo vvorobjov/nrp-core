@@ -33,44 +33,44 @@ static CreateDataPackClass *pCreateDataPack = nullptr;
 
 python::object CreateDataPack(python::tuple args, python::dict kwargs)
 {
-	assert(pCreateDataPack != nullptr);
-	return pCreateDataPack->createAndRegisterDataPack(args, kwargs);
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->createAndRegisterDataPack(args, kwargs);
 }
 
 void RegisterDataPack(python::str devName, python::object nodeCollection)
 {
-	assert(pCreateDataPack != nullptr);
-	return pCreateDataPack->registerDataPack(devName, nodeCollection);
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->registerDataPack(devName, nodeCollection);
 }
 
 python::dict GetDevMap()
 {
-	assert(pCreateDataPack != nullptr);
-	return pCreateDataPack->pyDevMap();
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->pyDevMap();
 }
 
 BOOST_PYTHON_MODULE(NRP_NEST_PYTHON_MODULE)
 {
-	// Import General NRP Python Module
-	python::import(PYTHON_MODULE_NAME_STR);
+    // Import General NRP Python Module
+    python::import(PYTHON_MODULE_NAME_STR);
 
-	// Setup CreateDataPack and import Nest
-	python::class_<CreateDataPackClass>("__CreateDataPackClass", python::no_init)
-	        .def("CreateDataPack", python::raw_function(&CreateDataPackClass::pyCreateDataPack))
-	        .def("RegisterDataPack", python::raw_function(&CreateDataPackClass::pyRegisterDataPack))
-	        .def("GetDevMap", &CreateDataPackClass::pyDevMap);
+    // Setup CreateDataPack and import Nest
+    python::class_<CreateDataPackClass>("__CreateDataPackClass", python::no_init)
+            .def("CreateDataPack", python::raw_function(&CreateDataPackClass::pyCreateDataPack))
+            .def("RegisterDataPack", python::raw_function(&CreateDataPackClass::pyRegisterDataPack))
+            .def("GetDevMap", &CreateDataPackClass::pyDevMap);
 
-	python::dict devMap;
-	python::dict nestDict(python::import("nest").attr("__dict__"));
+    python::dict devMap;
+    python::dict nestDict(python::import("nest").attr("__dict__"));
 
-	python::object pyCreateDataPack(CreateDataPackClass(nestDict, devMap));
-	python::scope().attr("__CreateDataPack") = pyCreateDataPack;
+    python::object pyCreateDataPack(CreateDataPackClass(nestDict, devMap));
+    python::scope().attr("__CreateDataPack") = pyCreateDataPack;
 
-	CreateDataPackClass &createDataPack = python::extract<CreateDataPackClass&>(pyCreateDataPack);
-	pCreateDataPack = &createDataPack;
+    CreateDataPackClass &createDataPack = python::extract<CreateDataPackClass&>(pyCreateDataPack);
+    pCreateDataPack = &createDataPack;
 
-	// Setup Nest Create and Register DataPack Function
-	python::def("CreateDataPack", python::raw_function(CreateDataPack));
-	python::def("RegisterDataPack", RegisterDataPack);
-	python::def("GetDevMap", GetDevMap);
+    // Setup Nest Create and Register DataPack Function
+    python::def("CreateDataPack", python::raw_function(CreateDataPack));
+    python::def("RegisterDataPack", RegisterDataPack);
+    python::def("GetDevMap", GetDevMap);
 }

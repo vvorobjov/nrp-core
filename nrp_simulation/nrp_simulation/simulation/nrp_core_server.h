@@ -48,131 +48,131 @@
  */
 class NrpCoreServer : public NrpCore::NrpCore::Service
 {
-	public:
-		enum class RequestType { None, Init, RunLoop, Shutdown };
+    public:
+        enum class RequestType { None, Init, RunLoop, Shutdown };
 
-		/*!
-		 * \brief Constructor. Spawns an instance of gRPC server with given address.
-		 * \param address Address of the gRPC server
-		 */
-		NrpCoreServer(const std::string & address);
+        /*!
+         * \brief Constructor. Spawns an instance of gRPC server with given address.
+         * \param address Address of the gRPC server
+         */
+        NrpCoreServer(const std::string & address);
 
-		/*!
-		 * \brief Returns the type of request coming from the client
-		 */
-		RequestType getRequestType() const;
+        /*!
+         * \brief Returns the type of request coming from the client
+         */
+        RequestType getRequestType() const;
 
-		/*!
-		 * \brief Returns number of iterations of runLoop requested by the client
-		 */
-		unsigned getNumIterations() const;
+        /*!
+         * \brief Returns number of iterations of runLoop requested by the client
+         */
+        unsigned getNumIterations() const;
 
-		/*!
-		 * \brief Puts the current thread to sleep until a request is available
-		 *
-		 * The function is supposed to be called by the consumer thread.
-		 * It should be called in combination with markRequestAsProcessed function.
-		 */
-		void waitForRequest();
+        /*!
+         * \brief Puts the current thread to sleep until a request is available
+         *
+         * The function is supposed to be called by the consumer thread.
+         * It should be called in combination with markRequestAsProcessed function.
+         */
+        void waitForRequest();
 
-		/*!
-		 * \brief Signals the server that the request has been processed
-		 *
-		 * The function is supposed to be called by the consumer thread, after
-		 * the pending request has been consumed. If the function isn't called, the
-		 * producer thread will not wake up! It must be called after waitForRequest function.
-		 */
-		void markRequestAsProcessed();
+        /*!
+         * \brief Signals the server that the request has been processed
+         *
+         * The function is supposed to be called by the consumer thread, after
+         * the pending request has been consumed. If the function isn't called, the
+         * producer thread will not wake up! It must be called after waitForRequest function.
+         */
+        void markRequestAsProcessed();
 
-		/*!
-		 * \brief Signals the server, that there was an error during request handling
-		 *
-		 * \param errorMessage Message describing what went wrong
-		 */
-		void markRequestAsFailed(const std::string & errorMessage);
+        /*!
+         * \brief Signals the server, that there was an error during request handling
+         *
+         * \param errorMessage Message describing what went wrong
+         */
+        void markRequestAsFailed(const std::string & errorMessage);
 
-	private:
+    private:
 
-		/*!
-		 * \brief Clears the request variables and sets the request type to none
-		 */
-		void resetRequest();
+        /*!
+         * \brief Clears the request variables and sets the request type to none
+         */
+        void resetRequest();
 
-		/*!
-		 * \brief Indicates if there's a request pending
-		 */
-		bool isRequestPending() const;
+        /*!
+         * \brief Indicates if there's a request pending
+         */
+        bool isRequestPending() const;
 
-		/*!
-		 * \brief A helper function used by the request callbacks
-		 *
-		 * The function will block the callback thread until the request has been processed by the consumer.
-		 *
-		 * \param lock        Lock acquired by the callback
-		 * \param requestType Type of the request to be prepared for the consumer
-		 * \return            Status of the request. In case of failure, it will contain grpc::StatusCode::CANCELLED
-		 *                    and the error message returned by the consumer.
-		 */
-		grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType);
+        /*!
+         * \brief A helper function used by the request callbacks
+         *
+         * The function will block the callback thread until the request has been processed by the consumer.
+         *
+         * \param lock        Lock acquired by the callback
+         * \param requestType Type of the request to be prepared for the consumer
+         * \return            Status of the request. In case of failure, it will contain grpc::StatusCode::CANCELLED
+         *                    and the error message returned by the consumer.
+         */
+        grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType);
 
-		/*!
-		 * \brief Callback for the initialization request coming from the client
-		 */
-		grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::EmptyMessage *) override;
+        /*!
+         * \brief Callback for the initialization request coming from the client
+         */
+        grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::EmptyMessage *) override;
 
-		/*!
-		 * \brief Callback for the run loop request coming from the client
-		 */
-		grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::EmptyMessage *) override;
+        /*!
+         * \brief Callback for the run loop request coming from the client
+         */
+        grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::EmptyMessage *) override;
 
-		/*!
-		 * \brief Callback for the shutdown request coming from the client
-		 */
-		grpc::Status shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::EmptyMessage *) override;
+        /*!
+         * \brief Callback for the shutdown request coming from the client
+         */
+        grpc::Status shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::EmptyMessage *) override;
 
-		/*!
-		 * \brief Mutex used for synchronization of consumer and producer threads with conditional variables
-		 */
-		std::mutex _mutex;
+        /*!
+         * \brief Mutex used for synchronization of consumer and producer threads with conditional variables
+         */
+        std::mutex _mutex;
 
-		/*!
-		 * \brief Conditional variable used to deliver requests to the consumer
-		 */
-		std::condition_variable _consumerConditionalVar;
+        /*!
+         * \brief Conditional variable used to deliver requests to the consumer
+         */
+        std::condition_variable _consumerConditionalVar;
 
-		/*!
-		 * \brief Conditional variable used to pass responses back to the producer
-		 */
-		std::condition_variable _producerConditionalVar;
+        /*!
+         * \brief Conditional variable used to pass responses back to the producer
+         */
+        std::condition_variable _producerConditionalVar;
 
-		/*!
-		 * \brief Lock used by the functions called from the consumer threads
-		 */
-		std::unique_lock<std::mutex> _lock;
+        /*!
+         * \brief Lock used by the functions called from the consumer threads
+         */
+        std::unique_lock<std::mutex> _lock;
 
-		/*!
-		 * \brief Pointer to the gRPC server class
-		 */
-		std::unique_ptr<grpc::Server> _server;
+        /*!
+         * \brief Pointer to the gRPC server class
+         */
+        std::unique_ptr<grpc::Server> _server;
 
-		/*!
-		 * \brief Type of the pending request
-		 */
-		RequestType _requestType = RequestType::None;
+        /*!
+         * \brief Type of the pending request
+         */
+        RequestType _requestType = RequestType::None;
 
-		/*!
-		 * \brief Number of iterations of runLoop requested by the client
-		 */
-		unsigned _numIterations = 0;
+        /*!
+         * \brief Number of iterations of runLoop requested by the client
+         */
+        unsigned _numIterations = 0;
 
-		/*!
-		 * \brief Helper structure holding request status and error messages
-		 */
-		struct RequestStatus
-		{
-			bool        failed       = false;
-			std::string errorMessage = "";
-		} _requestStatus;
+        /*!
+         * \brief Helper structure holding request status and error messages
+         */
+        struct RequestStatus
+        {
+            bool        failed       = false;
+            std::string errorMessage = "";
+        } _requestStatus;
 };
 
 #endif // NRP_CORE_SERVER_H

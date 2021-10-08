@@ -1,16 +1,15 @@
-"""Python Engine 1. Will get current engine time and make it accessible as a device"""
 from nrp_core.engines.opensim import OpenSimEngineScript
 from nrp_core.engines.python_json import RegisterEngine
 
 # The API of Opensim is shown in the following link:
-# https://simtk.org/api_docs/opensim/api_docs/classOpenSim_1_1Model.html
+# https://simtk.org/api_docs/opensim/api_docs
 
 @RegisterEngine()
 class Script(OpenSimEngineScript):
     def initialize(self):
-        """Initialize device1 with time"""
+        """Initialize datapack1 with time"""
         print("Server Engine is initializing")
-        print("Registering device --> for sensors")
+        print("Registering datapack --> for sensors")
         self._registerDataPack("joints")
         self._setDataPack("joints", {"shoulder": 0, "elbow": 0})
         self._registerDataPack("infos")
@@ -25,7 +24,7 @@ class Script(OpenSimEngineScript):
         # For example, if action=[0.5, 0.0, 0.0, 0.0, 0.0, 0.0], 
         # the color of TRIlong will not be blue in shown screen
         self.action = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        print("Registering device --> for actuators")
+        print("Registering datapack --> for actuators")
         self._registerDataPack("control_cmd")
 
     def runLoop(self, timestep):
@@ -39,8 +38,8 @@ class Script(OpenSimEngineScript):
             # All Joints and Muscles can be found in the "*.osim"
             # Obtain the joint data from model "arm_26"
             # In arm_26, the joint set is [offset, r_shoulder, r_elbow]
-            s_val = self.sim_manager.get_device_val("r_shoulder", deviceType="Joint")
-            e_val = self.sim_manager.get_device_val("r_elbow", deviceType="Joint") 
+            s_val = self.sim_manager.get_model_property("r_shoulder", datapack_type="Joint")
+            e_val = self.sim_manager.get_model_property("r_elbow", datapack_type="Joint") 
             # Send data to TF
             self._setDataPack("joints", {"shoulder": s_val, "elbow": e_val})
             self._setDataPack("infos", {"time": self.sim_manager.get_sim_time()})
@@ -50,11 +49,11 @@ class Script(OpenSimEngineScript):
         # 1: To show components in a list
         #ctrl_list = self.sim_manager.theWorld.model.getControlsTable()
         # 2: To show components one by one
-        #print(self.sim_manager.get_device_names("Force"))
+        #print(self.sim_manager.get_model_properties("Force"))
 
     def reset(self):
-        print("Reset !!!")
-        # Reset the value of set devices
+        print("resetting the opensim simulation...")
+        # Reset the value of set datapacks
         self._setDataPack("joints", {"shoulder": 0, "elbow": 0})
         self._setDataPack("infos", {"time": 0})
         # Reset simulation model

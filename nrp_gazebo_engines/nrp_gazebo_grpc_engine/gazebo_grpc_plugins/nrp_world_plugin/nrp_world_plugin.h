@@ -31,47 +31,47 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for a single joint
-	 */
-	class NRPWorldPlugin
-	        : public GazeboStepController,
-	          public WorldPlugin
-	{
-		public:
-			virtual ~NRPWorldPlugin() override = default;
+    /*!
+     * \brief Interface for a single joint
+     */
+    class NRPWorldPlugin
+            : public GazeboStepController,
+              public WorldPlugin
+    {
+        public:
+            virtual ~NRPWorldPlugin() override = default;
 
-			virtual void Load(physics::WorldPtr world, sdf::ElementPtr sdf) override;
-			virtual void Reset() override;
+            virtual void Load(physics::WorldPtr world, sdf::ElementPtr sdf) override;
+            virtual void Reset() override;
 
-			virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+            virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-			bool finishWorldLoading() override;
+            bool finishWorldLoading() override;
 
-			bool resetWorld() override;
+            bool resetWorld() override;
 
-		private:
-			/*!
-			 * \brief Lock to ensure only one loop is being executed
-			 */
-			std::mutex _lockLoop;
+        private:
+            /*!
+             * \brief Lock to ensure only one loop is being executed
+             */
+            std::mutex _lockLoop;
 
-			physics::WorldPtr _world;
-			sdf::ElementPtr _worldSDF;
+            physics::WorldPtr _world;
+            sdf::ElementPtr _worldSDF;
 
-			/*!
-			 * \brief Contains state of the world loaded with the Load function
-			 */
-			physics::WorldState _initialWorldState;
+            /*!
+             * \brief Contains state of the world loaded with the Load function
+             */
+            physics::WorldState _initialWorldState;
 
-			/*!
-			 * \brief Start running the sim.
-			 * \param numIterations Number of iterations to run
-			 */
-			void startLoop(unsigned int numIterations);
-	};
+            /*!
+             * \brief Start running the sim.
+             * \param numIterations Number of iterations to run
+             */
+            void startLoop(unsigned int numIterations);
+    };
 
-	GZ_REGISTER_WORLD_PLUGIN(NRPWorldPlugin)
+    GZ_REGISTER_WORLD_PLUGIN(NRPWorldPlugin)
 }
 
 #endif // NRP_WORLD_PLUGIN

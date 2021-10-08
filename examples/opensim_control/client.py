@@ -5,8 +5,8 @@ from nrp_core.engines.python_json import EngineScript, RegisterEngine
 @RegisterEngine()
 class Script(EngineScript):
     def initialize(self):
-        """Initialize device1 with empty time"""
-        print("Client Engine is initializing. Registering device...")
+        """Initialize datapack1 with empty time"""
+        print("Client Engine is initializing. Registering datapack...")
         self._registerDataPack("reset_flag")
         self._registerDataPack("joint_data")
         #self._setDataPack("joint_data", { "shoulder" : 0, "elbow": 0})
@@ -27,7 +27,7 @@ class Script(EngineScript):
         self.reset_count = 0
 
     def runLoop(self, timestep):
-        """Receive device1 at every timestep"""
+        """Receive datapack1 at every timestep"""
         #'''
         joints = self._getDataPack("joint_data")
         elbow_joint = joints.get("elbow")

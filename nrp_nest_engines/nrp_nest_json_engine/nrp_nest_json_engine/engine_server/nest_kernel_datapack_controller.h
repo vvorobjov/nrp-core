@@ -28,20 +28,20 @@
 
 
 class NestKernelDataPackController
-	: public JsonDataPackController
+    : public JsonDataPackController
 {
-	public:
-		NestKernelDataPackController(const DataPackIdentifier & devID, boost::python::dict nest);
+    public:
+        NestKernelDataPackController(const DataPackIdentifier & devID, boost::python::dict nest);
 
-		void handleDataPackData(const nlohmann::json &data) override;
-		virtual nlohmann::json * getDataPackInformation() override;
+        void handleDataPackData(const nlohmann::json &data) override;
+        virtual nlohmann::json * getDataPackInformation() override;
 
-	private:
+    private:
 
-		/*!
-		 * \brief Currently running Nest instance
-		 */
-		boost::python::dict _nest;
+        /*!
+         * \brief Currently running Nest instance
+         */
+        boost::python::dict _nest;
 };
 
 #endif // NEST_KERNEL_DATAPACK_CONTROLLER_H

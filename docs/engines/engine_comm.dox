@@ -1,6 +1,8 @@
-/*! \page engine_comm Engine Communication Protocols (ECP)
+/*! \page engine_comm Engine Communication Protocols
 
 Final engine implementations can be based on one of the engine communication protocol (ECP) provided with NRP-core. These are intermediate engine implementations (ie. can't be instantiated, nor directly used in an experiment) that implement engine client / server communication and datapack de-/serialization for a given communication protocol or middleware. Therefore, engine implementations based thereon can focus on the aspects specific to the functionality that the engine is meant to provide.
+
+A tutorial on how to create new engine implementations based on the provided ECPs can be found \ref engine_creation_template "here".
 
 The ECPs provided with NRP-core are described below.
 
@@ -8,11 +10,9 @@ The ECPs provided with NRP-core are described below.
 
 This ECP uses an HTTP REST Server as the base for the engine server. The client can then use REST calls to communicate. All communications will be de-/serialized using JSON.
 
-The server side of the engine is implemented in EngineJSONServer and the client in EngineJSONNRPClient. Final engine implementations can inherit from these two classes. In order to handle datapack I/O operations in the engine server, concrete datapack controllers can be based on EngineDataPackController.
+The server side of the engine is implemented in EngineJSONServer and the client in EngineJSONNRPClient. Final engine implementations can inherit from these two classes. In order to handle datapack I/O operations in the engine server, concrete datapack controllers can be based on the DataPackController class.
 
 To help create servers, EngineJSONOptsParser can be used to parse start parameters and extract relevant information. Additionally, the SimulationManager will launch an instance of EngineJSONRegistrationServer which can be used by EngineJSONServers to communicate its address to clients.
-
-A tutorial based on this ECP can be found \ref json_engine_creation "here".
 
 \subsection engine_json_config_section Engine Configuration Parameters
 

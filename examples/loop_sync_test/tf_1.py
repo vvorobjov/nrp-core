@@ -16,10 +16,10 @@ expected_results = []
 with open('expected_results.txt', 'r') as fd:
     expected_results = fd.readlines()
 
-@FromEngineDataPack(keyword='datapack_python1', id=DataPackIdentifier('datapack1', 'python_1'))
-@FromEngineDataPack(keyword='datapack_python2', id=DataPackIdentifier('datapack2', 'python_2'))
-@FromEngineDataPack(keyword='nest_kernel',    id=DataPackIdentifier('kernel', 'nest'))
-@FromEngineDataPack(keyword='datapack_python3', id=DataPackIdentifier('datapack3', 'python_3'))
+@EngineDataPack(keyword='datapack_python1', id=DataPackIdentifier('datapack1', 'python_1'))
+@EngineDataPack(keyword='datapack_python2', id=DataPackIdentifier('datapack2', 'python_2'))
+@EngineDataPack(keyword='nest_kernel',    id=DataPackIdentifier('kernel', 'nest'))
+@EngineDataPack(keyword='datapack_python3', id=DataPackIdentifier('datapack3', 'python_3'))
 @TransceiverFunction("python_1")
 def transceiver_function(datapack_python1, datapack_python2, datapack_python3, nest_kernel):
     """The main transceiver function of the test, performs the actual testing

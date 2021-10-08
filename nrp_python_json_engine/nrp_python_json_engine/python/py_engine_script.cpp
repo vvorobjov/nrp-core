@@ -28,7 +28,7 @@
 
 PyEngineScript::~PyEngineScript()
 {
-	this->_pServer = nullptr;
+    this->_pServer = nullptr;
 }
 
 void PyEngineScript::initialize()
@@ -38,7 +38,7 @@ void PyEngineScript::shutdown()
 {}
 
 SimulationTime PyEngineScript::simTime() const
-{	return this->_time;	}
+{   return this->_time; }
 
 nlohmann::json PyEngineScript::engineConfig() const
 {
@@ -48,36 +48,36 @@ nlohmann::json PyEngineScript::engineConfig() const
 
 void PyEngineScript::registerDataPack(std::string datapackName)
 {
-	//std::cout << "Registering datapack \"" + datapackName + "\"\n";
-	assert(this->_pServer != nullptr);
+    //std::cout << "Registering datapack \"" + datapackName + "\"\n";
+    assert(this->_pServer != nullptr);
 
-	//std::cout << "Creating datapack controller for \"" + datapackName + "\"\n";
-	PtrTemplates<PythonEngineJSONDataPackController>::shared_ptr
-	        newController(new PythonEngineJSONDataPackController(JsonDataPack::createID(datapackName, "")));
+    //std::cout << "Creating datapack controller for \"" + datapackName + "\"\n";
+    PtrTemplates<PythonEngineJSONDataPackController>::shared_ptr
+            newController(new PythonEngineJSONDataPackController(JsonDataPack::createID(datapackName, "")));
 
-	//std::cout << "Adding datapack controller for \"" + datapackName + "\"\n";
-	this->_datapackControllers.push_back(newController);
-	this->_nameDataPackMap.emplace(datapackName, &(newController->data()));
+    //std::cout << "Adding datapack controller for \"" + datapackName + "\"\n";
+    this->_datapackControllers.push_back(newController);
+    this->_nameDataPackMap.emplace(datapackName, &(newController->data()));
 
-	//std::cout << "Adding datapack \"" + datapackName + "\" to server\n";
-	this->_pServer->registerDataPackNoLock(datapackName, newController.get());
+    //std::cout << "Adding datapack \"" + datapackName + "\" to server\n";
+    this->_pServer->registerDataPackNoLock(datapackName, newController.get());
 
-	//std::cout << "Finished registering datapack \"" + datapackName + "\"\n";
+    //std::cout << "Finished registering datapack \"" + datapackName + "\"\n";
 }
 
 boost::python::object &PyEngineScript::getDataPack(const std::string &datapackName)
 {
-	auto devIt = this->_nameDataPackMap.find(datapackName);
-	if(devIt == this->_nameDataPackMap.end())
-		throw NRPException::logCreate("Could not find datapack with name \"" + datapackName + "\"");
+    auto devIt = this->_nameDataPackMap.find(datapackName);
+    if(devIt == this->_nameDataPackMap.end())
+        throw NRPException::logCreate("Could not find datapack with name \"" + datapackName + "\"");
 
-	return *(devIt->second);
+    return *(devIt->second);
 }
 
 void PyEngineScript::setDataPack(const std::string &datapackName, boost::python::object data)
-{	this->getDataPack(datapackName) = data;	}
+{   this->getDataPack(datapackName) = data; }
 
 void PyEngineScript::setPythonJSONServer(PythonJSONServer *pServer)
 {
-	this->_pServer = pServer;
+    this->_pServer = pServer;
 }

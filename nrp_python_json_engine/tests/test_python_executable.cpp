@@ -42,26 +42,26 @@ static PipeCommunication *pCommCtP = nullptr;
 
 void handle_signal(int signal)
 {
-	std::cout << "Handling signal";
-	std::cout.flush();
+    std::cout << "Handling signal";
+    std::cout.flush();
 
-	if(signal == SIGHUP)
-	{
-		// Shutdown server
-		PythonServerExecutable::shutdown();
+    if(signal == SIGHUP)
+    {
+        // Shutdown server
+        PythonServerExecutable::shutdown();
 
-		if(pCommPtC)
-			pCommPtC->~PipeCommunication();
+        if(pCommPtC)
+            pCommPtC->~PipeCommunication();
 
-		if(pCommCtP)
-			pCommCtP->~PipeCommunication();
+        if(pCommCtP)
+            pCommCtP->~PipeCommunication();
 
-		// Finish printing
-		std::cout.flush();
-		std::cerr.flush();
+        // Finish printing
+        std::cout.flush();
+        std::cerr.flush();
 
-		exit(0);
-	}
+        exit(0);
+    }
 }
 
 TEST(TestPythonExecutable, TestPython)
@@ -82,113 +82,113 @@ TEST(TestPythonExecutable, TestPython)
     argv.push_back(engineRegArg.data());
     int argc = static_cast<int>(argv.size());
 
-	const float timeStep = 1000; // microseconds
+    const float timeStep = 1000; // microseconds
 
-	// Create pipe
-	PipeCommunication commCtP, commPtC;
-	pCommCtP = &commCtP;
-	pCommPtC = &commPtC;
+    // Create pipe
+    PipeCommunication commCtP, commPtC;
+    pCommCtP = &commCtP;
+    pCommPtC = &commPtC;
 
 
-	// Create child process
-	const auto parentPID = getpid();
-	auto pid = fork();
-	ASSERT_GE(pid, 0);
-	if(pid > 0)
-	{		
-		// Parent process, main checking process
-		pCommCtP->closeWrite();
-		pCommPtC->closeRead();
+    // Create child process
+    const auto parentPID = getpid();
+    auto pid = fork();
+    ASSERT_GE(pid, 0);
+    if(pid > 0)
+    {       
+        // Parent process, main checking process
+        pCommCtP->closeWrite();
+        pCommPtC->closeRead();
 
-		char rec = 0;
+        char rec = 0;
 
-		// Wait for server to startup
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 1);
+        // Wait for server to startup
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 1);
 
-		sleep(2);
+        sleep(2);
 
-		// Send init call
-		RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
-		ASSERT_EQ(resp.code, 200);
+        // Send init call
+        RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
+        ASSERT_EQ(resp.code, 200);
 
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 2);
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 2);
 
-		// Send runstep call
-		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep}}).dump());
-		auto respParse = nlohmann::json::parse(resp.body);
-		ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep);
+        // Send runstep call
+        resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep}}).dump());
+        auto respParse = nlohmann::json::parse(resp.body);
+        ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep);
 
-		char send = 3;
-		ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
+        char send = 3;
+        ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
 
-		// Test shutdown
-		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
+        // Test shutdown
+        resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
 
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 4);
-	}
-	else
-	{
-		try
-		{
-			// Child process, PYTHON executable
-			ASSERT_NE(signal(SIGHUP, &handle_signal), SIG_ERR);
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 4);
+    }
+    else
+    {
+        try
+        {
+            // Child process, PYTHON executable
+            ASSERT_NE(signal(SIGHUP, &handle_signal), SIG_ERR);
 
-			// Child process should quit on parent process death
-			prctl(PR_SET_PDEATHSIG, SIGHUP);
+            // Child process should quit on parent process death
+            prctl(PR_SET_PDEATHSIG, SIGHUP);
 
-			// Stop if parent process died before setting up death handling
-			if(getppid() != parentPID)
-				exit(0);
+            // Stop if parent process died before setting up death handling
+            if(getppid() != parentPID)
+                exit(0);
 
-			pCommPtC->closeWrite();
-			pCommCtP->closeRead();
+            pCommPtC->closeWrite();
+            pCommCtP->closeRead();
 
-			// Start server
-			auto &pythonExec = PythonServerExecutable::resetInstance(argc, const_cast<char**>(argv.data()));
+            // Start server
+            auto &pythonExec = PythonServerExecutable::resetInstance(argc, const_cast<char**>(argv.data()));
 
-			ASSERT_EQ(pythonExec.serverRunning(), true);
+            ASSERT_EQ(pythonExec.serverRunning(), true);
 
-			sleep(1);
+            sleep(1);
 
-			char send = 1;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+            char send = 1;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
 
-			// Wait for init call
-			pythonExec.pyState().allowThreads();
-			pythonExec.waitForInit();
+            // Wait for init call
+            pythonExec.pyState().allowThreads();
+            pythonExec.waitForInit();
 
-			send = 2;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+            send = 2;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
 
-			// Wait until runStep call has been sent
-			char rec = 0;
-			ASSERT_EQ(commPtC.readP(&rec, 1, 5, 1), 1);
-			ASSERT_EQ(rec, 3);
+            // Wait until runStep call has been sent
+            char rec = 0;
+            ASSERT_EQ(commPtC.readP(&rec, 1, 5, 1), 1);
+            ASSERT_EQ(rec, 3);
 
-			// Continue running until shutdown command has been received
-			pythonExec.run();
+            // Continue running until shutdown command has been received
+            pythonExec.run();
 
-			ASSERT_EQ(pythonExec.serverRunning(), false);
-			send = 4;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
-		}
-		catch(std::exception&)
-		{}
+            ASSERT_EQ(pythonExec.serverRunning(), false);
+            send = 4;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+        }
+        catch(std::exception&)
+        {}
 
-		// Stop python server
-		PythonServerExecutable::shutdown();
+        // Stop python server
+        PythonServerExecutable::shutdown();
 
-		// Shutdown pipe
-		commCtP.~PipeCommunication();
-		commPtC.~PipeCommunication();
+        // Shutdown pipe
+        commCtP.~PipeCommunication();
+        commPtC.~PipeCommunication();
 
-		// Finish printing
-		std::cout.flush();
-		std::cerr.flush();
+        // Finish printing
+        std::cout.flush();
+        std::cerr.flush();
 
-		exit(0);
-	}
+        exit(0);
+    }
 }

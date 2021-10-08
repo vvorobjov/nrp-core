@@ -37,106 +37,106 @@ using namespace boost;
 
 class JsonConverter : public testing::Test
 {
-	protected:
+    protected:
 
-		static void appendPythonPath(const std::string &path)
-		{
-			boost::python::handle pathH(boost::python::borrowed(PySys_GetObject("path")));
-			boost::python::list paths(pathH);
-			paths.append(path);
+        static void appendPythonPath(const std::string &path)
+        {
+            boost::python::handle pathH(boost::python::borrowed(PySys_GetObject("path")));
+            boost::python::list paths(pathH);
+            paths.append(path);
 
-			PySys_SetObject("path", paths.ptr());
-		}
+            PySys_SetObject("path", paths.ptr());
+        }
 
-		static void SetUpTestSuite()
-		{
-			PyImport_AppendInittab("test_module", CONCATENATE_TOKENS(PyInit_, JSON_PYTHON_MODULE_NAME));
-			Py_Initialize();
-			json_converter::initNumpy();
-			python::numpy::initialize();
-			main    = new python::object(python::import("__main__"));
-			globals = new python::dict(main->attr("__dict__"));
+        static void SetUpTestSuite()
+        {
+            PyImport_AppendInittab("test_module", CONCATENATE_TOKENS(PyInit_, JSON_PYTHON_MODULE_NAME));
+            Py_Initialize();
+            json_converter::initNumpy();
+            python::numpy::initialize();
+            main    = new python::object(python::import("__main__"));
+            globals = new python::dict(main->attr("__dict__"));
 
-			// Append simple_function path to search
-			appendPythonPath(TEST_PYTHON_FUNCTIONS_MODULE_PATH);
-			PyImport_ImportModule("test_module");
+            // Append simple_function path to search
+            appendPythonPath(TEST_PYTHON_FUNCTIONS_MODULE_PATH);
+            PyImport_ImportModule("test_module");
 
-			// Load simple function
-			python::object simpleFcn(python::import("test_functions"));
-			globals->update(simpleFcn.attr("__dict__"));
-		}
+            // Load simple function
+            python::object simpleFcn(python::import("test_functions"));
+            globals->update(simpleFcn.attr("__dict__"));
+        }
 
-		static void handlePythonException()
-		{
-			PyErr_Print();
-			PyErr_Clear();
+        static void handlePythonException()
+        {
+            PyErr_Print();
+            PyErr_Clear();
 
-			std::cout.flush();
+            std::cout.flush();
 
-			throw std::invalid_argument("Python Exception");
-		}
-
-
-		/*!
-		 * \brief Runs python function with given name, extracts the exception message and returns it as string
-		 */
-		static const std::string runAndExtractExceptionMessage(const std::string & functionName, const JsonDataPack * inputDataPack)
-		{
-			try
-			{
-				if(inputDataPack != nullptr)
-				{
-					(*globals)[functionName](boost::ref(inputDataPack));
-				}
-				else
-				{
-					(*globals)[functionName]();
-				}
-			}
-			catch(boost::python::error_already_set &)
-			{
-				PyObject *ptype, *pvalue, *ptraceback;
-				PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-
-				const char *pStrErrorMessage = PyUnicode_AsUTF8(pvalue);
-				return std::string(pStrErrorMessage);
-			}
-
-			return "";
-		}
+            throw std::invalid_argument("Python Exception");
+        }
 
 
-		/*!
-		 * \brief Asserts that two arrays are identical with respect to size and values
-		 */
-		template <typename TYPE>
-		static void assertArrayEqual(const nlohmann::json & result, const std::array<TYPE, 3> & expected)
-		{
-			ASSERT_EQ(result.size(), expected.size());
+        /*!
+         * \brief Runs python function with given name, extracts the exception message and returns it as string
+         */
+        static const std::string runAndExtractExceptionMessage(const std::string & functionName, const JsonDataPack * inputDataPack)
+        {
+            try
+            {
+                if(inputDataPack != nullptr)
+                {
+                    (*globals)[functionName](boost::ref(inputDataPack));
+                }
+                else
+                {
+                    (*globals)[functionName]();
+                }
+            }
+            catch(boost::python::error_already_set &)
+            {
+                PyObject *ptype, *pvalue, *ptraceback;
+                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
 
-			for(size_t i = 0; i < result.size(); i++)
-			{
-				ASSERT_EQ(result[i], expected[i]);
-			}
-		}
+                const char *pStrErrorMessage = PyUnicode_AsUTF8(pvalue);
+                return std::string(pStrErrorMessage);
+            }
+
+            return "";
+        }
 
 
-		/*!
-		 * \brief Asserts that two arrays are identical with respect to size and values (with some margin)
-		 */
-		template <typename TYPE>
-		static void assertArrayNear(const nlohmann::json & result, const std::array<TYPE, 3> & expected)
-		{
-			ASSERT_EQ(result.size(), expected.size());
+        /*!
+         * \brief Asserts that two arrays are identical with respect to size and values
+         */
+        template <typename TYPE>
+        static void assertArrayEqual(const nlohmann::json & result, const std::array<TYPE, 3> & expected)
+        {
+            ASSERT_EQ(result.size(), expected.size());
 
-			for(size_t i = 0; i < result.size(); i++)
-			{
-				ASSERT_NEAR(result[i], expected[i], 1e-6);
-			}
-		}
+            for(size_t i = 0; i < result.size(); i++)
+            {
+                ASSERT_EQ(result[i], expected[i]);
+            }
+        }
 
-		static python::object * main;
-		static python::dict   * globals;
+
+        /*!
+         * \brief Asserts that two arrays are identical with respect to size and values (with some margin)
+         */
+        template <typename TYPE>
+        static void assertArrayNear(const nlohmann::json & result, const std::array<TYPE, 3> & expected)
+        {
+            ASSERT_EQ(result.size(), expected.size());
+
+            for(size_t i = 0; i < result.size(); i++)
+            {
+                ASSERT_NEAR(result[i], expected[i], 1e-6);
+            }
+        }
+
+        static python::object * main;
+        static python::dict   * globals;
 };
 
 python::object * JsonConverter::main = nullptr;
@@ -148,8 +148,8 @@ python::dict   * JsonConverter::globals = nullptr;
  */
 TEST_F(JsonConverter, TestJsonToPython)
 {
-	try
-	{
+    try
+    {
         // Create input datapack with JSON data
 
         nlohmann::json * inputJson = new nlohmann::json();
@@ -161,17 +161,17 @@ TEST_F(JsonConverter, TestJsonToPython)
         (*inputJson)["testBoolFalse"] = false;
         (*inputJson)["testArray"    ] = { 1, 0, 2 };
         (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
-		(*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
+        (*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
         JsonDataPack inputDataPack("a", "b", inputJson);
 
         // Call the test function
 
         (*globals)["test_input"](boost::ref(inputDataPack));
-	}
-	catch(boost::python::error_already_set &)
-	{
-		handlePythonException();
-	}
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
 }
 
 
@@ -180,16 +180,16 @@ TEST_F(JsonConverter, TestJsonToPython)
  */
 TEST_F(JsonConverter, TestJsonToPythonFailures)
 {
-	// Create input datapack with JSON data
-	// Conversion from binary data is not supported and should throw an exception
+    // Create input datapack with JSON data
+    // Conversion from binary data is not supported and should throw an exception
 
-	nlohmann::json * inputJson = new nlohmann::json();
-	(*inputJson)["testBinary"] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
-	JsonDataPack inputDataPack("a", "b", inputJson);
+    nlohmann::json * inputJson = new nlohmann::json();
+    (*inputJson)["testBinary"] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
+    JsonDataPack inputDataPack("a", "b", inputJson);
 
-	// Call the test function
+    // Call the test function
 
-	ASSERT_ANY_THROW((*globals)["test_unsupported_json_type_failure"](boost::ref(inputDataPack)));
+    ASSERT_ANY_THROW((*globals)["test_unsupported_json_type_failure"](boost::ref(inputDataPack)));
 }
 
 
@@ -198,57 +198,57 @@ TEST_F(JsonConverter, TestJsonToPythonFailures)
  */
 TEST_F(JsonConverter, TestPythonToJson)
 {
-	try
-	{
+    try
+    {
         // Call the test function
 
         JsonDataPack * res = boost::python::extract<JsonDataPack *>((*globals)["test_output"]());
 
-		// Check basic data types
+        // Check basic data types
 
-		ASSERT_EQ(res->getData()["test_null"      ], nullptr);
-		ASSERT_EQ(res->getData()["test_long"      ], 1);
-		ASSERT_EQ(res->getData()["test_double"    ], 43.21);
-		ASSERT_EQ(res->getData()["test_string"    ], "string");
-		ASSERT_EQ(res->getData()["test_bool_true" ], true);
-		ASSERT_EQ(res->getData()["test_bool_false"], false);
+        ASSERT_EQ(res->getData()["test_null"      ], nullptr);
+        ASSERT_EQ(res->getData()["test_long"      ], 1);
+        ASSERT_EQ(res->getData()["test_double"    ], 43.21);
+        ASSERT_EQ(res->getData()["test_string"    ], "string");
+        ASSERT_EQ(res->getData()["test_bool_true" ], true);
+        ASSERT_EQ(res->getData()["test_bool_false"], false);
 
-		// Check list
+        // Check list
 
-		assertArrayEqual(res->getData()["test_array"], std::array<int, 3>({5, 1, 6}));
+        assertArrayEqual(res->getData()["test_array"], std::array<int, 3>({5, 1, 6}));
 
-		// Check tuple
+        // Check tuple
 
-		assertArrayEqual(res->getData()["test_tuple"], std::array<int, 3>({1, 2, 3}));
+        assertArrayEqual(res->getData()["test_tuple"], std::array<int, 3>({1, 2, 3}));
 
-		// Check dictionary
+        // Check dictionary
 
-		ASSERT_EQ(res->getData()["test_object"]["key1"], "value");
-		ASSERT_EQ(res->getData()["test_object"]["key2"], 600);
+        ASSERT_EQ(res->getData()["test_object"]["key1"], "value");
+        ASSERT_EQ(res->getData()["test_object"]["key2"], 600);
 
-		// Check numpy integer arrays
+        // Check numpy integer arrays
 
-		assertArrayEqual(res->getData()["test_numpy_array_int8" ], std::array<int, 3>({ 1,  2,  3}));
-		assertArrayEqual(res->getData()["test_numpy_array_int16"], std::array<int, 3>({ 4,  5,  6}));
-		assertArrayEqual(res->getData()["test_numpy_array_int32"], std::array<int, 3>({ 7,  8,  9}));
-		assertArrayEqual(res->getData()["test_numpy_array_int64"], std::array<int, 3>({10, 11, 12}));
+        assertArrayEqual(res->getData()["test_numpy_array_int8" ], std::array<int, 3>({ 1,  2,  3}));
+        assertArrayEqual(res->getData()["test_numpy_array_int16"], std::array<int, 3>({ 4,  5,  6}));
+        assertArrayEqual(res->getData()["test_numpy_array_int32"], std::array<int, 3>({ 7,  8,  9}));
+        assertArrayEqual(res->getData()["test_numpy_array_int64"], std::array<int, 3>({10, 11, 12}));
 
-		// Check numpy unsigned integer arrays
+        // Check numpy unsigned integer arrays
 
-		assertArrayEqual(res->getData()["test_numpy_array_uint8" ], std::array<unsigned, 3>({0,  1,  2}));
-		assertArrayEqual(res->getData()["test_numpy_array_uint16"], std::array<unsigned, 3>({3,  4,  5}));
-		assertArrayEqual(res->getData()["test_numpy_array_uint32"], std::array<unsigned, 3>({6,  7,  8}));
-		assertArrayEqual(res->getData()["test_numpy_array_uint64"], std::array<unsigned, 3>({9, 10, 11}));
+        assertArrayEqual(res->getData()["test_numpy_array_uint8" ], std::array<unsigned, 3>({0,  1,  2}));
+        assertArrayEqual(res->getData()["test_numpy_array_uint16"], std::array<unsigned, 3>({3,  4,  5}));
+        assertArrayEqual(res->getData()["test_numpy_array_uint32"], std::array<unsigned, 3>({6,  7,  8}));
+        assertArrayEqual(res->getData()["test_numpy_array_uint64"], std::array<unsigned, 3>({9, 10, 11}));
 
-		// Check numpy floating-point arrays
+        // Check numpy floating-point arrays
 
-		assertArrayNear(res->getData()["test_numpy_array_float32"], std::array<float,  3>({0.5, 2.3, 3.55}));
-		assertArrayNear(res->getData()["test_numpy_array_float64"], std::array<double, 3>({1.5, 2.3, 3.88}));
-	}
-	catch(boost::python::error_already_set &)
-	{
-		handlePythonException();
-	}
+        assertArrayNear(res->getData()["test_numpy_array_float32"], std::array<float,  3>({0.5, 2.3, 3.55}));
+        assertArrayNear(res->getData()["test_numpy_array_float64"], std::array<double, 3>({1.5, 2.3, 3.88}));
+    }
+    catch(boost::python::error_already_set &)
+    {
+        handlePythonException();
+    }
 }
 
 
@@ -259,22 +259,22 @@ TEST_F(JsonConverter, TestPythonToJsonFailures)
 {
     // Call the test function
 
-	nlohmann::json * inputJsonArray = new nlohmann::json({ 1, 0, 2 });
+    nlohmann::json * inputJsonArray = new nlohmann::json({ 1, 0, 2 });
     JsonDataPack inputDataPackArray("a", "b", inputJsonArray);
 
-	nlohmann::json * inputJsonObject = new nlohmann::json({ {"key1", "value"}, {"key2", 600} });
+    nlohmann::json * inputJsonObject = new nlohmann::json({ {"key1", "value"}, {"key2", 600} });
     JsonDataPack inputDataPackObject("a", "b", inputJsonObject);
 
-	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_1", &inputDataPackObject), "object indices must be str");
-	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_2", &inputDataPackObject), "key 'non_existent' doesn't exist");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_1", &inputDataPackObject), "object indices must be str");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_object_2", &inputDataPackObject), "key 'non_existent' doesn't exist");
 
-	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_1", &inputDataPackArray), "list index out of range");
-	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_2", &inputDataPackArray), "list indices must be integers");
-	ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_3", &inputDataPackArray), "setting json array elements not supported");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_1", &inputDataPackArray), "list index out of range");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_2", &inputDataPackArray), "list indices must be integers");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_index_out_of_range_array_3", &inputDataPackArray), "setting json array elements not supported");
 
-	ASSERT_EQ(runAndExtractExceptionMessage("test_conversion_failure_unsupported_type",       nullptr), "Attempted to convert unsupported python type into nlohmann::json.");
-	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_type", nullptr), "Conversion of numpy dtype '<U1' not implemented");
-	ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_nd",   nullptr), "Conversion of numpy array with nd = 2 not implemented");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_conversion_failure_unsupported_type",       nullptr), "Attempted to convert unsupported python type into nlohmann::json.");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_type", nullptr), "Conversion of numpy dtype '<U1' not implemented");
+    ASSERT_EQ(runAndExtractExceptionMessage("test_numpy_conversion_failure_unsupported_nd",   nullptr), "Conversion of numpy array with nd = 2 not implemented");
 }
 
 
@@ -317,7 +317,7 @@ TEST_F(JsonConverter, TestJsonLenMethod)
 {
     try
     {
-        // Create input device with JSON data
+        // Create input datapack with JSON data
 
         nlohmann::json * inputJson = new nlohmann::json();
         (*inputJson)["testNull"     ] = nullptr;
@@ -344,7 +344,7 @@ TEST_F(JsonConverter, TestJsonKeysMethod)
 {
     try
     {
-        // Create input devices with JSON data
+        // Create input datapacks with JSON data
 
         nlohmann::json * inputJsonArray = new nlohmann::json({ 1, 0, 2 });
         JsonDataPack inputDataPackArray("a", "b", inputJsonArray);

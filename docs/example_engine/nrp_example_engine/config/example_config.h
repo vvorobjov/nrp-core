@@ -6,7 +6,7 @@
 
 struct ExampleConfigConst
 {
-	static constexpr char EngineType[] = "example_engine";
+    static constexpr char EngineType[] = "example_engine";
     static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_example.json#/EngineExample";
 };
 

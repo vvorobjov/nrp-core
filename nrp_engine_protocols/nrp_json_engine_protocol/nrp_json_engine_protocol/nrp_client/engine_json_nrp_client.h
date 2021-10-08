@@ -45,105 +45,105 @@ template<class ENGINE, const char* SCHEMA>
 class EngineJSONNRPClient
         : public EngineClient<ENGINE, SCHEMA>
 {
-	public:
-		/*!
-		 * \brief Constructor
-		 * \param config Engine Config
-		 * \param launcher Process launcher
-		 */
-		EngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
-		      _serverAddress(this->engineConfig().at("ServerAddress"))
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    public:
+        /*!
+         * \brief Constructor
+         * \param config Engine Config
+         * \param launcher Process launcher
+         */
+        EngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
+              _serverAddress(this->engineConfig().at("ServerAddress"))
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			RestClientSetup::ensureInstance();
-		}
+            RestClientSetup::ensureInstance();
+        }
 
-		/*!
-		 * \brief Constructor
-		 * \param serverAddress Server Address to send requests to
-		 * \param config Engine Config
-		 * \param launcher Process launcher
-		 */
-		EngineJSONNRPClient(const std::string &serverAddress, nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
-		      _serverAddress(serverAddress)
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        /*!
+         * \brief Constructor
+         * \param serverAddress Server Address to send requests to
+         * \param config Engine Config
+         * \param launcher Process launcher
+         */
+        EngineJSONNRPClient(const std::string &serverAddress, nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher)),
+              _serverAddress(serverAddress)
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             this->engineConfig()["ServerAddress"] = this->_serverAddress;
-			RestClientSetup::ensureInstance();
-		}
+            RestClientSetup::ensureInstance();
+        }
 
-		virtual ~EngineJSONNRPClient() override = default;
+        virtual ~EngineJSONNRPClient() override = default;
 
-		virtual pid_t launchEngine() override
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        virtual pid_t launchEngine() override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			// Launch engine process.
-			// enginePID == -1 means that the launcher hasn't launched a process
-			auto enginePID = this->EngineClientInterface::launchEngine();
+            // Launch engine process.
+            // enginePID == -1 means that the launcher hasn't launched a process
+            auto enginePID = this->EngineClientInterface::launchEngine();
 
-			// Wait for engine to register itself if process launching has succeeded
-			if(enginePID > 0 && !this->engineConfig().at("RegistrationServerAddress").empty())
-			{
-				const auto serverAddr = this->waitForRegistration(20, 1);
-				if(serverAddr.empty())
-					throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
+            // Wait for engine to register itself if process launching has succeeded
+            if(enginePID > 0 && !this->engineConfig().at("RegistrationServerAddress").empty())
+            {
+                const auto serverAddr = this->waitForRegistration(20, 1);
+                if(serverAddr.empty())
+                    throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
 
                 this->engineConfig()["ServerAddress"] = serverAddr;
-				this->_serverAddress = serverAddr;
-			}
+                this->_serverAddress = serverAddr;
+            }
 
-			return enginePID;
-		}
+            return enginePID;
+        }
 
-		virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			// Convert datapacks to JSON format
-			nlohmann::json request;
-			for(const auto &curDataPack : datapacksArray)
-			{
-				if(curDataPack->engineName().compare(this->engineName()) == 0)
-				{
-					if(curDataPack->type() != JsonDataPack::getType())
-					{
-						throw NRPException::logCreate("Engine \"" +
-													this->engineName() +
-													"\" cannot handle datapack type '" +
-													curDataPack->type() + "'");
-					}
+            // Convert datapacks to JSON format
+            nlohmann::json request;
+            for(const auto &curDataPack : datapacksArray)
+            {
+                if(curDataPack->engineName().compare(this->engineName()) == 0)
+                {
+                    if(curDataPack->type() != JsonDataPack::getType())
+                    {
+                        throw NRPException::logCreate("Engine \"" +
+                                                    this->engineName() +
+                                                    "\" cannot handle datapack type '" +
+                                                    curDataPack->type() + "'");
+                    }
 
-					// We get ownership of the datapack's data
-					// We'll have to delete the object after we're done
+                    // We get ownership of the datapack's data
+                    // We'll have to delete the object after we're done
 
-					nlohmann::json * data = (dynamic_cast<JsonDataPack *>(curDataPack))->releaseData();
+                    nlohmann::json * data = (dynamic_cast<JsonDataPack *>(curDataPack))->releaseData();
 
-					const auto & name = curDataPack->name();
+                    const auto & name = curDataPack->name();
 
-					request[name]["engine_name"] = curDataPack->engineName();
-					request[name]["type"]        = curDataPack->type();
-					request[name]["data"].swap(*data);
+                    request[name]["engine_name"] = curDataPack->engineName();
+                    request[name]["type"]        = curDataPack->type();
+                    request[name]["data"].swap(*data);
 
-					delete data;
-				}
-			}
+                    delete data;
+                }
+            }
 
-			// Send updated datapacks to Engine JSON server
-			EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(),
-			                                 EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
-			                                 "Engine server \"" + this->engineName() + "\" failed during datapack handling");
+            // Send updated datapacks to Engine JSON server
+            EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(),
+                                             EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
+                                             "Engine server \"" + this->engineName() + "\" failed during datapack handling");
 
-			// TODO: Check if engine has processed all sent datapacks
-		}
+            // TODO: Check if engine has processed all sent datapacks
+        }
 
         virtual const std::vector<std::string> engineProcStartParams() const override
         {
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             std::vector<std::string> startParams = this->engineConfig().at("EngineProcStartParams");
 
@@ -166,237 +166,237 @@ class EngineJSONNRPClient
             return this->engineConfig().at("EngineEnvParams");
         }
 
-	protected:
-		virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    protected:
+        virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			nlohmann::json request;
-			for(const auto &devID : datapackIdentifiers)
-			{
-				if(this->engineName().compare(devID.EngineName) == 0)
-				{
-					request[devID.Name] = {{"engine_name", devID.EngineName}, {"type", devID.Type}};
-				}
+            nlohmann::json request;
+            for(const auto &devID : datapackIdentifiers)
+            {
+                if(this->engineName().compare(devID.EngineName) == 0)
+                {
+                    request[devID.Name] = {{"engine_name", devID.EngineName}, {"type", devID.Type}};
+                }
 
-			}
+            }
 
-			// Post request to Engine JSON server
-			const auto resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(),
-			                                                 EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
-			                                                 "Engine server \"" + this->engineName() + "\" failed during datapack retrieval"));
+            // Post request to Engine JSON server
+            const auto resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(),
+                                                             EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
+                                                             "Engine server \"" + this->engineName() + "\" failed during datapack retrieval"));
 
-			return this->getDataPackInterfacesFromJSON(resp);
-		}
+            return this->getDataPackInterfacesFromJSON(resp);
+        }
 
-		/*!
-		 * \brief Send an initialization command
-		 * \param data Data that should be passed to the engine
-		 * \return Returns init data from engine
-		 */
-		nlohmann::json sendInitCommand(const nlohmann::json &data)
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        /*!
+         * \brief Send an initialization command
+         * \param data Data that should be passed to the engine
+         * \return Returns init data from engine
+         */
+        nlohmann::json sendInitCommand(const nlohmann::json &data)
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			NRPLogger::debug("EngineJSONNRPClient::sendInitCommand [ data: {} ]", data.dump());
+            NRPLogger::debug("EngineJSONNRPClient::sendInitCommand [ data: {} ]", data.dump());
 
-			// Post init request to Engine JSON server
-			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(),
-			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
-			                   "Engine server \"" + this->engineName() + "\" failed during initialization");
-		}
+            // Post init request to Engine JSON server
+            return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(),
+                               EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
+                               "Engine server \"" + this->engineName() + "\" failed during initialization");
+        }
 
-		/*!
-		 * \brief Send a reset command
-		 * \param data Data that should be passed to the engine
-		 * \return Returns reset data from engine
-		 */
-		nlohmann::json sendResetCommand(const nlohmann::json &data)
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-			
-			NRPLogger::debug("EngineJSONNRPClient::sendResetCommand [ data: {} ]", data.dump());
+        /*!
+         * \brief Send a reset command
+         * \param data Data that should be passed to the engine
+         * \return Returns reset data from engine
+         */
+        nlohmann::json sendResetCommand(const nlohmann::json &data)
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            
+            NRPLogger::debug("EngineJSONNRPClient::sendResetCommand [ data: {} ]", data.dump());
 
-			// Post reset request to Engine JSON server
-			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerResetRoute.data(),
-			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
-			                   "Engine server \"" + this->engineName() + "\" failed during reset");
-		}
+            // Post reset request to Engine JSON server
+            return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerResetRoute.data(),
+                               EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
+                               "Engine server \"" + this->engineName() + "\" failed during reset");
+        }
 
-		/*!
-		 * \brief Send a shutdown command
-		 * \param data Data that should be passed to the engine
-		 * \return Returns init data from engine
-		 */
-		nlohmann::json sendShutdownCommand(const nlohmann::json &data)
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        /*!
+         * \brief Send a shutdown command
+         * \param data Data that should be passed to the engine
+         * \return Returns init data from engine
+         */
+        nlohmann::json sendShutdownCommand(const nlohmann::json &data)
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			NRPLogger::debug("EngineJSONNRPClient::sendShutdownCommand [ data: {} ]", data.dump());
+            NRPLogger::debug("EngineJSONNRPClient::sendShutdownCommand [ data: {} ]", data.dump());
 
-			// Post init request to Engine JSON server
-			return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(),
-			                   EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
-			                   "Engine server \"" + this->engineName() + "\" failed during shutdown");
-		}
+            // Post init request to Engine JSON server
+            return sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(),
+                               EngineJSONConfigConst::EngineServerContentType.data(), data.dump(),
+                               "Engine server \"" + this->engineName() + "\" failed during shutdown");
+        }
 
-		/*!
-		 * \brief Wait for the engine registration server to receive a call from the engine
-		 * \param numTries Number of times to check the registration server for an address
-		 * \param waitTime Wait time (in seconds) between checks
-		 * \return Returns engine server address if present, empty string otherwise
-		 */
-		std::string waitForRegistration(unsigned int numTries, unsigned int waitTime) const
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        /*!
+         * \brief Wait for the engine registration server to receive a call from the engine
+         * \param numTries Number of times to check the registration server for an address
+         * \param waitTime Wait time (in seconds) between checks
+         * \return Returns engine server address if present, empty string otherwise
+         */
+        std::string waitForRegistration(unsigned int numTries, unsigned int waitTime) const
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
-			if(pRegistrationServer == nullptr)
-				pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig().at("RegistrationServerAddress"));
+            auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
+            if(pRegistrationServer == nullptr)
+                pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig().at("RegistrationServerAddress"));
 
-			if(!pRegistrationServer->isRunning())
-				pRegistrationServer->startServerAsync();
+            if(!pRegistrationServer->isRunning())
+                pRegistrationServer->startServerAsync();
 
-			// Try to retrieve engine address
-			auto engineAddr = pRegistrationServer->requestEngine(this->engineName());
+            // Try to retrieve engine address
+            auto engineAddr = pRegistrationServer->requestEngine(this->engineName());
 
-			while(engineAddr.empty() && numTries > 0)
-			{
-				// Continue to wait for engine address for 20s
-				sleep(waitTime);
-				engineAddr = pRegistrationServer->retrieveEngineAddress(this->engineName());
-				--numTries;
-			}
+            while(engineAddr.empty() && numTries > 0)
+            {
+                // Continue to wait for engine address for 20s
+                sleep(waitTime);
+                engineAddr = pRegistrationServer->retrieveEngineAddress(this->engineName());
+                --numTries;
+            }
 
-			// Close server if no additional clients are waiting for their engines to register
-			if(pRegistrationServer->getNumWaitingEngines() == 0)
-				EngineJSONRegistrationServer::clearInstance();
+            // Close server if no additional clients are waiting for their engines to register
+            if(pRegistrationServer->getNumWaitingEngines() == 0)
+                EngineJSONRegistrationServer::clearInstance();
 
-			return engineAddr;
-		}
+            return engineAddr;
+        }
 
-	private:
+    private:
 
-		/*!
-		 * \brief Server Address to send requests to
-		 */
-		std::string _serverAddress;
+        /*!
+         * \brief Server Address to send requests to
+         */
+        std::string _serverAddress;
 
-		/*!
-		 * \brief Send a request to the Server
-		 * \param serverName Name of the server
-		 * \param contentType Content Type
-		 * \param request Body of request
-		 * \param exceptionMessage Message to put into exception output
-		 * \return Returns body of response, parsed as JSON
-		 */
-		static nlohmann::json sendRequest(const std::string &serverName, const std::string &contentType, const std::string &request, const std::string_view &exceptionMessage)
-		{
-			// Post request to Engine JSON server
-			try
-			{
-				auto resp = RestClient::post(serverName, contentType, request);
-				if(resp.code != 200)
-				{
-					throw std::domain_error(exceptionMessage.data());
-				}
+        /*!
+         * \brief Send a request to the Server
+         * \param serverName Name of the server
+         * \param contentType Content Type
+         * \param request Body of request
+         * \param exceptionMessage Message to put into exception output
+         * \return Returns body of response, parsed as JSON
+         */
+        static nlohmann::json sendRequest(const std::string &serverName, const std::string &contentType, const std::string &request, const std::string_view &exceptionMessage)
+        {
+            // Post request to Engine JSON server
+            try
+            {
+                auto resp = RestClient::post(serverName, contentType, request);
+                if(resp.code != 200)
+                {
+                    throw std::domain_error(exceptionMessage.data());
+                }
 
-				return nlohmann::json::parse(resp.body);
-			}
-			catch(std::exception &e)
-			{
-				throw NRPException::logCreate(e, "Communication with engine server failed");
-			}
-		}
+                return nlohmann::json::parse(resp.body);
+            }
+            catch(std::exception &e)
+            {
+                throw NRPException::logCreate(e, "Communication with engine server failed");
+            }
+        }
 
-		/*!
-		 * \brief Thread function that executes the loop and waits for a result from the engine
-		 * \param timeStep Time (in seconds) to execute the engine
-		 * \return Returns current time of engine
-		 */
-		SimulationTime runLoopStepCallback(SimulationTime timeStep) override
-		{
-			nlohmann::json request;
-			request[EngineJSONConfigConst::EngineTimeStepName.data()] = timeStep.count();
+        /*!
+         * \brief Thread function that executes the loop and waits for a result from the engine
+         * \param timeStep Time (in seconds) to execute the engine
+         * \return Returns current time of engine
+         */
+        SimulationTime runLoopStepCallback(SimulationTime timeStep) override
+        {
+            nlohmann::json request;
+            request[EngineJSONConfigConst::EngineTimeStepName.data()] = timeStep.count();
 
-			// Post run loop request to Engine JSON server
-			nlohmann::json resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(),
-			                                                     EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
-			                                                     "Engine Server failed during loop execution"));
+            // Post run loop request to Engine JSON server
+            nlohmann::json resp(EngineJSONNRPClient::sendRequest(this->_serverAddress + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(),
+                                                                 EngineJSONConfigConst::EngineServerContentType.data(), request.dump(),
+                                                                 "Engine Server failed during loop execution"));
 
-			// Get engine time from response
-			SimulationTime engineTime;
-			try
-			{
-				engineTime = SimulationTime(resp[EngineJSONConfigConst::EngineTimeName.data()]);
-			}
-			catch(std::exception &e)
-			{
-				throw NRPException::logCreate(e, "Error while parsing the return value of the run_step of \"" + this->engineName() + "\"");
-			}
+            // Get engine time from response
+            SimulationTime engineTime;
+            try
+            {
+                engineTime = SimulationTime(resp[EngineJSONConfigConst::EngineTimeName.data()]);
+            }
+            catch(std::exception &e)
+            {
+                throw NRPException::logCreate(e, "Error while parsing the return value of the run_step of \"" + this->engineName() + "\"");
+            }
 
-			if(engineTime < SimulationTime::zero())
-				throw NRPException::logCreate("Error during execution of engine \"" + this->engineName() + "\"");
+            if(engineTime < SimulationTime::zero())
+                throw NRPException::logCreate("Error during execution of engine \"" + this->engineName() + "\"");
 
-			return engineTime;
-		}
+            return engineTime;
+        }
 
-		/*!
-		 * \brief Extracts datapacks from given JSON
-		 * \param datapacks JSON data of datapacks
-		 * \return Returns list of datapacks
-		 */
-		typename EngineClientInterface::datapacks_set_t getDataPackInterfacesFromJSON(const nlohmann::json &datapacks) const
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        /*!
+         * \brief Extracts datapacks from given JSON
+         * \param datapacks JSON data of datapacks
+         * \return Returns list of datapacks
+         */
+        typename EngineClientInterface::datapacks_set_t getDataPackInterfacesFromJSON(const nlohmann::json &datapacks) const
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-			typename EngineClientInterface::datapacks_set_t interfaces;
+            typename EngineClientInterface::datapacks_set_t interfaces;
 
-			for(auto curDataPackIterator = datapacks.begin(); curDataPackIterator != datapacks.end(); ++curDataPackIterator)
-			{
-				try
-				{
-					DataPackIdentifier datapackID(curDataPackIterator.key(),
-											  (*curDataPackIterator)["engine_name"],
-											  (*curDataPackIterator)["type"]);
+            for(auto curDataPackIterator = datapacks.begin(); curDataPackIterator != datapacks.end(); ++curDataPackIterator)
+            {
+                try
+                {
+                    DataPackIdentifier datapackID(curDataPackIterator.key(),
+                                              (*curDataPackIterator)["engine_name"],
+                                              (*curDataPackIterator)["type"]);
 
-					datapackID.EngineName = this->engineName();
-					interfaces.insert(this->getSingleDataPackInterfaceFromJSON(curDataPackIterator, datapackID));
-				}
-				catch(std::exception &e)
-				{
-					// TODO: Handle json datapack parsing error
-					throw NRPException::logCreate(e, "Failed to parse JSON DataPack Interface");
-				}
-			}
+                    datapackID.EngineName = this->engineName();
+                    interfaces.insert(this->getSingleDataPackInterfaceFromJSON(curDataPackIterator, datapackID));
+                }
+                catch(std::exception &e)
+                {
+                    // TODO: Handle json datapack parsing error
+                    throw NRPException::logCreate(e, "Failed to parse JSON DataPack Interface");
+                }
+            }
 
-			return interfaces;
-		}
+            return interfaces;
+        }
 
-		/*!
-		 * \brief Go through given DATAPACKS and try to create a DataPackInterface from the JSON object
-		 * \tparam DATAPACK DataPackInterface Class to check
-		 * \tparam REMAINING_DATAPACKS Remaining DataPackInterface Classes to check
-		 * \param datapackData DataPack data as JSON object
-		 * \param datapackID ID of datapack
-		 * \return Returns pointer to created datapack
-		 */
+        /*!
+         * \brief Go through given DATAPACKS and try to create a DataPackInterface from the JSON object
+         * \tparam DATAPACK DataPackInterface Class to check
+         * \tparam REMAINING_DATAPACKS Remaining DataPackInterface Classes to check
+         * \param datapackData DataPack data as JSON object
+         * \param datapackID ID of datapack
+         * \return Returns pointer to created datapack
+         */
 
-		inline DataPackInterfaceConstSharedPtr getSingleDataPackInterfaceFromJSON(const nlohmann::json::const_iterator &datapackData, DataPackIdentifier &datapackID) const
-		{
-			NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+        inline DataPackInterfaceConstSharedPtr getSingleDataPackInterfaceFromJSON(const nlohmann::json::const_iterator &datapackData, DataPackIdentifier &datapackID) const
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             if(datapackID.Type == JsonDataPack::getType())
             {
-				// Check whether the requested datapack has new data
-				// A datapack that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of datapack ID)
+                // Check whether the requested datapack has new data
+                // A datapack that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of datapack ID)
 
-				if(datapackData->size() == 2)
-				{
-					// There's no meaningful data in the datapack, so create an empty datapack with datapack ID only
+                if(datapackData->size() == 2)
+                {
+                    // There's no meaningful data in the datapack, so create an empty datapack with datapack ID only
 
-					return DataPackInterfaceSharedPtr(new DataPackInterface(std::move(datapackID)));
-				}
+                    return DataPackInterfaceSharedPtr(new DataPackInterface(std::move(datapackID)));
+                }
 
                 nlohmann::json * data = new nlohmann::json(std::move((*datapackData)["data"]));
 
@@ -405,11 +405,11 @@ class EngineJSONNRPClient
 
                 return newDataPack;
             }
-			else
-			{
-				throw NRPException::logCreate("DataPack type \"" + datapackID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
-			}
-		}
+            else
+            {
+                throw NRPException::logCreate("DataPack type \"" + datapackID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
+            }
+        }
 };
 
 

@@ -19,11 +19,11 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	nrp_simulation/simulation/nrp_core_server.cpp
-	nrp_simulation/simulation/fti_loop.cpp
-	nrp_simulation/simulation/simulation_manager.cpp
-		nrp_simulation/datapack_handle/datapack_handle.cpp
-		nrp_simulation/datapack_handle/tf_manager_handle.cpp
+    nrp_simulation/simulation/nrp_core_server.cpp
+    nrp_simulation/simulation/fti_loop.cpp
+    nrp_simulation/simulation/simulation_manager.cpp
+        nrp_simulation/datapack_handle/datapack_handle.cpp
+        nrp_simulation/datapack_handle/tf_manager_handle.cpp
 )
 
 # List of python module build files
@@ -32,13 +32,13 @@ set(PYTHON_MODULE_SRC_FILES
 
 # List executable build files
 set(EXEC_SRC_FILES
-	nrp_simulation_executable/main.cpp
+    nrp_simulation_executable/main.cpp
 )
 
 # List testing build files
 set(TEST_SRC_FILES
     tests/fti_loop.cpp
-	tests/simulation_manager.cpp
+    tests/simulation_manager.cpp
 )
 
 
@@ -69,49 +69,49 @@ add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
 target_link_libraries(${LIBRARY_NAME}
-	PUBLIC
-	${NRP_GEN_LIB_TARGET}
-	${NRP_PROTO_LIB_TARGET}
-	${PROTOBUF_LIBRARIES}
-	${GRPC_LIBRARIES}
+    PUBLIC
+    ${NRP_GEN_LIB_TARGET}
+    ${NRP_PROTO_LIB_TARGET}
+    ${PROTOBUF_LIBRARIES}
+    ${GRPC_LIBRARIES}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-	PUBLIC 
-	    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+    PUBLIC 
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-	PRIVATE
+    PRIVATE
 )
 
 
 ##########################################
 ## NRPServerPythonModule
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
-	add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
-	add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
-	target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-	set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
+    add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
+    add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
+    target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
 
-	target_include_directories(${PYTHON_MODULE_NAME}
-		PUBLIC
-	)
+    target_include_directories(${PYTHON_MODULE_NAME}
+        PUBLIC
+    )
 
      target_link_libraries(${PYTHON_MODULE_NAME}
-		PUBLIC
-		    ${NAMESPACE_NAME}::${LIBRARY_NAME}
-	)
+        PUBLIC
+            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+    )
 endif()
 
 
 ##########################################
 ## Executable
 if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
-	add_executable(${EXECUTABLE_NAME} ${EXEC_SRC_FILES})
-	target_link_libraries(${EXECUTABLE_NAME}
-		${NAMESPACE_NAME}::${LIBRARY_NAME}
-	)
+    add_executable(${EXECUTABLE_NAME} ${EXEC_SRC_FILES})
+    target_link_libraries(${EXECUTABLE_NAME}
+        ${NAMESPACE_NAME}::${LIBRARY_NAME}
+    )
 endif()
 
 
@@ -123,42 +123,42 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 ##########################################
 ## Tests
 if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-	find_package(Gazebo REQUIRED)
+    find_package(Gazebo REQUIRED)
 
-	set(GAZEBO_WORLD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/empty_world.sdf")
-	set(TEST_SIM_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/tests/test_files/simulation_config.json")
+    set(GAZEBO_WORLD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/empty_world.sdf")
+    set(TEST_SIM_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/tests/test_files/simulation_config.json")
 
-	# Create testing env files
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/simulation_config.json.in"	"${TEST_SIM_CONFIG_FILE}" @ONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+    # Create testing env files
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/simulation_config.json.in" "${TEST_SIM_CONFIG_FILE}" @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
 
-	# Create testing executable
-	enable_testing()
-	add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-	target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-	target_link_libraries(${TEST_NAME}
-		PUBLIC
-		${NAMESPACE_NAME}::${LIBRARY_NAME}
-		NRPNestJSONEngine::NRPNestJSONEngine
-		NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
-		GTest::GTest
-		GTest::Main)
+    # Create testing executable
+    enable_testing()
+    add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_libraries(${TEST_NAME}
+        PUBLIC
+        ${NAMESPACE_NAME}::${LIBRARY_NAME}
+        NRPNestJSONEngine::NRPNestJSONEngine
+        NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
+        GTest::GTest
+        GTest::Main)
 
-	gtest_discover_tests(${TEST_NAME}
-		WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-		EXTRA_ARGS -VV)
+    gtest_discover_tests(${TEST_NAME}
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+        EXTRA_ARGS -VV)
 
-	# Add python tests for NRP Server
-	find_package(Python3 COMPONENTS Interpreter)
-	if(Python3_Interpreter_FOUND)
-		add_test(NAME NrpServer COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" server.py "${CMAKE_SOURCE_DIR}/examples/tf_exchange" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-		set_property(TEST NrpServer PROPERTY ENVIRONMENT
-			"PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
-	endif()
+    # Add python tests for NRP Server
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_Interpreter_FOUND)
+        add_test(NAME NrpServer COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" server.py "${CMAKE_SOURCE_DIR}/examples/tf_exchange" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+        set_property(TEST NrpServer PROPERTY ENVIRONMENT
+            "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
+    endif()
 
-	# Add tests based on running example experiments
-	add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
+    # Add tests based on running example experiments
+    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
 endif()
 
 
@@ -169,71 +169,71 @@ set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 # Install library files
 install(TARGETS
-		${LIBRARY_NAME}
-	EXPORT
-		${LIB_EXPORT_NAME}
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ${LIBRARY_NAME}
+    EXPORT
+        ${LIB_EXPORT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}
 )
 
 # Install export target
 install(EXPORT ${LIB_EXPORT_NAME}
-	DESTINATION
-		${INSTALL_CONFIGDIR}
-	FILE
-		"${LIB_EXPORT_NAME}.cmake"
-	NAMESPACE
-		"${NAMESPACE_NAME}::"
+    DESTINATION
+        ${INSTALL_CONFIGDIR}
+    FILE
+        "${LIB_EXPORT_NAME}.cmake"
+    NAMESPACE
+        "${NAMESPACE_NAME}::"
 )
 
 # Install headers
 install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
-	DESTINATION
-	    ${CMAKE_INSTALL_INCLUDEDIR}
-	FILES_MATCHING
-	    PATTERN "*.h"
-		PATTERN "*.hpp"
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.hpp"
 )
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
-	install(TARGETS ${PYTHON_MODULE_NAME}
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
+    install(TARGETS ${PYTHON_MODULE_NAME}
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-		DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 endif()
 
 # Install python module with the NRP client
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/client.py"
-	DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
+    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
-	install(TARGETS ${EXECUTABLE_NAME}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS ${EXECUTABLE_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # create cmake version and config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
-	VERSION ${PROJECT_VERSION}
-	COMPATIBILITY AnyNewerVersion
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake.in"
-	"${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
-	INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # Install cmake version and config files
 install(
-	FILES
-		"${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
-		"${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
-	DESTINATION ${INSTALL_CONFIGDIR}
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+    DESTINATION ${INSTALL_CONFIGDIR}
 )

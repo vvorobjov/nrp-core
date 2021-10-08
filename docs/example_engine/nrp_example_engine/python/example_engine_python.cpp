@@ -8,6 +8,6 @@ namespace python = boost::python;
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 {
-	// Import the base Python module
-	python::import(PYTHON_MODULE_NAME_STR);
+    // Import the base Python module
+    python::import(PYTHON_MODULE_NAME_STR);
 }

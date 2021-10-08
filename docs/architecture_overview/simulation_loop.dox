@@ -1,6 +1,7 @@
-/*! \page fti_loop Simulation Loop
+/*! \page simulation_loop Simulation Loop
 
-The Simulation Loop is the main loop where the synchronization of engines, data transfer and data processing happens. The class responsible for managing its execution is: FTILoop.
+The simulation loop is the main loop where the synchronization of engines, data transfer and data processing happens. 
+The class responsible for managing its execution is: FTILoop, which stands for *Fixed Time Increment Loop* and implements the synchronization algorithm summarized below in this page.
 
 On initialization, it creates a TransceiverFunctionManager to manage all user-generated TransceiverFunctions. Additionally, it runs the initialization routines of all engines.
 
@@ -13,7 +14,7 @@ The way the FTILoop works is described below:
 - Every preprocessing function (PF) linked to every engine inside <i>L</i> is executed. DataPacks required for executing these functions are retrieved from the local cache and pass to them. Each PF returns an array of datapacks which is stored in this same cache.
 - TFs linked to engines in <i>L</i> are identified and executed. DataPacks required for executing these functions are retrieved from the cache and pass to them. The TFs return arrays with datapacks that should be sent to engines.
 - DataPacks received from TFs are sent to all engines in <i>L</i>.
-- A timeout is checked. Should it have occurred, the FTILoop is stopped. Otherwise, <i>t</i> is updated to <i>t+dt</i> and the cycle restarts.
+- A timeout is checked. Should it have occurred, the simulation loop is stopped. Otherwise, <i>t</i> is updated to <i>t+dt</i> and the cycle restarts.
 
 On shutdown, each engine is issued a shutdown command to close gracefully.
 

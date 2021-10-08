@@ -34,67 +34,67 @@
 class FTILoop
         : public PtrTemplates<FTILoop>
 {
-	public:
+    public:
 
-		FTILoop() = default;
-		FTILoop(jsonSharedPtr config, DataPackHandle::engine_interfaces_t engines);
+        FTILoop() = default;
+        FTILoop(jsonSharedPtr config, DataPackHandle::engine_interfaces_t engines);
 
-		/*!
-		 * \brief Initialize engines before running loop
-		 */
-		void initLoop();
+        /*!
+         * \brief Initialize engines before running loop
+         */
+        void initLoop();
 
-		/*!
-		 * \brief Reset engines of the loop
-		 */
-		void resetLoop();
+        /*!
+         * \brief Reset engines of the loop
+         */
+        void resetLoop();
 
-		/*!
-		 * \brief Shutdown engines
-		 */
-		void shutdownLoop();
+        /*!
+         * \brief Shutdown engines
+         */
+        void shutdownLoop();
 
-		/*!
-		 * \brief Runs a single loop step
-		 * \param timeStep How long the single components should run (in seconds)
-		 */
-		//void runLoopStep(float timeStep);
+        /*!
+         * \brief Runs a single loop step
+         * \param timeStep How long the single components should run (in seconds)
+         */
+        //void runLoopStep(float timeStep);
 
-		/*!
-		 * \brief Runs simulation for a total of runLoopTime (in s)
-		 * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
-		 */
-		void runLoop(SimulationTime runLoopTime);
+        /*!
+         * \brief Runs simulation for a total of runLoopTime (in s)
+         * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
+         */
+        void runLoop(SimulationTime runLoopTime);
 
-		/*!
-		 * \brief Get Simulation Time (in seconds)
-		 * \return Returns time passed in simulation (in seconds)
-		 */
-		inline SimulationTime getSimTime() const
-		{	return this->_simTime;	}
+        /*!
+         * \brief Get Simulation Time (in seconds)
+         * \return Returns time passed in simulation (in seconds)
+         */
+        inline SimulationTime getSimTime() const
+        {   return this->_simTime;  }
 
-	private:
-		/*!
-		 * \brief Configuration of simulation
-		 */
+    private:
+        /*!
+         * \brief Configuration of simulation
+         */
         jsonSharedPtr _config;
 
-		/*!
-		 * \brief Engines
-		 */
-		DataPackHandle::engine_interfaces_t _engines;
+        /*!
+         * \brief Engines
+         */
+        DataPackHandle::engine_interfaces_t _engines;
 
-		using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
+        using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
-		/*!
-		 * \brief Engine Queue. Contains all engines, sorted by completion time of their last step
-		 */
-		engine_queue_t _engineQueue;
+        /*!
+         * \brief Engine Queue. Contains all engines, sorted by completion time of their last step
+         */
+        engine_queue_t _engineQueue;
 
-		/*!
-		 * \brief Simulated time (in seconds)
-		 */
-		SimulationTime _simTime = SimulationTime::zero();
+        /*!
+         * \brief Simulated time (in seconds)
+         */
+        SimulationTime _simTime = SimulationTime::zero();
 
         /*!
          * \brief Used to handle datapack operations in engines
@@ -102,7 +102,7 @@ class FTILoop
         std::unique_ptr<DataPackHandle> _devHandler;
 
 
-		friend class FTILoopTest_InitTFManager_Test;
+        friend class FTILoopTest_InitTFManager_Test;
 };
 
 using FTILoopSharedPtr = FTILoop::shared_ptr;

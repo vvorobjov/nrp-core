@@ -30,66 +30,66 @@
  */
 class CreateDataPackClass
 {
-	public:
-		/*!
-		 * \brief Constructor
-		 * \param nest Nest Dict
-		 * \param devMap DataPack Mapping
-		 */
-		CreateDataPackClass(boost::python::dict nest, boost::python::dict devMap);
+    public:
+        /*!
+         * \brief Constructor
+         * \param nest Nest Dict
+         * \param devMap DataPack Mapping
+         */
+        CreateDataPackClass(boost::python::dict nest, boost::python::dict devMap);
 
-		/*!
-		 * \brief Python function to create datapack and register it in _devMap
-		 * \param args Python Args. args[0] is CreateDataPackClass, args[1] is the NRP datapack name. The remaining args will be passed to nest.Create(...)
-		 * \param kwargs Python Keyword Args. Will be passed to nest.Create(...)
-		 * \return Returns either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x)
-		 */
-		static boost::python::object pyCreateDataPack(boost::python::tuple args, boost::python::dict kwargs);
+        /*!
+         * \brief Python function to create datapack and register it in _devMap
+         * \param args Python Args. args[0] is CreateDataPackClass, args[1] is the NRP datapack name. The remaining args will be passed to nest.Create(...)
+         * \param kwargs Python Keyword Args. Will be passed to nest.Create(...)
+         * \return Returns either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x)
+         */
+        static boost::python::object pyCreateDataPack(boost::python::tuple args, boost::python::dict kwargs);
 
-		/*!
-		 * \brief pyRegisterDataPack
-		 * \param args Python Args. args[0] is CreateDataPackClass, args[1] is the NRP datapack name, args[2] is a NodeCollection object
-		 * \param kwargs Python Kwargs. Not used
-		 */
-		static boost::python::object pyRegisterDataPack(boost::python::tuple args, boost::python::dict kwargs);
+        /*!
+         * \brief pyRegisterDataPack
+         * \param args Python Args. args[0] is CreateDataPackClass, args[1] is the NRP datapack name, args[2] is a NodeCollection object
+         * \param kwargs Python Kwargs. Not used
+         */
+        static boost::python::object pyRegisterDataPack(boost::python::tuple args, boost::python::dict kwargs);
 
-		/*!
-		 * \brief Create new Nest datapack and add it to devMap
-		 * \param args Python Args. First argument must be string with datapack label. This will be used to reference the datapack from the NRP side. All other args will be passed to nest.Create(...)
-		 * \param kwargs Python Keyword Args. Will be passed to nest.Create(...)
-		 * \return Returns either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x)
-		 */
-		boost::python::object createAndRegisterDataPack(boost::python::tuple args, boost::python::dict kwargs);
+        /*!
+         * \brief Create new Nest datapack and add it to devMap
+         * \param args Python Args. First argument must be string with datapack label. This will be used to reference the datapack from the NRP side. All other args will be passed to nest.Create(...)
+         * \param kwargs Python Keyword Args. Will be passed to nest.Create(...)
+         * \return Returns either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x)
+         */
+        boost::python::object createAndRegisterDataPack(boost::python::tuple args, boost::python::dict kwargs);
 
-		/*!
-		 * \brief Register an existing datapack
-		 * \param devName NRP DataPack name
-		 * \param nodeCollection NodeCollection of datapack data
-		 */
-		void registerDataPack(boost::python::str devName, boost::python::object nodeCollection);
+        /*!
+         * \brief Register an existing datapack
+         * \param devName NRP DataPack name
+         * \param nodeCollection NodeCollection of datapack data
+         */
+        void registerDataPack(boost::python::str devName, boost::python::object nodeCollection);
 
-		/*!
-		 * \brief Python Call Function to get NRP datapack mapping
-		 * \return Returns dict with datapack mapping
-		 */
-		boost::python::dict pyDevMap();
+        /*!
+         * \brief Python Call Function to get NRP datapack mapping
+         * \return Returns dict with datapack mapping
+         */
+        boost::python::dict pyDevMap();
 
-		/*!
-		 * \brief Get datapack map
-		 * \return Returns datapack map
-		 */
-		const boost::python::dict &devMap() const;
+        /*!
+         * \brief Get datapack map
+         * \return Returns datapack map
+         */
+        const boost::python::dict &devMap() const;
 
-	private:
-		/*!
-		 * \brief Nest Module
-		 */
-		boost::python::dict _nest;
+    private:
+        /*!
+         * \brief Nest Module
+         */
+        boost::python::dict _nest;
 
-		/*!
-		 * \brief Mapping from python::str to either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x).
-		 */
-		boost::python::dict _devMap;
+        /*!
+         * \brief Mapping from python::str to either Nest NodeCollection (Nest 3.x) or python::tuple of nest GIDs (Nest 2.x).
+         */
+        boost::python::dict _devMap;
 };
 
 #endif // CREATE_DATAPACK_CLASS_H

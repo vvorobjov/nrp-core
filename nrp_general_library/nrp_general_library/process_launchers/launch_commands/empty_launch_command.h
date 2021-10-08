@@ -36,35 +36,35 @@ class EmptyLaunchCommand
 {
 
     public:
-		~EmptyLaunchCommand() = default;
+        ~EmptyLaunchCommand() = default;
 
-		/*!
-		* \brief launchEngineProcess always returns -1
-		* \return -1
-		*/
-		pid_t launchEngineProcess(const nlohmann::json &, const std::vector<std::string> &, const std::vector<std::string> &, bool )
-		{
-			return -1;
-		}
+        /*!
+        * \brief launchEngineProcess always returns -1
+        * \return -1
+        */
+        pid_t launchEngineProcess(const nlohmann::json &, const std::vector<std::string> &, const std::vector<std::string> &, bool )
+        {
+            return -1;
+        }
 
-		/*!
-		* \brief stopEngineProcess always returns 0
-		* \return 0
-		*/
-		pid_t stopEngineProcess(unsigned int) override 
-		{
-			return 0;
-		}
+        /*!
+        * \brief stopEngineProcess always returns 0
+        * \return 0
+        */
+        pid_t stopEngineProcess(unsigned int) override 
+        {
+            return 0;
+        }
 
-		/*!
-		* \brief getProcessStatus always returns ENGINE_RUNNING_STATUS::UNKNOWN
-		* \return ENGINE_RUNNING_STATUS::UNKNOWN
-		*/
-		ENGINE_RUNNING_STATUS getProcessStatus() override 
-		{
-			return ENGINE_RUNNING_STATUS::UNKNOWN;
-		}
+        /*!
+        * \brief getProcessStatus always returns ENGINE_RUNNING_STATUS::UNKNOWN
+        * \return ENGINE_RUNNING_STATUS::UNKNOWN
+        */
+        ENGINE_RUNNING_STATUS getProcessStatus() override 
+        {
+            return ENGINE_RUNNING_STATUS::UNKNOWN;
+        }
 
-};	
+};  
 
 #endif // EMPTY_LAUNCH_H

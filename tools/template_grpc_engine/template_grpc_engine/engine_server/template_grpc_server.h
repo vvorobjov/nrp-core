@@ -27,80 +27,80 @@
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 class ${engine_name}GrpcServer
-    : public EngineGrpcServer<EngineGrpc::TestPayload>
+    : public EngineGrpcServer<EngineTest::TestPayload>
 {
-	public:
-		${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);
+    public:
+        ${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);
         ~${engine_name}GrpcServer() = default;
 
-		/*!
-		 * \brief Indicates if the simulation was initialized and is running
-		 */
-		bool initRunFlag() const { return this->_initRunFlag; };
+        /*!
+         * \brief Indicates if the simulation was initialized and is running
+         */
+        bool initRunFlag() const { return this->_initRunFlag; };
 
-		/*!
-		 * \brief Indicates if shutdown was requested by the client
-		 */
-		bool shutdownFlag() const { return this->_shutdownFlag; };
+        /*!
+         * \brief Indicates if shutdown was requested by the client
+         */
+        bool shutdownFlag() const { return this->_shutdownFlag; };
 
-		/*!
-		 * \brief Runs a single step of the simulation
-		 *
-		 * The function will be called every simulation loop, after getDataPacksFromEngine and
-		 * before sendDataPacksToEngine. It should advance the simulation by the requested time step,
-		 *
-		 * \param[in] timeStep Requested time step, by which the simulation should advance
-		 *
-		 * \return Simulation time after the loop step
-		 */
-		SimulationTime runLoopStep(SimulationTime timeStep) override;
+        /*!
+         * \brief Runs a single step of the simulation
+         *
+         * The function will be called every simulation loop, after getDataPacksFromEngine and
+         * before sendDataPacksToEngine. It should advance the simulation by the requested time step,
+         *
+         * \param[in] timeStep Requested time step, by which the simulation should advance
+         *
+         * \return Simulation time after the loop step
+         */
+        SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-		/*!
-		 * \brief Initializes the engine
-		 *
-		 * The function will be called at the start of the simulation.
-		 * It should initialize the server and call API functions
-		 * of the simulator responsible for simulation initialization.
-		 *
-		 * \param[in] data Engine configuration data in form of JSON object
-		 */
-		void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
+        /*!
+         * \brief Initializes the engine
+         *
+         * The function will be called at the start of the simulation.
+         * It should initialize the server and call API functions
+         * of the simulator responsible for simulation initialization.
+         *
+         * \param[in] data Engine configuration data in form of JSON object
+         */
+        void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
 
-		/*!
-		 * \brief Shutdowns the engine
-		 *
-		 * The function will be called at the end of the simulation.
-		 * It should clean up all resources of the server and call API
-		 * functions of the simulator responsible for terminating the simulation.
-		 *
-		 * \param[in] data Additional arguments passed from the client
-		 */
-		void shutdown(const nlohmann::json &data) override;
+        /*!
+         * \brief Shutdowns the engine
+         *
+         * The function will be called at the end of the simulation.
+         * It should clean up all resources of the server and call API
+         * functions of the simulator responsible for terminating the simulation.
+         *
+         * \param[in] data Additional arguments passed from the client
+         */
+        void shutdown(const nlohmann::json &data) override;
 
-		/*!
-		 * \brief Resets the engine
-		 *
-		 * The function should perform all actions needed to reset the simulation
-		 * to its initial state.
-		 */
-		void reset() override;
+        /*!
+         * \brief Resets the engine
+         *
+         * The function should perform all actions needed to reset the simulation
+         * to its initial state.
+         */
+        void reset() override;
 
-	private:
+    private:
 
-		/*!
-		 * \brief Indicates if the simulation was initialized and is running
-		 */
-		bool _initRunFlag = false;
+        /*!
+         * \brief Indicates if the simulation was initialized and is running
+         */
+        bool _initRunFlag = false;
 
-		/*!
-		 * \brief Indicates if shutdown was requested by the client
-		 */
-		bool _shutdownFlag = false;
+        /*!
+         * \brief Indicates if shutdown was requested by the client
+         */
+        bool _shutdownFlag = false;
 
-		/*!
-		 * \brief Name of the engine
-		 */
-		std::string _engineName;
+        /*!
+         * \brief Name of the engine
+         */
+        std::string _engineName;
 };
 
 #endif // ${engine_name_uppercase}_JSON_SERVER_H

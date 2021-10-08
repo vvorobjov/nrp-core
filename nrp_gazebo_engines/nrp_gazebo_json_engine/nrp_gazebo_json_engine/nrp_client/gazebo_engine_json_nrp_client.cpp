@@ -40,60 +40,60 @@ GazeboEngineJSONNRPClient::GazeboEngineJSONNRPClient(nlohmann::json &config, Pro
 
 void GazeboEngineJSONNRPClient::initialize()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	try
-	{
-		// Wait for Gazebo to load world
-		const nlohmann::json initRes = this->sendInitCommand(this->engineConfig());
-		if(!initRes[0].get<bool>())
-			throw NRPExceptionNonRecoverable("Received initialization fail message from Engine \"" + this->engineName() + "\"");
-	}
-	catch(std::exception &e)
-	{
-		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" initialization failed");
-	}
+    try
+    {
+        // Wait for Gazebo to load world
+        const nlohmann::json initRes = this->sendInitCommand(this->engineConfig());
+        if(!initRes[0].get<bool>())
+            throw NRPExceptionNonRecoverable("Received initialization fail message from Engine \"" + this->engineName() + "\"");
+    }
+    catch(std::exception &e)
+    {
+        throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" initialization failed");
+    }
 
-	NRPLogger::debug("GazeboEngineJSONNRPClient::initialize(...) completed with no errors.");
+    NRPLogger::debug("GazeboEngineJSONNRPClient::initialize(...) completed with no errors.");
 }
 
 void GazeboEngineJSONNRPClient::reset()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	try
-	{
-		const nlohmann::json resetRes = this->sendResetCommand(nlohmann::json());
+    try
+    {
+        const nlohmann::json resetRes = this->sendResetCommand(nlohmann::json());
         
-		if(!resetRes[0].get<bool>()){
-			throw NRPExceptionNonRecoverable("Received reset fail message from Engine \"" + this->engineName() + "\"");
+        if(!resetRes[0].get<bool>()){
+            throw NRPExceptionNonRecoverable("Received reset fail message from Engine \"" + this->engineName() + "\"");
         }
 
-		this->resetEngineTime();
-	}
-	catch(std::exception &e)
-	{
-		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
-	}
+        this->resetEngineTime();
+    }
+    catch(std::exception &e)
+    {
+        throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
+    }
 }
 
 void GazeboEngineJSONNRPClient::shutdown()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	try
-	{
-		this->sendShutdownCommand(nlohmann::json());
-	}
-	catch(std::exception &e)
-	{
-		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" shutdown failed");
-	}
+    try
+    {
+        this->sendShutdownCommand(nlohmann::json());
+    }
+    catch(std::exception &e)
+    {
+        throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" shutdown failed");
+    }
 }
 
 const std::vector<std::string> GazeboEngineJSONNRPClient::engineProcEnvParams() const
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     std::vector<std::string> envVars = this->EngineJSONNRPClient::engineProcEnvParams();
 
@@ -111,7 +111,7 @@ const std::vector<std::string> GazeboEngineJSONNRPClient::engineProcEnvParams() 
 
 const std::vector<std::string> GazeboEngineJSONNRPClient::engineProcStartParams() const
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
 

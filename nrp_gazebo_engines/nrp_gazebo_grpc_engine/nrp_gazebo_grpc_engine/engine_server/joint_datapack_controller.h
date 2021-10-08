@@ -30,62 +30,62 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for a single joint
-	 */
-	class JointGrpcDataPackController
-	        : public DataPackController<google::protobuf::Message>
-	{
-		public:
+    /*!
+     * \brief Interface for a single joint
+     */
+    class JointGrpcDataPackController
+            : public DataPackController<google::protobuf::Message>
+    {
+        public:
         JointGrpcDataPackController(const std::string &jointName, const physics::JointPtr &joint, const physics::JointControllerPtr &jointController)
-			    : _name(jointName),
-			      _joint(joint),
-			      _jointController(jointController)
-			{}
+                : _name(jointName),
+                  _joint(joint),
+                  _jointController(jointController)
+            {}
 
-			virtual void handleDataPackData(const google::protobuf::Message &data) override
-			{
+            virtual void handleDataPackData(const google::protobuf::Message &data) override
+            {
                 // throws bad_cast
                 const auto &j = dynamic_cast<const Gazebo::Joint &>(data);
 
                 if(!std::isnan(j.position()))
-					this->_jointController->SetPositionTarget(_name, j.position());
+                    this->_jointController->SetPositionTarget(_name, j.position());
 
                 if(!std::isnan(j.velocity()))
-					this->_jointController->SetVelocityTarget(_name, j.velocity());
+                    this->_jointController->SetVelocityTarget(_name, j.velocity());
 
                 if(!std::isnan(j.effort()))
-					this->_joint->SetForce(0, j.effort());
-			}
+                    this->_joint->SetForce(0, j.effort());
+            }
 
-			virtual google::protobuf::Message *getDataPackInformation() override
-			{
+            virtual google::protobuf::Message *getDataPackInformation() override
+            {
                 auto l = new Gazebo::Joint();
             
-				l->set_position(this->_joint->Position(0));
-				l->set_velocity(this->_joint->GetVelocity(0));
-				l->set_effort(this->_joint->GetForce(0));
+                l->set_position(this->_joint->Position(0));
+                l->set_velocity(this->_joint->GetVelocity(0));
+                l->set_effort(this->_joint->GetForce(0));
 
-				return l;
-			}
+                return l;
+            }
 
-		private:
+        private:
 
             /*!
              * \brief Joint Name
              */
             std::string _name;
 
-			/*!
-			 * \brief Pointer to joint
-			 */
-			physics::JointPtr _joint;
+            /*!
+             * \brief Pointer to joint
+             */
+            physics::JointPtr _joint;
 
-			/*!
-			 * \brief Pointer to joint controller of the joint's model
-			 */
-			physics::JointControllerPtr _jointController = nullptr;
-	};
+            /*!
+             * \brief Pointer to joint controller of the joint's model
+             */
+            physics::JointControllerPtr _jointController = nullptr;
+    };
 }
 
 #endif // JOINT_GRPC_DATAPACK_CONTROLLER_H

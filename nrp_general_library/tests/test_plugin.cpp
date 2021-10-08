@@ -26,26 +26,26 @@
 
 struct TestEngineConfigConst
 {
-	static constexpr char EngineType[] = "test_engine";
+    static constexpr char EngineType[] = "test_engine";
     static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
 };
 
 class TestEngine
         : public EngineClient<TestEngine, TestEngineConfigConst::EngineSchema>
 {
-	public:
-		TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient(configHolder, std::move(launcher))
-		{}
+    public:
+        TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
+            : EngineClient(configHolder, std::move(launcher))
+        {}
 
-		virtual void initialize() override
-		{}
+        virtual void initialize() override
+        {}
 
-		virtual void reset() override
-		{}
+        virtual void reset() override
+        {}
 
-		virtual void shutdown() override
-		{}
+        virtual void shutdown() override
+        {}
 
         virtual const std::vector<std::string> engineProcStartParams() const override
         { return std::vector<std::string>(); }
@@ -53,24 +53,24 @@ class TestEngine
         virtual const std::vector<std::string> engineProcEnvParams() const override
         { return std::vector<std::string>(); }
 
-		virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
-		{}
+        virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
+        {}
 
-		SimulationTime runLoopStepCallback(SimulationTime /*timeStep*/) override
-		{
-			return SimulationTime::zero();
-		}
+        SimulationTime runLoopStepCallback(SimulationTime /*timeStep*/) override
+        {
+            return SimulationTime::zero();
+        }
 
-		virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
-		{
-			datapacks_set_t retVal;
-			for(const auto &devID : datapackIdentifiers)
-			{
-				retVal.emplace(new DataPackInterface(devID));
-			}
+        virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
+        {
+            datapacks_set_t retVal;
+            for(const auto &devID : datapackIdentifiers)
+            {
+                retVal.emplace(new DataPackInterface(devID));
+            }
 
-			return retVal;
-		}
+            return retVal;
+        }
 };
 
 CREATE_NRP_ENGINE_LAUNCHER(TestEngine::EngineLauncher<TestEngineConfigConst::EngineType>);

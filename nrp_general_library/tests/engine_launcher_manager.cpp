@@ -87,43 +87,43 @@ public:
 struct TestLauncher1
         : public EngineLauncherInterface
 {
-	TestLauncher1()
-	    : EngineLauncherInterface("engine1_type")
-	{}
-	~TestLauncher1() override = default;
+    TestLauncher1()
+        : EngineLauncherInterface("engine1_type")
+    {}
+    ~TestLauncher1() override = default;
 
-	EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
-	{
-		return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
-	}
+    EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
+    {
+        return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
+    }
 };
 
 struct TestLauncher2
         : public EngineLauncherInterface
 {
-	TestLauncher2()
-	    : EngineLauncherInterface("engine2_type")
-	{}
+    TestLauncher2()
+        : EngineLauncherInterface("engine2_type")
+    {}
 
-	virtual ~TestLauncher2() override = default;
+    virtual ~TestLauncher2() override = default;
 
-	EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
-	{
-		return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
-	}
+    EngineClientInterface::shared_ptr launchEngine(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher) override
+    {
+        return EngineClientInterface::shared_ptr(new TestEngine(config, std::move(launcher)));
+    }
 };
 
 TEST(EngineLauncherManagerTest, RegisterDataPack)
 {
-	auto test1Launcher = EngineLauncherInterfaceSharedPtr(new TestLauncher1());
-	EngineLauncherManager engines;
+    auto test1Launcher = EngineLauncherInterfaceSharedPtr(new TestLauncher1());
+    EngineLauncherManager engines;
 
-	ASSERT_EQ(engines.findLauncher(test1Launcher->engineType()), nullptr);
+    ASSERT_EQ(engines.findLauncher(test1Launcher->engineType()), nullptr);
 
-	engines.registerLauncher(test1Launcher);
-	ASSERT_EQ(engines.findLauncher(test1Launcher->engineType()).get(), test1Launcher.get());
+    engines.registerLauncher(test1Launcher);
+    ASSERT_EQ(engines.findLauncher(test1Launcher->engineType()).get(), test1Launcher.get());
 
-	auto test2Launcher = EngineLauncherInterfaceSharedPtr(new TestLauncher2());
-	engines.registerLauncher(test2Launcher);
-	ASSERT_EQ(engines.findLauncher(test2Launcher->engineType()).get(), test2Launcher.get());
+    auto test2Launcher = EngineLauncherInterfaceSharedPtr(new TestLauncher2());
+    engines.registerLauncher(test2Launcher);
+    ASSERT_EQ(engines.findLauncher(test2Launcher->engineType()).get(), test2Launcher.get());
 }

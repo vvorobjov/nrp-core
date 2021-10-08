@@ -8,12 +8,12 @@ To identify a Python function as a TransceiverFunction, it must be marked with t
 @TransceiverFunction("engine_name")
 \endcode
 
-This will both allow this function to be registered upon simulation startup as well as link it to the Engine specified by engine_name. For more details, see this \ref tf_implementation "section".
+This will both allow this function to be registered upon simulation startup as well as link it to the Engine specified by engine_name. For more details, see this \ref transceiver_function_implementation "section".
 
 To request datapacks from engines, additional decorators can be prepended to the TF, with the form
 
 \code{.py}
-@FromEngineDataPack(keyword, id)
+@EngineDataPack(keyword, id)
 \endcode
 
 This will configure the TF to request a datapack identified by `id`, and make it available as `keyword` in the TF.
@@ -23,7 +23,7 @@ Additionally, TFs allow users to send data back to engines as well. This is acco
 
 \section transceiver_function_example Example
 
-An example of a TF is listed below. The Python function "transceiver_function" is declared as a TF by prepending the TransceiverFunction decorator to its definition. The decorator also specifies that the TF is linked to the engine <i>python_2</i>. Using the FromEngineDataPack decorator, it reads DataPack data corresponding to datapack with id <i>datapack1</i> from an Engine with name <i>python_1</i> and sends its output to the engine it is linked to, ie. <i>python_2</i>.
+An example of a TF is listed below. The Python function "transceiver_function" is declared as a TF by prepending the TransceiverFunction decorator to its definition. The decorator also specifies that the TF is linked to the engine <i>python_2</i>. Using the EngineDataPack decorator, it reads DataPack data corresponding to datapack with id <i>datapack1</i> from an Engine with name <i>python_1</i> and sends its output to the engine it is linked to, ie. <i>python_2</i>.
 Before the TF is executed, <i>datapack1</i> is retrieved from <i>python_1</i>, a Python object instance of <i>datapack1</i> type Python wrapper is created and passed as argument to the TF with name <i>datapack_python</i>.
 During its execution, the TF first creates a datapack <i>rec_datapack1</i> linked to <i>python_2</i>. Then, it takes the data from <i>datapack_python</i> and places it into <i>rec_datapack1</i>, which is then returned from the TF.
 After execution of this TF, <i>rec_datapack1</i> will be sent to <i>python_2</i>.
@@ -42,7 +42,7 @@ To ensure that output datapacks from a TF are <i>systematically</i> received by 
 
 TransceiverFunctions are managed by the TransceiverFunctionManager and the TransceiverFunctionInterpreter. The former deals with general tasks such as loading TFs from the experiment configuration and de-/activation of TFs, while the latter handles the actual Python script execution.
 
-On FTILoop configuration stage, all TransceiverFunction configurations are read. For each config, the Python script that contains the TF is loaded and executed. Inside of the scripts, TFs must be registered with the TransceiverFunctionInterpreter by calling TransceiverFunctionInterpreter::registerNewTransceiverFunction. To automatize this process the TransceiverFunction decorator is provided. Any function in the TF script preceded by this decorator will be registered as a TF.
+On Simulation Loop configuration stage, all TransceiverFunction configurations are read. For each config, the Python script that contains the TF is loaded and executed. Inside of the scripts, TFs must be registered with the TransceiverFunctionInterpreter by calling TransceiverFunctionInterpreter::registerNewTransceiverFunction. To automatize this process the TransceiverFunction decorator is provided. Any function in the TF script preceded by this decorator will be registered as a TF.
 
 Currently, all TFs share the same PythonInterpreterState, meaning they share the same global and local Python variable pool. Therefore, a function/variable defined in one TF Python script is accessible in others.
 

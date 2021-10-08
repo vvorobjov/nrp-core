@@ -31,15 +31,15 @@
 struct PyEngineScriptWrapper
         : PyEngineScript, boost::python::wrapper<PyEngineScript>
 {
-	void initialize() override;
+    void initialize() override;
 
-	void defaultInitialize();
+    void defaultInitialize();
 
-	void runLoopFcn(SimulationTime timestep) override;
+    void runLoopFcn(SimulationTime timestep) override;
 
-	void shutdown() override;
+    void shutdown() override;
 
-	void defaultShutdown();
+    void defaultShutdown();
 
 
 };

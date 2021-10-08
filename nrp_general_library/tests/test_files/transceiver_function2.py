@@ -21,7 +21,7 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@FromEngineDataPack(keyword='datapack_engine', id=DataPackIdentifier('tf_input_engine', 'engine', 'type'))
+@EngineDataPack(keyword='datapack_engine', id=DataPackIdentifier('tf_input_engine', 'engine', 'type'))
 @PreprocessedDataPack(keyword='datapack_preprocessed', id=DataPackIdentifier('tf_input_preprocessing', 'engine', 'type'))
 @TransceiverFunction("engine")
 def transceiver_function(datapack_engine, datapack_preprocessed):

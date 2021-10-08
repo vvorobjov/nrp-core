@@ -32,53 +32,53 @@
 
 namespace gazebo
 {
-	class NRPJointController
-	        : public gazebo::ModelPlugin
-	{
-			struct PIDConfig
-			        : public common::PID
-			{
-				enum PID_TYPE { VELOCITY, POSITION };
+    class NRPJointController
+            : public gazebo::ModelPlugin
+    {
+            struct PIDConfig
+                    : public common::PID
+            {
+                enum PID_TYPE { VELOCITY, POSITION };
 
-				PID_TYPE Type = POSITION;
+                PID_TYPE Type = POSITION;
 
-				PIDConfig(double p, double i, double d, PID_TYPE _type);
-				PIDConfig(const PIDConfig&);
-				static PID_TYPE convertStringToType(std::string type);
-			};
+                PIDConfig(double p, double i, double d, PID_TYPE _type);
+                PIDConfig(const PIDConfig&);
+                static PID_TYPE convertStringToType(std::string type);
+            };
 
-		public:
-			virtual ~NRPJointController() override;
+        public:
+            virtual ~NRPJointController() override;
 
-			virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
+            virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
 
-		private:
+        private:
 
-			/*!
-			 * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
-			 */
-			std::list<JointDataPackController> _jointDataPackControllers;
+            /*!
+             * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
+             */
+            std::list<JointDataPackController> _jointDataPackControllers;
 
-			template<class T>
-			static T getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue);
-	};
+            template<class T>
+            static T getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue);
+    };
 
-	GZ_REGISTER_MODEL_PLUGIN(NRPJointController)
+    GZ_REGISTER_MODEL_PLUGIN(NRPJointController)
 
-	template<class T>
-	T NRPJointController::getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue)
-	{
-		try
-		{
-			return pidConfig->Get<T>(key);
-		}
-		catch(std::exception &e)
-		{
-			NRPException::logOnce(e);
-		}
+    template<class T>
+    T NRPJointController::getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue)
+    {
+        try
+        {
+            return pidConfig->Get<T>(key);
+        }
+        catch(std::exception &e)
+        {
+            NRPException::logOnce(e);
+        }
 
-		return defaultValue;
-	}
+        return defaultValue;
+    }
 }
 
 #endif

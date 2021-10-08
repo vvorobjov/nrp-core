@@ -28,23 +28,23 @@
 struct TestJSONDataPackController
         : public JsonDataPackController
 {
-	public:
-		TestJSONDataPackController(const DataPackIdentifier & devID) :
-		    JsonDataPackController(devID)
-		{}
+    public:
+        TestJSONDataPackController(const DataPackIdentifier & devID) :
+            JsonDataPackController(devID)
+        {}
 
-		void handleDataPackData(const nlohmann::json &data) override
-		{
-			setCachedData(data);
-		}
+        void handleDataPackData(const nlohmann::json &data) override
+        {
+            setCachedData(data);
+        }
 
-		constexpr const auto &data() const
-		{
-			return this->_data;
-		}
+        constexpr const auto &data() const
+        {
+            return this->_data;
+        }
 
-		nlohmann::json *getDataPackInformation() override
-		{
+        nlohmann::json *getDataPackInformation() override
+        {
             return this->_returnEmptyDataPack ? nullptr : &this->_data;
         }
 
@@ -53,9 +53,9 @@ struct TestJSONDataPackController
             this->_returnEmptyDataPack = value;
         }
 
-	private:
+    private:
 
-		bool _returnEmptyDataPack = false;
+        bool _returnEmptyDataPack = false;
 };
 
 

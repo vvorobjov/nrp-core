@@ -26,60 +26,60 @@
 
 struct EngineGRPCConfigConst
 {
-		/*!
-		 * \brief Maximum amount of tries for EngineJSONserver to bind to different ports
-		 */
-		static constexpr short MaxAddrBindTries = 1024;
+        /*!
+         * \brief Maximum amount of tries for EngineJSONserver to bind to different ports
+         */
+        static constexpr short MaxAddrBindTries = 1024;
 
-		/*!
-		 * \brief Parameter name that is used to pass along the server address
-		 */
-		static constexpr std::string_view EngineServerAddrArg = "serverurl";
+        /*!
+         * \brief Parameter name that is used to pass along the server address
+         */
+        static constexpr std::string_view EngineServerAddrArg = "serverurl";
 
-		/*!
-		 * \brief Parameter name that is used to pass along the engine name
-		 */
-		static constexpr std::string_view EngineNameArg = "engine";
+        /*!
+         * \brief Parameter name that is used to pass along the engine name
+         */
+        static constexpr std::string_view EngineNameArg = "engine";
 
-		/*!
-		 * \brief REST Server Route from which to get datapack information
-		 */
-		static constexpr std::string_view EngineServerGetDataPacksRoute = "/get_datapack_information";
+        /*!
+         * \brief REST Server Route from which to get datapack information
+         */
+        static constexpr std::string_view EngineServerGetDataPacksRoute = "/get_datapack_information";
 
-		/*!
-		 * \brief REST Server Route to which to send datapack changes
-		 */
-		static constexpr std::string_view EngineServerSetDataPacksRoute = "/set_datapack";
+        /*!
+         * \brief REST Server Route to which to send datapack changes
+         */
+        static constexpr std::string_view EngineServerSetDataPacksRoute = "/set_datapack";
 
-		/*!
-		 * \brief REST Server Route to execute a single loop
-		 */
-		static constexpr std::string_view EngineServerRunLoopStepRoute = "/run_loop";
+        /*!
+         * \brief REST Server Route to execute a single loop
+         */
+        static constexpr std::string_view EngineServerRunLoopStepRoute = "/run_loop";
 
-		/*!
-		 * \brief REST Server Route for engine initialization
-		 */
-		static constexpr std::string_view EngineServerInitializeRoute = "/initialize";
+        /*!
+         * \brief REST Server Route for engine initialization
+         */
+        static constexpr std::string_view EngineServerInitializeRoute = "/initialize";
 
-		/*!
-		 * \brief REST Server Route for engine shutdown
-		 */
-		static constexpr std::string_view EngineServerShutdownRoute = "/shutdown";
+        /*!
+         * \brief REST Server Route for engine shutdown
+         */
+        static constexpr std::string_view EngineServerShutdownRoute = "/shutdown";
 
-		/*!
-		 * \brief JSON name under which the runLoopStep timeStep is saved
-		 */
-		static constexpr std::string_view EngineTimeStepName = "time_step";
+        /*!
+         * \brief JSON name under which the runLoopStep timeStep is saved
+         */
+        static constexpr std::string_view EngineTimeStepName = "time_step";
 
-		/*!
-		 * \brief JSON name under which the runLoopStep engine time is sent
-		 */
-		static constexpr std::string_view EngineTimeName = "time";
+        /*!
+         * \brief JSON name under which the runLoopStep engine time is sent
+         */
+        static constexpr std::string_view EngineTimeName = "time";
 
-		/*!
-		 * \brief Content Type passed between server and client
-		 */
-		static constexpr std::string_view EngineServerContentType = "application/json";
+        /*!
+         * \brief Content Type passed between server and client
+         */
+        static constexpr std::string_view EngineServerContentType = "application/json";
 };
 
 

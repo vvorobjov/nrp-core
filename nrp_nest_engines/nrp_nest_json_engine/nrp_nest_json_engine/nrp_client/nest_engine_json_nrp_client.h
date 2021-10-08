@@ -38,30 +38,30 @@
 class NestEngineJSONNRPClient
 : public EngineJSONNRPClient<NestEngineJSONNRPClient, NestConfigConst::EngineSchema>
 {
-		/*!
-		 * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
-		 */
-		static constexpr size_t _killWait = 10;
+        /*!
+         * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
+         */
+        static constexpr size_t _killWait = 10;
 
-	public:
-		NestEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~NestEngineJSONNRPClient() override;
+    public:
+        NestEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        virtual ~NestEngineJSONNRPClient() override;
 
-		virtual void initialize() override;
+        virtual void initialize() override;
 
-		virtual void reset() override;
+        virtual void reset() override;
 
-		virtual void shutdown() override;
+        virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 
         virtual const std::vector<std::string> engineProcEnvParams() const override;
 
-	private:
-		/*!
-		 * \brief Error message returned by init command
-		 */
-		std::string _initErrMsg = "";
+    private:
+        /*!
+         * \brief Error message returned by init command
+         */
+        std::string _initErrMsg = "";
 };
 
 using NestEngineJSONLauncher = NestEngineJSONNRPClient::EngineLauncher<NestConfigConst::EngineType>;

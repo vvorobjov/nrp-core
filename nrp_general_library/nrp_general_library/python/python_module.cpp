@@ -37,20 +37,20 @@ namespace python = boost::python;
 using DataPackIdentifiers = EngineClientInterface::datapack_identifiers_set_t;
 
 /*!
- * \brief Dummy alias class for FromEngineDataPack, mapped to PreprocessedDataPack python decorator
+ * \brief Dummy alias class for EngineDataPack, mapped to PreprocessedDataPack python decorator
  *
- * boost::python doesn't allow to map two different names (FromEngineDataPack and
+ * boost::python doesn't allow to map two different names (EngineDataPack and
  * PreprocessedDataPack in our case) to a single C++ class.
- * This class acts as an 'alias' for FromEngineDataPack and allows for two python decorators
+ * This class acts as an 'alias' for EngineDataPack and allows for two python decorators
  * to be mapped to, effectively, a single class.
  *
- * Although FromEngineDataPack and PreprocessedDataPack are effectively the same class, they are
+ * Although EngineDataPack and PreprocessedDataPack are effectively the same class, they are
  * initialized with different arguments in the python constructors.
  */
 class PreprocessedDataPack
-    : public FromEngineDataPack
+    : public EngineDataPack
 {
-	using FromEngineDataPack::FromEngineDataPack;
+    using EngineDataPack::EngineDataPack;
 };
 
 /*!
@@ -65,49 +65,49 @@ class PreprocessedDataPack
  * but the decorator was created for semantical clarity and possible future developments.
  */
 class PreprocessingFunction
-	: public TransceiverFunction
+    : public TransceiverFunction
 {
-	using TransceiverFunction::TransceiverFunction;
+    using TransceiverFunction::TransceiverFunction;
 };
 
 struct TransceiverDataPackInterfaceWrapper
         : TransceiverDataPackInterface, python::wrapper<TransceiverDataPackInterface>
 {
-	python::object runTf(python::tuple &args, python::dict &kwargs) override
-	{
-		if(python::override runTf = this->get_override("runTf"))
-			return runTf(*args, **kwargs);
+    python::object runTf(python::tuple &args, python::dict &kwargs) override
+    {
+        if(python::override runTf = this->get_override("runTf"))
+            return runTf(*args, **kwargs);
 
-		return TransceiverDataPackInterface::runTf(args, kwargs);
-	}
+        return TransceiverDataPackInterface::runTf(args, kwargs);
+    }
 
-	python::object defaultRunTf(python::tuple &args, python::dict &kwargs)
-	{
-		return TransceiverDataPackInterface::runTf(args, kwargs);
-	}
+    python::object defaultRunTf(python::tuple &args, python::dict &kwargs)
+    {
+        return TransceiverDataPackInterface::runTf(args, kwargs);
+    }
 
-	EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
-	{
-		if(python::override getReqIDs = this->get_override("_getRequestedDataPackIDs"))
-			return getReqIDs();
+    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
+    {
+        if(python::override getReqIDs = this->get_override("_getRequestedDataPackIDs"))
+            return getReqIDs();
 
-		return TransceiverDataPackInterface::getRequestedDataPackIDs();
-	}
+        return TransceiverDataPackInterface::getRequestedDataPackIDs();
+    }
 
-	EngineClientInterface::datapack_identifiers_set_t defaultGetRequestedDataPackIDs() const
-	{
-		return TransceiverDataPackInterface::getRequestedDataPackIDs();
-	}
+    EngineClientInterface::datapack_identifiers_set_t defaultGetRequestedDataPackIDs() const
+    {
+        return TransceiverDataPackInterface::getRequestedDataPackIDs();
+    }
 };
 
 inline std::shared_ptr<DataPackIdentifier> genDevID(const std::string &name, const std::string &engineName)
 {
-	return std::shared_ptr<DataPackIdentifier>(new DataPackIdentifier(name, engineName, ""));
+    return std::shared_ptr<DataPackIdentifier>(new DataPackIdentifier(name, engineName, ""));
 }
 
 inline std::shared_ptr<DataPackInterface> genDevInterface(const std::string &name, const std::string &engineName)
 {
-	return std::shared_ptr<DataPackInterface>(new DataPackInterface(name, engineName, ""));
+    return std::shared_ptr<DataPackInterface>(new DataPackInterface(name, engineName, ""));
 }
 
 using namespace boost::python;
@@ -115,62 +115,62 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 {
-	// DataPackIdentifier
-	class_<DataPackIdentifier>("DataPackIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
-	        .def("__init__", make_constructor(&genDevID))
-	        .def_readwrite("name", &DataPackIdentifier::Name)
-	        .def_readwrite("type", &DataPackIdentifier::Type)
-	        .def_readwrite("engine_name", &DataPackIdentifier::EngineName);
+    // DataPackIdentifier
+    class_<DataPackIdentifier>("DataPackIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
+            .def("__init__", make_constructor(&genDevID))
+            .def_readwrite("name", &DataPackIdentifier::Name)
+            .def_readwrite("type", &DataPackIdentifier::Type)
+            .def_readwrite("engine_name", &DataPackIdentifier::EngineName);
 
-	register_ptr_to_python<std::shared_ptr<DataPackIdentifier> >();
-	register_ptr_to_python<std::shared_ptr<const DataPackIdentifier> >();
-
-
-	// DataPackInterface
-	class_<DataPackInterface>("DataPackInterface", init<const std::string &, const std::string&, const std::string&>())
-	        .def("__init__", make_constructor(&genDevInterface))
-			.def("isEmpty", &DataPackInterface::isEmpty)
-	        .add_property("name", make_function(&DataPackInterface::name, return_value_policy<copy_const_reference>()), &DataPackInterface::setName)
-	        .add_property("type", make_function(&DataPackInterface::type, return_value_policy<copy_const_reference>()), &DataPackInterface::setType)
-	        .add_property("engine_name", make_function(&DataPackInterface::engineName, return_value_policy<copy_const_reference>()), &DataPackInterface::setEngineName)
-	        .add_property("id", make_function(&DataPackInterface::id, return_value_policy<reference_existing_object>()), &DataPackInterface::setID);
-
-	register_ptr_to_python<DataPackInterfaceSharedPtr>();
-	register_ptr_to_python<DataPackInterfaceConstSharedPtr>();
+    register_ptr_to_python<std::shared_ptr<DataPackIdentifier> >();
+    register_ptr_to_python<std::shared_ptr<const DataPackIdentifier> >();
 
 
-	// TransceiverDataPackInterface
-	class_<TransceiverDataPackInterfaceWrapper, boost::noncopyable>("TransceiverDataPackInterface", init<>())
-	        .def("__call__", &TransceiverDataPackInterface::pySetup<TransceiverDataPackInterface>)
-	        .def("runTf", &TransceiverDataPackInterface::runTf, &TransceiverDataPackInterfaceWrapper::defaultRunTf)
-	        .def("getRequestedDataPackIDs", &TransceiverDataPackInterface::getRequestedDataPackIDs, &TransceiverDataPackInterfaceWrapper::defaultGetRequestedDataPackIDs);
+    // DataPackInterface
+    class_<DataPackInterface>("DataPackInterface", init<const std::string &, const std::string&, const std::string&>())
+            .def("__init__", make_constructor(&genDevInterface))
+            .def("isEmpty", &DataPackInterface::isEmpty)
+            .add_property("name", make_function(&DataPackInterface::name, return_value_policy<copy_const_reference>()), &DataPackInterface::setName)
+            .add_property("type", make_function(&DataPackInterface::type, return_value_policy<copy_const_reference>()), &DataPackInterface::setType)
+            .add_property("engine_name", make_function(&DataPackInterface::engineName, return_value_policy<copy_const_reference>()), &DataPackInterface::setEngineName)
+            .add_property("id", make_function(&DataPackInterface::id, return_value_policy<reference_existing_object>()), &DataPackInterface::setID);
 
-	register_ptr_to_python<TransceiverDataPackInterface::shared_ptr>();
-	register_ptr_to_python<TransceiverDataPackInterface::const_shared_ptr>();
-
-
-	// FromEngineDataPack
-	class_<FromEngineDataPack, bases<TransceiverDataPackInterface> >("FromEngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
-	        .def("__call__", &TransceiverDataPackInterface::pySetup<FromEngineDataPack>);
-
-	// PreprocessedDataPack
-	class_<PreprocessedDataPack, bases<FromEngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
-	        .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);
+    register_ptr_to_python<DataPackInterfaceSharedPtr>();
+    register_ptr_to_python<DataPackInterfaceConstSharedPtr>();
 
 
-	// TransceiverFunction
-	class_<TransceiverFunction, bases<TransceiverDataPackInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
-	        .def("__call__", &TransceiverFunction::pySetup)
-	        .def("runTf", &TransceiverFunction::runTf);
+    // TransceiverDataPackInterface
+    class_<TransceiverDataPackInterfaceWrapper, boost::noncopyable>("TransceiverDataPackInterface", init<>())
+            .def("__call__", &TransceiverDataPackInterface::pySetup<TransceiverDataPackInterface>)
+            .def("runTf", &TransceiverDataPackInterface::runTf, &TransceiverDataPackInterfaceWrapper::defaultRunTf)
+            .def("getRequestedDataPackIDs", &TransceiverDataPackInterface::getRequestedDataPackIDs, &TransceiverDataPackInterfaceWrapper::defaultGetRequestedDataPackIDs);
 
-	register_ptr_to_python<PtrTemplates<TransceiverFunction>::shared_ptr>();
-	register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
+    register_ptr_to_python<TransceiverDataPackInterface::shared_ptr>();
+    register_ptr_to_python<TransceiverDataPackInterface::const_shared_ptr>();
 
-	// PreprocessingFunction
-	class_<PreprocessingFunction, bases<TransceiverDataPackInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
-	        .def("__call__", &PreprocessingFunction::pySetup)
-	        .def("runTf", &PreprocessingFunction::runTf);
 
-	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
-	register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
+    // EngineDataPack
+    class_<EngineDataPack, bases<TransceiverDataPackInterface> >("EngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<EngineDataPack>);
+
+    // PreprocessedDataPack
+    class_<PreprocessedDataPack, bases<EngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);
+
+
+    // TransceiverFunction
+    class_<TransceiverFunction, bases<TransceiverDataPackInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
+            .def("__call__", &TransceiverFunction::pySetup)
+            .def("runTf", &TransceiverFunction::runTf);
+
+    register_ptr_to_python<PtrTemplates<TransceiverFunction>::shared_ptr>();
+    register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
+
+    // PreprocessingFunction
+    class_<PreprocessingFunction, bases<TransceiverDataPackInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
+            .def("__call__", &PreprocessingFunction::pySetup)
+            .def("runTf", &PreprocessingFunction::runTf);
+
+    register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
+    register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
 }

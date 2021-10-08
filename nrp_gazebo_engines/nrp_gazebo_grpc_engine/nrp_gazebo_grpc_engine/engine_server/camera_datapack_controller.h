@@ -32,71 +32,71 @@
 
 namespace gazebo
 {
-	class CameraGrpcDataPackController
-	        : public DataPackController<google::protobuf::Message>
-	{
-		public:
-	        // TODO: unused parameter
+    class CameraGrpcDataPackController
+            : public DataPackController<google::protobuf::Message>
+    {
+        public:
+            // TODO: unused parameter
             CameraGrpcDataPackController(const std::string &devName, const rendering::CameraPtr &camera, const sensors::SensorPtr &parent)
-			    : _name(devName),
-			      _parentSensor(parent),
-			      _data(new Gazebo::Camera())
-			{}
+                : _name(devName),
+                  _parentSensor(parent),
+                  _data(new Gazebo::Camera())
+            {}
 
             ~CameraGrpcDataPackController()
             {
                 delete _data;
             };
 
-			virtual void handleDataPackData(const google::protobuf::Message &data) override
-			{}
+            virtual void handleDataPackData(const google::protobuf::Message &data) override
+            {}
 
             virtual google::protobuf::Message *getDataPackInformation() override
-			{
-	            if(_hasNewData) {
+            {
+                if(_hasNewData) {
                     auto old = _data;
                     _data = new Gazebo::Camera();
                     _hasNewData = false;
                     return old;
                 }
-	            else
-	                return nullptr;
-			}
+                else
+                    return nullptr;
+            }
 
-			void updateCamData(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth)
-			{
-				const common::Time sensorUpdateTime = this->_parentSensor->LastMeasurementTime();
-				if(sensorUpdateTime > this->_lastSensorUpdateTime)
-				{
-					this->_lastSensorUpdateTime = sensorUpdateTime;
+            void updateCamData(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth)
+            {
+                const common::Time sensorUpdateTime = this->_parentSensor->LastMeasurementTime();
+                if(sensorUpdateTime > this->_lastSensorUpdateTime)
+                {
+                    this->_lastSensorUpdateTime = sensorUpdateTime;
 
                     _data->set_imageheight(height);
-					_data->set_imagewidth(width);
-					_data->set_imagedepth(depth);
+                    _data->set_imagewidth(width);
+                    _data->set_imagedepth(depth);
 
-					const auto imageSize = width*height*depth;
-					_data->set_imagedata(image, imageSize);
+                    const auto imageSize = width*height*depth;
+                    _data->set_imagedata(image, imageSize);
 
                     _hasNewData = true;
-				}
-			}
+                }
+            }
 
-			void resetTime(){
-				this->_lastSensorUpdateTime = 0;
-				this->_hasNewData = false;
-			}
+            void resetTime(){
+                this->_lastSensorUpdateTime = 0;
+                this->_hasNewData = false;
+            }
 
-		private:
-	        std::string _name;
+        private:
+            std::string _name;
 
-			sensors::SensorPtr _parentSensor;
+            sensors::SensorPtr _parentSensor;
 
-			common::Time _lastSensorUpdateTime = 0;
+            common::Time _lastSensorUpdateTime = 0;
 
             Gazebo::Camera *_data;
 
             bool _hasNewData = false;
-	};
+    };
 }
 
 #endif // CAMERA_GRPC_DATAPACK_CONTROLLER_H

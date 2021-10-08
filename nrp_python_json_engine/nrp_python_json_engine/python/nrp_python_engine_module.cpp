@@ -36,7 +36,7 @@ namespace python = boost::python;
  * \brief Calls PythonJSONServer::registerScript() without returning a value
  */
 void PyServerRegistration(python::object script)
-{	PythonJSONServer::registerScript(script);	}
+{   PythonJSONServer::registerScript(script);   }
 
 /*!
  * \brief Decorator for engine script class.
@@ -44,43 +44,43 @@ void PyServerRegistration(python::object script)
  */
 struct PyRegisterEngineDecorator
 {
-	/*!
-	 * \brief __call__() function
-	 * \param script Class derived from EngineScript
-	 * \return Returns ref to PyEngineScript
-	 */
-	PyEngineScript &pyCall(python::object script)
-	{	return *(PythonJSONServer::registerScript(script));	}
+    /*!
+     * \brief __call__() function
+     * \param script Class derived from EngineScript
+     * \return Returns ref to PyEngineScript
+     */
+    PyEngineScript &pyCall(python::object script)
+    {   return *(PythonJSONServer::registerScript(script)); }
 };
 
 
 BOOST_PYTHON_MODULE(NRP_PYTHON_ENGINE_MODULE)
 {
-	//python::class_<PyEngineScript>("__IntEngineScript", python::init<>());
+    //python::class_<PyEngineScript>("__IntEngineScript", python::init<>());
 
-	// Import General NRP Python Module
-	python::import(PYTHON_MODULE_NAME_STR);
+    // Import General NRP Python Module
+    python::import(PYTHON_MODULE_NAME_STR);
     python::import(JSON_PYTHON_MODULE_NAME_STR);
 
-	python::class_<SimulationTime>("SimulationTime")
-		.def("count", &SimulationTime::count)
-	;
+    python::class_<SimulationTime>("SimulationTime")
+        .def("count", &SimulationTime::count)
+    ;
 
-	// Engine Script Class. Used by users to define script that should be executed
-	python::class_<PyEngineScriptWrapper, boost::noncopyable>("EngineScript", python::init<>())
-	        .def("initialize", &PyEngineScriptWrapper::initialize, &PyEngineScriptWrapper::defaultInitialize)
-	        .def("runLoop", python::pure_virtual(&PyEngineScriptWrapper::runLoop))
-	        .def("shutdown", &PyEngineScriptWrapper::shutdown, &PyEngineScriptWrapper::defaultShutdown)
-	        .add_property("_time", &PyEngineScript::simTime)
-	        .add_property("_config", &PyEngineScript::engineConfig)
-	        .def("_registerDataPack", &PyEngineScript::registerDataPack)
-	        .def("_getDataPack", &PyEngineScript::getDataPack, python::return_value_policy<python::copy_non_const_reference>())
-	        .def("_setDataPack", &PyEngineScript::setDataPack);
+    // Engine Script Class. Used by users to define script that should be executed
+    python::class_<PyEngineScriptWrapper, boost::noncopyable>("EngineScript", python::init<>())
+            .def("initialize", &PyEngineScriptWrapper::initialize, &PyEngineScriptWrapper::defaultInitialize)
+            .def("runLoop", python::pure_virtual(&PyEngineScriptWrapper::runLoop))
+            .def("shutdown", &PyEngineScriptWrapper::shutdown, &PyEngineScriptWrapper::defaultShutdown)
+            .add_property("_time", &PyEngineScript::simTime)
+            .add_property("_config", &PyEngineScript::engineConfig)
+            .def("_registerDataPack", &PyEngineScript::registerDataPack)
+            .def("_getDataPack", &PyEngineScript::getDataPack, python::return_value_policy<python::copy_non_const_reference>())
+            .def("_setDataPack", &PyEngineScript::setDataPack);
 
-	python::register_ptr_to_python<PyEngineScriptSharedPtr>();
-	python::register_ptr_to_python<PyEngineScriptConstSharedPtr>();
+    python::register_ptr_to_python<PyEngineScriptSharedPtr>();
+    python::register_ptr_to_python<PyEngineScriptConstSharedPtr>();
 
-	// Engine Registration functions
-	python::class_<PyRegisterEngineDecorator, boost::noncopyable>("RegisterEngine", python::init<>())
-	        .def("__call__", &PyRegisterEngineDecorator::pyCall, python::return_internal_reference<>());
+    // Engine Registration functions
+    python::class_<PyRegisterEngineDecorator, boost::noncopyable>("RegisterEngine", python::init<>())
+            .def("__call__", &PyRegisterEngineDecorator::pyCall, python::return_internal_reference<>());
 }

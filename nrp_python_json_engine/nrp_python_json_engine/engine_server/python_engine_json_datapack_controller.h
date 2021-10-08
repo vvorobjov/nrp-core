@@ -32,26 +32,26 @@
 class PythonEngineJSONDataPackController
         : public JsonDataPackController
 {
-	public:
-		PythonEngineJSONDataPackController(const DataPackIdentifier & devID);
+    public:
+        PythonEngineJSONDataPackController(const DataPackIdentifier & devID);
 
-		virtual ~PythonEngineJSONDataPackController() override = default;
+        virtual ~PythonEngineJSONDataPackController() override = default;
 
-		void handleDataPackData(const nlohmann::json &data) override;
-		virtual nlohmann::json * getDataPackInformation() override;
+        void handleDataPackData(const nlohmann::json &data) override;
+        virtual nlohmann::json * getDataPackInformation() override;
 
-		/*!
-		 * \brief Get python object referenced by this controller
-		 */
-		boost::python::object & data();
+        /*!
+         * \brief Get python object referenced by this controller
+         */
+        boost::python::object & data();
 
-		boost::python::object data() const;
+        boost::python::object data() const;
 
-	protected:
-		/*!
-		 * \brief DataPack Data. Used to convert to/from JSON and python dict
-		 */
-		boost::python::object _datapackData;
+    protected:
+        /*!
+         * \brief DataPack Data. Used to convert to/from JSON and python dict
+         */
+        boost::python::object _datapackData;
 };
 
 #endif // PYTHON_ENGINE_JSON_DATAPACK_CONTROLLER_H

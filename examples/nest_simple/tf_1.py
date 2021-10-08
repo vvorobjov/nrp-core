@@ -9,7 +9,7 @@ n = 0
 print(sin_x)
 
 
-@FromEngineDataPack(keyword='voltage', id=DataPackIdentifier('voltage', 'nest'))
+@EngineDataPack(keyword='voltage', id=DataPackIdentifier('voltage', 'nest'))
 @TransceiverFunction("nest")
 def transceiver_function(voltage):
     # Read voltage

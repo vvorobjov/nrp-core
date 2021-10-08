@@ -5,11 +5,11 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-		nrp_communication_controller.cpp
-		gazebo_step_controller.cpp
-		camera_datapack_controller.cpp
-		joint_datapack_controller.cpp
-		link_datapack_controller.cpp
+        nrp_communication_controller.cpp
+        gazebo_step_controller.cpp
+        camera_datapack_controller.cpp
+        joint_datapack_controller.cpp
+        link_datapack_controller.cpp
 )
 
 
@@ -32,22 +32,22 @@ target_link_directories(NRPGazeboGrpcDataPackControllers PUBLIC ${GAZEBO_LIBRARY
 set_target_properties(NRPGazeboGrpcDataPackControllers PROPERTIES PREFIX "")
 
 target_include_directories(NRPGazeboGrpcDataPackControllers BEFORE
-	PUBLIC 
-	    $<INSTALL_INTERFACE:include>
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
-		${GAZEBO_INCLUDE_DIRS}
+    PUBLIC 
+        $<INSTALL_INTERFACE:include>
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+        ${GAZEBO_INCLUDE_DIRS}
 
-	PRIVATE
-		${NRP_GAZEBO_GRPC_LIB}
+    PRIVATE
+        ${NRP_GAZEBO_GRPC_LIB}
 )
 
 target_link_libraries(NRPGazeboGrpcDataPackControllers
-	PUBLIC
-	    ${NRP_GEN_LIB_TARGET}
-		${GAZEBO_LIBRARIES}
-	PRIVATE
-		${NRP_GAZEBO_GRPC_LIB}
+    PUBLIC
+        ${NRP_GEN_LIB_TARGET}
+        ${GAZEBO_LIBRARIES}
+    PRIVATE
+        ${NRP_GAZEBO_GRPC_LIB}
 )
 
 
@@ -75,41 +75,41 @@ set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/NRPGazeboGrpcDataPackContro
 
 # Install library files
 install(TARGETS
-		NRPGazeboGrpcDataPackControllers
-	EXPORT
-		NRPGazeboGrpcDataPackControllersTargets
-	LIBRARY DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
-	ARCHIVE DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        NRPGazeboGrpcDataPackControllers
+    EXPORT
+        NRPGazeboGrpcDataPackControllersTargets
+    LIBRARY DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
+    ARCHIVE DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 # Install export target
 install(EXPORT NRPGazeboGrpcDataPackControllersTargets
-	DESTINATION
-		${INSTALL_CONFIGDIR}
-	FILE
-		NRPGazeboGrpcDataPackControllersTargets.cmake
-	NAMESPACE
-		"NRPGazeboGrpcDataPackControllers::"
+    DESTINATION
+        ${INSTALL_CONFIGDIR}
+    FILE
+        NRPGazeboGrpcDataPackControllersTargets.cmake
+    NAMESPACE
+        "NRPGazeboGrpcDataPackControllers::"
 )
 
 # create cmake version and config files
 #include(CMakePackageConfigHelpers)
 #write_basic_package_version_file(
-#	"${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
-#	VERSION ${PROJECT_VERSION}
-#	COMPATIBILITY AnyNewerVersion
+#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
+#   VERSION ${PROJECT_VERSION}
+#   COMPATIBILITY AnyNewerVersion
 #)
 #
 #configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake.in"
-#	"${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
-#	INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
+#   INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 #)
 #
 ## Install cmake version and config files
 #install(
-#	FILES
-#		"${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
-#		"${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
-#	DESTINATION ${INSTALL_CONFIGDIR}
+#   FILES
+#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
+#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
+#   DESTINATION ${INSTALL_CONFIGDIR}
 #)

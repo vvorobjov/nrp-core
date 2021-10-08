@@ -62,7 +62,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Opensim Simulation Engine",
     "description": "Opensim Simulation Engine Configuration",
-    "$id": "#OpenSim",
+    "$id": "#OpenSimEngine",
     "allOf": [
       { "$ref": "#/py_sim" },
       {

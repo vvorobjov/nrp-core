@@ -1,10 +1,10 @@
 /*! \page tutorial_engine_creation Creating a new Engine from scratch
 
-As explained in \ref engines "apposite section of the architecture overview", engines are a core aspect of the nrp-core framework. They run the various (and possibly heterogeneous) components/modules of the simulations, with the FTILoop and TransceiverFunctions merely being a way to synchronize and exchange data therebetween. In other terms, the NRP-core facilitates communication between differing simulator types in order to integrate them into a single coherent simulation. We aim to achieve predictable behaviour even in cases where simulators with different execution schemes are deployed.
+As explained in \ref engines "apposite section of the architecture overview", engines are a core aspect of the NRP-core framework. They run the various (and possibly heterogeneous) components/modules of the simulations, with the Simulation Loop and TransceiverFunctions merely being a way to synchronize and exchange data therebetween. In other terms, the NRP-core facilitates communication between differing simulator types in order to integrate them into a single coherent simulation. We aim to achieve predictable behaviour even in cases where simulators with different execution schemes are deployed.
 This requires a strict engine interface, which will properly synchronize runtime and data exchange.
 
-The NRP has adopted a client-server approach to this problem, together with constraints in terms of synchronous communications. Each simulator runs in its own process, and acts a server. The FTILoop manages synchronization, and accesses each engine as a client.
-Data exchange is facilitated via \ref DataPack "DataPacks". Therefore, a developer wishing to create a new engine <b>must supply five components</b>: 
+The NRP has adopted a client-server approach to this problem, together with constraints in terms of synchronous communications. Each simulator runs in its own process, and acts as a server. The Simulation Loop manages synchronization, and accesses each engine as a client.
+Data exchange is facilitated via \ref datapacks "DataPacks". Therefore, a developer wishing to create a new engine <b>must supply five components</b>: 
 
 - \ref tutorial_engine_creation_engine_server "Engine Server"
 - \ref tutorial_engine_creation_engine_client "EngineClient"
@@ -15,10 +15,8 @@ Data exchange is facilitated via \ref DataPack "DataPacks". Therefore, a develop
 In the next sections we comment how to proceed to implement each of this components. The code samples in these sections are based on a bare bone example engine included in the folder *docs/example_engine*.
 
 Please note that this guide describes the steps needed to create an engine <em>from scratch</em>.
-It will take a considerable amount of development time, and the exact implementation will depend on the communication protocol and data structures of your choice.
-
-We provide generic engines that support \ref json_engine_creation "JSON over REST" and \ref grpc_engine_creation "protobuf over gRPC", which already implement the bulk of functionality.
-Should you wish to integrate a simulator with a Python interface in nrp-core, we also supply a \ref python_json_engine "PythonJSONEngine", which can execute arbitrary Python scripts.
+It will take a considerable amount of development time, and the exact implementation will depend on the communication protocol and data structures of your choice. In order to learn how to base your new engine implementation in one of the provided engine templates see this guide: \ref engine_creation_template
+Should you wish to integrate a simulator with a Python interface in NRP-core, we also supply a \ref python_json_engine "PythonJSONEngine", which can execute arbitrary Python scripts.
 
 \section tutorial_engine_creation_directories Directory tree
 
@@ -67,7 +65,7 @@ In this \subpage tutorial_engine_creation_engine_cmake_example_explanation "page
 \section tutorial_engine_creation_engine_config Creating an Engine configuration schema
 
 Engines should be configurable by users. Configuration is based on JSON documents, which
-are validated using <a href="https://json-schema.org/">JSON schemas</a>. This \ref simulation_configuration "page" offers more details on configuration management in nrp-core.
+are validated using <a href="https://json-schema.org/">JSON schemas</a>. This \ref simulation_configuration "page" offers more details on configuration management in NRP-core.
 
 Every new engine configuration schema should be based on the provided basic configuration schema:
 
@@ -104,19 +102,19 @@ A more detailed description of datapacks can be found in this \ref datapacks "pa
 They consists of some \ref datapacks_data "data structure", used as payload in data exchanges between Engine servers and clients, and \ref datapacks_id "metadata", used to uniquely identify the datapack and relate it to a specific engine.
 There is in principle no restrictions in the type a DataPack can store, as long as Engine client and server are able to exchange them over the wire.
 But since DataPacks also must be available inside of TransceiverFunctions, python bindings must be available for each data type used in DataPacks.
-To reduce the complexity of developping new engines, it is strongly recommended to use one of the data types for which nrp-core already provide python bindings.
+To reduce the complexity of developping new engines, it is strongly recommended to use one of the data types for which NRP-core already provide python bindings.
 These are: nlohmann::json and protobuf messages.
-However, if you decide to use another data type you must implement Python bindings for it and make them available to nrp-core as a Python module.
+However, if you decide to use another data type you must implement Python bindings for it and make them available to NRP-core as a Python module.
 
 
 \section tutorial_engine_creation_engine_client Creating an EngineClient
 
-An EngineClient is used by the FTILoop to interface with a simulator via an Engine Server. A communication protocol is required to facilitate data exchange. We provide a set of predefined protocol implementations \ref engine_types "here".
+An EngineClient is used by the Simulation Loop to interface with a simulator via an Engine Server. A communication protocol is required to facilitate data exchange. We provide a set of predefined protocol implementations \ref engine_types "here".
 In most cases, using one of these as a base template suffices and greatly reduces development efforts.
 
 A new engine client must inherit from the EngineClient class. As such, it may look as shown below. A detailed function description can be found in \ref EngineClientInterface.
 
-A set of methods need to be implemented in the new client class. These methods will be called by the FTILoop in various points of the simulation loop.
+A set of methods need to be implemented in the new client class. These methods will be called by the Simulation Loop in various points of the loop.
 
 
 \subsection tutorial_engine_creation_simulation_control_methods Simulation control and state methods
@@ -162,8 +160,8 @@ Related to \ref engine_env_params "EngineEnvParams" config parameter.
 
 \section tutorial_engine_creation_python Creating a Python module
 
-The FTILoop and engines are written in C++, but transceiver functions are written in Python. We need a way of wrapping
-C++ code with Python. This is done inside so called Python module. Most of the wrappers are already defined in the base
+The Simulation Loop and engines are written in C++, but transceiver functions are written in Python. We need a way of wrapping
+C++ code with Python, particularly for datapack data types which will be used in TFs. This is done inside so called Python module. Most of the wrappers are already defined in the base
 Python module, but wrappers for new datapack types must be added.
 
 \dontinclude nrp_example_engine/python/example_engine_python.cpp
@@ -180,7 +178,7 @@ We recommend using the BasicFork class as a starting template, and modify it to 
 
 \section tutorial_engine_creation_engine_server Creating an Engine Server
 
-An Engine Server runs in its own process, executes the simulation, and exchanges data with the FTILoop via the EngineClient.
+An Engine Server runs in its own process, executes the simulation, and exchanges data with the Simulation Loop via the EngineClient.
 To interface with said client, a communication protocol is required.
 We provide a set of predefined protocol implementations \ref engine_types "here".
 

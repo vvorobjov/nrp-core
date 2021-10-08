@@ -35,34 +35,34 @@ class PyEngineScript;
 class PythonJSONServer
         : public EngineJSONServer
 {
-	public:
-		PythonJSONServer(const std::string &serverAddress, boost::python::dict globals);
-		PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, boost::python::dict globals);
-		virtual ~PythonJSONServer() override = default;
+    public:
+        PythonJSONServer(const std::string &serverAddress, boost::python::dict globals);
+        PythonJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, boost::python::dict globals);
+        virtual ~PythonJSONServer() override = default;
 
-		/*!
-		 * \brief Has the initialization been executed?
-		 * \return Returns true once the initialize function has been run once
-		 */
-		bool initRunFlag() const;
+        /*!
+         * \brief Has the initialization been executed?
+         * \return Returns true once the initialize function has been run once
+         */
+        bool initRunFlag() const;
 
-		/*!
-		 * \brief Has a shutdown command been received?
-		 * \return Returns true if a shutdown command has been received
-		 */
-		bool shutdownFlag() const;
+        /*!
+         * \brief Has a shutdown command been received?
+         * \return Returns true if a shutdown command has been received
+         */
+        bool shutdownFlag() const;
 
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
-		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) override;
-		virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) override;
-		virtual nlohmann::json shutdown(const nlohmann::json &data) override;
+        virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+        virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) override;
+        virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) override;
+        virtual nlohmann::json shutdown(const nlohmann::json &data) override;
 
-		/*!
-		 * \brief Register pointer to python script
-		 * \param pythonScript Pointer to PyEngineScript
-		 * \return Returns ptr to PyEngineScript of pythonScript
-		 */
-		static PyEngineScript *registerScript(const boost::python::object &pythonScript);
+        /*!
+         * \brief Register pointer to python script
+         * \param pythonScript Pointer to PyEngineScript
+         * \return Returns ptr to PyEngineScript of pythonScript
+         */
+        static PyEngineScript *registerScript(const boost::python::object &pythonScript);
 
         /*!
          * \brief Returns this Engine configuration
@@ -70,55 +70,55 @@ class PythonJSONServer
          */
         nlohmann::json getEngineConfig() const;
 
-	private:
-		/*!
-		 * \brief Ptr to current PythonJSONServer.
-		 * When registerScript() is called, it will use this ptr to determine the class where the pythonScript will be stored
-		 */
-		static PythonJSONServer *_registrationPyServer;
+    private:
+        /*!
+         * \brief Ptr to current PythonJSONServer.
+         * When registerScript() is called, it will use this ptr to determine the class where the pythonScript will be stored
+         */
+        static PythonJSONServer *_registrationPyServer;
 
-		/*!
-		 * \brief Init Flag. Set to true once the server has executed the initialize function
-		 */
-		bool _initRunFlag = false;
+        /*!
+         * \brief Init Flag. Set to true once the server has executed the initialize function
+         */
+        bool _initRunFlag = false;
 
-		/*!
-		 * \brief Shutdown Flag. Set to true once the shutdown signal has been received
-		 */
-		bool _shutdownFlag = false;
+        /*!
+         * \brief Shutdown Flag. Set to true once the shutdown signal has been received
+         */
+        bool _shutdownFlag = false;
 
-		/*!
-		 * \brief Global Python variables
-		 */
-		boost::python::dict _pyGlobals;
+        /*!
+         * \brief Global Python variables
+         */
+        boost::python::dict _pyGlobals;
 
-		/*!
-		 * \brief Python script to execute
-		 */
-		boost::python::object _pyEngineScript;
+        /*!
+         * \brief Python script to execute
+         */
+        boost::python::object _pyEngineScript;
 
-		/*!
-		 * \brief List of datapack ptrs. Used to manage controller deletion
-		 */
-		std::list<std::shared_ptr<DataPackController<nlohmann::json>>> _datapackControllerPtrs;
+        /*!
+         * \brief List of datapack ptrs. Used to manage controller deletion
+         */
+        std::list<std::shared_ptr<DataPackController<nlohmann::json>>> _datapackControllerPtrs;
 
-		/*!
-		 *	\brief GIL Lock state
-		 */
-		PyGILState_STATE _pyGILState;
+        /*!
+         *  \brief GIL Lock state
+         */
+        PyGILState_STATE _pyGILState;
 
-		/*!
-		 * \brief Creates an error message to be returned to the main NRP process
-		 * \param errMsg Error text
-		 * \return Returns a JSON object containing the error text as well as a failure flag
-		 */
-		static nlohmann::json formatInitErrorMessage(const std::string &errMsg);
+        /*!
+         * \brief Creates an error message to be returned to the main NRP process
+         * \param errMsg Error text
+         * \return Returns a JSON object containing the error text as well as a failure flag
+         */
+        static nlohmann::json formatInitErrorMessage(const std::string &errMsg);
 
-		nlohmann::json getDataPackData(const nlohmann::json &reqData) override;
+        nlohmann::json getDataPackData(const nlohmann::json &reqData) override;
 
-		nlohmann::json setDataPackData(const nlohmann::json &reqData) override;
+        nlohmann::json setDataPackData(const nlohmann::json &reqData) override;
 
-		nlohmann::json _initData;
+        nlohmann::json _initData;
 
 };
 

@@ -1,5 +1,5 @@
 /*! \page nrp_simulation NRPCoreSim
-This is the main nrp-core executable. It can be used to run an experiment locally. With it, a simulation is configured, a FTILoop is initialized, and a simulation is run. The process is divided into the following steps:
+This is the main NRP-core executable. It can be used to run an experiment locally. With it, a simulation is configured, a Simulation Loop is initialized, and a simulation is run. The process is divided into the following steps:
 - Parse input parameters:
   - If a '-h' or '--help' is added to the simulation, only print the help text, then exit
   - '-c': configuration file name, it is expected to be in the same folder NRPCoreSim is executed from
@@ -12,7 +12,7 @@ This is the main nrp-core executable. It can be used to run an experiment locall
   - Additionally, it will read the input parameter '-p' and load those engine plugins requested by the user
   - Store all engines launchers contained in the loaded plugins in an EngineLauncherManager
 - Use input parameters to generate a new instance of SimulationManager. This will also launch all engine processes defined in the SimulationConfig passed to NRPCoreSim
-- If a SimulationConfig file was given as an input parameter, initialize a FTILoop and run until timeout
+- If a SimulationConfig file was given as an input parameter, initialize a Simulation Loop and run until timeout
 
 To launch an experiment with NRPCoreSim, the user must specify the simulation configuration file and optionally a list of engine plugins to be loaded. Eg:
 

@@ -4,7 +4,7 @@ import math
 
 class OpensimInterface(object):
 
-	stepsize = 0.001
+	step_size = 0.001
 
 	model = None
 	state = None
@@ -27,14 +27,16 @@ class OpensimInterface(object):
 	maxforces = []
 	curforces = []
 	
-	def __init__(self, modelName, isVisualizer, engineTimeStep):
+	def __init__(self, model_name, start_visualizer, time_step):
 		super(OpensimInterface, self).__init__()
-		self.stepsize = engineTimeStep
-		self.model = osim.Model(modelName)
+
+		self.step_size = time_step
+		self.model = osim.Model(model_name)
 		self.state = self.model.initSystem()
-		self.model.setUseVisualizer(isVisualizer)
+		self.model.setUseVisualizer(start_visualizer)
 		self.brain = osim.PrescribedController()
 		self.muscleSet = self.model.getMuscles()
+
 		for j in range(self.muscleSet.getSize()):
 			func = osim.Constant(1.0)
 			self.brain.addActuator(self.muscleSet.get(j))
@@ -42,8 +44,6 @@ class OpensimInterface(object):
 
 			self.maxforces.append(self.muscleSet.get(j).getMaxIsometricForce())
 			self.curforces.append(1.0)
-
-		self.noutput = self.muscleSet.getSize()
 
 		self.model.addController(self.brain)
 		self.model.initSystem()
@@ -60,7 +60,7 @@ class OpensimInterface(object):
 		self.n_step = self.n_step + 1
 		# Integrate till the new endtime
 		try:
-			self.state = self.manager.integrate(self.stepsize*self.n_step)
+			self.state = self.manager.integrate(self.step_size*self.n_step)
 		except Exception as e:
 			print(e)
 
@@ -73,47 +73,39 @@ class OpensimInterface(object):
 		
 	# Set the value of controller
 	def actuate(self, action):
-		self.last_action = action
-
 		brain = osim.PrescribedController.safeDownCast(
 			self.model.getControllerSet().get(0))
-		functionSet = brain.get_ControlFunctions()
+		function_set = brain.get_ControlFunctions()
 
-		for j in range(functionSet.getSize()):
-			func = osim.Constant.safeDownCast(functionSet.get(j))
+		for j in range(function_set.getSize()):
+			func = osim.Constant.safeDownCast(function_set.get(j))
 			func.setValue(float(action[j]))
 
-	#Obtain devices' name, which can also be found in the model file "*.osim"
-	def get_device_names(self, deviceType):
-		tSet = None
-		if deviceType == "Joint":
+	# Obtain datapack names, which can also be found in the model file "*.osim"
+	def get_model_properties(self, p_type):
+		if p_type == "Joint":
 			tSet = self.jointSet
-		elif deviceType == "Force":
+		elif p_type == "Force":
 			tSet = self.forceSet
 		else:
-			print("DeviceType is error")
-			print("In this function, it only supports Joint and Force")
+			print("supported types are 'Joint' and 'Force'")
 			return []
-		nameList = []
-		for i in range(tSet.getSize()):
-			nameList.append(tSet.get(i).getName())
 
-		return nameList
-	#Obtain the value of one device by the device name
-	def get_device_val(self, deviceName, deviceType):
-		tSet = None
-		if deviceType == "Joint":
+		return [tSet.get(i).getName() for i in range(tSet.getSize())]
+
+	# Obtain the value of one datapack by the datapack name
+	def get_model_property(self, p_name, p_type):
+		if p_type == "Joint":
 			tSet = self.jointSet
-		elif deviceType == "Force":
+		elif p_type == "Force":
 			tSet = self.forceSet
 		else:
-			print("DeviceType is error")
+			print("p_type is error")
 			print("In this function, it only supports Joint and Force")
 			return []
 		
-		theDevice = tSet.get(deviceName).getCoordinate()
-
-		return theDevice.getValue(self.state)
+		prop = tSet.get(p_name).getCoordinate()
+		return prop.getValue(self.state)
 		
 	def get_sim_time(self):
 		return self.state.getTime()

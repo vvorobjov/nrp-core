@@ -28,8 +28,8 @@ To run a single test or a group of tests you can use the ctest regex (-R) option
 (-VV runs the tests in verbose mode):
 
 \code{.sh}
-ctest -VV -R FTILoopTest.RunLoop  # Run a single test from the FTILoop group
-ctest -VV -R FTILoopTest          # Run all tests from the FTILoop group
+ctest -VV -R Simulation LoopTest.RunLoop  # Run a single test from the Simulation Loop group
+ctest -VV -R Simulation LoopTest          # Run all tests from the Simulation Loop group
 \endcode
 
 Every NRP Core module should have its own tests compiled into a single executable.

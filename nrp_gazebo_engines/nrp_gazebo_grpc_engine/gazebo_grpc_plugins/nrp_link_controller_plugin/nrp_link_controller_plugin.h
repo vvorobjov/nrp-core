@@ -27,18 +27,18 @@
 
 namespace gazebo
 {
-	class NRPLinkControllerPlugin
-	        : public gazebo::ModelPlugin
-	{
-		public:
-			virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
+    class NRPLinkControllerPlugin
+            : public gazebo::ModelPlugin
+    {
+        public:
+            virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf);
 
-		private:
+        private:
 
-			std::list< LinkGrpcDataPackController > _linkInterfaces;
-	};
+            std::list< LinkGrpcDataPackController > _linkInterfaces;
+    };
 
-	GZ_REGISTER_MODEL_PLUGIN(NRPLinkControllerPlugin)
+    GZ_REGISTER_MODEL_PLUGIN(NRPLinkControllerPlugin)
 }
 
 #endif

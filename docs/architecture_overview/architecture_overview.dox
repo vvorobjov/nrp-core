@@ -1,14 +1,14 @@
 /*! \page architecture_overview Architecture Overview
 
-The NRP Core framework (nrp-core) allows NRP users to design and execute experiments where multiple "simulation modules", running in separate processes, synchronize with each other at different frequencies to create a single, coherent simulation. The architecture components that run these "simulations modules" will hereafter be referred to as Engines.
+The NRP Core framework (NRP-core) allows NRP users to design and execute experiments where multiple "simulation modules", running in separate processes, synchronize with each other at different frequencies to create a single, coherent simulation. The architecture components that run these "simulations modules" will hereafter be referred to as Engines.
 
-An experiment in nrp-core therefore consists of multiple engine processes that synchronize with a central FTILoop process at predetermined frequencies defined by the user. These frequencies determine the engine time step, which defines the duration (in simulation time) for which that engine carries out a simulation independently (i.e. without communication to the central process). Note that: 1) the engine time step can be different for each engine and is set in the experiment configuration; 2) that the internal time step of the simulator at the heart of a given engine is independent from the engine time step (the latter should nevertheless be a multiple of this internal time step).
+An experiment in NRP-core therefore consists of multiple engine processes that synchronize with a central Simulation Loop process at predetermined frequencies defined by the user. These frequencies (expressed in simulation time) determine the engine time step, which defines the duration (also in simulation time) for which that engine carries out a simulation independently (i.e. without communication to the central process). Note that: 1) the engine time step can be different for each engine and is set in the experiment configuration; 2) that the internal time step of the simulator at the heart of a given engine is independent from the engine time step (the latter should nevertheless be a multiple of this internal time step).
 
 For more explanations, this \subpage sync_model_details "page" contains a more detailed description of the <b>synchronization model</b>.
 
-Please also note that, while nrp-core is - quite literally - the beating heart of the NRP, the so-called NRPCoreSim is the standalone application based on nrp-core. This standalone application can execute experiments through the same lifecycle process, but without the additional functionalities of the NRP (e.g. front end, etc.). This \subpage nrp_simulation "page" contains more information about NRPCoreSim.
+Please also note that, while NRP-core is - quite literally - the beating heart of the NRP, the so-called NRPCoreSim is the standalone application based on NRP-core. This standalone application can execute experiments through the same lifecycle process, but without the additional functionalities of the NRP (e.g. front end, etc.). This \subpage nrp_simulation "page" contains more information about NRPCoreSim.
 
-The main elements in the nrp-core architecture are briefly described below. A more in-depth description and implementation details are available in separate pages in this documentation.
+The main elements in the NRP-core architecture are briefly described below. A more in-depth description and implementation details are available in separate pages in this documentation.
 
 \section main_elements Main Elements
 
@@ -16,8 +16,8 @@ These are the main elements in the architecture involved in the synchronization 
 - \subpage datapacks "DataPack": user-defined data structures used to exchange data between engine servers and clients. They are as well the input and output of transceiver functions.
 - \subpage transceiver_function "Transceiver Function" (TF): user-defined Python functions which enable data exchange between engines.
 - \subpage preprocessing_function "Preprocessing Function" (PF): user-defined Python functions which enable to pre-process data coming from engines before injecting it into TFs.
-- \subpage engines "Engine": provides both an abstraction layer and an interface to integrate simulators in nrp-core. Each engine represents a process in which a concrete instance of a simulator is running. For each of them there is a client side component in the simulation loop process interfacing the engine process for simulation control and data exchange.
-- \subpage fti_loop "Simulation Loop": main loop where synchronization of engines, transmission of data and execution of transceiver functions happens.
+- \subpage engines "Engine": provides both an abstraction layer and an interface to integrate simulators in NRP-core. Each engine represents a process in which a concrete instance of a simulator is running. For each of them there is a client side component in the simulation loop process interfacing the engine process for simulation control and data exchange.
+- \subpage simulation_loop "Simulation Loop": main loop where synchronization of engines, transmission of data and execution of transceiver functions happens.
 
 \image html architecture_elements.png "Architecture overview"
 
@@ -25,7 +25,7 @@ These are the main elements in the architecture involved in the synchronization 
 
 The lifecycle of an experiment consists of a series of states in which the different components in the architecture interact to initialize, run and shutdown the simulation. These components can be grouped in different sections depending on the role they play in the architecture:
 
-- Simulation Management: initializes and manages the FTILoop
+- Simulation Management: initializes and manages the Simulation Loop
 - TransceiverFunction Management: initializes and manage the execution of TransceiverFunctions
 - \ref engines "Engine": Engine processes and clients
 - \subpage process_launcher "Process Management": those components in charge of launching, monitor and shutdown engine processes.

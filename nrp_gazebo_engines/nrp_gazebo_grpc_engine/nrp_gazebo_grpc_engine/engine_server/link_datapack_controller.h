@@ -29,31 +29,31 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for links
-	 */
-	class LinkGrpcDataPackController
-	        : public DataPackController<google::protobuf::Message>
-	{
-			template<class T>
-			constexpr static float ToFloat(const T &val)
-			{	return static_cast<float>(val);	}
+    /*!
+     * \brief Interface for links
+     */
+    class LinkGrpcDataPackController
+            : public DataPackController<google::protobuf::Message>
+    {
+            template<class T>
+            constexpr static float ToFloat(const T &val)
+            {   return static_cast<float>(val); }
 
-		public:
+        public:
             LinkGrpcDataPackController(const std::string &linkName, const physics::LinkPtr &link)
-			    : _name(linkName),
-			      _link(link)
-			{}
+                : _name(linkName),
+                  _link(link)
+            {}
 
-			virtual void handleDataPackData(const google::protobuf::Message &data) override
-			{}
+            virtual void handleDataPackData(const google::protobuf::Message &data) override
+            {}
 
-			virtual google::protobuf::Message *getDataPackInformation() override
-			{
+            virtual google::protobuf::Message *getDataPackInformation() override
+            {
                 auto l = new Gazebo::Link();
 
                 const auto &pose = this->_link->WorldCoGPose();
-				l->add_position(ToFloat(pose.Pos().X()));
+                l->add_position(ToFloat(pose.Pos().X()));
                 l->add_position(ToFloat(pose.Pos().Y()));
                 l->add_position(ToFloat(pose.Pos().Z()));
 
@@ -67,25 +67,25 @@ namespace gazebo
                 l->add_linearvelocity(ToFloat(linVel.Y()));
                 l->add_linearvelocity(ToFloat(linVel.Z()));
 
-				const auto &angVel = this->_link->WorldAngularVel();
-				l->add_angularvelocity(ToFloat(angVel.X()));
+                const auto &angVel = this->_link->WorldAngularVel();
+                l->add_angularvelocity(ToFloat(angVel.X()));
                 l->add_angularvelocity(ToFloat(angVel.Y()));
                 l->add_angularvelocity(ToFloat(angVel.Z()));
 
-				return l;
-			}
+                return l;
+            }
 
-		private:
-			/*!
-			 * \brief Link Name
-			 */
-			std::string _name;
+        private:
+            /*!
+             * \brief Link Name
+             */
+            std::string _name;
 
-			/*!
-			 * \brief Pointer to link
-			 */
-			physics::LinkPtr _link;
-	};
+            /*!
+             * \brief Pointer to link
+             */
+            physics::LinkPtr _link;
+    };
 }
 
 #endif // LINK_GRPC_DATAPACK_CONTROLLER_H

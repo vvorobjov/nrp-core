@@ -98,8 +98,8 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
 
     ASSERT_NO_THROW(engine->initialize());
 
-	// The data is updated asynchronously, on every new frame. It may happen that on first
-	// acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
+    // The data is updated asynchronously, on every new frame. It may happen that on first
+    // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
     const EngineClientInterface::datapacks_t * datapacks;
     int trial = 0;
@@ -112,7 +112,7 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
     }
     while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
-	ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
+    ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
     const DataPack<Gazebo::Camera>& camDat = dynamic_cast<const DataPack<Gazebo::Camera>&>(*(datapacks->at(0)));
 

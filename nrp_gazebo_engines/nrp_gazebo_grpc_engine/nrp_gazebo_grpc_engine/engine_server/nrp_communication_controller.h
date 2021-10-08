@@ -40,133 +40,133 @@
 class NRPCommunicationController
         : public EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>
 {
-	public:
+    public:
 
-		~NRPCommunicationController() override;
+        ~NRPCommunicationController() override;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController(const NRPCommunicationController &other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController(const NRPCommunicationController &other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController(NRPCommunicationController &&other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController(NRPCommunicationController &&other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
 
-		/*!
-		 * \brief Get singleton instance
-		 * \return Gets instance of NRPCommunicationController
-		 */
-		static NRPCommunicationController& getInstance();
+        /*!
+         * \brief Get singleton instance
+         * \return Gets instance of NRPCommunicationController
+         */
+        static NRPCommunicationController& getInstance();
 
-		/*!
-		 * \brief Reset server with the given server URL
-		 * \param serverURL URL used by server
-		 * \return Returns reference to server instance
-		 */
-		static NRPCommunicationController& resetInstance(const std::string &serverURL);
+        /*!
+         * \brief Reset server with the given server URL
+         * \param serverURL URL used by server
+         * \return Returns reference to server instance
+         */
+        static NRPCommunicationController& resetInstance(const std::string &serverURL);
 
-		/*!
-		 * \brief Reset server with the given server URL
-		 * \param serverURL URL used by server
-		 * \param engineName Name of this engine
-		 * \param registrationURL URL used to register this engine server's URL
-		 * \return Returns reference to server instance
-		 */
-		static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        /*!
+         * \brief Reset server with the given server URL
+         * \param serverURL URL used by server
+         * \param engineName Name of this engine
+         * \param registrationURL URL used to register this engine server's URL
+         * \return Returns reference to server instance
+         */
+        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 
 
-		/*!
-		 * \brief Register a step controller
-		 * \param stepController Pointer to step controller
-		 */
-		void registerStepController(GazeboStepController *stepController);
+        /*!
+         * \brief Register a step controller
+         * \param stepController Pointer to step controller
+         */
+        void registerStepController(GazeboStepController *stepController);
 
-		/*!
-		 * \brief Register a sensor plugin
-		 * \param sensorPlugin Pointer to sensor plugin
-		 */
-		void registerSensorPlugin(gazebo::SensorPlugin *sensorPlugin)
-		{
-			this->_sensorPlugins.push_back(sensorPlugin);
-		};
+        /*!
+         * \brief Register a sensor plugin
+         * \param sensorPlugin Pointer to sensor plugin
+         */
+        void registerSensorPlugin(gazebo::SensorPlugin *sensorPlugin)
+        {
+            this->_sensorPlugins.push_back(sensorPlugin);
+        };
 
-		/*!
-		 * \brief Register a model plugin
-		 * \param sensorPlugin Pointer to model plugin
-		 */
-		void registerModelPlugin(gazebo::ModelPlugin *modelPlugin)
-		{
-			this->_modelPlugins.push_back(modelPlugin);
-		};
+        /*!
+         * \brief Register a model plugin
+         * \param sensorPlugin Pointer to model plugin
+         */
+        void registerModelPlugin(gazebo::ModelPlugin *modelPlugin)
+        {
+            this->_modelPlugins.push_back(modelPlugin);
+        };
 
-		/*!
-		 * \brief Create datapack name from the given plugin and sensor/joint/link
-		 * \tparam T Plugin Type
-		 * \param plugin Controller Plugin
-		 * \param objectName Name of the controlled object (sensor, joint, link, ...)
-		 * \return Returns datapack name
-		 */
-		template<class T>
-		static std::string createDataPackName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
-		{	return plugin.GetHandle() + "::" + objectName;	}
+        /*!
+         * \brief Create datapack name from the given plugin and sensor/joint/link
+         * \tparam T Plugin Type
+         * \param plugin Controller Plugin
+         * \param objectName Name of the controlled object (sensor, joint, link, ...)
+         * \return Returns datapack name
+         */
+        template<class T>
+        static std::string createDataPackName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
+        {   return plugin.GetHandle() + "::" + objectName;  }
 
-	private:
+    private:
 
-		/*!
-		 * \brief Singleton instance of this class
-		 */
-		static std::unique_ptr<NRPCommunicationController> _instance;
+        /*!
+         * \brief Singleton instance of this class
+         */
+        static std::unique_ptr<NRPCommunicationController> _instance;
 
-		/*!
-		 * \brief Controlls gazebo stepping
-		 */
-		GazeboStepController *_stepController = nullptr;
+        /*!
+         * \brief Controlls gazebo stepping
+         */
+        GazeboStepController *_stepController = nullptr;
 
-		/*!
-		 * \brief Vector of registered SensorPlugin's.
-		 * They are kept in order to be available for function calls, like Reset
-		 * Because the world->Reset doesn't call plugins' corresponding functions.
-		 */
-		std::vector< gazebo::SensorPlugin* >  _sensorPlugins;
+        /*!
+         * \brief Vector of registered SensorPlugin's.
+         * They are kept in order to be available for function calls, like Reset
+         * Because the world->Reset doesn't call plugins' corresponding functions.
+         */
+        std::vector< gazebo::SensorPlugin* >  _sensorPlugins;
 
-		/*!
-		 * \brief Vector of registered ModelPlugin's
-		 * They are kept in order to be available for function calls, like Reset
-		 * Because the world->Reset doesn't call plugins' corresponding functions.
-		 */
-		std::vector< gazebo::ModelPlugin* >  _modelPlugins;
+        /*!
+         * \brief Vector of registered ModelPlugin's
+         * They are kept in order to be available for function calls, like Reset
+         * Because the world->Reset doesn't call plugins' corresponding functions.
+         */
+        std::vector< gazebo::ModelPlugin* >  _modelPlugins;
 
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+        virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-		virtual void initialize(const nlohmann::json &data, lock_t &datapackLock) override;
+        virtual void initialize(const nlohmann::json &data, lock_t &datapackLock) override;
 
-		virtual void reset() override;
+        virtual void reset() override;
 
-		virtual void shutdown(const nlohmann::json &data) override;
+        virtual void shutdown(const nlohmann::json &data) override;
 
-		/*!
-		 * \brief Make private for singleton
-		 */
-		NRPCommunicationController() = default;
+        /*!
+         * \brief Make private for singleton
+         */
+        NRPCommunicationController() = default;
 
-		/*!
-		 * \brief Constructor. Private for singleton
-		 * \param address Server Address
-		 */
-		NRPCommunicationController(const std::string &address);
+        /*!
+         * \brief Constructor. Private for singleton
+         * \param address Server Address
+         */
+        NRPCommunicationController(const std::string &address);
 
-		/*!
-		 * \brief Constructor. Private for singleton
-		 * \param serverURL URL used by server
-		 * \param engineName Name of this engine
-		 * \param registrationURL URL used to register this engine server's URL
-		 * \return Returns reference to server instance
-		 */
-		NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        /*!
+         * \brief Constructor. Private for singleton
+         * \param serverURL URL used by server
+         * \param engineName Name of this engine
+         * \param registrationURL URL used to register this engine server's URL
+         * \return Returns reference to server instance
+         */
+        NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 };
 
 #endif

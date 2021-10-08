@@ -29,40 +29,40 @@ CreateDataPackClass::CreateDataPackClass(boost::python::dict nest, boost::python
 
 boost::python::object CreateDataPackClass::pyCreateDataPack(boost::python::tuple args, boost::python::dict kwargs)
 {
-	CreateDataPackClass &self = boost::python::extract<CreateDataPackClass&>(args[0]);
-	return self.createAndRegisterDataPack(args, kwargs);
+    CreateDataPackClass &self = boost::python::extract<CreateDataPackClass&>(args[0]);
+    return self.createAndRegisterDataPack(args, kwargs);
 }
 
 boost::python::object CreateDataPackClass::pyRegisterDataPack(boost::python::tuple args, boost::python::dict)
 {
-	CreateDataPackClass &self = boost::python::extract<CreateDataPackClass&>(args[0]);
-	self.registerDataPack(boost::python::str(args[1]), args[2]);
+    CreateDataPackClass &self = boost::python::extract<CreateDataPackClass&>(args[0]);
+    self.registerDataPack(boost::python::str(args[1]), args[2]);
 
-	return boost::python::object();
+    return boost::python::object();
 }
 
 boost::python::api::object CreateDataPackClass::createAndRegisterDataPack(boost::python::tuple args, boost::python::dict kwargs)
 {
-	// Call Nest's Create function with all arguments except for first one (that is the label)
-	boost::python::object datapackID = this->_nest["Create"](*(args.slice(1, boost::python::len(args))), **kwargs);
+    // Call Nest's Create function with all arguments except for first one (that is the label)
+    boost::python::object datapackID = this->_nest["Create"](*(args.slice(1, boost::python::len(args))), **kwargs);
 
-	// Save created datapack's ID
-	this->registerDataPack(boost::python::str(args[0]), datapackID);
+    // Save created datapack's ID
+    this->registerDataPack(boost::python::str(args[0]), datapackID);
 
-	return datapackID;
+    return datapackID;
 }
 
 void CreateDataPackClass::registerDataPack(boost::python::str devName, boost::python::api::object nodeCollection)
 {
-	this->_devMap[devName] = nodeCollection;
+    this->_devMap[devName] = nodeCollection;
 }
 
 boost::python::dict CreateDataPackClass::pyDevMap()
 {
-	return this->devMap();
+    return this->devMap();
 }
 
 const boost::python::dict &CreateDataPackClass::devMap() const
 {
-	return this->_devMap;
+    return this->_devMap;
 }

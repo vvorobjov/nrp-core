@@ -1,10 +1,10 @@
 /*! \page getting_started Getting started
 
-In order to start working with the NRP Core, the latter must be first compiled and installed. The installation guide can be found in the following page: \subpage installation "Installation Instructions"
+In order to start working with NRP-core, the latter must be first compiled and installed. The installation guide can be found in the following page: \subpage installation "Installation Instructions"
 
-We provide a number of example experiments within the NRP Core repository. They are located in the `examples` subdirectory. They give a good overview of the capabilities of the NRP and should be relatively easy to adapt to user-specific needs. More details about running these experiments can be found on the page: \subpage running_example_exp "Running the example experiments".
+We provide a number of example experiments within the NRP-core repository. They are located in the `examples` subdirectory. They give a good overview of the capabilities of the NRP and should be relatively easy to adapt to user-specific needs. More details about running these experiments can be found on the page: \subpage running_example_exp "Running the example experiments".
 
-Please take note that some of the examples may require additional models or dependencies, which may be not included in the NRP Core repository. More information can be found in our \ref tutorial_helpful_info "guide".
+Please take note that some of the examples may require additional models or dependencies, which may be not included in the NRP-core repository. More information can be found in our \ref tutorial_helpful_info "guide".
 
 
 */

@@ -9,37 +9,37 @@
 
 class ExampleEngineServerExecutable
 {
-	public:
-		~ExampleEngineServerExecutable() = default;
+    public:
+        ~ExampleEngineServerExecutable() = default;
 
-		// Delete move and copy operators. This ensures this class is a singleton
-		ExampleEngineServerExecutable(const ExampleEngineServerExecutable &) = delete;
-		ExampleEngineServerExecutable(ExampleEngineServerExecutable &&) = delete;
+        // Delete move and copy operators. This ensures this class is a singleton
+        ExampleEngineServerExecutable(const ExampleEngineServerExecutable &) = delete;
+        ExampleEngineServerExecutable(ExampleEngineServerExecutable &&) = delete;
 
-		ExampleEngineServerExecutable &operator=(const ExampleEngineServerExecutable &) = delete;
-		ExampleEngineServerExecutable &operator=(ExampleEngineServerExecutable &&) = delete;
+        ExampleEngineServerExecutable &operator=(const ExampleEngineServerExecutable &) = delete;
+        ExampleEngineServerExecutable &operator=(ExampleEngineServerExecutable &&) = delete;
 
-		static ExampleEngineServerExecutable &getInstance();
-		static ExampleEngineServerExecutable &resetInstance(int argc, char *argv[]);
+        static ExampleEngineServerExecutable &getInstance();
+        static ExampleEngineServerExecutable &resetInstance(int argc, char *argv[]);
 
-		static void shutdown();
+        static void shutdown();
 
-		void startServerAsync();
-		bool serverRunning() const;
+        void startServerAsync();
+        bool serverRunning() const;
 
-		void waitForInit();
-		int run();
+        void waitForInit();
+        int run();
 
-	private:
-		static std::unique_ptr<ExampleEngineServerExecutable> _instance;
+    private:
+        static std::unique_ptr<ExampleEngineServerExecutable> _instance;
 
-		cxxopts::ParseResult _res;
+        cxxopts::ParseResult _res;
 
-		ExampleEngineServer _server;
+        ExampleEngineServer _server;
 
-		ExampleEngineServerExecutable(int argc, char *argv[]);
+        ExampleEngineServerExecutable(int argc, char *argv[]);
 
-		static void handleSIGTERM(int signal);
+        static void handleSIGTERM(int signal);
 };
 
 #endif // EXAMPLE_ENGINE_SERVER_EXECUTABLE_H

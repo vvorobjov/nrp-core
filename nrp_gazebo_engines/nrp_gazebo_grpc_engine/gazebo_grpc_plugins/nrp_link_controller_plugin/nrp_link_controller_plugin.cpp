@@ -30,22 +30,22 @@ using namespace nlohmann;
 
 void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
-	auto &commControl = NRPCommunicationController::getInstance();
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    auto &commControl = NRPCommunicationController::getInstance();
 
-	// Register a datapack for each link
-	auto links = model->GetLinks();
-	for(const auto &link : links)
-	{
-		const auto datapackName = NRPCommunicationController::createDataPackName(*this, link->GetName());
+    // Register a datapack for each link
+    auto links = model->GetLinks();
+    for(const auto &link : links)
+    {
+        const auto datapackName = NRPCommunicationController::createDataPackName(*this, link->GetName());
 
-		NRPLogger::info("Registering link controller for link [ {} ]", datapackName);
+        NRPLogger::info("Registering link controller for link [ {} ]", datapackName);
 
-		this->_linkInterfaces.push_back(LinkGrpcDataPackController(datapackName, link));
-		commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
-	}
+        this->_linkInterfaces.push_back(LinkGrpcDataPackController(datapackName, link));
+        commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+    }
 
-	// Register plugin
-	commControl.registerModelPlugin(this);
+    // Register plugin
+    commControl.registerModelPlugin(this);
 }

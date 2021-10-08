@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "gazebo_msgs.proto";
+import "test_msgs.proto";
 
 package Engine;
 
@@ -15,7 +16,7 @@ message DataPackMessage
 
     oneof data
     {
-        TestPayload  test   = 2;
+        EngineTest.TestPayload  test   = 2;
         Gazebo.Camera camera = 3;
         Gazebo.Link   link   = 4;
         Gazebo.Joint  joint  = 5;
@@ -30,13 +31,4 @@ message DataPackIdentifier
     string datapackName = 1;
     string datapackType = 2;
     string engineName = 3;
-}
-
-/*
- * Message used for testing
- */
-message TestPayload
-{
-    uint32 integer = 1;
-    string str     = 2;
 }

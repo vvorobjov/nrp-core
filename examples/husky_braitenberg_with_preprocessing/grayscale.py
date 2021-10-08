@@ -1,7 +1,7 @@
 from nrp_core import *
 import numpy as np
 
-@FromEngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
+@EngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
 @PreprocessingFunction("gazebo")
 def transceiver_function(camera):
 

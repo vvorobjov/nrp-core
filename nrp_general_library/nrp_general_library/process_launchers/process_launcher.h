@@ -33,131 +33,131 @@
 class ProcessLauncherInterface
         : public PtrTemplates<ProcessLauncherInterface>
 {
-	public:
-		// Process status options
-		using ENGINE_RUNNING_STATUS = LaunchCommandInterface::ENGINE_RUNNING_STATUS;
-		static constexpr auto UNKNOWN = LaunchCommandInterface::ENGINE_RUNNING_STATUS::UNKNOWN;
-		static constexpr auto RUNNING = LaunchCommandInterface::ENGINE_RUNNING_STATUS::RUNNING;
-		static constexpr auto STOPPED = LaunchCommandInterface::ENGINE_RUNNING_STATUS::STOPPED;
+    public:
+        // Process status options
+        using ENGINE_RUNNING_STATUS = LaunchCommandInterface::ENGINE_RUNNING_STATUS;
+        static constexpr auto UNKNOWN = LaunchCommandInterface::ENGINE_RUNNING_STATUS::UNKNOWN;
+        static constexpr auto RUNNING = LaunchCommandInterface::ENGINE_RUNNING_STATUS::RUNNING;
+        static constexpr auto STOPPED = LaunchCommandInterface::ENGINE_RUNNING_STATUS::STOPPED;
 
-		virtual ~ProcessLauncherInterface() = default;
+        virtual ~ProcessLauncherInterface() = default;
 
-		/*!
-		 * \brief Get name of launcher
-		 */
-		virtual std::string launcherName() const = 0;
+        /*!
+         * \brief Get name of launcher
+         */
+        virtual std::string launcherName() const = 0;
 
-		/*!
-		 * \brief Create a new proces launcher
-		 */
-		virtual ProcessLauncherInterface::unique_ptr createLauncher() = 0;
+        /*!
+         * \brief Create a new proces launcher
+         */
+        virtual ProcessLauncherInterface::unique_ptr createLauncher() = 0;
 
-		/*!
-		 * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
-		 * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
-		 * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-		 * \param startParams Additional Start parameters
-		 * \param appendParentEnv Should parent env variables be appended to child process
-		 * \return Returns Process ID of child process on success
-		 */
-		virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-		                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
-		/*!
-		 * \brief Stop a running engine process
-		 * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinitely
-		 * \return Returns child PID on success, negative value on error
-		 */
-		virtual pid_t stopEngineProcess(unsigned int killWait) = 0;
+        /*!
+         * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
+         * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+         * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
+         * \param startParams Additional Start parameters
+         * \param appendParentEnv Should parent env variables be appended to child process
+         * \return Returns Process ID of child process on success
+         */
+        virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
+        /*!
+         * \brief Stop a running engine process
+         * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinitely
+         * \return Returns child PID on success, negative value on error
+         */
+        virtual pid_t stopEngineProcess(unsigned int killWait) = 0;
 
-		/*!
-		 * \brief Get the current engine process status. If status cannot be retrieved, return ENGINE_RUNNING_STATUS::UNKNOWN
-		 * \return Returns status as enum ProcessLauncherInterface::ENGINE_RUNNING_STATUS
-		 */
-		virtual ENGINE_RUNNING_STATUS getProcessStatus()
-		{	return this->_launchCmd ? this->_launchCmd->getProcessStatus() : ENGINE_RUNNING_STATUS::UNKNOWN;	}
+        /*!
+         * \brief Get the current engine process status. If status cannot be retrieved, return ENGINE_RUNNING_STATUS::UNKNOWN
+         * \return Returns status as enum ProcessLauncherInterface::ENGINE_RUNNING_STATUS
+         */
+        virtual ENGINE_RUNNING_STATUS getProcessStatus()
+        {   return this->_launchCmd ? this->_launchCmd->getProcessStatus() : ENGINE_RUNNING_STATUS::UNKNOWN;    }
 
-		/*!
-		 * \brief Get Launch Command. If launchEngineProcess has not yet been called, return nullptr
-		 */
-		LaunchCommandInterface *launchCommand() const;
+        /*!
+         * \brief Get Launch Command. If launchEngineProcess has not yet been called, return nullptr
+         */
+        LaunchCommandInterface *launchCommand() const;
 
-	protected:
-		/*!
-		 * \brief Checks given Environment variable for correctness (Should contain an '=' character)
-		 * \param envVar Variable to check
-		 * \return Returns true if valid, false otherwise
-		 */
-		static bool checkEnvVar(const std::string &envVar);
+    protected:
+        /*!
+         * \brief Checks given Environment variable for correctness (Should contain an '=' character)
+         * \param envVar Variable to check
+         * \return Returns true if valid, false otherwise
+         */
+        static bool checkEnvVar(const std::string &envVar);
 
-		/*!
-		 * \brief Split Environment variable string into variable name and value
-		 * \param envVar String to split. Should have the form <VAR_NAME>=<VAR_VALUE>
-		 * \return Returns tuple. First value is VAR_NAME, second one is VAR_VALUE. If envVar has an invalid form, returns an empty string for both values
-		 */
-		static std::tuple<std::string,std::string> splitEnvVar(const std::string &envVar);
+        /*!
+         * \brief Split Environment variable string into variable name and value
+         * \param envVar String to split. Should have the form <VAR_NAME>=<VAR_VALUE>
+         * \return Returns tuple. First value is VAR_NAME, second one is VAR_VALUE. If envVar has an invalid form, returns an empty string for both values
+         */
+        static std::tuple<std::string,std::string> splitEnvVar(const std::string &envVar);
 
-		/*!
-		 * \brief Launch Command
-		 */
-		LaunchCommandInterface::unique_ptr _launchCmd = nullptr;
+        /*!
+         * \brief Launch Command
+         */
+        LaunchCommandInterface::unique_ptr _launchCmd = nullptr;
 };
 
 
 /*!
- *	\brief Base class for all process launchers
- *	\tparam PROCESS_LAUNCHER Final class derived from ProcessLauncher
- *	\tparam LAUNCHER_TYPE Launcher Type as string
+ *  \brief Base class for all process launchers
+ *  \tparam PROCESS_LAUNCHER Final class derived from ProcessLauncher
+ *  \tparam LAUNCHER_TYPE Launcher Type as string
  */
 template<class PROCESS_LAUNCHER,const char *LAUNCHER_TYPE, class ...LAUNCHER_COMMANDS>
 class ProcessLauncher
         : public ProcessLauncherInterface
 {
-	public:
-		static constexpr auto LauncherType = LAUNCHER_TYPE;
+    public:
+        static constexpr auto LauncherType = LAUNCHER_TYPE;
 
-		ProcessLauncher() {
-		    static_assert((std::is_base_of_v<LaunchCommandInterface, LAUNCHER_COMMANDS> && ...) ,"Parameter LAUNCHER_COMMANDS must derive from LaunchCommandInterface");
-		    static_assert((std::is_convertible_v<const volatile LAUNCHER_COMMANDS*, const volatile LaunchCommandInterface*> && ...),"Parameter LAUNCHER_COMMANDS must be convertible to LaunchCommandInterface");
-		}
+        ProcessLauncher() {
+            static_assert((std::is_base_of_v<LaunchCommandInterface, LAUNCHER_COMMANDS> && ...) ,"Parameter LAUNCHER_COMMANDS must derive from LaunchCommandInterface");
+            static_assert((std::is_convertible_v<const volatile LAUNCHER_COMMANDS*, const volatile LaunchCommandInterface*> && ...),"Parameter LAUNCHER_COMMANDS must be convertible to LaunchCommandInterface");
+        }
 
-		~ProcessLauncher() override = default;
+        ~ProcessLauncher() override = default;
 
-		ProcessLauncherInterface::unique_ptr createLauncher() override
-		{	return ProcessLauncherInterface::unique_ptr(new PROCESS_LAUNCHER());	}
+        ProcessLauncherInterface::unique_ptr createLauncher() override
+        {   return ProcessLauncherInterface::unique_ptr(new PROCESS_LAUNCHER());    }
 
-		std::string launcherName() const override final
-		{	return std::string(LauncherType);	}
+        std::string launcherName() const override final
+        {   return std::string(LauncherType);   }
 
-		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-		                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override final
-		{
-			if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
-			{	throw noLauncherFound(engineConfig.at("EngineLaunchCommand"));	}
+        pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) override final
+        {
+            if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
+            {   throw noLauncherFound(engineConfig.at("EngineLaunchCommand"));  }
 
-			this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(engineConfig.at("EngineLaunchCommand"));
-			return this->_launchCmd->launchEngineProcess(engineConfig, envParams, startParams,appendParentEnv);
-		}
+            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(engineConfig.at("EngineLaunchCommand"));
+            return this->_launchCmd->launchEngineProcess(engineConfig, envParams, startParams,appendParentEnv);
+        }
 
-		pid_t stopEngineProcess(unsigned int killWait) override final
-		{	return this->_launchCmd->stopEngineProcess(killWait);	}
+        pid_t stopEngineProcess(unsigned int killWait) override final
+        {   return this->_launchCmd->stopEngineProcess(killWait);   }
 
-	private:
-		template<class LAUNCH_CMD, class ...REST>
-		inline LaunchCommandInterface::unique_ptr findLauncher(const std::string &launchCmd)
-		{
-			if(std::string(LAUNCH_CMD::LaunchType) == launchCmd)
-				return LaunchCommandInterface::unique_ptr(new LAUNCH_CMD());
-			else
-			{
-				if constexpr (sizeof...(REST) > 0)
-				{	return findLauncher<REST...>(launchCmd);	}
-				else
-				{	throw noLauncherFound(launchCmd);	}
-			}
-		}
+    private:
+        template<class LAUNCH_CMD, class ...REST>
+        inline LaunchCommandInterface::unique_ptr findLauncher(const std::string &launchCmd)
+        {
+            if(std::string(LAUNCH_CMD::LaunchType) == launchCmd)
+                return LaunchCommandInterface::unique_ptr(new LAUNCH_CMD());
+            else
+            {
+                if constexpr (sizeof...(REST) > 0)
+                {   return findLauncher<REST...>(launchCmd);    }
+                else
+                {   throw noLauncherFound(launchCmd);   }
+            }
+        }
 
-		static inline std::runtime_error noLauncherFound(const std::string &launchCmd)
-		{	return std::runtime_error("Unable to find launcher with name \"" + launchCmd + "\"");	}
+        static inline std::runtime_error noLauncherFound(const std::string &launchCmd)
+        {   return std::runtime_error("Unable to find launcher with name \"" + launchCmd + "\"");   }
 };
 
 #endif // PROCESS_LAUNCHER_H

@@ -42,32 +42,32 @@ GazeboEngineGrpcNRPClient::GazeboEngineGrpcNRPClient(nlohmann::json &config, Pro
 
 void GazeboEngineGrpcNRPClient::initialize()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	// Wait for Gazebo to load world
-	try
-	{
-		this->sendInitCommand(this->engineConfig());
-	}
-	catch(std::exception& e)
-	{
-		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" initialization failed");
-	}
+    // Wait for Gazebo to load world
+    try
+    {
+        this->sendInitCommand(this->engineConfig());
+    }
+    catch(std::exception& e)
+    {
+        throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" initialization failed");
+    }
 
-	NRPLogger::debug("GazeboEngineGrpcNRPClient::initialize(...) completed with no errors.");
+    NRPLogger::debug("GazeboEngineGrpcNRPClient::initialize(...) completed with no errors.");
 }
 
 void GazeboEngineGrpcNRPClient::reset()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	try
-	{
-		this->sendResetCommand();
-	}
-	catch(std::exception& e)
-	{
-		throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
-	}
+    try
+    {
+        this->sendResetCommand();
+    }
+    catch(std::exception& e)
+    {
+        throw NRPException::logCreate(e, "Engine \"" + this->engineName() + "\" reset failed");
+    }
 
     this->_datapackCache.clear();
 
@@ -76,21 +76,21 @@ void GazeboEngineGrpcNRPClient::reset()
 
 void GazeboEngineGrpcNRPClient::shutdown()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	try
-	{
-		this->sendShutdownCommand(nlohmann::json());
-	}
-	catch(std::exception &e)
-	{
-		throw NRPException::logCreate("Engine \"" + this->engineName() + "\" shutdown failed");
-	}
+    try
+    {
+        this->sendShutdownCommand(nlohmann::json());
+    }
+    catch(std::exception &e)
+    {
+        throw NRPException::logCreate("Engine \"" + this->engineName() + "\" shutdown failed");
+    }
 }
 
 const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcEnvParams() const
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     std::vector<std::string> envVars = this->EngineGrpcClient::engineProcEnvParams();
 
@@ -108,7 +108,7 @@ const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcEnvParams() 
 
 const std::vector<std::string> GazeboEngineGrpcNRPClient::engineProcStartParams() const
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     std::vector<std::string> startParams = this->EngineGrpcClient::engineProcStartParams();
 

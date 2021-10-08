@@ -28,59 +28,59 @@
 
 namespace gazebo
 {
-	class NRPJointController
-	        : public gazebo::ModelPlugin
-	{
-			struct PIDConfig
-			        : public common::PID
-			{
-				enum PID_TYPE { VELOCITY, POSITION };
+    class NRPJointController
+            : public gazebo::ModelPlugin
+    {
+            struct PIDConfig
+                    : public common::PID
+            {
+                enum PID_TYPE { VELOCITY, POSITION };
 
-				PID_TYPE Type = POSITION;
+                PID_TYPE Type = POSITION;
 
-				PIDConfig(double p, double i, double d, PID_TYPE _type);
-				PIDConfig(const PIDConfig& pid);
+                PIDConfig(double p, double i, double d, PID_TYPE _type);
+                PIDConfig(const PIDConfig& pid);
 
-				static PID_TYPE convertStringToType(std::string type);
-			};
+                static PID_TYPE convertStringToType(std::string type);
+            };
 
-		public:
-			virtual ~NRPJointController() override;
+        public:
+            virtual ~NRPJointController() override;
 
-			virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf) override;
+            virtual void Load(physics::ModelPtr model, sdf::ElementPtr sdf) override;
 
-		private:
+        private:
 
-			/*!
-			 * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
-			 */
-			std::list< JointGrpcDataPackController > _jointDataPackControllers;
+            /*!
+             * \brief List containing all joint interfaces. TODO: Change to shared_ptr to prevent segfault errors when this plugin is destroyed
+             */
+            std::list< JointGrpcDataPackController > _jointDataPackControllers;
 
-			/*!
-			 * \brief Joint PID Configuration
-			 */
-			std::map<std::string, PIDConfig> _jointConfigs;
+            /*!
+             * \brief Joint PID Configuration
+             */
+            std::map<std::string, PIDConfig> _jointConfigs;
 
-			template<class T>
-			static T getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue);
-	};
+            template<class T>
+            static T getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue);
+    };
 
-	GZ_REGISTER_MODEL_PLUGIN(NRPJointController)
+    GZ_REGISTER_MODEL_PLUGIN(NRPJointController)
 
-	template<class T>
-	T NRPJointController::getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue)
-	{
-		try
-		{
-			return pidConfig->Get<T>(key);
-		}
-		catch(const std::exception &e)
-		{
-			NRPLogger::error(e.what());
-		}
+    template<class T>
+    T NRPJointController::getOptionalValue(const sdf::ElementPtr &pidConfig, const std::string &key, T defaultValue)
+    {
+        try
+        {
+            return pidConfig->Get<T>(key);
+        }
+        catch(const std::exception &e)
+        {
+            NRPLogger::error(e.what());
+        }
 
-		return defaultValue;
-	}
+        return defaultValue;
+    }
 }
 
 #endif

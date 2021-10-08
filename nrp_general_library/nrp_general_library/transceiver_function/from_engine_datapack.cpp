@@ -25,13 +25,13 @@
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
-FromEngineDataPack::FromEngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed)
+EngineDataPack::EngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed)
     : _keyword(keyword),
       _datapackID(datapackID),
-	  _isPreprocessed(isPreprocessed)
+      _isPreprocessed(isPreprocessed)
 {}
 
-EngineClientInterface::datapack_identifiers_set_t FromEngineDataPack::getRequestedDataPackIDs() const
+EngineClientInterface::datapack_identifiers_set_t EngineDataPack::getRequestedDataPackIDs() const
 {
     // If this is a preprocessing function this and _datapackID must be linked to the same engine
     if(this->isPrepocessing() && this->_datapackID.EngineName != this->linkedEngineName())
@@ -39,31 +39,31 @@ EngineClientInterface::datapack_identifiers_set_t FromEngineDataPack::getRequest
         "\" but its input datapack \""+ this->_datapackID.Name + "\" is linked to engine \"" + this->_datapackID.EngineName +
         "\". Preprocessing functions can just take input datapacks from their linked engines");
 
-	return _isPreprocessed ? EngineClientInterface::datapack_identifiers_set_t() : EngineClientInterface::datapack_identifiers_set_t({this->_datapackID});
+    return _isPreprocessed ? EngineClientInterface::datapack_identifiers_set_t() : EngineClientInterface::datapack_identifiers_set_t({this->_datapackID});
 }
 
-boost::python::object FromEngineDataPack::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
+boost::python::object EngineDataPack::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
 {
-	const auto engineDevs = TransceiverDataPackInterface::TFInterpreter->getEngineDataPacks();
+    const auto engineDevs = TransceiverDataPackInterface::TFInterpreter->getEngineDataPacks();
 
-	bool foundDevID = false;
-	auto engDataPacksIt = engineDevs.find(this->_datapackID.EngineName);
-	if(engDataPacksIt != engineDevs.end())
-	{
-		for(const auto &curDataPack : *(engDataPacksIt->second))
-		{
-			if(curDataPack->id().Name == this->_datapackID.Name)
-			{
-				kwargs[this->_keyword] = curDataPack;
+    bool foundDevID = false;
+    auto engDataPacksIt = engineDevs.find(this->_datapackID.EngineName);
+    if(engDataPacksIt != engineDevs.end())
+    {
+        for(const auto &curDataPack : *(engDataPacksIt->second))
+        {
+            if(curDataPack->id().Name == this->_datapackID.Name)
+            {
+                kwargs[this->_keyword] = curDataPack;
 
-				foundDevID = true;
-				break;
-			}
-		}
-	}
+                foundDevID = true;
+                break;
+            }
+        }
+    }
 
-	if(!foundDevID)
-		throw NRPException::logCreate("Couldn't find datapack with ID name \"" + this->_datapackID.Name + "\"");
+    if(!foundDevID)
+        throw NRPException::logCreate("Couldn't find datapack with ID name \"" + this->_datapackID.Name + "\"");
 
-	return TransceiverDataPackInterface::runTf(args, kwargs);
+    return TransceiverDataPackInterface::runTf(args, kwargs);
 }

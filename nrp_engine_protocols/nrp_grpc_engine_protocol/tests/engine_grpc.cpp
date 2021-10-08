@@ -43,24 +43,24 @@ class TestGrpcDataPackController
 {
     public:
 
-		TestGrpcDataPackController()
-		    : _data(new Engine::TestPayload())
+        TestGrpcDataPackController()
+            : _data(new EngineTest::TestPayload())
         { }
 
         virtual void handleDataPackData(const google::protobuf::Message &data) override
-		{
+        {
             // throws bad_cast
-            const auto &j = dynamic_cast<const Engine::TestPayload &>(data);
-		    _data->CopyFrom(j);
-		}
+            const auto &j = dynamic_cast<const EngineTest::TestPayload &>(data);
+            _data->CopyFrom(j);
+        }
 
         virtual google::protobuf::Message *getDataPackInformation() override
-		{
+        {
             if(this->_returnEmptyDataPack)
                 return nullptr;
             else {
                 auto old_data = _data;
-                _data = new Engine::TestPayload();
+                _data = new EngineTest::TestPayload();
                 _data->CopyFrom(*old_data);
                 return old_data;
             }
@@ -71,8 +71,8 @@ class TestGrpcDataPackController
             this->_returnEmptyDataPack = value;
         }
 
-	private:
-        Engine::TestPayload* _data;
+    private:
+        EngineTest::TestPayload* _data;
         bool _returnEmptyDataPack = false;
 };
 
@@ -83,31 +83,31 @@ struct TestEngineGRPCConfigConst
 };
 
 class TestEngineGrpcClient
-: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, Engine::TestPayload>
+: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, EngineTest::TestPayload>
 {
     public:
         TestEngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineGrpcClient(config, std::move(launcher))
         {}
 
-		void initialize() override
+        void initialize() override
         {
             this->sendInitCommand("test");
         }
 
-		void reset() override
+        void reset() override
         {
             this->sendResetCommand();
         }
 
-		void shutdown() override
+        void shutdown() override
         {
             this->sendShutdownCommand("test");
         }
 };
 
 class TestEngineGrpcServer
-    : public EngineGrpcServer<Engine::TestPayload>
+    : public EngineGrpcServer<EngineTest::TestPayload>
 {
     public:
 
@@ -441,10 +441,10 @@ TEST(EngineGrpc, SetDataPackData)
 
     std::vector<DataPackInterface*> input_datapacks;
 
-	std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
+    std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
     server.registerDataPack(datapackName, datapackController.get());
 
-    std::shared_ptr<DataPack<Engine::TestPayload>> dev1(new DataPack<Engine::TestPayload>(datapackName, engineName)); // Client side
+    std::shared_ptr<DataPack<EngineTest::TestPayload>> dev1(new DataPack<EngineTest::TestPayload>(datapackName, engineName)); // Client side
     input_datapacks.push_back(dev1.get());
 
     // The gRPC server isn't running, so the sendDataPacksToEngine command should fail
@@ -459,20 +459,20 @@ TEST(EngineGrpc, SetDataPackData)
     ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
 
     input_datapacks.clear();
-    auto d = new Engine::TestPayload();
+    auto d = new EngineTest::TestPayload();
     d->set_integer(111);
-    dev1.reset(new DataPack<Engine::TestPayload>(datapackName, engineName, d));
+    dev1.reset(new DataPack<EngineTest::TestPayload>(datapackName, engineName, d));
     input_datapacks.push_back(dev1.get());
 
     // Normal command execution
     client.sendDataPacksToEngine(input_datapacks);
-    d = dynamic_cast<Engine::TestPayload *>(datapackController->getDataPackInformation());
+    d = dynamic_cast<EngineTest::TestPayload *>(datapackController->getDataPackInformation());
 
-	ASSERT_EQ(d->integer(),       111);
+    ASSERT_EQ(d->integer(),       111);
 
     // Test setting data on a datapack that wasn't registered in the engine server
     const std::string datapackName2 = "b";
-    DataPack<Engine::TestPayload> dev2(datapackName2, engineName);
+    DataPack<EngineTest::TestPayload> dev2(datapackName2, engineName);
     input_datapacks.clear();
     input_datapacks.push_back(&dev2);
 
@@ -499,7 +499,7 @@ TEST(EngineGrpc, GetDataPackData)
     std::vector<DataPackInterface*> input_datapacks;
 
     DataPackIdentifier         devId(datapackName, engineName, datapackType);
-    DataPack<Engine::TestPayload> dev1(datapackName, engineName); // Client side
+    DataPack<EngineTest::TestPayload> dev1(datapackName, engineName); // Client side
     std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
 
     server.registerDataPack(datapackName, datapackController.get());
@@ -588,8 +588,8 @@ TEST(EngineGrpc, GetDataPackData2)
 
     DataPackIdentifier         devId1(datapackName1, engineName, datapackType1);
     DataPackIdentifier         devId2(datapackName2, engineName, datapackType2);
-    DataPack<Engine::TestPayload> dev1(datapackName1, engineName); // Client side
-    DataPack<Engine::TestPayload> dev2(datapackName2, engineName); // Client side
+    DataPack<EngineTest::TestPayload> dev1(datapackName1, engineName); // Client side
+    DataPack<EngineTest::TestPayload> dev2(datapackName2, engineName); // Client side
     std::shared_ptr<TestGrpcDataPackController> datapackController1(new TestGrpcDataPackController()); // Server side
     std::shared_ptr<TestGrpcDataPackController> datapackController2(new TestGrpcDataPackController()); // Server side
 

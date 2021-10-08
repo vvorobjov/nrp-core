@@ -27,53 +27,53 @@
 
 void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	NRPLogger::info("NRP Communication plugin: Initializing...");
+    NRPLogger::info("NRP Communication plugin: Initializing...");
 
-	std::string serverAddr, engineName, registrationAddr;
-	try
-	{
-		// Parse options from input
-		auto inputArgsParse = EngineGRPCOptsParser::parseOpts(argc, argv, EngineGRPCOptsParser::createOptionParser(true));
+    std::string serverAddr, engineName, registrationAddr;
+    try
+    {
+        // Parse options from input
+        auto inputArgsParse = EngineGRPCOptsParser::parseOpts(argc, argv, EngineGRPCOptsParser::createOptionParser(true));
 
-		// Save given URL
-		serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
-		engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
+        // Save given URL
+        serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
+        engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
         // TODO: remove registrationAddr parameter everywhere
         // registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
         registrationAddr = "";
-	}
-	catch(cxxopts::OptionException &e)
-	{
+    }
+    catch(cxxopts::OptionException &e)
+    {
         NRPLogger::error("Failed to parse options [ {} ]", e.what());
 
-		throw;
-	}
+        throw;
+    }
 
-	// Create server with given URL
-	auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
+    // Create server with given URL
+    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
 
-	// Save bound URL
-	this->_serverAddress = newController.serverAddress();
-	NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server on {}", this->_serverAddress);
+    // Save bound URL
+    this->_serverAddress = newController.serverAddress();
+    NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server on {}", this->_serverAddress);
 
-	// Start the server
-	newController.startServerAsync();
+    // Start the server
+    newController.startServerAsync();
 
-	NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: Server started. Waiting for input...");
+    NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: Server started. Waiting for input...");
 }
 
 void gazebo::NRPCommunicationPlugin::Reset()
 {
-	NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-	
-	// Reset server
-	NRPLogger::info("NRP Communication plugin: Resetting controller...");
-	auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    // Reset server
+    NRPLogger::info("NRP Communication plugin: Resetting controller...");
+    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);
 
-	// Start server
-	newController.startServerAsync();
+    // Start server
+    newController.startServerAsync();
 
-	NRPLogger::info("NRP Communication plugin: Server restarted. Waiting for input...");
+    NRPLogger::info("NRP Communication plugin: Server restarted. Waiting for input...");
 }

@@ -1,7 +1,7 @@
 /*! \page running_example_exp Running the example experiments
 
-In this section we are going to show how to run some of the example experiments. Different experiments utilize different
-features of the NRP, and their use will be highlighted.
+In this section, we show how to run some of the example experiments. Different experiments utilize different
+features of the NRP, the use of which will be highlighted.
 
 Experiments are run using the provided application \ref nrp_simulation. It takes as arguments the \ref simulation_configuration "simulation configuration file" used to configure the experiment and, optionally, a list of \ref plugin_system "engine plugins" to be loaded at run time. Please notice that by default only \ref python_json_engine is loaded. Any other plugin required to execute an experiment must be explicitly added with the "-p" parameter. See examples below.
 
@@ -15,7 +15,7 @@ Both Gazebo and NEST are wrapped into so-called \ref engines "engines", which al
 
 The Gazebo engine starts Gazebo server (gzserver), so you should be able to peek into the simulation by connecting with Gazebo client (`gzclient`) from a separate terminal.
 
-To run the example, if you haven't done it yet, you have to install first some additional gazebo models. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
+To run the example, if you haven't done it yet, you have to install first some additional Gazebo models. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
 
 \code{.sh}
 cd examples/husky_braitenberg
@@ -36,7 +36,7 @@ Here is a short description of all files that are located in the example directo
 
 This experiment is a modification of the previous one and shows how to use one of the tools provided by the NRP - the \ref preprocessing_function "preprocessing function".
 Preprocessing functions are called before transceiver functions.
-Using the functionality might reduce the amount of computations in case when multiple transceiver functions would perform the same operations on certain data.
+The use of preprocessing functions is intended to increase computational efficiency when several transceiver functions would otherwise carry out multiple times the same operations on the same data.
 
 The preprocessing function used in the example converts RGB images received from Gazebo into grayscale images. The processed images are passed to one of the transceiver functions (`cam_tf.py`) and can be displayed after changing `False` to `True` in the following piece of code:
 
@@ -44,7 +44,7 @@ The preprocessing function used in the example converts RGB images received from
 \skip # Set to True
 \until time.sleep
 
-Code of the preprocessing function is located in `grayscale.py` file.
+The code of the preprocessing function is located in `grayscale.py` file.
 
 To run the example, switch to the proper directory and run the NRP simulation executable:
 
@@ -63,31 +63,54 @@ cd examples/husky_braitenberg_nest_server
 NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestServerEngine.so"
 \endcode
 
-This will as well start nest-server in a separate process.
+This will also start nest-server in a separate process.
 
 \section getting_started_experiment_tf_exchange DataPack Exchange using the Python JSON Engine
 
-This simple example shows two instances of \ref python_json_engine exchanging datapack data. The data exchange is mediated by a \ref transceiver_function "Transceiver Function".
+This simple example shows two instances of \ref python_json_engine exchanging data as datapacks. Data exchange between the simulators is done with the help of \ref transceiver_function "Transceiver Functions" (TFs) and \ref datapacks "datapacks".
 
-The PythonJSONEngine implements a Python class, <i>EngineScript</i>, which methods <i>initialize</i>, <i>runLoop</i> and <i>shutdown</i> can be overriden to execute any arbitrary piece of Python code synchronously in a NRP experiment. This opens the possibility of easily integrating any simulator with a Python API in an experiment (eg.opensim, openai). Under the hood <i>EngineScript</i> manages DataPack I/O operations with the FTILoop.
+The PythonJSONEngine implements a Python class, <i>EngineScript</i>, the methods <i>initialize</i>, <i>runLoop</i> and <i>shutdown</i> of which can be overriden to execute any arbitrary piece of Python code synchronously in a NRP experiment. This opens the possibility of easily integrating any simulator with a Python API in an experiment (e.g. OpenSim, OpenAI Gym, etc.). Under the hood, <i>EngineScript</i> manages DataPack I/O operations with the Simulation Loop.
 
-In the example, which can be found in <i>examples/tf_exchange</i> folder, an engine defined in <i>engine_1.py</i> file registers a datapack of type <i>PythonDataPack</i> and id "datapack1". The datapack stores a dictionary with the current simulation time in the engine and the number of simulation steps the engine has already advanced. Then a TF defined in <i>tf_1.py</i> get this datapack and relay it to a second engine defined in <i>engine_2.py</i> which simply prints out its data.
+In the example, which can be found in <i>examples/tf_exchange</i> folder, an engine defined in <i>engine_1.py</i> file registers a datapack of type \ref datapacks_json "JsonDataPack" with id "datapack1". The datapack stores a dictionary with the current simulation time in the engine and the number of simulation steps the engine has already advanced. Then a TF defined in <i>tf_1.py</i> gets this datapack and relays it to a second engine defined in <i>engine_2.py</i>, which simply prints out its data.
 
-\ref python_json_engine only supports <i>PythonDataPack</i> datapack type, which stores a Python dictionary in an attribute <i>data</i>. Therefore it allows to send any kind of data between Engines and TFs with the only constraint of it being JSON serializable. <i>PythonDataPack</i> is defined in the <i>nrp_core</i> module from which it can be imported. Eg:
+\ref python_json_engine only supports <i>JsonDataPack</i> datapack type, which stores a wraps a JSON object in an attribute <i>data</i>. Therefore it allows to send any kind of data between Engines and TFs with the only constraint of it being JSON serializable. <i>JsonDataPack</i> is defined in the <i>nrp_core.nrp_json</i> module from which it can be imported. Eg:
 
 \code{.py}
-from nrp_core import PythonDataPack
+from nrp_core.data.nrp_json import JsonDataPack
 \endcode
 
-To launch the example just execute:
+To launch the example, just execute:
 
 \code{.sh}
 cd examples/tf_exchange
 NRPCoreSim -c simulation_config.json
 \endcode
 
-In this case, no additional plugins need to be specified.
+In this case, no additional plugin needs to be specified.
 
+
+\section getting_started_experiment_OpenSIm_Arm26 OpenSim with dummy controller for Arm26 model
+
+This experiment implements a dummy controller for a simple OpenSim model of the human arm (arm26, see <a href="https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models">https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models</a>) in an OpenSim scene.
+
+This experiment uses two kinds of so-called engines (\ref python_json_engine "NRPPythonJSONEngine" and \ref opensim_engine "NRPOpenSimEngine"), and illustrates how the NRP manages execution of the OpenSim simulation and synchronization with other engines. The communication between OpenSim and the python controller is done with the help of \ref transceiver_function "transceiver functions" and \ref datapacks "engine datapacks". In short, the transceiver functions allow translating the I/O data between different platforms, while the datapacks serve as generic containers for the data.
+
+To run the example, switch to the experiment directory and run the NRP simulation executable:
+
+\code{.py}
+cd examples/opensim_control
+NRPCoreSim -c simulation_config.json -p "NRPOpenSimEngine.so"
+\endcode
+
+This will start the OpenSim simulation with proper visualization.
+
+Here is a short description of all files that are located in the example directory:
+- Folder “arm26” – include the simulation file of the OpenSim scene
+- server.py - contains the setup of the OpenSim simulation, including initialize, runLoop, reset, and shutdown
+- client.py - contains the setup of the python controller
+- send_cmd.py - transceiver function that converts output from the Python controller into simulation commands
+- rec_joints.py - transceiver function which converts feedback muscle data from OpenSim
+- simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
 
 
 */

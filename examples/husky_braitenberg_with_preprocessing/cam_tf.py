@@ -62,7 +62,7 @@ def detect_red(camDataPack):
     return __results(red_left, red_right, green_blue)
 
 
-@FromEngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
+@EngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
 @PreprocessedDataPack(keyword='processed', id=DataPackIdentifier('processed', 'gazebo'))
 @TransceiverFunction("nest")
 def transceiver_function(camera, processed):

@@ -1,7 +1,7 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@FromEngineDataPack(keyword='action', id=DataPackIdentifier('action', 'client'))
+@EngineDataPack(keyword='action', id=DataPackIdentifier('action', 'client'))
 @TransceiverFunction("server")
 def transceiver_function(action):
     rec_cmd = JsonDataPack("control_cmd", "server")

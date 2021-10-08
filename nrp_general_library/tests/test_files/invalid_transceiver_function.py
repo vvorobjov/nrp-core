@@ -25,7 +25,7 @@ from testModule import TestInputDataPack, TestOutputDataPack
 # Invalid syntax
 fsdavhufdsihjk = jfdaonv
 
-@FromEngineDataPack(keyword='datapack', id=DataPackIdentifier('dev', 'type', 'engine'))
+@EngineDataPack(keyword='datapack', id=DataPackIdentifier('dev', 'type', 'engine'))
 @TransceiverFunction()
 def transceiver_function(datapack):
     test_val = datapack.test_value

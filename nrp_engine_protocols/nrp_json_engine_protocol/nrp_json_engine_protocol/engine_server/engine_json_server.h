@@ -40,249 +40,249 @@
  */
 class EngineJSONServer
 {
-		/*!
-		 * \brief Time to wait for shutdown before raising an exception (in milliseconds)
-		 */
-		static constexpr auto ShutdownWaitTime = std::chrono::milliseconds(10*1000);
+        /*!
+         * \brief Time to wait for shutdown before raising an exception (in milliseconds)
+         */
+        static constexpr auto ShutdownWaitTime = std::chrono::milliseconds(10*1000);
 
-	protected:
-		static constexpr std::string_view GetDataPackInformationRoute = EngineJSONConfigConst::EngineServerGetDataPacksRoute;
-		static constexpr std::string_view SetDataPackRoute = EngineJSONConfigConst::EngineServerSetDataPacksRoute;
-		static constexpr std::string_view RunLoopStepRoute = EngineJSONConfigConst::EngineServerRunLoopStepRoute;
-		static constexpr std::string_view InitializeRoute = EngineJSONConfigConst::EngineServerInitializeRoute;
-		static constexpr std::string_view ResetRoute = EngineJSONConfigConst::EngineServerResetRoute;
-		static constexpr std::string_view ShutdownRoute = EngineJSONConfigConst::EngineServerShutdownRoute;
+    protected:
+        static constexpr std::string_view GetDataPackInformationRoute = EngineJSONConfigConst::EngineServerGetDataPacksRoute;
+        static constexpr std::string_view SetDataPackRoute = EngineJSONConfigConst::EngineServerSetDataPacksRoute;
+        static constexpr std::string_view RunLoopStepRoute = EngineJSONConfigConst::EngineServerRunLoopStepRoute;
+        static constexpr std::string_view InitializeRoute = EngineJSONConfigConst::EngineServerInitializeRoute;
+        static constexpr std::string_view ResetRoute = EngineJSONConfigConst::EngineServerResetRoute;
+        static constexpr std::string_view ShutdownRoute = EngineJSONConfigConst::EngineServerShutdownRoute;
 
-	public:
-		using mutex_t = std::timed_mutex;
-		using lock_t = std::unique_lock<EngineJSONServer::mutex_t>;
+    public:
+        using mutex_t = std::timed_mutex;
+        using lock_t = std::unique_lock<EngineJSONServer::mutex_t>;
 
-		/*!
-		 * \brief Constructor. Tries to bind to a port and register itself with clientAddress
-		 * \param engineAddress Server Address. If it contains a port, will try to bind to said port. If that fails, will increment port number and try again. This will continue for at most EngineJSONConfigConst::MaxAddrBindTries times
-		 * \param engineName Engine Name
-		 * \param clientAddress Client Address. The server will try to register itself under this address
-		 */
-		EngineJSONServer(const std::string &engineAddress, const std::string &engineName, const std::string &clientAddress);
+        /*!
+         * \brief Constructor. Tries to bind to a port and register itself with clientAddress
+         * \param engineAddress Server Address. If it contains a port, will try to bind to said port. If that fails, will increment port number and try again. This will continue for at most EngineJSONConfigConst::MaxAddrBindTries times
+         * \param engineName Engine Name
+         * \param clientAddress Client Address. The server will try to register itself under this address
+         */
+        EngineJSONServer(const std::string &engineAddress, const std::string &engineName, const std::string &clientAddress);
 
-		/*!
-		 * \brief Constructor. Will try to bind to engineAddress
-		 * \param engineAddress Server address
-		 */
-		EngineJSONServer(const std::string &engineAddress);
-		EngineJSONServer();
-		virtual ~EngineJSONServer();
+        /*!
+         * \brief Constructor. Will try to bind to engineAddress
+         * \param engineAddress Server address
+         */
+        EngineJSONServer(const std::string &engineAddress);
+        EngineJSONServer();
+        virtual ~EngineJSONServer();
 
-		// Delete copy mechanisms
-		EngineJSONServer(const EngineJSONServer&) = delete;
-		EngineJSONServer &operator=(const EngineJSONServer&) = delete;
-
-
-		/*!
-		 * \brief Is the server running?
-		 * \return Returns true if the server is running
-		 */
-		bool isServerRunning() const;
-
-		/*!
-		 * \brief Start the server in asynchronous mode
-		 */
-		void startServerAsync();
-
-		/*!
-		 * \brief Start the server synchronously
-		 */
-		void startServer();
-
-		/*!
-		 * \brief Stop running server
-		 */
-		void shutdownServer();
-
-		/*!
-		 * \brief Get running server port
-		 * \return Returns port of running server, 0 if server is not running
-		 */
-		uint16_t serverPort() const;
-
-		/*!
-		 * \brief Get server address
-		 */
-		std::string serverAddress() const;
-
-		/*!
-		 * \brief Registers a datapack
-		 * \param datapackName Name of datapack
-		 * \param interface Pointer to interface
-		 */
-		void registerDataPack(const std::string &datapackName, JsonDataPackController *interface);
-
-		/*!
-		 * \brief Registers a datapack. Skips locking the mutex.
-		 * Should only be used if thread-safe access to _datapacksControllers can be guaranteed
-		 * \param datapackName Name of datapack
-		 * \param interface Pointer to interface
-		 */
-		void registerDataPackNoLock(const std::string &datapackName, JsonDataPackController *interface);
-
-		/*!
-		 * \brief Run a single loop step
-		 * \param timeStep Step to take
-		 * \return Returns the time registered by this engine at the end of the loop
-		 */
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
-
-		/*!
-		 * \brief Engine Initialization routine
-		 * \param data Initialization data
-		 * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
-		 * \return Returns data about initialization status
-		 */
-		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) = 0;
-
-		/*!
-		 * \brief Engine reset routine
-		 * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
-		 * \return Returns data about initialization status
-		 */
-		virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) = 0;
-
-		/*!
-		 * \brief Engine Shutdown routine
-		 * \param data Shutdown data
-		 * \return Returns data about shutdown status
-		 */
-		virtual nlohmann::json shutdown(const nlohmann::json &data) = 0;
-
-	protected:
-		/*!
-		 * \brief Lock access to _datapacks to make execution thread-safe
-		 */
-		mutex_t _datapackLock;
-
-		/*!
-		 * \brief Remove all registered datapacks
-		 */
-		void clearRegisteredDataPacks();
+        // Delete copy mechanisms
+        EngineJSONServer(const EngineJSONServer&) = delete;
+        EngineJSONServer &operator=(const EngineJSONServer&) = delete;
 
 
-		/*!
-		 * \brief Retrieves datapack data. Takes an array of datapack names for which to get data.
-		 * \param reqData A JSON array containing datapack names.
-		 * \return DataPack data, formatted as a JSON array
-		 */
-		virtual nlohmann::json getDataPackData(const nlohmann::json &reqData);
+        /*!
+         * \brief Is the server running?
+         * \return Returns true if the server is running
+         */
+        bool isServerRunning() const;
 
-		/*!
-		 * \brief Set datapack data
-		 * \param reqData A JSON array containing datapack names linked to the individual datapack's data
-		 * \return Execution result
-		 */
-		// TODO What is this function supposed to return?
-		virtual nlohmann::json setDataPackData(const nlohmann::json &reqData);
+        /*!
+         * \brief Start the server in asynchronous mode
+         */
+        void startServerAsync();
 
-	private:
-		/*!
-		 * \brief Is the server running?
-		 */
-		bool _serverRunning = false;
+        /*!
+         * \brief Start the server synchronously
+         */
+        void startServer();
 
-		/*!
-		 *	\brief ServerURL
-		 */
-		std::string _serverAddress;
+        /*!
+         * \brief Stop running server
+         */
+        void shutdownServer();
 
-		/*!
-		 * \brief Routes
-		 */
-		Pistache::Rest::Router _router;
+        /*!
+         * \brief Get running server port
+         * \return Returns port of running server, 0 if server is not running
+         */
+        uint16_t serverPort() const;
 
-		using enpoint_ptr_t = std::unique_ptr<Pistache::Http::Endpoint>;
+        /*!
+         * \brief Get server address
+         */
+        std::string serverAddress() const;
 
-		/*!
-		 * \brief Server Endpoint
-		 */
-		enpoint_ptr_t _pEndpoint = nullptr;
+        /*!
+         * \brief Registers a datapack
+         * \param datapackName Name of datapack
+         * \param interface Pointer to interface
+         */
+        void registerDataPack(const std::string &datapackName, JsonDataPackController *interface);
 
-		/*!
-		 * \brief Available datapacks
-		 */
-		std::map<std::string, JsonDataPackController*> _datapacksControllers;
+        /*!
+         * \brief Registers a datapack. Skips locking the mutex.
+         * Should only be used if thread-safe access to _datapacksControllers can be guaranteed
+         * \param datapackName Name of datapack
+         * \param interface Pointer to interface
+         */
+        void registerDataPackNoLock(const std::string &datapackName, JsonDataPackController *interface);
 
-		NRPLogger _loggerCfg;
+        /*!
+         * \brief Run a single loop step
+         * \param timeStep Step to take
+         * \return Returns the time registered by this engine at the end of the loop
+         */
+        virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
 
-		/*!
-		 * \brief Set routes used by server
-		 */
-		static Pistache::Rest::Router setRoutes(EngineJSONServer *server);
+        /*!
+         * \brief Engine Initialization routine
+         * \param data Initialization data
+         * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
+         * \return Returns data about initialization status
+         */
+        virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) = 0;
 
-		/*!
-		 * \brief Parse request
-		 * \param req Request
-		 * \paragraph res Response Writer. Sends back failure message if parse failed
-		 * \return Returns JSON object
-		 */
-		static nlohmann::json parseRequest(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter &res);
+        /*!
+         * \brief Engine reset routine
+         * \param datapackLock DataPack Lock. Prevents access to _datapacksControllers
+         * \return Returns data about initialization status
+         */
+        virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) = 0;
 
-		/*!
-		 * \brief Callback function to retrieve datapack data. Takes an array of datapack names for which to get data.
-		 * \param req DataPack data request. A JSON array containing datapack names.
-		 * \param res Response writer that sends datapack data back to NRP, formatted as a JSON array.
-		 */
-		void getDataPackDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+        /*!
+         * \brief Engine Shutdown routine
+         * \param data Shutdown data
+         * \return Returns data about shutdown status
+         */
+        virtual nlohmann::json shutdown(const nlohmann::json &data) = 0;
 
-		/*!
-		 * \brief Callback function to set datapack data
-		 * \param req DataPack Data. A JSON array containing datapack names linked to the individual datapack's data
-		 * \param res Response writer that sends execution result back to the NRP
-		 */
-		void setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+    protected:
+        /*!
+         * \brief Lock access to _datapacks to make execution thread-safe
+         */
+        mutex_t _datapackLock;
 
-		/*!
-		 * \brief Try to get iterator key, print error message and throw exception if no key is available
-		 * \param jsonIterator JSON object iterator
-		 * \return Returns key
-		 */
-		static const std::string &getIteratorKey(const nlohmann::json::const_iterator &jsonIterator);
+        /*!
+         * \brief Remove all registered datapacks
+         */
+        void clearRegisteredDataPacks();
 
-		/*!
-		 * \brief Callback function to run loop step
-		 * \param req Loop Data. Only contains the simulation time to be executed (in s)
-		 * \param res Response writer that sends OK on completion
-		 */
-		void runLoopStepHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
 
-		/*!
-		 * \brief Callback function to initialize
-		 * \param req Initialization Data
-		 * \param res Response writer. Contains initialization status
-		 */
-		void initializeHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+        /*!
+         * \brief Retrieves datapack data. Takes an array of datapack names for which to get data.
+         * \param reqData A JSON array containing datapack names.
+         * \return DataPack data, formatted as a JSON array
+         */
+        virtual nlohmann::json getDataPackData(const nlohmann::json &reqData);
 
-		/*!
-		 * \brief Callback function to reset
-		 * \param req Reset Data
-		 * \param res Response writer. Contains initialization status
-		 */
-		void resetHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+        /*!
+         * \brief Set datapack data
+         * \param reqData A JSON array containing datapack names linked to the individual datapack's data
+         * \return Execution result
+         */
+        // TODO What is this function supposed to return?
+        virtual nlohmann::json setDataPackData(const nlohmann::json &reqData);
 
-		/*!
-		 * \brief Callback function for shutdown routine
-		 * \param req Shutdown Data
-		 * \param res Response writer. Contains shutdown data
-		 */
-		void shutdownHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+    private:
+        /*!
+         * \brief Is the server running?
+         */
+        bool _serverRunning = false;
 
-		/*!
-		 * \brief Creates a REST server. Tries to bind to a port and register itself with clientAddress
-		 * \param engineAddress Server Address. If it contains a port, will try to bind to said port. If that fails, will increment port number and try again. This will continue for at most EngineJSONConfigConst::MaxAddrBindTries times
-		 * \param engineName Engine Name
-		 * \param clientAddress Client Address. The server will try to register itself under this address
-		 */
-		static Pistache::Http::Endpoint createEndpoint(std::string *engineAddress, const std::string &engineName);
+        /*!
+         *  \brief ServerURL
+         */
+        std::string _serverAddress;
 
-		friend class EngineJSONServerTest_Functions_Test;
-		friend class TestEngineJSONServer;
+        /*!
+         * \brief Routes
+         */
+        Pistache::Rest::Router _router;
+
+        using enpoint_ptr_t = std::unique_ptr<Pistache::Http::Endpoint>;
+
+        /*!
+         * \brief Server Endpoint
+         */
+        enpoint_ptr_t _pEndpoint = nullptr;
+
+        /*!
+         * \brief Available datapacks
+         */
+        std::map<std::string, JsonDataPackController*> _datapacksControllers;
+
+        NRPLogger _loggerCfg;
+
+        /*!
+         * \brief Set routes used by server
+         */
+        static Pistache::Rest::Router setRoutes(EngineJSONServer *server);
+
+        /*!
+         * \brief Parse request
+         * \param req Request
+         * \paragraph res Response Writer. Sends back failure message if parse failed
+         * \return Returns JSON object
+         */
+        static nlohmann::json parseRequest(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter &res);
+
+        /*!
+         * \brief Callback function to retrieve datapack data. Takes an array of datapack names for which to get data.
+         * \param req DataPack data request. A JSON array containing datapack names.
+         * \param res Response writer that sends datapack data back to NRP, formatted as a JSON array.
+         */
+        void getDataPackDataHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Callback function to set datapack data
+         * \param req DataPack Data. A JSON array containing datapack names linked to the individual datapack's data
+         * \param res Response writer that sends execution result back to the NRP
+         */
+        void setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Try to get iterator key, print error message and throw exception if no key is available
+         * \param jsonIterator JSON object iterator
+         * \return Returns key
+         */
+        static const std::string &getIteratorKey(const nlohmann::json::const_iterator &jsonIterator);
+
+        /*!
+         * \brief Callback function to run loop step
+         * \param req Loop Data. Only contains the simulation time to be executed (in s)
+         * \param res Response writer that sends OK on completion
+         */
+        void runLoopStepHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Callback function to initialize
+         * \param req Initialization Data
+         * \param res Response writer. Contains initialization status
+         */
+        void initializeHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Callback function to reset
+         * \param req Reset Data
+         * \param res Response writer. Contains initialization status
+         */
+        void resetHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Callback function for shutdown routine
+         * \param req Shutdown Data
+         * \param res Response writer. Contains shutdown data
+         */
+        void shutdownHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+
+        /*!
+         * \brief Creates a REST server. Tries to bind to a port and register itself with clientAddress
+         * \param engineAddress Server Address. If it contains a port, will try to bind to said port. If that fails, will increment port number and try again. This will continue for at most EngineJSONConfigConst::MaxAddrBindTries times
+         * \param engineName Engine Name
+         * \param clientAddress Client Address. The server will try to register itself under this address
+         */
+        static Pistache::Http::Endpoint createEndpoint(std::string *engineAddress, const std::string &engineName);
+
+        friend class EngineJSONServerTest_Functions_Test;
+        friend class TestEngineJSONServer;
 };
 
 #endif // ENGINE_JSON_SERVER_H

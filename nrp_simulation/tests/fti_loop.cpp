@@ -37,60 +37,60 @@ using namespace testing;
 
 TEST(FTILoopTest, Constructor)
 {
-	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
+    auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
 
-	const char *procName = "test";
-	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
+    const char *procName = "test";
+    PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 
-	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	ASSERT_NO_THROW(FTILoop simLoop(config, {brain, physics}));
+    ASSERT_NO_THROW(FTILoop simLoop(config, {brain, physics}));
 }
 
 TEST(FTILoopTest, RunLoop)
 {
-	using namespace std::chrono_literals;
+    using namespace std::chrono_literals;
 
-	auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
+    auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
 
-	const char *procName = "test";
-	PythonInterpreterState pyState(1, const_cast<char**>(&procName));
+    const char *procName = "test";
+    PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
-	const SimulationTime timestep(10);
-	const float timeStepFloat = 0.01f;
+    const SimulationTime timestep(10);
+    const float timeStepFloat = 0.01f;
 
-	{
-		nlohmann::json nestCfg(config->at("EngineConfigs").at(1));
+    {
+        nlohmann::json nestCfg(config->at("EngineConfigs").at(1));
         nestCfg["NestInitFileName"] = TEST_NEST_SIM_FILE;
         nestCfg["EngineTimestep"] = timeStepFloat;
 
-		nlohmann::json gazeboCfg(config->at("EngineConfigs").at(0));
+        nlohmann::json gazeboCfg(config->at("EngineConfigs").at(0));
         gazeboCfg["GazeboWorldFile"] = TEST_GAZEBO_WORLD_FILE;
         gazeboCfg["EngineTimestep"] = timeStepFloat;
 
-		config->at("EngineConfigs").at(1) = nestCfg;
-		config->at("EngineConfigs").at(0) = gazeboCfg;
-	}
+        config->at("EngineConfigs").at(1) = nestCfg;
+        config->at("EngineConfigs").at(0) = gazeboCfg;
+    }
 
-	EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
-	EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-	// TODO Without the sleeps between calls, gRPC seems to fail in weird ways...
-	std::this_thread::sleep_for(100ms);
+    // TODO Without the sleeps between calls, gRPC seems to fail in weird ways...
+    std::this_thread::sleep_for(100ms);
 
-	FTILoop simLoop(config, {brain, physics});
+    FTILoop simLoop(config, {brain, physics});
 
-	ASSERT_NO_THROW(simLoop.initLoop());
+    ASSERT_NO_THROW(simLoop.initLoop());
 
-	ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
-	ASSERT_NO_THROW(simLoop.runLoop(timestep));
-	std::this_thread::sleep_for(100ms);
-	ASSERT_EQ(simLoop.getSimTime(), timestep);
-	ASSERT_NO_THROW(simLoop.runLoop(timestep));
-	std::this_thread::sleep_for(100ms);
-	ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
+    ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
+    ASSERT_NO_THROW(simLoop.runLoop(timestep));
+    std::this_thread::sleep_for(100ms);
+    ASSERT_EQ(simLoop.getSimTime(), timestep);
+    ASSERT_NO_THROW(simLoop.runLoop(timestep));
+    std::this_thread::sleep_for(100ms);
+    ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
 }
