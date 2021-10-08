@@ -24,16 +24,16 @@
 
 
 LaunchCommandInterface *ProcessLauncherInterface::launchCommand() const
-{	return this->_launchCmd.get();	}
+{   return this->_launchCmd.get();  }
 
 bool ProcessLauncherInterface::checkEnvVar(const std::string &envVar)
-{	return (envVar.find("=", 1) != envVar.npos);	}
+{   return (envVar.find("=", 1) != envVar.npos);    }
 
 std::tuple<std::string, std::string> ProcessLauncherInterface::splitEnvVar(const std::string &envVar)
 {
-	const auto eqLocation = envVar.find("=", 1);
-	if(eqLocation == envVar.npos)
-		return std::tuple<std::string, std::string>();
+    const auto eqLocation = envVar.find("=", 1);
+    if(eqLocation == envVar.npos)
+        return std::tuple<std::string, std::string>();
 
-	return std::tuple<std::string, std::string>(envVar.substr(0, eqLocation), envVar.substr(eqLocation+1, envVar.length()));
+    return std::tuple<std::string, std::string>(envVar.substr(0, eqLocation), envVar.substr(eqLocation+1, envVar.length()));
 }

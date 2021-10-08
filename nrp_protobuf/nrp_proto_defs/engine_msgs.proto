@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+import "gazebo_msgs.proto";
+import "test_msgs.proto";
+
+package Engine;
+
+
+/*
+ * Data of a single datapack sent by server in response to the getDataPack command
+ * Contains datapack metadata and data specific to the datapack type
+ */
+message DataPackMessage
+{
+    DataPackIdentifier datapackId = 1;
+
+    oneof data
+    {
+        EngineTest.TestPayload  test   = 2;
+        Gazebo.Camera camera = 3;
+        Gazebo.Link   link   = 4;
+        Gazebo.Joint  joint  = 5;
+    }
+}
+
+/*
+ * DataPack metadata
+ */
+message DataPackIdentifier
+{
+    string datapackName = 1;
+    string datapackType = 2;
+    string engineName = 3;
+}

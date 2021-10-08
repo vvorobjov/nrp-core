@@ -26,94 +26,90 @@
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
-#include "nrp_nest_server_engine/devices/nest_server_device.h"
-
 #include <future>
 #include <unistd.h>
 
 /*!
- * \brief NRP - Nest Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ * \brief NRP - Nest Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  */
 class NestEngineServerNRPClient
         : public EngineClient<NestEngineServerNRPClient, NestServerConfigConst::EngineSchema>
 {
-		/*!
-		 * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
-		 */
-		static constexpr size_t _killWait = 10;
+        /*!
+         * \brief Number of seconds to wait for Nest to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
+         */
+        static constexpr size_t _killWait = 10;
 
         /*!
          * \brief NestEngineServerNRPClient will look for an unbound port as default. This is the port number at which to start the search
          */
         static constexpr uint16_t PortSearchStart = 5000;
 
-	public:
-		NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~NestEngineServerNRPClient() override;
+    public:
+        NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        virtual ~NestEngineServerNRPClient() override;
 
-		virtual void initialize() override;
-		virtual void shutdown() override;
+        virtual void initialize() override;
+        virtual void reset() override;
+        virtual void shutdown() override;
 
-		virtual SimulationTime getEngineTime() const override;
+        SimulationTime runLoopStepCallback(SimulationTime timeStep) override;
 
-		virtual void runLoopStep(SimulationTime timeStep) override;
-		virtual void waitForStepCompletion(float timeOut) override;
-
-		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
+        virtual void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 
         virtual const std::vector<std::string> engineProcEnvParams() const override;
 
-		using population_mapping_t = std::map<std::string, std::string>;
+        using population_mapping_t = std::map<std::string, std::string>;
 
-	protected:
-		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
 
-	private:
+        virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
 
-		/*!
-		 * \brief Future used during asynchronous execution of the runStep function
-		 */
-		std::future<bool> _runStepThread;
+    private:
 
-		/*!
-		 * \brief Contains populations returned by server after loading the brain file
-		 *
-		 * The structure contains (population_name, [IDs]) pairs, which are returned
-		 * by the NEST server during initialization. The mapping may be used to access
-		 * populations of neurons by their name, rather than by specifying their IDs.
-		 *
-		 * The list of IDs is stored as string, formatted as JSON array.
-		 */
-		population_mapping_t _populations;
+        /*!
+         * \brief Future used during asynchronous execution of the runStep function
+         */
+        std::future<bool> _runStepThread;
 
-		/*!
-		 * \brief NEST simulation resolution cached at engine initialization
-		 */
-		float _simulationResolution = 0.0f;
+        /*!
+         * \brief Contains populations returned by server after loading the brain file
+         *
+         * The structure contains (population_name, [IDs]) pairs, which are returned
+         * by the NEST server during initialization. The mapping may be used to access
+         * populations of neurons by their name, rather than by specifying their IDs.
+         *
+         * The list of IDs is stored as string, formatted as JSON array.
+         */
+        population_mapping_t _populations;
 
-		/*!
-		 * \brief Address of NEST server
-		 */
-		std::string _serverAddress;
+        /*!
+         * \brief NEST simulation resolution cached at engine initialization
+         */
+        float _simulationResolution = 0.0f;
 
-		bool runStepFcn(SimulationTime timestep);
+        /*!
+         * \brief Address of NEST server
+         */
+        std::string _serverAddress;
 
-		/*!
-		 * \brief Returns NEST server address
-		 *
-		 * \return Address of NEST server
-		 */
-		std::string serverAddress() const;
+        bool runStepFcn(SimulationTime timestep);
 
-		/*!
-		 * \brief Returns a JSON array of device IDs mapped to specified device name
-		 *
-		 * \param deviceName Name of the device
-		 * \return Reference to JSON array of device IDs, as string
-		 */
-		const std::string & getDeviceIdList(const std::string & deviceName) const;
+        /*!
+         * \brief Returns NEST server address
+         *
+         * \return Address of NEST server
+         */
+        std::string serverAddress() const;
+
+        /*!
+         * \brief Returns a JSON array of datapack IDs mapped to specified datapack name
+         *
+         * \param datapackName Name of the datapack
+         * \return Reference to JSON array of datapack IDs, as string
+         */
+        const std::string & getDataPackIdList(const std::string & datapackName) const;
 };
 
 using NestEngineServerNRPClientLauncher = NestEngineServerNRPClient::EngineLauncher<NestServerConfigConst::EngineType>;

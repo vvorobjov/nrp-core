@@ -21,22 +21,34 @@
 //
 
 #include "nrp_camera_controller_plugin/nrp_camera_controller_plugin.h"
-
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_grpc_engine/engine_server/nrp_communication_controller.h"
 
 
 void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf)
 {
-	// Load camera plugin
-	this->CameraPlugin::Load(sensor, sdf);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	const auto devName = NRPCommunicationController::createDeviceName(*this, sensor->Name());
-	std::cout << "NRPCameraController: Registering new controller \"" << devName << "\"\n";
+    // Load camera plugin
+    this->CameraPlugin::Load(sensor, sdf);
 
-	// Create camera device and register it
-	this->_cameraInterface.reset(new GrpcDeviceControlSerializer<CameraDeviceController>(devName, this->camera, sensor));
-	NRPCommunicationController::getInstance().registerDevice(devName, this->_cameraInterface.get());
+    const auto devName = NRPCommunicationController::createDataPackName(*this, sensor->Name());
+    NRPLogger::info("NRPCameraController: Registering new controller [ {} ]", devName);
+
+    // Create camera datapack and register it
+    this->_cameraInterface.reset(new CameraGrpcDataPackController(devName, this->camera, sensor));
+    NRPCommunicationController::getInstance().registerDataPack(devName, this->_cameraInterface.get());
+
+    // Register plugin in communication controller
+    NRPCommunicationController::getInstance().registerSensorPlugin(this);
 }
 
 void gazebo::NRPCameraController::OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &)
-{	this->_cameraInterface->updateCamData(image, width, height, depth);	}
+{   
+    this->_cameraInterface->updateCamData(image, width, height, depth); 
+}
+
+void gazebo::NRPCameraController::Reset()
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    this->_cameraInterface->resetTime();
+}

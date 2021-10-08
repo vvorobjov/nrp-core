@@ -36,12 +36,12 @@ struct function_traits;
 template<typename R, typename ...Args>
 struct function_traits<std::function<R(Args...)> >
 {
-	static const size_t nargs = sizeof...(Args);
+    static const size_t nargs = sizeof...(Args);
 
-	using result_t = R;
+    using result_t = R;
 
-	template<size_t i>
-	using arg_t = typename std::tuple_element<i, std::tuple<Args...>>::type;
+    template<size_t i>
+    using arg_t = typename std::tuple_element<i, std::tuple<Args...>>::type;
 };
 
 #endif // FUNCTION_TRAITS

@@ -28,18 +28,18 @@
 
 struct GazeboJSONConfigConst
 {
-    static constexpr FixedString EngineType = "gazebo_json";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_json";
+    static constexpr char EngineType[] = "gazebo_json";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_json";
 
-	/*!
-	 * \brief Gazebo Start Parameters Argument for plugins
-	 */
-	static constexpr std::string_view GazeboPluginArg = "-s";
+    /*!
+     * \brief Gazebo Start Parameters Argument for plugins
+     */
+    static constexpr std::string_view GazeboPluginArg = "-s";
 
-	/*!
-	 * \brief Gazebo Start Parameters Argument for random seed value
-	 */
-	static constexpr std::string_view GazeboRNGSeedArg = "--seed";
+    /*!
+     * \brief Gazebo Start Parameters Argument for random seed value
+     */
+    static constexpr std::string_view GazeboRNGSeedArg = "--seed";
 };
 
 #endif // GAZEBO_JSON_CONFIG_H

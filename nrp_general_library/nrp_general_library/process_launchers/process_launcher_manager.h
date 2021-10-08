@@ -36,61 +36,66 @@ template<class ...PROCESS_LAUNCHERS>
 class ProcessLauncherManager
         : public PtrTemplates<ProcessLauncherManager<PROCESS_LAUNCHERS...> >
 {
-	public:
-		/*!
-		 * \brief Constructor. Registers all Process Launchers for further use
-		 */
-		ProcessLauncherManager()
-		{	this->registerProcessLauncher<PROCESS_LAUNCHERS...>();	}
-		~ProcessLauncherManager() = default;
+    public:
+        /*!
+         * \brief Constructor. Registers all Process Launchers for further use
+         */
+        ProcessLauncherManager()
+        {   this->registerProcessLauncher<PROCESS_LAUNCHERS...>();  }
+        ~ProcessLauncherManager() = default;
 
-		// Delete copy and move constructors
-		ProcessLauncherManager(const ProcessLauncherManager&) = delete;
-		ProcessLauncherManager(ProcessLauncherManager&&) = delete;
+        // Delete copy and move constructors
+        ProcessLauncherManager(const ProcessLauncherManager&) = delete;
+        ProcessLauncherManager(ProcessLauncherManager&&) = delete;
 
-		ProcessLauncherManager &operator=(ProcessLauncherManager&&) = delete;
-		ProcessLauncherManager &operator=(const ProcessLauncherManager&) = delete;
+        ProcessLauncherManager &operator=(ProcessLauncherManager&&) = delete;
+        ProcessLauncherManager &operator=(const ProcessLauncherManager&) = delete;
 
-		/*!
-		 * \brief Create a new process launcher
-		 * \param launcherType Name of launcher
-		 * \return Returns ptr to launcher
-		 */
-		ProcessLauncherInterface::unique_ptr createProcessLauncher(const std::string &launcherType) const
-		{
-			//ProcessLauncherManager *const manager = ProcessLauncherManager::getInstance();
+        /*!
+         * \brief Create a new process launcher
+         * \param launcherType Name of launcher
+         * \return Returns ptr to launcher
+         */
+        ProcessLauncherInterface::unique_ptr createProcessLauncher(const std::string &launcherType) const
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            //ProcessLauncherManager *const manager = ProcessLauncherManager::getInstance();
 
-			const auto launcherIterator = this->_processLaunchers.find(launcherType);
-			if(launcherIterator == this->_processLaunchers.end())
-				throw NRPException::logCreate("Could not find process launcher of type \"" + launcherType + "\"");
+            const auto launcherIterator = this->_processLaunchers.find(launcherType);
+            if(launcherIterator == this->_processLaunchers.end())
+                throw NRPException::logCreate("Could not find process launcher of type \"" + launcherType + "\"");
 
-			return launcherIterator->second->createLauncher();
-		}
+            return launcherIterator->second->createLauncher();
+        }
 
-		void registerProcessLauncher(ProcessLauncherInterface::unique_ptr &&launcher)
-		{	this->_processLaunchers.emplace(launcher->launcherName(), std::move(launcher));	}
+        void registerProcessLauncher(ProcessLauncherInterface::unique_ptr &&launcher)
+        {   this->_processLaunchers.emplace(launcher->launcherName(), std::move(launcher)); }
 
-	private:
+    private:
 
-		/*!
-		 * \brief All Process Launchers
-		 */
-		std::map<std::string, ProcessLauncherInterface::unique_ptr> _processLaunchers;
+        /*!
+         * \brief All Process Launchers
+         */
+        std::map<std::string, ProcessLauncherInterface::unique_ptr> _processLaunchers;
 
-		/*!
-		 *	\brief Register process launchers specified in the template on startup
-		 *	\tparam PROCESS_LAUNCHER Launcher class to register
-		 *	\tparam REST Remaining launchers to register
-		 */
-		template<PROCESS_LAUNCHER_C PROCESS_LAUNCHER, class ...REST>
-		void registerProcessLauncher()
-		{
-			ProcessLauncherInterface::unique_ptr launcher(new PROCESS_LAUNCHER());
-			this->registerProcessLauncher(std::move(launcher));
+        /*!
+         *  \brief Register process launchers specified in the template on startup
+         *  \tparam PROCESS_LAUNCHER Launcher class to register
+         *  \tparam REST Remaining launchers to register
+         */
+        template<class PROCESS_LAUNCHER, class ...REST>
+        void registerProcessLauncher()
+        {
+            static_assert(std::is_base_of_v<ProcessLauncherInterface, PROCESS_LAUNCHER> && std::is_convertible_v<const volatile PROCESS_LAUNCHER*, const volatile ProcessLauncherInterface*>,"Parameter PROCESS_LAUNCHER must derive from ProcessLauncherInterface");
 
-			if constexpr (sizeof... (REST) > 0)
-			{	this->registerProcessLauncher<REST...>();	}
-		}
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            
+            ProcessLauncherInterface::unique_ptr launcher(new PROCESS_LAUNCHER());
+            this->registerProcessLauncher(std::move(launcher));
+
+            if constexpr (sizeof... (REST) > 0)
+            {   this->registerProcessLauncher<REST...>();   }
+        }
 };
 
 /*!

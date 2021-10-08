@@ -23,12 +23,12 @@
 #include "nrp_python_json_engine/python/py_engine_script.h"
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
-#include "nrp_python_json_engine/engine_server/python_engine_json_device_controller.h"
+#include "nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.h"
 
 
 PyEngineScript::~PyEngineScript()
 {
-	this->_pServer = nullptr;
+    this->_pServer = nullptr;
 }
 
 void PyEngineScript::initialize()
@@ -38,40 +38,46 @@ void PyEngineScript::shutdown()
 {}
 
 SimulationTime PyEngineScript::simTime() const
-{	return this->_time;	}
+{   return this->_time; }
 
-void PyEngineScript::registerDevice(std::string deviceName)
+nlohmann::json PyEngineScript::engineConfig() const
 {
-	//std::cout << "Registering device \"" + deviceName + "\"\n";
-	assert(this->_pServer != nullptr);
-
-	//std::cout << "Creating device controller for \"" + deviceName + "\"\n";
-	PtrTemplates<PythonEngineJSONDeviceController<PyObjectDevice>>::shared_ptr
-	        newController(new PythonEngineJSONDeviceController<PyObjectDevice>(DeviceIdentifier(deviceName, "", PyObjectDevice::TypeName.data())));
-
-	//std::cout << "Adding device controller for \"" + deviceName + "\"\n";
-	this->_deviceControllers.push_back(newController);
-	this->_nameDeviceMap.emplace(deviceName, &(newController->data()));
-
-	//std::cout << "Adding device \"" + deviceName + "\" to server\n";
-	this->_pServer->registerDeviceNoLock(deviceName, newController.get());
-
-	//std::cout << "Finished registering device \"" + deviceName + "\"\n";
+    assert(this->_pServer != nullptr);
+    return this->_pServer->getEngineConfig();
 }
 
-boost::python::object &PyEngineScript::getDevice(const std::string &deviceName)
+void PyEngineScript::registerDataPack(std::string datapackName)
 {
-	auto devIt = this->_nameDeviceMap.find(deviceName);
-	if(devIt == this->_nameDeviceMap.end())
-		throw NRPException::logCreate("Could not find device with name \"" + deviceName + "\"");
+    //std::cout << "Registering datapack \"" + datapackName + "\"\n";
+    assert(this->_pServer != nullptr);
 
-	return *(devIt->second);
+    //std::cout << "Creating datapack controller for \"" + datapackName + "\"\n";
+    PtrTemplates<PythonEngineJSONDataPackController>::shared_ptr
+            newController(new PythonEngineJSONDataPackController(JsonDataPack::createID(datapackName, "")));
+
+    //std::cout << "Adding datapack controller for \"" + datapackName + "\"\n";
+    this->_datapackControllers.push_back(newController);
+    this->_nameDataPackMap.emplace(datapackName, &(newController->data()));
+
+    //std::cout << "Adding datapack \"" + datapackName + "\" to server\n";
+    this->_pServer->registerDataPackNoLock(datapackName, newController.get());
+
+    //std::cout << "Finished registering datapack \"" + datapackName + "\"\n";
 }
 
-void PyEngineScript::setDevice(const std::string &deviceName, boost::python::object data)
-{	this->getDevice(deviceName) = data;	}
+boost::python::object &PyEngineScript::getDataPack(const std::string &datapackName)
+{
+    auto devIt = this->_nameDataPackMap.find(datapackName);
+    if(devIt == this->_nameDataPackMap.end())
+        throw NRPException::logCreate("Could not find datapack with name \"" + datapackName + "\"");
+
+    return *(devIt->second);
+}
+
+void PyEngineScript::setDataPack(const std::string &datapackName, boost::python::object data)
+{   this->getDataPack(datapackName) = data; }
 
 void PyEngineScript::setPythonJSONServer(PythonJSONServer *pServer)
 {
-	this->_pServer = pServer;
+    this->_pServer = pServer;
 }

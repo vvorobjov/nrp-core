@@ -4,6 +4,8 @@ FROM ubuntu:20.04
 
 ARG NRP_USER=nrpuser
 ARG NRP_GROUP=nrpgroup
+ARG UID=1000
+ARG GID=1000
 ARG HOME_PARENT_FOLDER=/home
 
 # Set environment
@@ -23,8 +25,8 @@ RUN apt update -y && apt-get install -y sudo
 # Set NRP_USER user
 
 RUN mkdir -p ${HOME_PARENT_FOLDER} \
-    && groupadd --gid 11860 ${NRP_GROUP} \
-    && useradd --home-dir ${HOME} --create-home --uid 901325 --gid 11860 --groups ${NRP_GROUP} -ms /bin/bash ${NRP_USER} \
+    && groupadd --gid ${GID} ${NRP_GROUP} \
+    && useradd --home-dir ${HOME} --create-home --uid ${UID} --gid ${GID} --groups ${NRP_GROUP} -ms /bin/bash ${NRP_USER} \
     && echo "${NRP_USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Set NRP_USER directories

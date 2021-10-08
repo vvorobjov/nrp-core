@@ -2,12 +2,12 @@
 
 This page describes how experiments are configured in nrp-core.
 
-The details of the configuration of any given experiment are stored in a single JSON file, hereafter referred to as the “simulation configuration file”. This file (very originally named "simulation_configuration.json" in most of the examples) contains all the necessary configuration parameters to initialize and run an experiment, including details such as the engines involved in the experiment, active TransceiverFunctions, and engine timesteps. Below is an example taken from <i>examples/tf_exchange</i> experiment:
+ The details of the configuration of any given experiment are stored in a single JSON file, hereafter referred to as the “simulation configuration file”. This file (very originally named "simulation_configuration.json" in most of the examples) contains all the necessary configuration parameters to initialize and run an experiment, including details such as the engines involved in the experiment, active TransceiverFunctions, and engine timesteps. Below is an example taken from <i>examples/tf_exchange</i> experiment:
 
 
 \include tf_exchange/simulation_config.json
 
-In order to configure entirely all aspects of a given simulation, the NRP users only need to modify the configuration file. Inside it, the sections that should receive most attention from the users are: `EngineConfigs`, where the configuration of all the \ref engines "engines" participating in the experiment is specified; and `TransceiverFunctionConfigs`, where \ref transceiver_function "transceiver functions" are specified.
+In order to configure entirely all aspects of a given simulation, the NRP users only need to modify the configuration file. Inside it, the sections that should receive most attention from the users are: `EngineConfigs`, where the configuration of all the \ref engines "engines" participating in the experiment is specified; and `DataPackProcessingFunctions`, where \ref transceiver_function "transceiver functions" are specified.
 
 For the definition of the configuration structure, we rely on <a href="https://json-schema.org/">json-schema</a>.
 

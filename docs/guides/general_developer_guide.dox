@@ -1,0 +1,209 @@
+/*! \page tutorial_developer_guide General developer guide
+
+This page is supposed to give an overview of the development process set up for the NRP Core repository.
+
+\section tutorial_developer_guide_testing Testing
+
+The testing framework of our choice is <a href="https://github.com/google/googletest">Google Test</a>.
+To execute our tests we use <a href="https://cmake.org/cmake/help/latest/manual/ctest.1.html">ctest</a>,
+which is a test runner provided by CMake.
+
+<em>Please note that all commands in this section should be executed from the build directory!</em>
+
+By default, building of the tests is enabled. To disable it, add `-DENABLE_TESTING=OFF` to the cmake step of the build process.
+
+The simplest way to run all available tests, after the build and installation process is complete:
+
+\code{.sh}
+make test
+\endcode
+
+or, equivalently:
+
+\code{.sh}
+ctest
+\endcode
+
+To run a single test or a group of tests you can use the ctest regex (-R) option
+(-VV runs the tests in verbose mode):
+
+\code{.sh}
+ctest -VV -R Simulation LoopTest.RunLoop  # Run a single test from the Simulation Loop group
+ctest -VV -R Simulation LoopTest          # Run all tests from the Simulation Loop group
+\endcode
+
+Every NRP Core module should have its own tests compiled into a single executable.
+The executable should be named `${PROJECT_NAME}Tests`.
+
+To find all test executables:
+
+\code{.sh}
+find . -name "*Tests"
+\endcode
+
+which should give an output similar to this:
+
+\code
+./nrp_engine_protocols/nrp_grpc_engine_protocol/NRPGRPCEngineProtocolTests
+./nrp_engine_protocols/nrp_json_engine_protocol/NRPJSONEngineProtocolTests
+./nrp_general_library/NRPGeneralLibraryTests
+./nrp_gazebo_engines/nrp_gazebo_grpc_engine/NRPGazeboGrpcEngineTests
+./nrp_gazebo_engines/nrp_gazebo_json_engine/NRPGazeboJSONEngineTests
+./nrp_simulation/NRPCoreSimTests
+./nrp_python_json_engine/NRPPythonJSONEngineTests
+./nrp_nest_engines/nrp_nest_json_engine/NRPNestJSONEngineTests
+\endcode
+
+To run a single executable, which contains all tests for the module:
+
+\code{.sh}
+./nrp_general_library/NRPGeneralLibraryTests
+\endcode
+
+To run a single test you can use the gtest filtering capability:
+
+\code{.sh}
+nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTransceiverFcnDataPacks
+\endcode
+
+
+\section tutorial_developer_guide_loggingg Logger usage
+
+For logging we use the own wrapper for the fast thread-safe logger SpdLog.
+
+In order to enable logging functionality, add to the code:
+
+\code{.cpp}
+#include "nrp_general_library/utils/nrp_logger.h"
+\endcode
+
+The logger has the following calls for printing the logs of corresponding severity:
+
+\code{.cpp}
+NRPLogger::debug("debug message");
+NRPLogger::debug("formatted string debug message {}", "Hello world!");
+NRPLogger::info("info message");
+NRPLogger::info("formatted decimal info message {0:d}", 22);
+NRPLogger::warn("warn message");
+NRPLogger::warn("formatted binary warn message {0:b}", 42);
+NRPLogger::error("error message");
+NRPLogger::error("formatted float error message {:03.2f}", 3.14);
+NRPLogger::critical("critical message");
+NRPLogger::critical("{:>30}", "right aligned critical message");
+\endcode
+
+and, separately, trace level
+
+\code{.cpp}
+NRP_LOGGER_TRACE("trace message");
+NRP_LOGGER_TRACE("formatted string trace message {}", __FUNCTION__);
+\endcode
+
+The macro NRP_LOGGER_TRACE can be totally voided if PRODUCTION_RELEASE is defined at compilation. This allows hiding all trace log calls (created by NRP_LOGGER_TRACE) from the compiled code.
+
+Each logger can be initialized with explicitly or default parameters. This behaviour is determined by the NRPLogger constructor that is called. The settings can be defined explicitly in the following constructor:
+
+\code{.cpp}
+	NRPLogger(
+		std::string loggerName,
+		NRPLogger::level_t fileLogLevel,
+		NRPLogger::level_t consoleLogLevel,
+		std::string logDir,
+		bool doSavePars = false);
+\endcode
+
+The name of the logger, `loggerName`, is displayed in the log message and is appended to the log file name.
+The corresponding minimum log levels can be set for both file and console (`fileLogLevel` and `consoleLogLevel`).
+The parameter `logDir` specifies the location of the log files with respect to the working directory (or may be set as absolute path).
+The `doSavePars` flag allows this constructor to propagate the logger settings or consume them from the shared memory. In case this flag is `true`, then the constructor saves settings into the shared memory, otherwise the constructor tries to load them.
+
+The creation of the logger with the default parameters can be done with another constructor:
+
+\code{.cpp}
+	NRPLogger(
+		std::string loggerName = _defaultLoggerName.data());
+\endcode
+
+Even if the `loggerName` is not specified at the call, it will be set with the default value `_defaultLoggerName = "nrp_core"`. The value of the other parameters is determined in the constructor definition:
+
+\code{.cpp}
+NRPLogger::NRPLogger(
+	std::string loggerName)
+	: NRPLogger(
+		loggerName, 
+		NRPLogger::level_t::off, 
+		NRPLogger::level_t::info, 
+		_defaultLogDir.data(), 
+		false) {}
+\endcode
+
+Note, that using this constructor doesn't allow saving the settings of the logger (`doSavePars = false`). This constructor will always try to load them from the memory.
+
+Currently, only the logger in the NRPCoreSim executable is initialized with explicit constructor (which is parametrized by the console parameters). And only this logger tries to save its settings to the shared memory object. 
+The other loggers (in engine servers) try to fetch the settings from the shared memory object and apply them. In case they can’t, the default settings are applied. Thus, the child processes of the launcher inherit its logger settings by the following workflow:
+
+1. The launcher creates the first logger and initializes it with parameters from the console (if any, or with default ones if they are absent).
+2. The resulting settings from the launcher logger are saved into the shared memory
+3. When the forked process starts, it creates its own logger.
+4. The process tries to find the shared object with settings and get them from there
+5. If something goes wrong with the shared object, the logger is initialized with the default settings (only a message is given, that it couldn’t load settings, the process is not terminated).
+
+Here are the optional console parameters that are used to define the logger settings:
+- `-l,--loglevel <VAL>` defines the general log level;
+- `--cloglevel <VAL>` defines the console log level;
+- `--floglevel <VAL>` defines the file log level;
+- `--logdir <VAL>` defines the directory for the log files;
+
+The values for the level parameters can be any of `trace`, `debug`, `info`, `warn`, `error`, `critical`.
+
+Finally, after the NRPLogger object is created, it should be at some point deleted. Note, that the destructor of the NRPLogger closes all spdlog sinks and, thus, disables the following logging. The NRPLogger object should be deleted only at the end of the operation and only one NRPLogger should be created within the process.
+
+\section tutorial_developer_guide_static Static code analysis
+
+Currently we support <a href="http://cppcheck.sourceforge.net/">cppcheck</a> as the static code analysis tool.
+It is integrated into our build system. Before you can use it, you will have to install it:
+
+\code{.sh}
+sudo apt install cppcheck
+\endcode
+
+You can run it from the build directory with:
+
+\code{.sh}
+make cppcheck
+\endcode
+
+\section tutorial_developer_guide_time_profiler Time Profiler
+
+There are two macros available for time profiling: NRP_LOG_TIME and NRP_LOG_TIME_BLOCK. Both macros are only activated if TIME_PROFILE variable is defined at compilation. This allows easily hiding all time profile calls from the compiled code if wished.
+
+NRP_LOG_TIME takes a `filename` parameter and records in a file with that name (and `.log` extension) the time difference, expressed in microseconds, between the clock time at the moment of calling and a fix time point. For example the next call:
+
+\code{.cpp}
+NRP_LOG_TIME("my_time_point");
+\endcode
+
+will add a record with the aforementioned time difference to a file named `my_time_point.log`.
+
+NRP_LOG_TIME_BLOCK functions in a similar way than NRP_LOG_TIME but records the duration between the moment of calling and the end of the current block, ie. when a created helper object goes out of scope. For example:
+
+\code{.cpp}
+
+{
+	NRP_LOG_TIME_BLOCK("my_time_duration");
+	// ... here some important code
+}
+\endcode
+
+will add a record with the duration, also expressed in microseconds, until the execution reaches the end of the block to a file named `my_time_duration.log'.
+
+All time log files are stored in a subfolder `time_logs` of the simulation working directory.
+
+Finally, both macros are defined in \ref nrp_general_library/utils/time_utils.h, which must be included in order to use them.
+
+
+\section tutorial_developer_guide_grpc Debugging gRPC engines
+
+<a href=https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md>gRPC troubleshooting guide</a>
+
+*/

@@ -1,6 +1,6 @@
 {
 	"SimulationName": "tf_exchange",
-	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a device. tf_1 will request said device and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
 	"SimulationTimeout": 2,
 	"EngineConfigs": 
 	[
@@ -15,12 +15,11 @@
 			"PythonFileName": "engine_2.py"
 		}
 	],
-	"TransceiverFunctionConfigs":
+	"DataPackProcessingFunctions":
 	[
 		{
 			"Name": "tf_1",
 			"FileName": "tf_1.py"
 		}
-	],
-	"PreprocessingFunctionConfigs": []
+	]
 }

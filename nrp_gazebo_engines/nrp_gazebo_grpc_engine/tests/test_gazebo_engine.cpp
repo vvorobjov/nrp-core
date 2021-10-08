@@ -24,9 +24,6 @@
 
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/config/cmake_constants.h"
-#include "nrp_gazebo_devices/physics_camera.h"
-#include "nrp_gazebo_devices/physics_joint.h"
-#include "nrp_gazebo_devices/physics_link.h"
 #include "nrp_gazebo_grpc_engine/nrp_client/gazebo_engine_grpc_nrp_client.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
@@ -34,7 +31,9 @@
 
 #include <fstream>
 
-TEST(TestGazeboEngine, Start)
+static constexpr int MAX_DATA_ACQUISITION_TRIALS = 5;
+
+TEST(TestGazeboGrpcEngine, Start)
 {
     // Setup config
     nlohmann::json config;
@@ -55,7 +54,7 @@ TEST(TestGazeboEngine, Start)
     ASSERT_ANY_THROW(engine->initialize());
 }
 
-TEST(TestGazeboEngine, WorldPlugin)
+TEST(TestGazeboGrpcEngine, WorldPlugin)
 {
     // Setup config
     nlohmann::json config;
@@ -73,11 +72,12 @@ TEST(TestGazeboEngine, WorldPlugin)
     sleep(1);
 
     ASSERT_NO_THROW(engine->initialize());
-    ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-    ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
+    ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
+    ASSERT_NO_THROW(engine->reset());
 }
 
-TEST(TestGazeboEngine, CameraPlugin)
+TEST(TestGazeboGrpcEngine, CameraPlugin)
 {
     // Setup config
     nlohmann::json config;
@@ -98,26 +98,32 @@ TEST(TestGazeboEngine, CameraPlugin)
 
     ASSERT_NO_THROW(engine->initialize());
 
-	// Run a single simulation step. This is to ensure that the camera data has been updated.
-	// The data is updated asynchronously, on every new frame, so it may happen that on first
-	// acquisition, there's no camera image yet.
+    // The data is updated asynchronously, on every new frame. It may happen that on first
+    // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-	ASSERT_NO_THROW(engine->runLoopStep(toSimulationTime<int, std::milli>(100)));
-	ASSERT_NO_THROW(engine->waitForStepCompletion(5.0f));
+    const EngineClientInterface::datapacks_t * datapacks;
+    int trial = 0;
 
-    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("nrp_camera::camera", engine->engineName(), PhysicsCamera::TypeName.data())});
-    ASSERT_EQ(devices.size(), 1);
+    do
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("nrp_camera::camera", engine->engineName(), "irrelevant_type")});
+        ASSERT_EQ(datapacks->size(), 1);
+    }
+    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
-	const PhysicsCamera &camDat = dynamic_cast<const PhysicsCamera&>(*(devices[0]));
+    ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    ASSERT_EQ(camDat.imageHeight(), 240);
-    ASSERT_EQ(camDat.imageWidth(),  320);
-    ASSERT_EQ(camDat.imagePixelSize(),  3);
-    ASSERT_EQ(camDat.imageData().size(), 320*240*3);
+    const DataPack<Gazebo::Camera>& camDat = dynamic_cast<const DataPack<Gazebo::Camera>&>(*(datapacks->at(0)));
+
+    ASSERT_EQ(camDat.getData().imageheight(), 240);
+    ASSERT_EQ(camDat.getData().imagewidth(),  320);
+    ASSERT_EQ(camDat.getData().imagedepth(),  3);
+    ASSERT_EQ(camDat.getData().imagedata().size(), 320*240*3);
 }
 
 
-TEST(TestGazeboEngine, JointPlugin)
+TEST(TestGazeboGrpcEngine, JointPlugin)
 {
     // Setup config
     nlohmann::json config;
@@ -138,25 +144,28 @@ TEST(TestGazeboEngine, JointPlugin)
 
     ASSERT_NO_THROW(engine->initialize());
 
-    // Test device data getting
-    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("youbot::base_footprint_joint", engine->engineName(), PhysicsJoint::TypeName.data())});
-    ASSERT_EQ(devices.size(), 1);
+    // Test datapack data getting
+    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint",
+                                                    engine->engineName(), "irrelevant_type")});
+    ASSERT_EQ(datapacks.size(), 1);
 
-    const PhysicsJoint *pJointDev = dynamic_cast<const PhysicsJoint*>(devices[0].get());
-    ASSERT_EQ(pJointDev->position(), 0);
+    const auto *pJointDev = dynamic_cast<const DataPack<Gazebo::Joint> *>(datapacks[0].get());
+    ASSERT_NE(pJointDev, nullptr);
+    ASSERT_EQ(pJointDev->getData().position(), 0);
 
-    // Test device data setting
+    // Test datapack data setting
     const auto newTargetPos = 2.0f;
 
-    PhysicsJoint newJointDev(DeviceIdentifier(pJointDev->id()));
-    newJointDev.setEffort(NAN);
-    newJointDev.setVelocity(NAN);
-    newJointDev.setPosition(newTargetPos);
+    auto newJointDev = new Gazebo::Joint();
+    newJointDev->set_effort(NAN);
+    newJointDev->set_velocity(NAN);
+    newJointDev->set_position(newTargetPos);
+    DataPack<Gazebo::Joint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
 
-    ASSERT_NO_THROW(engine->sendDevicesToEngine({&newJointDev}));
+    ASSERT_NO_THROW(engine->sendDataPacksToEngine({&dev}));
 }
 
-TEST(TestGazeboEngine, LinkPlugin)
+TEST(TestGazeboGrpcEngine, LinkPlugin)
 {
     // Setup config
     nlohmann::json config;
@@ -177,11 +186,12 @@ TEST(TestGazeboEngine, LinkPlugin)
 
     ASSERT_NO_THROW(engine->initialize());
 
-    // Test device data getting
-    auto devices = engine->updateDevicesFromEngine({DeviceIdentifier("link_youbot::base_footprint", engine->engineName(), PhysicsJoint::TypeName.data())});
-    ASSERT_EQ(devices.size(), 1);
+    // Test datapack data getting
+    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("link_youbot::base_footprint",
+                                                    engine->engineName(), "irrelevant_type")});
+    ASSERT_EQ(datapacks.size(), 1);
 
-    const PhysicsLink *pLinkDev = dynamic_cast<const PhysicsLink*>(devices[0].get());
+    const auto *pLinkDev = dynamic_cast<const DataPack<Gazebo::Link> *>(datapacks[0].get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // TODO: Check that link state is correct

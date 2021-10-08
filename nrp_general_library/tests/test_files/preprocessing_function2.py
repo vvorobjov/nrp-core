@@ -18,20 +18,19 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from NRPPythonModule import *
-from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
-@FromEngineDevice(keyword='device1', id=DeviceIdentifier('pf_input1', 'engine', 'type'))
-@FromEngineDevice(keyword='device2', id=DeviceIdentifier('pf_input2', 'engine', 'type'))
-@FromEngineDevice(keyword='device3', id=DeviceIdentifier('pf_input3', 'engine', 'type'))
+@EngineDataPack(keyword='datapack1', id=DataPackIdentifier('pf_input1', 'engine', 'type'))
+@EngineDataPack(keyword='datapack2', id=DataPackIdentifier('pf_input2', 'engine', 'type'))
+@EngineDataPack(keyword='datapack3', id=DataPackIdentifier('pf_input3', 'engine', 'type'))
 @PreprocessingFunction("engine")
-def transceiver_function(device1, device2, device3):
-    ret_dev1 = PythonDevice()
-    ret_dev2 = TestInputDevice()
-    ret_dev1.data = {"test_value1" : str(device1.test_value),
-                     "test_value2" : str(device2.test_value),
-                     "test_value3" : str(device3.test_value)}
+def transceiver_function(datapack1, datapack2, datapack3):
+    ret_dev1 = JsonDataPack("tf_input_preprocessing", "engine")
+    ret_dev1.data["test_value1"] = str(datapack1.test_value)
+    ret_dev1.data["test_value2"] = str(datapack2.test_value)
+    ret_dev1.data["test_value3"] = str(datapack3.test_value)
     
-    return [ret_dev1, ret_dev2]
+    return [ret_dev1]
 
 # EOF

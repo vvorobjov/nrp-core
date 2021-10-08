@@ -1,32 +1,32 @@
 /*! \page nest_json NEST JSON Engine
 
-This engine type enables the integration of the <a href="https://www.nest-simulator.org/">NEST</a> spiking neural network simulator in nrp-core. It is based on the \ref engine_json engine.
+This engine type enables the integration of the <a href="https://www.nest-simulator.org/">NEST</a> spiking neural network simulator in NRP-core. It is based on the \ref engine_json engine.
 
-At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling device data transfer.
+At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling datapack data transfer.
 
-\section nest_json_devices Devices
+\section nest_json_datapacks DataPacks
 
-This engine supports a unique device type: NestDevice. The latter contains the status of a set of neurons, detectors or synapsis as a python dictionary or list of dictionaries. In fact, it can store the status of any NEST object which can be passed as argument to `nest.GetStatus()` and `nest.SetStatus()` functions.
+This engine supports a unique datapack type: \ref datapacks_json. It contains the status of a set of neurons, detectors or synapsis as a dictionary or list of dictionaries. In fact, it can store the status of any NEST object which can be passed as argument to `nest.GetStatus()` and `nest.SetStatus()` functions.
 
-NRPNestJSONPythonModule contains two functions that can be used to register devices with a NEST Json Engine:
+nrp_core.engines.nest_json contains two functions that can be used to register datapacks with a NEST Json Engine:
 
-- RegisterDevice: takes as arguments a string indicating the device name and a NEST object which status will be linked to the device
-- CreateDevice: convenience function that internally calls nest.Create() and then RegisterDevice(). Its first argument is the device name. The rest of the arguments the function is called with will be passed to nest.Create(). Both the device name and the return value of nest.Create() are then passed to RegisterDevice().
+- RegisterDataPack: takes as arguments a string indicating the datapack name and a NEST object which status will be linked to the datapack
+- CreateDataPack: convenience function that internally calls nest.Create() and then RegisterDataPack(). Its first argument is the datapack name. The rest of the arguments the function is called with will be passed to nest.Create(). Both the datapack name and the return value of nest.Create() are then passed to RegisterDataPack().
 
-After a device is registered using the functions described above, a NestEngineJSONDeviceController object is created to handle device I/O operations for this device in the Engine server. The NEST object passed to RegisterDevice() is linked to this device controller. When the device is sent to the engine, it is passed to the device controller which calls nest.SetStatus() with the device content. When the device is requested from the engine, the device controller calls nest.GetStatus() and stores the return value in the device data attribute.
+After a datapack is registered using the functions described above, a NestEngineJSONDataPackController object is created to handle datapack I/O operations for this datapack in the Engine server. The NEST object passed to RegisterDataPack() is linked to this datapack controller. When the datapack is sent to the engine, it is passed to the controller which calls nest.SetStatus() with the datapack content. When the datapack is requested from the engine, the datapack controller calls nest.GetStatus() and stores the return value in the datapack data attribute.
 
-In `examples/nest_simple` can be found a simple experiment showing the use of NEST JSON Engine. First, in the script `nest_simple.py`, a NEST network is defined and two devices with names `noise` and `voltage` are registered:
+In `examples/nest_simple` can be found a simple experiment showing the use of NEST JSON Engine. First, in the script `nest_simple.py`, a NEST network is defined and two datapacks with names `noise` and `voltage` are registered:
 
 \include nest_simple/nest_simple.py
 
-Then, in `tf_1.py`, the `voltage` NestDevice is accessed and its content printed out. Finally it returns a `noise` device that will be used to set the status of its linked NEST object after it has been received by the engine server:
+Then, in `tf_1.py`, the `voltage` JsonDataPack is accessed and its content printed out. Finally it returns a `noise` datapack that will be used to set the status of its linked NEST object after it has been received by the engine server:
 
 \include nest_simple/tf_1.py
 
   <table>
-  <caption id="nest_device_attributes_table">NestDevice Attributes</caption>
+  <caption id="python_datapack_attributes_table">JsonDataPack Attributes</caption>
   <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
-  <tr><td>data    <td>Contains the status of one or more NEST objects  <td>dict or list <td>boost::python::dict or boost::python::list
+  <tr><td>data    <td>data contained in the datapack as a NlohmannJson object    <td>NlohmannJson <td>nlohmann::json
   </table>
 
 \section nest_json_configuration Engine Configuration Parameters
@@ -67,7 +67,7 @@ To use the NEST JSON engine in an experiment, set `EngineType` to <b>"nest_json"
 
 \section nest_json_schema Schema
 
-Inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas.
+As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
 
 \include engines/engines_nest.json
 

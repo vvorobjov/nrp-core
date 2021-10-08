@@ -27,8 +27,8 @@
 
 struct NestServerConfigConst
 {
-    static constexpr FixedString EngineType = "nest_server";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_nest.json#/engine_nest_server";
+    static constexpr char EngineType[] = "nest_server";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_nest.json#/engine_nest_server";
 };
 
 #endif // NEST_SERVER_CONFIG_H

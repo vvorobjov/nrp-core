@@ -3449,7 +3449,7 @@
       <shadows>1</shadows>
     </scene>
     <audio>
-      <device>default</device>
+      <datapack>default</datapack>
     </audio>
     <wind/>
     <spherical_coordinates>

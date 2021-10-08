@@ -8,7 +8,7 @@ JSON Schema allows for composability and inheritance. Taking advantage of this c
 
 All JSON schemas in the framework are contained in the folder `config_schemas` at the root of the project. Given the readability of json-schema, these schemas can be used directly as a source of documentation to look up each of the parameters in the configuration.
 
-As an example, the schema corresponding to \ref simulation_schema "simulation", the top level schema which is used to validate a simulation configuration file (e.g. such as the one provided above) is given below.
+As an example, the schema corresponding to \ref simulation_schema "simulation", the top level schema which is used to validate a simulation configuration file is given below.
 
 \include simulation.json
 
@@ -16,7 +16,7 @@ Each JSON schema can have an <a href="https://json-schema.org/understanding-json
 
 \section schema_reference Referencing schemas
 
-The `type` of a parameter can be a simple type or a reference to another schema, which is precisely the case of the elements of the arrays `EngineConfigs` and `TransceiverFunctionConfigs` in the schema given above. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
+The `type` of a parameter can be a simple type or a reference to another schema. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
 
 - authority: identifying the institution responsible for the schema. For the schemas developed by the <a href="https://neurorobotics.net/who-we-are.html">NRP Team</a> this will always be https://neurorobotics.net
 - path: this is the path to the file containing the referenced schema from `config_schemas` folder
@@ -48,12 +48,12 @@ For a more in-depth explanation of the json-schema format details, https://json-
 
 Default values of schema parameters are used to automatically set a value for the corresponding parameter if it has not been explicitly set in the configuration file. In this way, if a parameter is not present in the configuration file but it has a default value in the schema, it will be automatically added. This step is performed after validating the configuration file.
 
-Those parameters which can't be left unset in the configuration file must be marked as required in the schema. For that they must be included in the `required` list in the schema JSON object, as it is done in the simulation schema listed above. Usually, required parameters don't have a default value and vice versa, i.e. if a parameter is not required, a default value is defined for it in the schema. There are two exceptions to this rule:
+Those parameters which can't be left unset in the configuration file must be marked as *required* in the schema. For that they must be included in the `required` list in the schema JSON object, as it is done in the simulation schema listed above. Usually, required parameters don't have a default value and vice versa, i.e. if a parameter is not required, a default value is defined for it in the schema. There are two exceptions to this rule:
 
 - Due to limitations in the  <a href="https://github.com/pboettch/json-schema-validator">library</a> we use for schema validation, default values set to an empty array (`[]`) are disregarded.
 - Sometimes the default value of a parameter cannot be set to a fixed value in the schema. This is for example the case when default values want to be set to an environment variable. Another example could be if the default value for a parameter needs some computations.
 
-To overcome these exceptions, default values can also be set in-code using the convenience method \ref nrp_general_library/utils/json_schema_utils.h "json_utils::set_default". If a default value for a certain parameter is to be set in-code using this method, it should not be set as required in the corresponding schema and a default value should not be defined for it in this schema.
+To undertake these exceptions, default values can also be set in-code using the convenience method \ref nrp_general_library/utils/json_schema_utils.h "json_utils::set_default". If a default value for a certain parameter is to be set in-code using this method, it should not be set as required in the corresponding schema and a default value should not be defined for it in this schema.
 
 Finally, when using `allOf` to define schema hierarchies (e.g. in engine schemas), all the schemas specified within the `allOf` section will be traversed in order. An important implication of this behavior is that the first default value found for a parameter will be used. Therefore, in case of wanting to override default values in an inherited schema, the reference to the base schema should be place at the end of the `allOf` list.
 

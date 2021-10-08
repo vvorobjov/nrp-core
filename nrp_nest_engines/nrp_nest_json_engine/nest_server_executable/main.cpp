@@ -21,20 +21,22 @@
 //
 
 #include "nest_server_executable/nest_server_executable.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 #include <boost/python.hpp>
 
 int main(int argc, char *argv[])
 {
-	// Load the Nest server
-	auto &server = NestServerExecutable::resetInstance(argc, argv);
 
-	// Start the server in separate thread
-	server.startServerAsync();
+    // Load the Nest server
+    auto &server = NestServerExecutable::resetInstance(argc, argv);
 
-	// Wait for Initialization call
-	server.waitForInit();
+    // Start the server in separate thread
+    server.startServerAsync();
 
-	// Run server
-	return server.run();
+    // Wait for Initialization call
+    server.waitForInit();
+
+    // Run server
+    return server.run();
 }

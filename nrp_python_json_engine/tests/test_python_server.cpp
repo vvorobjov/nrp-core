@@ -22,10 +22,8 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
-#include "nrp_json_engine_protocol/device_interfaces/json_device_serializer.h"
 #include "tests/test_env_cmake.h"
 
 #include <boost/python.hpp>
@@ -36,72 +34,73 @@ namespace python = boost::python;
 
 TEST(TestPythonJSONServer, TestFunc)
 {
-	std::string argvDat = "TestProg";
-	char *argv = &argvDat[0];
-	PythonInterpreterState pyState(1, &argv);
+    std::string argvDat = "TestProg";
+    char *argv = &argvDat[0];
+    PythonInterpreterState pyState(1, &argv);
 
-	python::dict pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
-	python::object pyLocals;
+    python::dict pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
+    python::object pyLocals;
 
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_python";
-    config["PythonFileName"] = TEST_PYTHON_DEVICE_FILE_NAME;
+    config["PythonFileName"] = TEST_PYTHON_DATAPACK_FILE_NAME;
     std::string server_address = "localhost:5434";;
     config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(config.at("ServerAddress"), pyGlobals, pyLocals);
+    PythonJSONServer server(config.at("ServerAddress"), pyGlobals);
 
-	// Test Init
-	pyState.allowThreads();
+    // Test Init
+    pyState.allowThreads();
 
-	EngineJSONServer::mutex_t fakeMutex;
-	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(config, fakeLock);
+    EngineJSONServer::mutex_t fakeMutex;
+    EngineJSONServer::lock_t fakeLock(fakeMutex);
+    nlohmann::json respParse = server.initialize(config, fakeLock);
 
-	const auto execResult = respParse[PythonConfigConst::InitFileExecStatus.data()].get<bool>();
-	ASSERT_EQ(execResult, true);
-	ASSERT_EQ(server.initRunFlag(), true);
+    const auto execResult = respParse[PythonConfigConst::InitFileExecStatus.data()].get<bool>();
+    ASSERT_EQ(execResult, true);
+    ASSERT_EQ(server.initRunFlag(), true);
 
-	// Test runStep REST call
-	const SimulationTime timeStep(1000);
-	ASSERT_EQ(server.runLoopStep(timeStep), timeStep);
+    // Test runStep REST call
+    const SimulationTime timeStep(1000);
+    ASSERT_EQ(server.runLoopStep(timeStep), timeStep);
 
-	// Test getDevice REST call EngineServerGetDevicesRoute
-	server.startServerAsync();
+    // Test getDataPack REST call EngineServerGetDataPacksRoute
+    server.startServerAsync();
 
-	//pyState.endAllowThreads();
-	auto req = nlohmann::json({{"device1", 0}});
-	auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
-	respParse = nlohmann::json::parse(resp.body);
+    //pyState.endAllowThreads();
+    auto req = nlohmann::json({{"datapack1", 0}});
+    auto resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), req.dump());
+    respParse = nlohmann::json::parse(resp.body);
 
-	// TODO Why return here?
-	return;
+    // TODO Why return here?
+    return;
 
-	// Test Python Device data deserialization
-    auto devid = DeviceSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
-	PyObjectDevice dev = DeviceSerializerMethods<nlohmann::json>::deserialize<PyObjectDevice>(std::move(devid), respParse.begin());
+    // TODO It seems that this part is not executed, to be reviewed
+    // Test Python DataPack data deserialization
+    /*auto devid = DataPackSerializerMethods<nlohmann::json>::deserializeID(respParse.begin());
+    PyObjectDataPack dev = DataPackSerializerMethods<nlohmann::json>::deserialize<PyObjectDataPack>(std::move(devid), respParse.begin());
 
-	dev.PyObjectDevice::data() = python::dict(dev.PyObjectDevice::data().deserialize(""));
+    dev.PyObjectDataPack::data() = python::dict(dev.PyObjectDataPack::data().deserialize(""));
 
-	// TODO: Test Sending data
+    // TODO: Test Sending data
 
-	ASSERT_EQ(respParse["device1"][PyObjectDeviceConst::Object.m_data].size(), python::len(dev.data()));
-	float recTime = python::extract<float>(dev.data()["time"]);
-	ASSERT_EQ(0, recTime);
+    ASSERT_EQ(respParse["datapack1"][PyObjectDataPackConst::Object.m_data].size(), python::len(dev.data()));
+    float recTime = python::extract<float>(dev.data()["time"]);
+    ASSERT_EQ(0, recTime);
 
-	pyState.endAllowThreads();
-	server.shutdownServer();
+    pyState.endAllowThreads();
+    server.shutdownServer();*/
 }
 
 TEST(TestPythonJSONServer, TestInitError)
 {
-	std::string argvDat = "TestProg";
-	char *argv = &argvDat[0];
-	PythonInterpreterState pyState(1, &argv);
+    std::string argvDat = "TestProg";
+    char *argv = &argvDat[0];
+    PythonInterpreterState pyState(1, &argv);
 
-	auto pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
-	python::object pyLocals;
+    auto pyGlobals = python::dict(python::import("__main__").attr("__dict__"));
+    python::object pyLocals;
 
     nlohmann::json config;
     config["EngineName"] = "engine";
@@ -110,12 +109,12 @@ TEST(TestPythonJSONServer, TestInitError)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-	PythonJSONServer server(server_address, pyGlobals, pyLocals);
-	pyState.allowThreads();
+    PythonJSONServer server(server_address, pyGlobals);
+    pyState.allowThreads();
 
-	EngineJSONServer::mutex_t fakeMutex;
-	EngineJSONServer::lock_t fakeLock(fakeMutex);
-	nlohmann::json respParse = server.initialize(config, fakeLock);
+    EngineJSONServer::mutex_t fakeMutex;
+    EngineJSONServer::lock_t fakeLock(fakeMutex);
+    nlohmann::json respParse = server.initialize(config, fakeLock);
 
-	pyState.endAllowThreads();
+    pyState.endAllowThreads();
 }

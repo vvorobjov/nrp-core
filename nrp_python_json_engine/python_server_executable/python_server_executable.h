@@ -32,78 +32,78 @@
  */
 class PythonServerExecutable
 {
-	public:
-		~PythonServerExecutable();
+    public:
+        ~PythonServerExecutable();
 
-		// Delete move and copy operators. This ensures this class is a singleton
-		PythonServerExecutable(const PythonServerExecutable &) = delete;
-		PythonServerExecutable(PythonServerExecutable &&) = delete;
+        // Delete move and copy operators. This ensures this class is a singleton
+        PythonServerExecutable(const PythonServerExecutable &) = delete;
+        PythonServerExecutable(PythonServerExecutable &&) = delete;
 
-		PythonServerExecutable &operator=(const PythonServerExecutable &) = delete;
-		PythonServerExecutable &operator=(PythonServerExecutable &&) = delete;
+        PythonServerExecutable &operator=(const PythonServerExecutable &) = delete;
+        PythonServerExecutable &operator=(PythonServerExecutable &&) = delete;
 
-		/*!
-		 * \brief Get singleton instance of executable
-		 * \return Returns singleton instance
-		 */
-		static PythonServerExecutable &getInstance();
+        /*!
+         * \brief Get singleton instance of executable
+         * \return Returns singleton instance
+         */
+        static PythonServerExecutable &getInstance();
 
-		/*!
-		 * \brief Reset singletong instance with given start parameters
-		 * \param argc
-		 * \param argv
-		 * \return Returns singleton instance
-		 */
-		static PythonServerExecutable &resetInstance(int argc, char *argv[]);
+        /*!
+         * \brief Reset singletong instance with given start parameters
+         * \param argc
+         * \param argv
+         * \return Returns singleton instance
+         */
+        static PythonServerExecutable &resetInstance(int argc, char *argv[]);
 
-		/*!
-		 * \brief Shutdown the server. Must be executed before the Python Environment is finalized to prevent segfaults
-		 */
-		static void shutdown();
+        /*!
+         * \brief Shutdown the server. Must be executed before the Python Environment is finalized to prevent segfaults
+         */
+        static void shutdown();
 
-		/*!
-		 * \brief Start the server
-		 */
-		void startServerAsync();
+        /*!
+         * \brief Start the server
+         */
+        void startServerAsync();
 
-		/*!
-		 * \brief Is the server running
-		 * \return Returns true if the server is running, false otherwise
-		 */
-		bool serverRunning() const;
+        /*!
+         * \brief Is the server running
+         * \return Returns true if the server is running, false otherwise
+         */
+        bool serverRunning() const;
 
-		/*!
-		 * \brief Wait for initialization signal from the NRP
-		 */
-		void waitForInit();
+        /*!
+         * \brief Wait for initialization signal from the NRP
+         */
+        void waitForInit();
 
-		/*!
-		 * \brief Start the python server loop. Executes commands sent from the NRP
-		 * \return Returns result of loop
-		 */
-		int run();
+        /*!
+         * \brief Start the python server loop. Executes commands sent from the NRP
+         * \return Returns result of loop
+         */
+        int run();
 
-		/*!
-		 * \brief Get Python Interpreter
-		 */
-		PythonInterpreterState &pyState();
+        /*!
+         * \brief Get Python Interpreter
+         */
+        PythonInterpreterState &pyState();
 
-	private:
-		static std::unique_ptr<PythonServerExecutable> _instance;
+    private:
+        static std::unique_ptr<PythonServerExecutable> _instance;
 
-		cxxopts::ParseResult _res;
+        cxxopts::ParseResult _res;
 
-		PythonInterpreterState _pyInterp;
+        PythonInterpreterState _pyInterp;
 
-		PythonJSONServer _server;
+        PythonJSONServer _server;
 
-		PythonServerExecutable(int argc, char *argv[]);
+        PythonServerExecutable(int argc, char *argv[]);
 
-		/*!
-		 * \brief Handle a call from SIGTERM to terminate server
-		 * \param signal Signal to handle
-		 */
-		static void handleSIGTERM(int signal);
+        /*!
+         * \brief Handle a call from SIGTERM to terminate server
+         * \param signal Signal to handle
+         */
+        static void handleSIGTERM(int signal);
 };
 
 #endif // PYTHON_SERVER_EXECUTABLE_H

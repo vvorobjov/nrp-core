@@ -23,65 +23,54 @@
 #include <boost/python.hpp>
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_nest_server_engine/config/cmake_constants.h"
-#include "nrp_nest_server_engine/devices/nest_server_device.h"
-#include "nrp_nest_server_engine/python/create_device_class.h"
+#include "nrp_nest_server_engine/python/create_datapack_class.h"
 
 
 namespace python = boost::python;
 
-static CreateDeviceClass *pCreateDevice = nullptr;
+static CreateDataPackClass *pCreateDataPack = nullptr;
 
-python::object CreateDevice(python::tuple args, python::dict kwargs)
+python::object CreateDataPack(python::tuple args, python::dict kwargs)
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->createAndRegisterDevice(args, kwargs);
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->createAndRegisterDataPack(args, kwargs);
 }
 
-void RegisterDevice(python::str devName, python::object nodeCollection)
+void RegisterDataPack(python::str devName, python::object nodeCollection)
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->registerDevice(devName, nodeCollection);
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->registerDataPack(devName, nodeCollection);
 }
 
 python::dict GetDevMap()
 {
-	assert(pCreateDevice != nullptr);
-	return pCreateDevice->pyDevMap();
+    assert(pCreateDataPack != nullptr);
+    return pCreateDataPack->pyDevMap();
 }
-
-void setNestData(NestServerDevice &dev, const boost::python::object &data)
-{	dev.data() = data;	}
-
-const boost::python::object &getNestData(const NestServerDevice &dev)
-{	return dev.data();	}
 
 BOOST_PYTHON_MODULE(NRP_NEST_PYTHON_MODULE)
 {
-	// Import General NRP Python Module
-	python::import(PYTHON_MODULE_NAME_STR);
+    // Import General NRP Python Module
+    python::import(PYTHON_MODULE_NAME_STR);
 
-	python_property_device_class<NestServerDevice>::create()
-	        .add_property("data", python::make_function(getNestData, python::return_value_policy<python::copy_const_reference>()), &setNestData);
+    // Setup CreateDataPack and import Nest
+    python::class_<CreateDataPackClass>("__CreateDataPackClass", python::no_init)
+            .def("CreateDataPack", python::raw_function(&CreateDataPackClass::pyCreateDataPack))
+            .def("RegisterDataPack", python::raw_function(&CreateDataPackClass::pyRegisterDataPack))
+            .def("GetDevMap", &CreateDataPackClass::pyDevMap);
 
-	// Setup CreateDevice and import Nest
-	python::class_<CreateDeviceClass>("__CreateDeviceClass", python::no_init)
-	        .def("CreateDevice", python::raw_function(&CreateDeviceClass::pyCreateDevice))
-	        .def("RegisterDevice", python::raw_function(&CreateDeviceClass::pyRegisterDevice))
-	        .def("GetDevMap", &CreateDeviceClass::pyDevMap);
+    python::dict devMap;
+    python::dict nestDict(python::import("nest").attr("__dict__"));
 
-	python::dict devMap;
-	python::dict nestDict(python::import("nest").attr("__dict__"));
+    python::object pyCreateDataPack(CreateDataPackClass(nestDict, devMap));
+    python::scope().attr("__CreateDataPack") = pyCreateDataPack;
 
-	python::object pyCreateDevice(CreateDeviceClass(nestDict, devMap));
-	python::scope().attr("__CreateDevice") = pyCreateDevice;
+    CreateDataPackClass &createDataPack = python::extract<CreateDataPackClass&>(pyCreateDataPack);
+    pCreateDataPack = &createDataPack;
 
-	CreateDeviceClass &createDevice = python::extract<CreateDeviceClass&>(pyCreateDevice);
-	pCreateDevice = &createDevice;
-
-	// Setup Nest Create and Register Device Function
-	python::def("CreateDevice", python::raw_function(CreateDevice));
-	python::def("RegisterDevice", RegisterDevice);
-	python::def("GetDevMap", GetDevMap);
+    // Setup Nest Create and Register DataPack Function
+    python::def("CreateDataPack", python::raw_function(CreateDataPack));
+    python::def("RegisterDataPack", RegisterDataPack);
+    python::def("GetDevMap", GetDevMap);
 }

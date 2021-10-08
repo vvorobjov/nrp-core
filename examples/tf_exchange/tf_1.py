@@ -1,10 +1,12 @@
-from NRPPythonModule import *
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
-@FromEngineDevice(keyword='device_python', id=DeviceIdentifier('device1', 'python_1'))
+@EngineDataPack(keyword='datapack_python', id=DataPackIdentifier('datapack1', 'python_1'))
 @TransceiverFunction("python_2")
-def transceiver_function(device_python):
-    rec_device1 = PythonDevice("rec_device2", "python_2")
-    rec_device1.data = device_python.data
+def transceiver_function(datapack_python):
+    rec_datapack1 = JsonDataPack("rec_datapack2", "python_2")
+    for k in datapack_python.data.keys():
+        rec_datapack1.data[k] = datapack_python.data[k]
 
-    return [ rec_device1 ]
+    return [ rec_datapack1 ]
 

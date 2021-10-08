@@ -1,11 +1,26 @@
-from NRPPythonModule import *
-from NRPNestJSONPythonModule import NestDevice
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
-@FromEngineDevice(keyword='voltage', id=DeviceIdentifier('voltage', 'nest'))
+from math import sin, cos
+
+sin_x = [abs(1000*sin(x)) for x in range(100)]
+cos_x = [abs(1000*cos(x)) for x in range(100)]
+n = 0
+print(sin_x)
+
+
+@EngineDataPack(keyword='voltage', id=DataPackIdentifier('voltage', 'nest'))
 @TransceiverFunction("nest")
 def transceiver_function(voltage):
-  print(voltage.data[0]['events'])
-  noise_device = NestDevice("noise", "nest")
-  noise_device.data = {"rate": 80000.0, "rate": 15000.0}
+    # Read voltage
+    print(voltage)
 
-  return [ noise_device ]
+    # Set rate
+    global n
+    n = n+1 if n < 99 else 0
+
+    noise_datapack = JsonDataPack("noise", "nest")
+    noise_datapack.data.append({"rate": sin_x[n]})
+    noise_datapack.data.append({"rate": cos_x[n]})
+
+    return [ noise_datapack ]

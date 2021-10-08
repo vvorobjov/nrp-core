@@ -23,7 +23,7 @@
 #include <gtest/gtest.h>
 
 #include "nest_server_executable/nest_server_executable.h"
-#include "nrp_general_library/utils/spdlog_setup.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 #include "nrp_general_library/utils/pipe_communication.h"
 #include "nrp_nest_json_engine/config/nest_config.h"
 #include "tests/test_env_cmake.h"
@@ -42,27 +42,26 @@ static PipeCommunication *pCommCtP = nullptr;
 
 void handle_signal(int signal)
 {
-	std::cout << "Handling signal";
-	std::cout.flush();
+    std::cout << "Handling signal";
+    std::cout.flush();
 
-	if(signal == SIGHUP)
-	{
-		// Shutdown server
-		NestServerExecutable::shutdown();
+    if(signal == SIGHUP)
+    {
+        // Shutdown server
+        NestServerExecutable::shutdown();
 
-		if(pCommPtC)
-			pCommPtC->~PipeCommunication();
+        if(pCommPtC)
+            pCommPtC->~PipeCommunication();
 
-		if(pCommCtP)
-			pCommCtP->~PipeCommunication();
+        if(pCommCtP)
+            pCommCtP->~PipeCommunication();
 
-		// Finish printing
-		std::cout.flush();
-		std::cerr.flush();
-		SPDLogSetup::shutdownDefault();
+        // Finish printing
+        std::cout.flush();
+        std::cerr.flush();
 
-		exit(0);
-	}
+        exit(0);
+    }
 }
 
 TEST(TestNestExecutable, TestNest)
@@ -74,124 +73,123 @@ TEST(TestNestExecutable, TestNest)
     std::string server_address = "localhost:5445";
     config["ServerAddress"] = server_address;
 
-	std::vector<const char*> argv;
-	const std::string engineAddrArg = std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address;
+    std::vector<const char*> argv;
+    const std::string engineAddrArg = std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address;
     const std::string engineRegArg = std::string("--") + EngineJSONConfigConst::EngineRegistrationServerAddrArg.data() + "= localhost:9001";
 
-	argv.push_back("--engine=engine");
-	argv.push_back(engineAddrArg.data());
+    argv.push_back("--engine=engine");
+    argv.push_back(engineAddrArg.data());
     argv.push_back(engineRegArg.data());
     argv.push_back("--quiet");
-	int argc = static_cast<int>(argv.size());
+    int argc = static_cast<int>(argv.size());
 
-	SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
+    SimulationTime timeStep = toSimulationTime<int, std::milli>(1);
 
-	// Create pipe
-	PipeCommunication commCtP, commPtC;
-	pCommCtP = &commCtP;
-	pCommPtC = &commPtC;
+    // Create pipe
+    PipeCommunication commCtP, commPtC;
+    pCommCtP = &commCtP;
+    pCommPtC = &commPtC;
 
 
-	// Create child process
-	const auto parentPID = getpid();
-	auto pid = fork();
-	ASSERT_GE(pid, 0);
-	if(pid > 0)
-	{		
-		// Parent process, main checking process
-		pCommCtP->closeWrite();
-		pCommPtC->closeRead();
+    // Create child process
+    const auto parentPID = getpid();
+    auto pid = fork();
+    ASSERT_GE(pid, 0);
+    if(pid > 0)
+    {       
+        // Parent process, main checking process
+        pCommCtP->closeWrite();
+        pCommPtC->closeRead();
 
-		char rec = 0;
+        char rec = 0;
 
-		// Wait for server to startup
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 1);
+        // Wait for server to startup
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 1);
 
-		sleep(2);
+        sleep(2);
 
-		// Send init call
-		RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
-		ASSERT_EQ(resp.code, 200);
+        // Send init call
+        RestClient::Response resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), config.dump());
+        ASSERT_EQ(resp.code, 200);
 
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 2);
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 2);
 
-		// Send runstep call
-		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep.count()}}).dump());
-		auto respParse = nlohmann::json::parse(resp.body);
-		ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep.count());
+        // Send runstep call
+        resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json({{EngineJSONConfigConst::EngineTimeStepName.data(), timeStep.count()}}).dump());
+        auto respParse = nlohmann::json::parse(resp.body);
+        ASSERT_EQ(respParse[EngineJSONConfigConst::EngineTimeName.data()].get<float>(), timeStep.count());
 
-		char send = 3;
-		ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
+        char send = 3;
+        ASSERT_EQ(commPtC.writeP(&send, 1, 5, 1), 1);
 
-		// Test shutdown
-		resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
+        // Test shutdown
+        resp = RestClient::post(server_address + "/" + EngineJSONConfigConst::EngineServerShutdownRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), nlohmann::json().dump());
 
-		ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
-		ASSERT_EQ(rec, 4);
-	}
-	else
-	{
-		try
-		{
-			// Child process, NEST executable
-			ASSERT_NE(signal(SIGHUP, &handle_signal), SIG_ERR);
+        ASSERT_EQ(commCtP.readP(&rec, 1, 5, 1), 1);
+        ASSERT_EQ(rec, 4);
+    }
+    else
+    {
+        try
+        {
+            // Child process, NEST executable
+            ASSERT_NE(signal(SIGHUP, &handle_signal), SIG_ERR);
 
-			// Child process should quit on parent process death
-			prctl(PR_SET_PDEATHSIG, SIGHUP);
+            // Child process should quit on parent process death
+            prctl(PR_SET_PDEATHSIG, SIGHUP);
 
-			// Stop if parent process died before setting up death handling
-			if(getppid() != parentPID)
-				exit(0);
+            // Stop if parent process died before setting up death handling
+            if(getppid() != parentPID)
+                exit(0);
 
-			pCommPtC->closeWrite();
-			pCommCtP->closeRead();
+            pCommPtC->closeWrite();
+            pCommCtP->closeRead();
 
-			// Start server
-			auto &nestExec = NestServerExecutable::resetInstance(argc, const_cast<char**>(argv.data()));
+            // Start server
+            auto &nestExec = NestServerExecutable::resetInstance(argc, const_cast<char**>(argv.data()));
 
-			ASSERT_EQ(nestExec.serverRunning(), true);
+            ASSERT_EQ(nestExec.serverRunning(), true);
 
-			sleep(1);
+            sleep(1);
 
-			char send = 1;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+            char send = 1;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
 
-			// Wait for init call
-			nestExec.pyState().allowThreads();
-			nestExec.waitForInit();
+            // Wait for init call
+            nestExec.pyState().allowThreads();
+            nestExec.waitForInit();
 
-			send = 2;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+            send = 2;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
 
-			// Wait until runStep call has been sent
-			char rec = 0;
-			ASSERT_EQ(commPtC.readP(&rec, 1, 5, 1), 1);
-			ASSERT_EQ(rec, 3);
+            // Wait until runStep call has been sent
+            char rec = 0;
+            ASSERT_EQ(commPtC.readP(&rec, 1, 5, 1), 1);
+            ASSERT_EQ(rec, 3);
 
-			// Continue running until shutdown command has been received
-			nestExec.run();
+            // Continue running until shutdown command has been received
+            nestExec.run();
 
-			ASSERT_EQ(nestExec.serverRunning(), false);
-			send = 4;
-			ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
-		}
-		catch(std::exception&)
-		{}
+            ASSERT_EQ(nestExec.serverRunning(), false);
+            send = 4;
+            ASSERT_EQ(commCtP.writeP(&send, 1, 5, 1), 1);
+        }
+        catch(std::exception&)
+        {}
 
-		// Stop nest server
-		NestServerExecutable::shutdown();
+        // Stop nest server
+        NestServerExecutable::shutdown();
 
-		// Shutdown pipe
-		commCtP.~PipeCommunication();
-		commPtC.~PipeCommunication();
+        // Shutdown pipe
+        commCtP.~PipeCommunication();
+        commPtC.~PipeCommunication();
 
-		// Finish printing
-		std::cout.flush();
-		std::cerr.flush();
-		SPDLogSetup::shutdownDefault();
-
-		exit(0);
-	}
+        // Finish printing
+        std::cout.flush();
+        std::cerr.flush();
+        
+        exit(0);
+    }
 }

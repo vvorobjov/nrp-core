@@ -1,0 +1,325 @@
+/*! \page datapacks Engine DataPacks
+
+DataPacks are simple objects which wrap around arbitrary data structures, like JSON objects or protobuf messages.
+They provide the necessary abstract interface, which is understood by all components of NRP-Core, while still
+allowing to pass data in various formats.
+
+A DataPack consists of two parts:
+
+- DataPack ID: which allows to uniquely indentify the object 
+- DataPack data: this is the data stored by the DataPack, which can be in principle of any type
+
+DataPacks are mainly used by \ref transceiver_function "Transceiver functions" to relay data between engines. 
+Each engine type is designed to accept only datapacks of a certain type and structure.
+To discover which datapacks can be processed by each engine, check out the engine's documentation \ref nrp_engines "here".
+
+
+\section datapacks_id DataPack ID
+
+Every datapack contains a DataPackIdentifier, which uniquely identifies the datapack object and allows
+for routing of the data between transceiver functions, engine clients and engine servers.
+A datapack identifier consists of three fields:
+
+- name - name of the datapack. Must be unique.
+- type - string representation of the DataPack data type. This field will most probably will be of no concern for the users.
+It is set and used internally and is not in human-readable form.
+- engine name - name of the engine to which the datapack is bound.
+
+These fields can be accessed from the transceiver functions:
+
+\code{.py}
+print(datapack.name)
+print(datapack.type)
+print(datapack.engine_name)
+\endcode
+
+
+\section datapacks_data DataPack data
+
+DataPack is a template class with a single template parameter, which specifies the type of the data contained by the DataPack. 
+This DataPack data can be in principle of any type. 
+In practice there are some limitations though, since DataPacks, which are C++ objects, must be accessible from TransceiverFunctions, which are written in Python. 
+Therefore the only DataPack data types which can be actually used in NRP-core are those for which Python bindings are provided. 
+These are commented \ref supported_datapack_types "below".
+
+In TransceiverFunctions, the DataPack data can always be accessed using the datapack "data" attribute.
+
+\section empty_datapack Empty DataPacks
+
+It is possible for a datapack to contain no data. 
+This is useful for example when an Engine is asked for a certain DataPack but it is not able to provide it. 
+In this case, an Engine can return an empty datapack.
+This type of datapack contains only a datapack identifier and no data. 
+
+Attempting to retrieve the data from an empty DataPack will result in an exception.
+A method "isEmpty" is provided to check whether a DataPack is empty or not before attempting to access its data:
+
+\code{.py}
+if(not datapack.isEmpty()):
+	# It's safe to get the data
+	print(datapack.data)
+else:
+	# This will raise an exception
+	print(datapack.data)
+\endcode
+
+
+\section datapacks_tfs Role of DataPacks in TransceiverFunctions
+
+DataPacks are both the input and output of TransceiverFunctions.
+When a datapack is declared as input of a TF, this datapack is always requested to the corresponding Engine when the latter is synchronized.
+When a datapack is returned by a TF, it is sent to the corresponding Engine after the TF is executed.
+For more information about the synchronization model used in nrp-core the reader can refer to these sections:
+- \ref transceiver_function_synchronization "Transceiver Functions synchronization"
+- \ref sync_model_details "nrp-core synchronization model"
+
+The subsections below elaborate on the details of how to use DataPacks in TFs.
+
+\subsection datapacks_tfs_input DataPacks as input to transceiver functions
+
+DataPacks can be declared as TransceiverFunction inputs using the dedicated decorator.
+After that they can be accessed in TFs as input arguments.
+
+\code{.py}
+# Declare datapack with "datapack_name" name from engine "engine_name" as input using the @EngineDataPack decorator
+# The trasceiver function must accept an argument with the same name as "keyword" in the datapack decorator
+
+@EngineDataPack(keyword="datapack", id=DataPackIdentifier("datapack_name", "engine_name"))
+@TransceiverFunction("engine_name")
+def transceiver_function(datapack):
+	print(datapack.data)
+
+# Multiple input datapacks from different engines can be declared
+
+@EngineDataPack(keyword="datapack1", id=DataPackIdentifier("datapack_name1", "engine_name1"))
+@EngineDataPack(keyword="datapack2", id=DataPackIdentifier("datapack_name2", "engine_name2"))
+@TransceiverFunction("engine_name1")
+def transceiver_function(datapack1, datapack2):
+	print(datapack1.data)
+	print(datapack2.data)
+\endcode
+
+When passed as TF arguments, DataPacks behave at all effect as read-only objects.
+Even though it is possible to modify their data or to add new attributes to them inside of a TransceiverFunction,
+these changes will have no effect outside of the TransceiverFunction.
+
+
+\subsection datapacks_tfs_output DataPacks as output of transceiver functions
+
+DataPacks can be returned from the transceiver function.
+
+\code{.py}
+# NRP-Core expects transceiver functions to always return a list of datapacks
+
+@TransceiverFunction("engine_name")
+def transceiver_function():
+	datapack = JsonDataPack("datapack_name", "engine_name")
+
+	return [ datapack ]
+
+# Multiple datapacks can be returned
+
+@TransceiverFunction("engine_name")
+def transceiver_function():
+	datapack1 = JsonDataPack("datapack_name1", "engine_name")
+	datapack2 = JsonDataPack("datapack_name2", "engine_name")
+
+	return [ datapack1, datapack2 ]
+\endcode
+
+\section supported_datapack_types Supported DataPack data types
+
+As commented in the section above, DataPacks are both the input and output of TFs. Therefore, a conversion mechanism between C++ and Python is required for each supported DataPack data type. The types currently supported are nlohmann::json and protobuf messages. The subsections below give details of the Python API provided for each of these types.
+
+\subsection datapacks_json JsonDataPack
+
+<b>JsonDataPack</b> type wraps around <a href="https://github.com/nlohmann/json">nlohmann::json</a> C++ objects.
+The Python class wrapping the C++ json object is *NlohmannJson*, which is stored in JsonDataPack *data* attribute.
+<b>NlohmannJson</b> is very flexible and allows to pass most types of data between engines and transceiver functions
+without writing any additional code, it can contain all basic Python types.
+<b>NlohmannJson</b> also has partial support for numpy arrays - it's possible to use 1-dimensional arrays of integers and floats.
+
+
+\subsubsection datapacks_json_importing Importing and creating JsonDataPack
+
+To import JsonDataPack:
+
+\code{.py}
+from nrp_core.data.nrp_json import JsonDataPack
+\endcode
+
+To create a JsonDataPack object:
+
+\code{.py}
+datapack = JsonDataPack("datapack_name", "engine_name")
+\endcode
+
+
+\subsubsection datapacks_json_setting_getting Getting and setting data
+
+Inside transceiver functions the data can be accessed like a python dictionary:
+
+\code{.py}
+# To set the data
+
+datapack = JsonDataPack("datapack_name", "engine_name")
+
+datapack.data["null"]   = None
+datapack.data["long"]   = 1
+datapack.data["double"] = 43.21
+datapack.data["string"] = "string"
+datapack.data["bool"]   = True
+datapack.data["array"]  = [5, 1, 6]
+datapack.data["tuple"]  = (1, 2, 3)
+datapack.data["object"] = {"key1": "value", "key2": 600}
+
+# To retrieve the data
+
+print(datapack.data["string"])
+print(datapack.data["object"])
+
+for k in datapack.data.keys():
+    print(datapack.data[k])
+
+\endcode
+
+Numpy arrays:
+
+\code{.py}
+
+# Numpy integer arrays
+
+datapack.data["numpy_array_int8" ] = np.array([ 1,  2,  3], dtype="int8")
+datapack.data["numpy_array_int16"] = np.array([ 4,  5,  6], dtype="int16")
+datapack.data["numpy_array_int32"] = np.array([ 7,  8,  9], dtype="int32")
+datapack.data["numpy_array_int64"] = np.array([10, 11, 12], dtype="int64")
+
+# Numpy unsigned integer arrays
+
+datapack.data["numpy_array_uint8" ] = np.array([0,  1,  2], dtype="uint8")
+datapack.data["numpy_array_uint16"] = np.array([3,  4,  5], dtype="uint16")
+datapack.data["numpy_array_uint32"] = np.array([6,  7,  8], dtype="uint32")
+datapack.data["numpy_array_uint64"] = np.array([9, 10, 11], dtype="uint64")
+
+# Numpy floating-point arrays
+
+datapack.data["numpy_array_float32"] = np.array([0.5, 2.3, 3.55], dtype="float32")
+datapack.data["numpy_array_float64"] = np.array([1.5, 2.3, 3.88], dtype="float64")
+
+\endcode
+
+\subsubsection datapacks_json_inspecting Inspecting content of JsonDataPack
+
+Printing the content using __str__ method:
+
+\code{.py}
+str(datapack.data)
+str(datapack.data["array"])
+str(datapack.data["object"])
+
+# Or print it directly:
+
+print(datapack.data)
+\endcode
+
+Getting a list of keys:
+
+\code{.py}
+keys = datapack.data.keys()
+\endcode
+
+Getting length of the object:
+
+\code{.py}
+length = len(datapack.data)
+\endcode
+
+The above will return number of keys, if data is a JSON object, or number of elements, if it's a JSON array.
+
+
+\subsubsection datapacks_json_arrays Using JsonDataPacks to store JSON arrays
+
+In all the examples above it has been assumed that JsonDataPack is storing a JSON object.
+Actually the data object can contain either a JSON object, a JSON array or an empty object, it depens on how it is started.
+After instantiation, it contains an empty object:
+
+\code{.py}
+datapack = JsonDataPack("example_datapack", "example_engine")
+# Returned value is 'null'
+datapack.data.json_type()
+\endcode
+
+If data is appended to it, the datapack stores a JSON array:
+
+\code{.py}
+datapack.data.append(1.55)
+# Returned value is 'array'
+datapack.data.json_type()
+\endcode
+
+If instead a key is assigned, it stores a JSON object:
+
+\code{.py}
+datapack = JsonDataPack("example_datapack", "example_engine")
+datapack.data['key'] = 1.55
+# Returned value is 'object'
+datapack.data.json_type()
+\endcode
+
+Please be aware that methods specific to 'object' type for accessing or setting elements will raise an error when used with an 'array' type and otherwise.
+
+
+\subsection datapacks_protobuf Protobuf datapacks
+
+In contrast with JsonDataPack, which can wrap any nlohmann::json C++ object, a Python wrapper class is generated for each Protobuf definition.
+For example, for the *Camera* message listed below (which is used by the \ref gazebo_engine), a python class *GazeboCameraDataPack* is generated.
+
+\code{.proto}
+package Gazebo;
+
+// Data coming from gazebo camera datapack
+message Camera
+{
+    uint32 imageWidth  = 1;
+    uint32 imageHeight = 2;
+    uint32 imageDepth  = 3;
+    bytes  imageData   = 4;
+}
+\endcode
+
+This class contains a *data* attribute which is of type *GazeboCamera* and gives access to the wrapped datapack data. 
+The generated Python classes match the original Protobuf Python API as described in the <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated">protobuf documentation</a>.
+There are some known limitations with respect to the original Protobuf Python API which are listed below with references to the protobuf documentation:
+
+1. Well Known Types not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">ref</a>
+2. Repeated Message field not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#repeated-message-fields">ref</a>
+3. Map field type not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#map-fields">ref</a>
+4. Only basic Enum support. To set or get *Enum* fields only *int* can be used. *Enum constants* can't be accessed from python <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#enum">ref</a>
+5. The *Message* Python wrapper only supports a subset of the methods listed <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html">here</a>. These are: 'Clear', 'ClearField', 'HasField', 'IsInitialized' and 'WhichOneof'.
+
+Finally, these Python wrappers are automatically generated in the NRP-core build process. See this \ref tutorial_add_proto_definition "guide" to know how to add custom message definitions so they become afterwards available to Engines and TFs.
+
+
+\section datapacks_implementation Implementation details
+
+All concrete datapack classes should be based on the DataPack class. It is a template class,
+and the single template argument specifies the data structure type, which is going to be held by the class instances.
+
+The DataPack class design is somewhat similar to that of std::unique_ptr. Whenever a datapack object is constructed,
+it takes ownership of the input data structure. This structure may be then accessed and modified,
+or the ownership may be released.
+
+The DataPack class inherits from DataPackInterface. This class may also be instantiated, but the object will not carry any data (ie. it's an empty DataPack).
+
+\subsection datapacks_implementation_empty Empty datapacks
+
+A DataPack class is considered empty when its data is released. Every instance of the base class, DataPackInterface, is also
+considered empty, because there is no data stored in it.
+
+\subsection datapacks_implementation_python Python interface
+
+In order to be accessible to transceiver functions, a conversion mechanism between C++ and Python must be specified for each DataPack data type.
+Currently NRP-core provides Python bindings for nlohmann::json and protobuf messages.
+In case you wished to integrate a different data type, you would have to implement Python bindings for this type and make them available to NRP-core as a Python module.
+
+ */

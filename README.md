@@ -13,13 +13,16 @@ sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `ls
 wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
 sudo apt update
-sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil
+sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip
 
 # required by gazebo engine
 sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
 
 # required by nest-server (which is built and installed along with nrp-core)
-sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3
+sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
+
+# required by nrp-server, which uses gRPC python bindings and mpi
+pip install grpcio-tools pytest docopt mpi4py
     
 # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
 sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
@@ -54,7 +57,7 @@ export PATH=$PATH:${NRP}/bin
 . /usr/share/gazebo-11/setup.sh
 ```
  * Start the simulation:
-	`NRPSimulation -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
+	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
 
 ## Basic Information
 
@@ -64,9 +67,9 @@ export PATH=$PATH:${NRP}/bin
 	 - nrp_nest_engines: Nest Engine
 	 - nrp_gazebo_engines: Gazebo Engine
 	 - nrp_python_json_engine: Python JSON Engine
-	 - nrp_simulation: Contains the SimulationLoop and -Manager. Creates the NRPSimulation executable
+	 - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
  - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
- - All libraries generate a python module. This can be used to interface with the devices from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
+ - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
 
 ## Examples
 
@@ -74,7 +77,7 @@ export PATH=$PATH:${NRP}/bin
 	 - To run them, first set the environment as described in **Running an experiment**. Then:
 
 			cd examples/<EXAMPLE_NAME>
-			NRPSimulation -c <SIMULATION_CONFIG>
+			NRPCoreSim -c <SIMULATION_CONFIG>
 			
 	 - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
 

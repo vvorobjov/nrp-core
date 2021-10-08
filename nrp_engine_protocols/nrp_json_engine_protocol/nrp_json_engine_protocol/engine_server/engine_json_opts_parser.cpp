@@ -22,23 +22,28 @@
 
 #include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 cxxopts::Options EngineJSONOptsParser::createOptionParser(bool allowUnrecognised)
 {
-	cxxopts::Options options("NRP JSON Server");
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	if(allowUnrecognised)
-		options.allow_unrecognised_options();
+    cxxopts::Options options("NRP JSON Server");
 
-	options.add_options()
-	        (EngineJSONConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
-	        (EngineJSONConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>())
-	        (EngineJSONConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+    if(allowUnrecognised)
+        options.allow_unrecognised_options();
 
-	return options;
+    options.add_options()
+            (EngineJSONConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
+            (EngineJSONConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>())
+            (EngineJSONConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+
+    return options;
 }
 
 cxxopts::ParseResult EngineJSONOptsParser::parseOpts(int argc, char *argv[], cxxopts::Options parser)
 {
-	return parser.parse(argc, argv);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    return parser.parse(argc, argv);
 }

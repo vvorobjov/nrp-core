@@ -26,28 +26,26 @@
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
-#include "nrp_gazebo_devices/physics_camera.h"
-#include "nrp_gazebo_devices/physics_joint.h"
-#include "nrp_gazebo_devices/physics_link.h"
-
 #include "nrp_gazebo_json_engine/config/gazebo_json_config.h"
 
 #include <unistd.h>
 
 
 /*!
- *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ *  \brief NRP - Gazebo Communicator on the NRP side. Converts DataPackInterface classes from/to JSON objects
  */
 class GazeboEngineJSONNRPClient
-: public EngineJSONNRPClient<GazeboEngineJSONNRPClient, GazeboJSONConfigConst::EngineSchema, PhysicsCamera, PhysicsJoint, PhysicsLink>
+: public EngineJSONNRPClient<GazeboEngineJSONNRPClient, GazeboJSONConfigConst::EngineSchema>
 {
-	public:
-		GazeboEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~GazeboEngineJSONNRPClient() override = default;
+    public:
+        GazeboEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
+        virtual ~GazeboEngineJSONNRPClient() override = default;
 
-		virtual void initialize() override;
+        virtual void initialize() override;
 
-		virtual void shutdown() override;
+        virtual void reset() override;
+
+        virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 

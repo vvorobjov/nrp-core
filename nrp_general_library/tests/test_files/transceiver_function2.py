@@ -18,19 +18,19 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from NRPPythonModule import *
-from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
-@FromEngineDevice(keyword='device_engine', id=DeviceIdentifier('tf_input_engine', 'engine', 'type'))
-@PreprocessedDevice(keyword='device_preprocessed', id=DeviceIdentifier('tf_input_preprocessing', 'engine', 'type'))
+@EngineDataPack(keyword='datapack_engine', id=DataPackIdentifier('tf_input_engine', 'engine', 'type'))
+@PreprocessedDataPack(keyword='datapack_preprocessed', id=DataPackIdentifier('tf_input_preprocessing', 'engine', 'type'))
 @TransceiverFunction("engine")
-def transceiver_function(device_engine, device_preprocessed):
-    test_val1 = device_engine.test_value
-    test_val2 = device_preprocessed.data["test_value"]
+def transceiver_function(datapack_engine, datapack_preprocessed):
+    test_val1 = datapack_engine.test_value
+    test_val2 = datapack_preprocessed.data["test_value"]
     
-    ret_dev = PythonDevice()
-    ret_dev.data = {"test_value1" : str(test_val1),
-                    "test_value2" : str(test_val2)}
+    ret_dev = JsonDataPack('return_datapack', 'engine')
+    ret_dev.data["test_value1"] = str(test_val1)
+    ret_dev.data["test_value2"] = str(test_val2)
     
     return [ret_dev]
 

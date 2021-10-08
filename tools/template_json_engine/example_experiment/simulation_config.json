@@ -1,0 +1,17 @@
+{
+	"SimulationName": "${engine_name_lowercase}_experiment",
+	"SimDescription": "This experiment launches the ${engine_name_lowercase} JSON engine and passes some data from the engine to the transceiver function",
+	"SimulationTimeout": 1,
+	"EngineConfigs": [
+		{
+			"EngineType": "${engine_name_lowercase}_json_engine",
+			"EngineName": "${engine_name_lowercase}_engine"
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}

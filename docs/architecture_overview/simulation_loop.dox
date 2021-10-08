@@ -1,21 +1,22 @@
 /*! \page simulation_loop Simulation Loop
 
-The Simulation Loop is the main loop where the synchronization of engines, data transfer and data processing happens. The class responsible for managing its execution is: SimulationLoop.
+The simulation loop is the main loop where the synchronization of engines, data transfer and data processing happens. 
+The class responsible for managing its execution is: FTILoop, which stands for *Fixed Time Increment Loop* and implements the synchronization algorithm summarized below in this page.
 
 On initialization, it creates a TransceiverFunctionManager to manage all user-generated TransceiverFunctions. Additionally, it runs the initialization routines of all engines.
 
-During the simulation, a sequence of steps are managed by the SimulationLoop. Each step represents a series of data exchange and processing that happen at a given simulation time, <i>t</i>. This simulation time is calculated by the SimulationLoop on the basis of all individual engine time steps (see below). In order to guarantee an ordered synchronization of the various engines with each other, we thus strongly suggest that the users impose some constraints to the values taken by the engine time steps declared in the experiment configuration (see section \ref simulation_configuration "Simulation Configuration" hereafter). One such constraint can be that all individual engine time step be a multiple of the smallest engine time step <i>dt</i>. In that case, <i>t</i> is always a multiple of the smallest engine time step <i>dt</i>. Another such constraint, even stronger, is that every individual time step be the product of the smallest engine time step <i>dt</i> by a power of two (i.e. 2<SUP>n</SUP> <i>dt</i>). In this case, all engines will synchronize with each other at times that are multiple of the largest individual engine time step.
+During the simulation, a sequence of steps are managed by the FTILoop. Each step represents a series of data exchange and processing that happen at a given simulation time, <i>t</i>. This simulation time is calculated by the FTILoop on the basis of all individual engine time steps (see below). In order to guarantee an ordered synchronization of the various engines with each other, we thus strongly suggest that the users impose some constraints to the values taken by the engine time steps declared in the experiment configuration (see section \ref simulation_configuration "Simulation Configuration" hereafter). One such constraint can be that all individual engine time step be a multiple of the smallest engine time step <i>dt</i>. In that case, <i>t</i> is always a multiple of the smallest engine time step <i>dt</i>. Another such constraint, even stronger, is that every individual time step be the product of the smallest engine time step <i>dt</i> by a power of two (i.e. 2<SUP>n</SUP> <i>dt</i>). In this case, all engines will synchronize with each other at times that are multiple of the largest individual engine time step.
 
-The way the SimulationLoop works is described below:
+The way the FTILoop works is described below:
 - The time step of each engine is checked, and if <i>t</i> is a multiple of that engine time step, the engine is added to a list <i>L</i>.
 - The loop waits for every engine inside <i>L</i> to complete. The simulation as a whole is blocked until they all return.
-- All devices required by all active preprocessing and transceiver functions are identified. Those linked to engines in <i>L</i> are requested and stored in a local device cache. If the device already exists in the cache, it is overwritten.
-- Every preprocessing function (PF) linked to every engine inside <i>L</i> is executed. Devices required for executing these functions are retrieved from the local cache and pass to them. Each PF returns an array of devices which is stored in this same cache.
-- TFs linked to engines in <i>L</i> are identified and executed. Devices required for executing these functions are retrieved from the cache and pass to them. The TFs return arrays with devices that should be sent to engines.
-- Devices received from TFs are sent to all engines in <i>L</i>.
-- A timeout is checked. Should it have occurred, the SimulationLoop is stopped. Otherwise, <i>t</i> is updated to <i>t+dt</i> and the cycle restarts.
+- All datapacks required by all active preprocessing and transceiver functions are identified. Those linked to engines in <i>L</i> are requested and stored in a local datapack cache. If the datapack already exists in the cache, it is overwritten.
+- Every preprocessing function (PF) linked to every engine inside <i>L</i> is executed. DataPacks required for executing these functions are retrieved from the local cache and pass to them. Each PF returns an array of datapacks which is stored in this same cache.
+- TFs linked to engines in <i>L</i> are identified and executed. DataPacks required for executing these functions are retrieved from the cache and pass to them. The TFs return arrays with datapacks that should be sent to engines.
+- DataPacks received from TFs are sent to all engines in <i>L</i>.
+- A timeout is checked. Should it have occurred, the simulation loop is stopped. Otherwise, <i>t</i> is updated to <i>t+dt</i> and the cycle restarts.
 
 On shutdown, each engine is issued a shutdown command to close gracefully.
 
-The entire loop is executed within one function, SimulationLoop::runLoop. Should any of the above steps fail, an exception is thrown.
+The entire loop is executed within one function, FTILoop::runLoop. Should any of the above steps fail, an exception is thrown.
  */

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package EngineTest;
+
+/*
+ * Message used for testing
+ */
+message TestPayload
+{
+    uint32 integer = 1;
+    string str     = 2;
+}

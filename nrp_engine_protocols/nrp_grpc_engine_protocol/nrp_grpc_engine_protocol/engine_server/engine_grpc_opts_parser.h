@@ -31,9 +31,9 @@
  */
 class EngineGRPCOptsParser
 {
-	public:
-		static cxxopts::Options createOptionParser(bool allowUnrecognised = false);
-		static cxxopts::ParseResult parseOpts(int argc, char *argv[], cxxopts::Options parser = EngineGRPCOptsParser::createOptionParser());
+    public:
+        static cxxopts::Options createOptionParser(bool allowUnrecognised = false);
+        static cxxopts::ParseResult parseOpts(int argc, char *argv[], cxxopts::Options parser = EngineGRPCOptsParser::createOptionParser());
 };
 
 #endif // ENGINE_GRPC_OPTS_PARSER_H

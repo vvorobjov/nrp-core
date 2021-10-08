@@ -83,7 +83,7 @@ rpg = nest.Create('poisson_generator')
 # Go poisson generator
 gpg = nest.Create('poisson_generator')
 
-# Connect devices
+# Connect datapacks
 nest.Connect(lpg, CIRCUIT[slice(0, 3, 2)])
 nest.Connect(rpg, CIRCUIT[slice(1, 4, 2)])
 nest.Connect(gpg, CIRCUIT[4])

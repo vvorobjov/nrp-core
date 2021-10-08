@@ -1,6 +1,6 @@
 /*! \page transceiver_function_schema Transceiver Function Schema
 
-The TransceiverFunctions are responsible for exchanging data between engines. They are simple python scripts that take devices as input (i.e. data, either as received from engines, or pre-processed by preprocessing functions), performs some computation on those devices, and output other devices to be consumed by a given engine. Additional information can be found \ref transceiver_function "here". In order to use them in an experiment they must be added in the simulation configuration file.
+The TransceiverFunctions are responsible for exchanging data between engines. They are simple python scripts that take datapacks as input (i.e. data, either as received from engines, or pre-processed by preprocessing functions), performs some computation on those datapacks, and output other datapacks to be consumed by a given engine. Additional information can be found \ref transceiver_function "here". In order to use them in an experiment they must be added in the simulation configuration file.
 
 Below is a list of all the parameters needed to configure a TransceiverFunction.
 
