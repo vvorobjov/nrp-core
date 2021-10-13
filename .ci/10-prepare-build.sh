@@ -25,6 +25,6 @@ python3 -m pip install --user pytest
 
 # Run cmake
 
-cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR"
+cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" -DCOVERAGE:BOOL=ON
 
 # EOF

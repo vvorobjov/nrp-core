@@ -43,6 +43,7 @@ pipeline {
 
                 // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                 sh 'bash .ci/30-run-tests.sh'
+                cobertura coberturaReportFile: 'build/gcovr.xml'
             }
         }
        

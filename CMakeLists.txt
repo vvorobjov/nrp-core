@@ -12,7 +12,18 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 #string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--no-undefined")
 
-set (NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror)
+set(COVERAGE OFF CACHE BOOL "Enables code coverage")
+
+if(${COVERAGE} STREQUAL ON)
+    set(GCOV_CXX_FLAGS -coverage)
+    set(GCOV_LD_FLAGS -coverage)
+else()
+    set(GCOV_CXX_FLAGS "")
+    set(GCOV_LD_FLAGS "")
+endif()
+
+set(NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror ${GCOV_CXX_FLAGS})
+set(NRP_COMMON_LD_FLAGS ${GCOV_LD_FLAGS})
 
 # Uncomment to compile a production version of code (without trace calls)
 # add_definitions(-DPRODUCTION_RELEASE)
@@ -213,25 +224,25 @@ add_custom_target(cppcheck
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json
     COMMENT "Running cppcheck"
-    DEPENDS cppcheck-base
+	DEPENDS cppcheck-base
     VERBATIM
 )
 
 ##########################################
-## Template engines
+## coverage
 
-# All execute_process() commands will be executed sequentially during the configuration step
-
-# Generate code from the template JSON engine
-execute_process(
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND tools/create_new_engine.py --name Build --type json
+add_custom_target(gcovr
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND gcovr -r ../ --exclude "_deps" --exclude ".*example_engine.*" --xml gcovr.xml --html gcovr.html
+    COMMENT "Running gcovr"
+    VERBATIM
 )
 
 # Generate code from the template gRPC engine
 execute_process(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMAND tools/create_new_engine.py --name Build --type grpc
+    COMMAND tools/create_new_engine.py --name Build --type json
 )
 
 add_subdirectory("tools/build_grpc_engine")

@@ -116,6 +116,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${PYTHON_MODULE_NAME}

@@ -36,4 +36,8 @@ if (((ctest_result & ~0x8) != 0)); then
     exit $ctest_result
 fi
 
+python3 -m pip install --user gcovr
+
+make gcovr
+
 # EOF

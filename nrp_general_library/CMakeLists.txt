@@ -181,6 +181,7 @@ target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<
 set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
 set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
 
+target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}
@@ -255,6 +256,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Create testing process executble (used for testing ProcessLaunchers)
     set(TEST_NRP_PROCESS_EXEC "TestNRPProcessExec")
     add_executable(${TEST_NRP_PROCESS_EXEC} tests/test_process_exec.cpp)
+    target_link_options(${TEST_NRP_PROCESS_EXEC} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NRP_PROCESS_EXEC}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME})
@@ -263,6 +265,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     set(TEST_NRP_PLUGIN "TestNRPPluginManager")
     add_library(${TEST_NRP_PLUGIN} SHARED tests/test_plugin.cpp)
     set_target_properties(${TEST_NRP_PLUGIN} PROPERTIES PREFIX "")
+    target_link_options(${TEST_NRP_PLUGIN} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NRP_PLUGIN}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME})
@@ -275,6 +278,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
