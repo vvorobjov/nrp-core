@@ -164,6 +164,7 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 
 set(ENABLE_NEST FULL)
 set(ENABLE_GAZEBO FULL)
+set(ENABLE_ROS FULL)
 
 ##########################################
 ## NRP Engines
@@ -187,6 +188,13 @@ endif()
 add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
+
+## ROS Messages
+if(NOT ENABLE_ROS STREQUAL OFF)
+    add_subdirectory(nrp_ros_msgs)
+else()
+    message(STATUS "Ros msgs python bindings will not be built")
+endif()
 
 ##########################################
 ## NRP Simulation
@@ -266,13 +274,14 @@ set(DOXYGEN_EXAMPLE_PATH
         "nrp_protobuf/engine_proto_defs"
         "nrp_general_library/CMakeLists.txt"
         "CMakeLists.txt"
+        "nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt"
         "README.md")
 
 ## Example Engine. It is built to ensure the examples are not out of date in the documentation
 add_subdirectory("docs/example_engine")
 
 get_property(DOXYGEN_SOURCES GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
-doxygen_add_docs(doxygen
+doxygen_add_docs(doxygen_nrp
         ${DOXYGEN_SOURCES}
         "docs/main_page.dox"
 
@@ -317,6 +326,7 @@ doxygen_add_docs(doxygen
         "docs/guides/general_developer_guide.dox"
         "docs/guides/helpful_info.dox"
         "docs/guides/add_proto_definition.dox"
+        "docs/guides/add_custom_ros_msgs.dox"
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"

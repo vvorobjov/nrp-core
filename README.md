@@ -23,6 +23,11 @@ sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi
 
 # required by nrp-server, which uses gRPC python bindings and mpi
 pip install grpcio-tools pytest docopt mpi4py
+   
+# ROS
+Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
+
+Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an exisiting catking workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
     
 # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
 sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
@@ -42,7 +47,7 @@ mkdir -p /home/${USER}/.local/nrp
 make
 make install
 # just in case of wanting to build the documentation. Documentation can then be found in a new doxygen folder
-make doxygen 
+make doxygen_nrp
 ```
 
 ## Running an experiment
@@ -54,7 +59,11 @@ export NRP=/home/${USER}/.local/nrp
 export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
 export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
 export PATH=$PATH:${NRP}/bin
+export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
 . /usr/share/gazebo-11/setup.sh
+. /opt/ros/noetic/setup.bash
+. ${CATKIN_WS}/devel/setup.bash
+
 ```
  * Start the simulation:
 	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
@@ -80,4 +89,6 @@ export PATH=$PATH:${NRP}/bin
 			NRPCoreSim -c <SIMULATION_CONFIG>
 			
 	 - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
+
+
 

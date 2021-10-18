@@ -6,3 +6,8 @@ export PATH=$PATH:$NRP_INSTALL_DIR/bin
 
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
+
+source /opt/ros/noetic/setup.sh
+
+export CATKIN_WS=${HOME}/catkin_ws
+export ROS_PACKAGE_PATH=${CATKIN_WS}/src:${ROS_PACKAGE_PATH}

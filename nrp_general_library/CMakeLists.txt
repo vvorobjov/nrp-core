@@ -111,6 +111,12 @@ if(NOT ${restclient-cpp_FOUND})
         add_subdirectory(${restclient-cpp_SOURCE_DIR} ${restclient-cpp_BINARY_DIR})
         target_include_directories(restclient-cpp
             INTERFACE "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+
+        # not very nice hack to prevent restclient-cpp tests from compiling.
+        execute_process(
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                COMMAND rm ${CMAKE_BINARY_DIR}/_deps/restclient-cpp-build/test-program[1]_include.cmake
+        )
     endif()
 endif()
 

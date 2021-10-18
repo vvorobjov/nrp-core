@@ -22,8 +22,8 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/nrp_core_server.cpp
     nrp_simulation/simulation/fti_loop.cpp
     nrp_simulation/simulation/simulation_manager.cpp
-        nrp_simulation/datapack_handle/datapack_handle.cpp
-        nrp_simulation/datapack_handle/tf_manager_handle.cpp
+    nrp_simulation/datapack_handle/datapack_handle.cpp
+    nrp_simulation/datapack_handle/tf_manager_handle.cpp
 )
 
 # List of python module build files
