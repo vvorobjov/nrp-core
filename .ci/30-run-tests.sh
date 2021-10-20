@@ -21,7 +21,7 @@ export GTEST_OUTPUT="xml:$test_results_dir"
 
 ctest_result=0
 if [ -z "$DISPLAY" ]; then
-    xvfb-run ctest
+    xvfb-run -e /dev/stdout ctest
     ctest_result=$?
 else
     ctest
