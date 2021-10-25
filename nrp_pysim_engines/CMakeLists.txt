@@ -34,6 +34,9 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
+    ../nrp_python_json_engine/python_server_executable/python_server_executable.cpp
+    tests/test_pysim_executable.cpp
+    tests/test_pysim_server.cpp
 )
 
 
@@ -116,7 +119,26 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
+if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+    # Create testing env files
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
 
+    # Create testing executable
+    enable_testing()
+    add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
+    target_link_libraries(${TEST_NAME}
+        PUBLIC
+        ${NAMESPACE_NAME}::${LIBRARY_NAME}
+        GTest::GTest
+        GTest::Main)
+
+    gtest_discover_tests(${TEST_NAME}
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+        EXTRA_ARGS -VV)
+endif()
 ##########################################
 ## Installation
 

@@ -17,3 +17,6 @@ class Script(EngineScript):
 
     def shutdown(self):
         print("Engine 1 is shutting down")
+
+    def reset(self):
+        print("Engine 1 is resetting")

@@ -19,19 +19,18 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef PYSIM_CONFIG_H
-#define PYSIM_CONFIG_H
+#ifndef TEST_ENV_CMAKE_H
+#define TEST_ENV_CMAKE_H
 
-#include <string_view>
+#define TEST_SIMPLE_PYTHON_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/python_simple.py"
+#define TEST_PYTHON_DATAPACK_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/python_datapack_test.py"
+#define TEST_PYTHON_INIT_ERROR_FILE_NAME  "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/test_init_error.py"
 
-#include "nrp_general_library/utils/fixed_string.h"
 
-struct OpenSimConfigConst
-{
-    static constexpr char EngineType[] = "opensim";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/opensim";
+#define TEST_SIMULATOR_INIT_ERROR_FILE_NAME  "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/init/test_init.py"
+#define TEST_SIMULATOR_INIT_WORLD_NAME  "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/init/basicModel.osim"
 
-    static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
-};
+#define TEST_SIMULATOR_SIMPLE_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/exec/test_sim.py"
+#define TEST_SIMULATOR_SIM_WORLD_NAME  "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/exec/arm26/arm26_ground_offset.osim"
 
-#endif // PYSIM_CONFIG_H
+#endif // TEST_ENV_CMAKE_H

@@ -4,7 +4,7 @@ import math
 
 class OpensimInterface(object):
 
-	step_size = 0.001
+	stepsize = 0.001
 
 	model = None
 	state = None
@@ -27,16 +27,15 @@ class OpensimInterface(object):
 	maxforces = []
 	curforces = []
 	
-	def __init__(self, model_name, start_visualizer, time_step):
+	def __init__(self, modelName, isVisualizer, engineTimeStep):
 		super(OpensimInterface, self).__init__()
-
-		self.step_size = time_step
-		self.model = osim.Model(model_name)
+		self.stepsize = engineTimeStep
+		self.model = osim.Model(modelName)
 		self.state = self.model.initSystem()
-		self.model.setUseVisualizer(start_visualizer)
+		self.model.setUseVisualizer(isVisualizer)
 		self.brain = osim.PrescribedController()
 		self.muscleSet = self.model.getMuscles()
-
+		
 		for j in range(self.muscleSet.getSize()):
 			func = osim.Constant(1.0)
 			self.brain.addActuator(self.muscleSet.get(j))
@@ -46,7 +45,7 @@ class OpensimInterface(object):
 			self.curforces.append(1.0)
 
 		self.model.addController(self.brain)
-		self.model.initSystem()
+		self.state = self.model.initSystem()
 		# Enable the visualizer
 		self.reset()
 
@@ -60,12 +59,13 @@ class OpensimInterface(object):
 		self.n_step = self.n_step + 1
 		# Integrate till the new endtime
 		try:
-			self.state = self.manager.integrate(self.step_size*self.n_step)
+			self.state = self.manager.integrate(self.stepsize*self.n_step)
 		except Exception as e:
 			print(e)
 
 	def reset(self):
 		self.state = self.model.initializeState()
+		#self.state = self.model.initSystem()
 		self.state.setTime(0)
 		self.n_step = 0
 
@@ -73,39 +73,49 @@ class OpensimInterface(object):
 		
 	# Set the value of controller
 	def actuate(self, action):
+		self.last_action = action
+
 		brain = osim.PrescribedController.safeDownCast(
 			self.model.getControllerSet().get(0))
-		function_set = brain.get_ControlFunctions()
+		functionSet = brain.get_ControlFunctions()
 
-		for j in range(function_set.getSize()):
-			func = osim.Constant.safeDownCast(function_set.get(j))
+		for j in range(functionSet.getSize()):
+			func = osim.Constant.safeDownCast(functionSet.get(j))
 			func.setValue(float(action[j]))
 
 	# Obtain datapack names, which can also be found in the model file "*.osim"
-	def get_model_properties(self, p_type):
-		if p_type == "Joint":
+	def get_model_properties(self, deviceType):
+		tSet = None
+		if deviceType == "Joint":
 			tSet = self.jointSet
-		elif p_type == "Force":
+		elif deviceType == "Force":
 			tSet = self.forceSet
 		else:
-			print("supported types are 'Joint' and 'Force'")
-			return []
-
-		return [tSet.get(i).getName() for i in range(tSet.getSize())]
-
-	# Obtain the value of one datapack by the datapack name
-	def get_model_property(self, p_name, p_type):
-		if p_type == "Joint":
-			tSet = self.jointSet
-		elif p_type == "Force":
-			tSet = self.forceSet
-		else:
-			print("p_type is error")
+			print("DeviceType is error")
 			print("In this function, it only supports Joint and Force")
 			return []
-		
-		prop = tSet.get(p_name).getCoordinate()
-		return prop.getValue(self.state)
+		nameList = []
+		for i in range(tSet.getSize()):
+			nameList.append(tSet.get(i).getName())
+
+		return nameList
+	# Obtain the value of one datapack by the datapack name
+	def get_model_property(self, deviceName, deviceType):
+		if deviceType == "Joint":
+			tSet = self.jointSet
+			theDevice = tSet.get(deviceName).getCoordinate()
+			return theDevice.getValue(self.state)
+		elif deviceType == "Force":
+			tSet = self.forceSet
+			theDevice = tSet.get(deviceName).get_appliesForce()
+			if theDevice:
+				self.model.realizeDynamics(self.state)
+				tVal =  tSet.get(deviceName).getRecordValues(self.state)
+			return tVal
+		else:
+			print("DeviceType is error")
+			print("In this function, it only supports Joint and Force")
+			return []
 		
 	def get_sim_time(self):
 		return self.state.getTime()
@@ -114,4 +124,5 @@ class OpensimInterface(object):
 		self.manager = osim.Manager(self.model)
 		self.manager.setIntegratorAccuracy(self.integrator_accuracy)
 		self.manager.initialize(self.state)
+
 

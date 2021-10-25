@@ -9,8 +9,7 @@ Similarly to the Python JSON Engine, the engine behavior in each experiment is i
 - `initialize()`: executed when the engine is initialized
 - `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
 - `shutdown()`: executed when the engine is requested to shutdown
-
-Note: for readers familiar with the JSON engine, a basic `reset()` function is implemented through shutting down and re-initializing, and as such is not to be overridden. 
+- `reset()`: executed when the engine is requested to reset. If it is not provided the Engine is reset by calling `shutdown()` and `initialize()` sequentially. 
 
 The interaction with the Opensim simulator is performed by an instance of the *SimulatorManager* class, which is stored in *OpenSimEngineScript* in the atribute *self.sim_manager*. *self.sim_manager* must be "manually" called from the *OpenSimEngineScript* subclass in order to advance, modify or get information from the Opensim simulation. As an example of this use, the script implementing the Opensim engine in *examples/opensim_control* is listed below:
 
