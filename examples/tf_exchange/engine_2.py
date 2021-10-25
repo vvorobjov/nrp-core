@@ -7,7 +7,6 @@ class Script(EngineScript):
     def initialize(self):
         """Initialize datapack1 with empty time"""
         print("Engine 2 is initializing. Registering datapack...")
-        print(type(self._config))
         self._registerDataPack("rec_datapack2")
         self._setDataPack("rec_datapack2", { "time" : self._time.count(), "timestep": 0 })
 

@@ -161,6 +161,8 @@ nlohmann::json PythonJSONServer::reset(EngineJSONServer::lock_t &lock)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
+    PythonGILLock lockpy(this->_pyGILState, true);
+
     if (!this->initRunFlag())
     {
         return nlohmann::json({{PythonConfigConst::ResetExecStatus, false}, {PythonConfigConst::ErrorMsg, "Cannot reset non-initialized instance"}});
@@ -168,11 +170,14 @@ nlohmann::json PythonJSONServer::reset(EngineJSONServer::lock_t &lock)
 
     try
     {
-        this->shutdown(_initData);
-
-        this->_shutdownFlag = false;
-
-        this->initialize(_initData, lock);
+        // Try to use user provided reset function from EngineScript
+        PyEngineScript &script = python::extract<PyEngineScript&>(this->_pyEngineScript);
+        if(!script.reset()) {
+            // Hard reset the engine if user didn't provide a reset function
+            this->shutdown(_initData);
+            this->_shutdownFlag = false;
+            this->initialize(_initData, lock);
+        }
 
         return nlohmann::json({{PythonConfigConst::ResetExecStatus, true}});
     }

@@ -62,6 +62,11 @@ class PyEngineScript
         virtual void shutdown();
 
         /*!
+         * \brief Reset function
+         */
+        virtual bool reset();
+
+        /*!
          * \brief Get simulation time of this engine
          */
         SimulationTime simTime() const;
