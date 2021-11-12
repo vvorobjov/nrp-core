@@ -64,7 +64,6 @@ class OpensimInterface(object):
 
 	def reset(self):
 		self.state = self.model.initializeState()
-		#self.state = self.model.initSystem()
 		self.state.setTime(0)
 		self.n_step = 0
 
