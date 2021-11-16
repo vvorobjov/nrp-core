@@ -64,6 +64,7 @@ class OpensimInterface(object):
 
 	def reset(self):
 		self.state = self.model.initializeState()
+		#self.state = self.model.initSystem()
 		self.state.setTime(0)
 		self.n_step = 0
 
@@ -119,4 +120,5 @@ class OpensimInterface(object):
 		self.manager = osim.Manager(self.model)
 		self.manager.setIntegratorAccuracy(self.integrator_accuracy)
 		self.manager.initialize(self.state)
+
 

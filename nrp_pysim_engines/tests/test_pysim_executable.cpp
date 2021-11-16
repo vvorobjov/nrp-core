@@ -70,6 +70,7 @@ TEST(TestPySimExecutable, TestSimulatorRun)
     nlohmann::json config;
     config["EngineName"] = "test_opensim_init";
     config["EngineType"] = "test_engine_opensim";
+    config["Simulator"] = "Opensim";
     config["PythonFileName"] = TEST_SIMULATOR_INIT_ERROR_FILE_NAME;
     config["WorldFileName"] = TEST_SIMULATOR_INIT_WORLD_NAME;
     config["Visualizer"] = false;
