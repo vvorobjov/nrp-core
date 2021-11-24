@@ -4,7 +4,7 @@ This is an engine implementation that integrates the <a href="http://gazebosim.o
 
 The integration of gzserver in NRP-core is implemented through gazebo plugins, which must be used in the gazebo simulation sdf file in order to register the engine with the SimulationManager and setup datapack communication.
 
-Two implementations of the Gazebo engine are provided. One is based on \ref engine_json and another on \ref engine_grpc. The latter performs much better and it is recommended. The former is provided for situations in which gRPC may not be available. The Grpc implementation uses protobuf objects to encapsulate data exchanged between the Engine and TFs, whereas the JSON implementation uses nlohmann::json objects. Besides from this fact, both engines are very similar both in their configuration and behavior. The rest of the documentation below is implicitely referred to the Grpc implementation even though in most cases the JSON implementation shows no differences.
+Two implementations of the Gazebo engine are provided. One is based on \ref engine_json and another on \ref engine_grpc. The latter performs much better and it is recommended. The former is provided for situations in which gRPC may not be available. The gRPC implementation uses protobuf objects to encapsulate data exchanged between the Engine and TFs, whereas the JSON implementation uses nlohmann::json objects. Besides from this fact, both engines are very similar both in their configuration and behavior. The rest of the documentation below is implicitely referred to the gRPC implementation even though in most cases the JSON implementation shows no differences.
 
 A description of the implemented <b>gazebo plugins</b> can be found \subpage gazebo_plugins "here", and a description of the <b>datapacks</b> supported off-the-shelf by the gazebo engine can be found \subpage gazebo_datapacks "here"
 
@@ -32,7 +32,7 @@ To use the Gazebo engine in an experiment, set `EngineType` to <b>"gazebo_grpc"<
 
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
-<tr><td>ServerAddress<td>GRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
 </table>
 
 - Parameters specific to this engine type:
@@ -47,7 +47,7 @@ To use the Gazebo engine in an experiment, set `EngineType` to <b>"gazebo_grpc"<
 
 \section engine_gazebo_schema Schema
 
-As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below: 
+As explained above, the schema used by the Gazebo engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
 
 \include engines/engines_gazebo.json
 

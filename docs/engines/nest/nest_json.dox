@@ -67,7 +67,7 @@ To use the NEST JSON engine in an experiment, set `EngineType` to <b>"nest_json"
 
 \section nest_json_schema Schema
 
-As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
+As explained above, the schema used by the NEST JSON engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
 
 \include engines/engines_nest.json
 

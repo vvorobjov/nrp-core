@@ -64,7 +64,7 @@ OPENSIM_PATH=$HOME/Documents/OpenSim
 mkdir -p $OPENSIM_PATH
 cd $OPENSIM_PATH
 
-# Build Opensim dependencie
+# Build Opensim dependencies
 git clone https://github.com/opensim-org/opensim-core.git
 mkdir opensim_dependencies_build
 cd opensim_dependencies_build

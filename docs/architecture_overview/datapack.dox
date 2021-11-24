@@ -178,6 +178,7 @@ datapack.data["object"] = {"key1": "value", "key2": 600}
 print(datapack.data["string"])
 print(datapack.data["object"])
 
+# JsonDataPack supports dict's __getitem__ and keys methods.
 for k in datapack.data.keys():
     print(datapack.data[k])
 
@@ -210,7 +211,7 @@ datapack.data["numpy_array_float64"] = np.array([1.5, 2.3, 3.88], dtype="float64
 
 \subsubsection datapacks_json_inspecting Inspecting content of JsonDataPack
 
-Printing the content using __str__ method:
+Printing the content using Python's built-in function __str__:
 
 \code{.py}
 str(datapack.data)
