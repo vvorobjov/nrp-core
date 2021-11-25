@@ -57,7 +57,7 @@ To use the NEST server engine in an experiment, set `EngineType` to <b>"nest_ser
 
 \section nest_server_schema Schema
 
-As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" schema. A complete schema for the configuration of this engine is given below: 
+As explained above, the schema used by the NEST engine inherits from \ref engine_base_schema "EngineBase" schema. A complete schema for the configuration of this engine is given below:
 
 \include engines/engines_nest.json
 
