@@ -73,7 +73,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 ##########################################
 ## Boost Python libraries
-## find_package(Boost) changes behvior after Boost version 1.67, so adapt component names accordingly
+## find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
 add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
 find_package(Boost REQUIRED)
 if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
@@ -159,29 +159,49 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ##   - the engine server side components might or might not be built, depending on if the related simulator is required at compilation time
 ## - if the flag is set to FULL the simulator is assumed to be installed or it will be installed from source if this option is available. All targets connected with this simulator will be built
 ##
-## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential denpendency conflicts
+## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential dependency conflicts
 ## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
 
-set(ENABLE_NEST FULL)
-set(ENABLE_GAZEBO FULL)
-set(ENABLE_ROS FULL)
+if(NOT DEFINED ENABLE_NEST)
+    message(VERBOSE "ENABLE_NEST defaults to FULL")
+    set(ENABLE_NEST FULL)
+else()
+    message(VERBOSE "ENABLE_NEST is set to ${ENABLE_NEST}")
+endif()
+
+if(NOT DEFINED ENABLE_GAZEBO)
+    message(VERBOSE "ENABLE_GAZEBO defaults to FULL")
+    set(ENABLE_GAZEBO FULL)
+else()
+    message(VERBOSE "ENABLE_GAZEBO is set to ${ENABLE_GAZEBO}")
+endif()
+
+if(NOT DEFINED ENABLE_ROS)
+    message(VERBOSE "ENABLE_ROS defaults to FULL")
+    set(ENABLE_ROS FULL)
+else()
+    message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
+endif()
+
 
 ##########################################
 ## NRP Engines
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
+    message(STATUS "Building Gazebo engines")
     add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
     add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
 else()
     message(STATUS "Gazebo engines will not be built")
 endif()
 
-## Nest Engines
+## NEST Engines
 if(NOT ENABLE_NEST STREQUAL OFF)
+    message(STATUS "Building NEST engines")
     add_subdirectory(nrp_nest_engines)
 else()
-    message(STATUS "Nest engines will not be built")
+    message(STATUS "NEST engines will not be built")
 endif()
 
 ## Python Engine
@@ -191,9 +211,10 @@ add_subdirectory(nrp_pysim_engines)
 
 ## ROS Messages
 if(NOT ENABLE_ROS STREQUAL OFF)
+    message(STATUS "Building ROS msgs Python bindings")
     add_subdirectory(nrp_ros_msgs)
 else()
-    message(STATUS "Ros msgs python bindings will not be built")
+    message(STATUS "ROS msgs Python bindings will not be built")
 endif()
 
 ##########################################

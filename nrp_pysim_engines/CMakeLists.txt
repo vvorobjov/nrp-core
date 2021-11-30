@@ -34,9 +34,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-    ../nrp_python_json_engine/python_server_executable/python_server_executable.cpp
-    tests/test_pysim_executable.cpp
-    tests/test_pysim_server.cpp
+    tests/test_opensim_engine.cpp
 )
 
 

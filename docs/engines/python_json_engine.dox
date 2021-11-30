@@ -76,7 +76,7 @@ To use the Python JSON engine in an experiment, set `EngineType` to <b>"python_j
 
 \section python_json_schema Schema
 
-As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below: 
+As explained above, the schema used by the PythonJSON engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
 
 \include engines/engine_python.json
 

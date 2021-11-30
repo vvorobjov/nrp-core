@@ -13,7 +13,7 @@ From the NRP-core perspective, the core component of the engine is its communica
 
 This \ref nrp_engines "page" contains a list of currently supported Engines.
 
-The architecture has been designed in a modular way that allow to implement new engines with relative easiness. In \ref tutorial_engine_creation "this page" can be found a tutorial on how to implement a new engine from scratch. An easier approach is to base the implementation on one of the already implemented communication protocol. Tutorials are available  teaching how to accomplish that using \ref grpc_engine_creation "GRPC" and \ref json_engine_creation "JSON over REST".
+The architecture has been designed in a modular way that allows to implement new engines with relative easiness. In \ref tutorial_engine_creation "this page" can be found a tutorial on how to implement a new engine from scratch. An easier approach is to base the implementation on one of the already implemented communication protocol. Tutorials are available  teaching how to accomplish that using \ref grpc_engine_creation "gRPC" and \ref json_engine_creation "JSON over REST".
 
 \section Python_json_engine_section Python JSON Engine
 

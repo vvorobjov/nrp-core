@@ -24,4 +24,3 @@ class Script(OpenSimEngineScript):
     def shutdown(self):
         print("Engine 1 is shutting down")
 
-
