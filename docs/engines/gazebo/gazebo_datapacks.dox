@@ -1,6 +1,6 @@
 /*! \page gazebo_datapacks Gazebo DataPacks
 
-The JSON implementation always uses \ref datapacks_json to exchange data with TFs. This datapack can contain arbitrary data in a JSON object. The Grpc implementation uses \ref datapacks_protobuf. Below are listed the protobuf message definitions used by the Gazebo engine:
+The JSON implementation always uses \ref datapacks_json to exchange data with TFs. This datapack can contain arbitrary data in a JSON object. The gRPC implementation uses \ref datapacks_protobuf. Below are listed the protobuf message definitions used by the Gazebo engine:
 
 \include gazebo_msgs.proto
 
