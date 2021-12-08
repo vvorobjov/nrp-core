@@ -1,6 +1,6 @@
 # Download base image ubuntu 20.04
 
-FROM ubuntu:20.04
+FROM nvidia/cudagl:11.0-base-ubuntu20.04
 
 ARG NRP_USER=nrpuser
 ARG NRP_GROUP=nrpgroup
@@ -21,6 +21,17 @@ ARG DEBIAN_FRONTEND=noninteractive
 # INSTALL sudo
 
 RUN apt update -y && apt-get install -y sudo
+
+ENV NVIDIA_DRIVER_CAPABILITIES compute,graphics,utility
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget
+
+# Install Vulkan SDK
+RUN wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | apt-key add - && \
+wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.1.121-bionic.list http://packages.lunarg.com/vulkan/1.1.121/lunarg-vulkan-1.1.121-bionic.list && \
+apt update && DEBIAN_FRONTEND=noninteractive apt install -y vulkan-sdk && apt upgrade -y && apt autoremove -y
+
+COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 
 # Set NRP_USER user
 
