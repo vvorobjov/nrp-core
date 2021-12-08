@@ -1,0 +1,78 @@
+/*! \page engine_comm Engine Communication Protocols
+
+Final engine implementations can be based on one of the engine communication protocol (ECP) provided with NRP-core. These are intermediate engine implementations (ie. can't be instantiated, nor directly used in an experiment) that implement engine client / server communication and datapack de-/serialization for a given communication protocol or middleware. Therefore, engine implementations based thereon can focus on the aspects specific to the functionality that the engine is meant to provide.
+
+A tutorial on how to create new engine implementations based on the provided ECPs can be found \ref engine_creation_template "here".
+
+The ECPs provided with NRP-core are described below.
+
+\section engine_json JSON over REST
+
+This ECP uses an HTTP REST Server as the base for the engine server. The client can then use REST calls to communicate. All communications will be de-/serialized using JSON.
+
+The server side of the engine is implemented in EngineJSONServer and the client in EngineJSONNRPClient. Final engine implementations can inherit from these two classes. In order to handle datapack I/O operations in the engine server, concrete datapack controllers can be based on the DataPackController class.
+
+To help create servers, EngineJSONOptsParser can be used to parse start parameters and extract relevant information. Additionally, the SimulationManager will launch an instance of EngineJSONRegistrationServer which can be used by EngineJSONServers to communicate its address to clients.
+
+\subsection engine_json_config_section Engine Configuration Parameters
+
+This engine type parameters are defined in EngineJSON schema (listed \ref engine_comm_protocols_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" schema and thus inherits all parameters from the latter.
+
+- Parameters inherited from EngineBase schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Command (executable) that will be run in the engine process<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>EngineJSONServer address. Should this address already be in use, the server will continue trying ports higher up<td>string<td>localhost:9002<td><td>
+<tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
+</table>
+
+\section engine_grpc Protobuf over gRPC
+
+In this case a gRPC server is used for communication. DataPacks are serialized into protobuf format.
+
+\subsection engine_grpc_config_section Engine Configuration Parameters
+
+This engine type parameters are defined in EngineGRPC schema (listed \ref engine_comm_protocols_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" schema and thus inherits all parameters from the latter.
+
+- Parameters inherited from EngineBase schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Command (executable) that will be run in the engine process<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+</table>
+
+\section engine_comm_protocols_schema Schema
+
+Inherits from \ref engine_base_schema "EngineBase" schema
+
+\include engines/engine_comm_protocols.json
+
+ */

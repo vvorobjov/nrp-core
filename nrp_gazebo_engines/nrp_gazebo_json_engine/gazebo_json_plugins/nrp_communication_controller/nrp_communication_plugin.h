@@ -27,30 +27,30 @@
 
 namespace gazebo
 {
-	/*!
-	 * \brief Plugin that creates a REST server for NRP communication
-	 */
-	class NRPCommunicationPlugin
-	        : public SystemPlugin
-	{
-		public:
-			virtual ~NRPCommunicationPlugin() = default;
+    /*!
+     * \brief Plugin that creates a REST server for NRP communication
+     */
+    class NRPCommunicationPlugin
+            : public SystemPlugin
+    {
+        public:
+            virtual ~NRPCommunicationPlugin() = default;
 
-			/*!
-			 * \brief Load the communication server
-			 */
-			virtual void Load(int argc = 0, char **argv = nullptr);
+            /*!
+             * \brief Load the communication server
+             */
+            virtual void Load(int argc = 0, char **argv = nullptr);
 
-			virtual void Reset();
+            virtual void Reset();
 
-		private:
-			/*!
-			 * \brief Server URL, read from program opts
-			 */
-			std::string _serverAddress;
-	};
+        private:
+            /*!
+             * \brief Server URL, read from program opts
+             */
+            std::string _serverAddress;
+    };
 
-	GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)
+    GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)
 }
 
 #endif

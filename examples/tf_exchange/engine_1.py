@@ -1,19 +1,22 @@
-"""Python Engine 1. Will get current engine time and make it accessible as a device"""
+"""Python Engine 1. Will get current engine time and make it accessible as a datapack"""
 
-from NRPPythonEngineModule import EngineScript,RegisterEngine
+from nrp_core.engines.python_json import EngineScript,RegisterEngine
 
 @RegisterEngine()
 class Script(EngineScript):
     def initialize(self):
-        """Initialize device1 with time"""
-        print("Engine 1 is initializing. Registering device...")
-        self._registerDevice("device1")
-        self._setDevice("device1", { "time" : self._time.count(), "timestep": 0 })
+        """Initialize datapack1 with time"""
+        print("Engine 1 is initializing. Registering datapack...")
+        self._registerDataPack("datapack1")
+        self._setDataPack("datapack1", { "time" : self._time.count(), "timestep": 0 })
 
     def runLoop(self, timestep):
-        """Update device1 at every timestep"""
-        self._setDevice("device1", { "time" : self._time.count(), "timestep": timestep.count() })
-        print("Device 1 data is " + str(self._getDevice("device1")))
+        """Update datapack1 at every timestep"""
+        self._setDataPack("datapack1", { "time" : self._time.count(), "timestep": timestep.count() })
+        print("DataPack 1 data is " + str(self._getDataPack("datapack1")))
 
-    def shutdown():
+    def shutdown(self):
         print("Engine 1 is shutting down")
+
+    def reset(self):
+        print("Engine 1 is resetting")

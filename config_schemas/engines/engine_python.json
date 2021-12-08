@@ -1,19 +1,76 @@
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Python Json Engine",
-  "description": "Python Json Engine Configuration",
-  "$id": "#PythonJSONEngine",
-  "allOf": [
-    { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
-    {
-      "properties": {
-        "EngineType": { "enum": ["python_json"] },
-        "PythonFileName" : {
-          "type": "string",
-          "description": "Python File (contains the python engine script)"
+{"python_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Python Json Engine Base",
+    "description": "Python Json Engine Base Configuration",
+    "$id": "#PythonJSONEngineBase",
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      {
+        "properties": {
+          "PythonFileName" : {
+            "type": "string",
+            "description": "Path to the python script containing the engine definition"
+          }
+        },
+        "required": ["PythonFileName"]
+      }
+    ]
+  },
+  "python_json" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Python Json Engine",
+    "description": "Python Json Engine Configuration",
+    "$id": "#PythonJSONEngine",
+    "allOf": [
+      { "$ref": "#/python_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["python_json"] }
         }
-      },
-      "required": ["PythonFileName"]
-    }
-  ]
+      }
+    ]
+  },
+  "py_sim" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Python Simulation Engine",
+    "description": "Python Simulation Engine Configuration",
+    "$id": "#PySim",
+    "allOf": [
+      { "$ref": "#/python_base" },
+      {
+        "properties": {
+          "Simulator": {
+            "type": "string",
+            "default": "Opensim",
+            "description": "The simulator will be used"
+          },
+          "WorldFileName": {
+            "type": "string",
+            "description": "Path to the file of simulation world"
+          },
+          "Visualizer": {
+            "type": "boolean",
+            "default": false,
+            "description": "To show the simulation in visualizer or not"
+          }
+        },
+        "required": ["WorldFileName"]
+      }
+    ]
+  },
+  "opensim" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Opensim Simulation Engine",
+    "description": "Opensim Simulation Engine Configuration",
+    "$id": "#OpenSimEngine",
+    "allOf": [
+      { "$ref": "#/py_sim" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["opensim"] },
+          "Simulator": { "enum": ["Opensim"] }
+        }
+      }
+    ]
+  }
 }

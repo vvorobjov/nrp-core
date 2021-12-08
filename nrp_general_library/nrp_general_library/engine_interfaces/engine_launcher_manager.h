@@ -32,27 +32,27 @@
 class EngineLauncherManager
         : public PtrTemplates<EngineLauncherManager>
 {
-		using launcher_set_t = std::set<EngineLauncherInterfaceSharedPtr>;
+        using launcher_set_t = std::set<EngineLauncherInterfaceSharedPtr>;
 
-	public:
-		/*!
-		 * \brief Register launcher
-		 * \param launcher Launcher to register
-		 */
-		void registerLauncher(const EngineLauncherInterfaceSharedPtr &launcher);
+    public:
+        /*!
+         * \brief Register launcher
+         * \param launcher Launcher to register
+         */
+        void registerLauncher(const EngineLauncherInterfaceSharedPtr &launcher);
 
-		/*!
-		 * \brief Finds a Launcher via the given name
-		 * \param name Name of Launcher
-		 * \return Returns pointer to the Launcher if available, nullptr otherwise
-		 */
-		EngineLauncherInterfaceSharedPtr findLauncher(const EngineLauncherInterface::engine_type_t &name) const;
+        /*!
+         * \brief Finds a Launcher via the given name
+         * \param name Name of Launcher
+         * \return Returns pointer to the Launcher if available, nullptr otherwise
+         */
+        EngineLauncherInterfaceSharedPtr findLauncher(const EngineLauncherInterface::engine_type_t &name) const;
 
-	private:
-		/*!
-		 * \brief All available launchers
-		 */
-		launcher_set_t _launchers;
+    private:
+        /*!
+         * \brief All available launchers
+         */
+        launcher_set_t _launchers;
 };
 
 using EngineLauncherManagerSharedPtr = EngineLauncherManager::shared_ptr;

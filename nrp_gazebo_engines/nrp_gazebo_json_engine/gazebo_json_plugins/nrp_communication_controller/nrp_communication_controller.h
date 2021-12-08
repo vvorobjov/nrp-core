@@ -23,8 +23,6 @@
 #define NRP_COMMUNICATION_CONTROLLER_H
 
 #include "nrp_json_engine_protocol/engine_server/engine_json_server.h"
-#include "nrp_json_engine_protocol/engine_server/engine_json_device_controller.h"
-
 #include "nrp_gazebo_json_engine/engine_server/gazebo_step_controller.h"
 
 #include <pistache/router.h>
@@ -40,98 +38,132 @@
 class NRPCommunicationController
         : public EngineJSONServer
 {
-	public:
-		~NRPCommunicationController() override;
+    public:
+        ~NRPCommunicationController() override;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController(const NRPCommunicationController &other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController(const NRPCommunicationController &other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController(NRPCommunicationController &&other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController(NRPCommunicationController &&other) = delete;
 
-		/*! \brief Delete for singleton */
-		NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
+        /*! \brief Delete for singleton */
+        NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
 
-		/*!
-		 * \brief Get singleton instance
-		 * \return Gets instance of NRPCommunicationController
-		 */
-		static NRPCommunicationController& getInstance();
+        /*!
+         * \brief Get singleton instance
+         * \return Gets instance of NRPCommunicationController
+         */
+        static NRPCommunicationController& getInstance();
 
-		/*!
-		 * \brief Reset server with the given server URL
-		 * \param serverURL URL used by server
-		 * \return Returns reference to server instance
-		 */
-		static NRPCommunicationController& resetInstance(const std::string &serverURL);
+        /*!
+         * \brief Reset server with the given server URL
+         * \param serverURL URL used by server
+         * \return Returns reference to server instance
+         */
+        static NRPCommunicationController& resetInstance(const std::string &serverURL);
 
-		/*!
-		 * \brief Reset server with the given server URL
-		 * \param serverURL URL used by server
-		 * \param engineName Name of this engine
-		 * \param registrationURL URL used to register this engine server's URL
-		 * \return Returns reference to server instance
-		 */
-		static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        /*!
+         * \brief Reset server with the given server URL
+         * \param serverURL URL used by server
+         * \param engineName Name of this engine
+         * \param registrationURL URL used to register this engine server's URL
+         * \return Returns reference to server instance
+         */
+        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 
 
-		/*!
-		 * \brief Register a step controller
-		 * \param stepController Pointer to step controller
-		 */
-		void registerStepController(GazeboStepController *stepController);
+        /*!
+         * \brief Register a step controller
+         * \param stepController Pointer to step controller
+         */
+        void registerStepController(GazeboStepController *stepController);
 
-		/*!
-		 * \brief Create device name from the given plugin and sensor/joint/link
-		 * \tparam T Plugin Type
-		 * \param plugin Controller Plugin
-		 * \param objectName Name of the controlled object (sensor, joint, link, ...)
-		 * \return Returns device name
-		 */
-		template<class T>
-		static std::string createDeviceName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
-		{	return plugin.GetHandle() + "::" + objectName;	}
+        /*!
+         * \brief Register a sensor plugin
+         * \param sensorPlugin Pointer to sensor plugin
+         */
+        void registerSensorPlugin(gazebo::SensorPlugin *sensorPlugin)
+        {
+            this->_sensorPlugins.push_back(sensorPlugin);
+        };
 
-	private:
+        /*!
+         * \brief Register a model plugin
+         * \param sensorPlugin Pointer to model plugin
+         */
+        void registerModelPlugin(gazebo::ModelPlugin *modelPlugin)
+        {
+            this->_modelPlugins.push_back(modelPlugin);
+        };
 
-		/*!
-		 * \brief Singleton instance of this class
-		 */
-		static std::unique_ptr<NRPCommunicationController> _instance;
+        /*!
+         * \brief Create datapack name from the given plugin and sensor/joint/link
+         * \tparam T Plugin Type
+         * \param plugin Controller Plugin
+         * \param objectName Name of the controlled object (sensor, joint, link, ...)
+         * \return Returns datapack name
+         */
+        template<class T>
+        static std::string createDataPackName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
+        {   return plugin.GetHandle() + "::" + objectName;  }
 
-		/*!
-		 * \brief Controlls gazebo stepping
-		 */
-		GazeboStepController *_stepController = nullptr;
+    private:
 
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+        /*!
+         * \brief Singleton instance of this class
+         */
+        static std::unique_ptr<NRPCommunicationController> _instance;
 
-		virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &lock) override;
+        /*!
+         * \brief Controlls gazebo stepping
+         */
+        GazeboStepController *_stepController = nullptr;
 
-		virtual nlohmann::json shutdown(const nlohmann::json &data) override;
+        /*!
+         * \brief Vector of registered SensorPlugin's.
+         * They are kept in order to be available for function calls, like Reset
+         * Because the world->Reset doesn't call plugins' corresponding functions.
+         */
+        std::vector< gazebo::SensorPlugin* >  _sensorPlugins;
 
-		/*!
-		 * \brief Make private for singleton
-		 */
-		NRPCommunicationController() = default;
+        /*!
+         * \brief Vector of registered ModelPlugin's
+         * They are kept in order to be available for function calls, like Reset
+         * Because the world->Reset doesn't call plugins' corresponding functions.
+         */
+        std::vector< gazebo::ModelPlugin* >  _modelPlugins;
 
-		/*!
-		 * \brief Constructor. Private for singleton
-		 * \param address Server Address
-		 */
-		NRPCommunicationController(const std::string &address);
+        virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-		/*!
-		 * \brief Constructor. Private for singleton
-		 * \param serverURL URL used by server
-		 * \param engineName Name of this engine
-		 * \param registrationURL URL used to register this engine server's URL
-		 * \return Returns reference to server instance
-		 */
-		NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &lock) override;
+
+        virtual nlohmann::json reset(EngineJSONServer::lock_t &lock) override;
+
+        virtual nlohmann::json shutdown(const nlohmann::json &data) override;
+
+        /*!
+         * \brief Make private for singleton
+         */
+        NRPCommunicationController() = default;
+
+        /*!
+         * \brief Constructor. Private for singleton
+         * \param address Server Address
+         */
+        NRPCommunicationController(const std::string &address);
+
+        /*!
+         * \brief Constructor. Private for singleton
+         * \param serverURL URL used by server
+         * \param engineName Name of this engine
+         * \param registrationURL URL used to register this engine server's URL
+         * \return Returns reference to server instance
+         */
+        NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 };
 
 #endif

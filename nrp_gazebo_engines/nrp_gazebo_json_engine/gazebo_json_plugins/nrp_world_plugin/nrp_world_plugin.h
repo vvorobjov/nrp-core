@@ -27,43 +27,51 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/JointController.hh>
 #include <gazebo/physics/Joint.hh>
+#include <gazebo/physics/WorldState.hh>
 
 namespace gazebo
 {
-	/*!
-	 * \brief Interface for a single joint
-	 */
-	class NRPWorldPlugin
-	        : public GazeboStepController,
-	          public WorldPlugin
-	{
-		public:
-			virtual ~NRPWorldPlugin() override = default;
+    /*!
+     * \brief Interface for a single joint
+     */
+    class NRPWorldPlugin
+            : public GazeboStepController,
+              public WorldPlugin
+    {
+        public:
+            virtual ~NRPWorldPlugin() override = default;
 
-			virtual void Load(physics::WorldPtr world, sdf::ElementPtr sdf) override;
-			virtual void Reset() override;
+            virtual void Load(physics::WorldPtr world, sdf::ElementPtr sdf) override;
+            virtual void Reset() override;
 
-			virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+            virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-			bool finishWorldLoading() override;
+            bool finishWorldLoading() override;
 
-		private:
-			/*!
-			 * \brief Lock to ensure only one loop is being executed
-			 */
-			std::mutex _lockLoop;
+            bool resetWorld() override;
 
-			physics::WorldPtr _world;
-			sdf::ElementPtr _worldSDF;
+        private:
+            /*!
+             * \brief Lock to ensure only one loop is being executed
+             */
+            std::mutex _lockLoop;
 
-			/*!
-			 * \brief Start running the sim.
-			 * \param numIterations Number of iterations to run
-			 */
-			void startLoop(unsigned int numIterations);
-	};
+            physics::WorldPtr _world;
+            sdf::ElementPtr _worldSDF;
 
-	GZ_REGISTER_WORLD_PLUGIN(NRPWorldPlugin)
+            /*!
+             * \brief Contains state of the world loaded with the Load function
+             */
+            physics::WorldState _initialWorldState;
+
+            /*!
+             * \brief Start running the sim.
+             * \param numIterations Number of iterations to run
+             */
+            void startLoop(unsigned int numIterations);
+    };
+
+    GZ_REGISTER_WORLD_PLUGIN(NRPWorldPlugin)
 }
 
 #endif // NRP_WORLD_PLUGIN

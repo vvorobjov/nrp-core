@@ -6,7 +6,7 @@
     "properties" : {
       "NestInitFileName": {
         "type": "string",
-        "description": "Nest Init File (contains a python script that sets up the neural network, as well as any other initialization routines the user whishes to perform)"
+        "description": "Path to the python script that sets up the neural network for the simulation"
       },
       "NestRNGSeed": {
         "type": "integer",
@@ -37,7 +37,7 @@
     "description": "Nest Server Engine",
     "$id": "#NestServerEngine",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
       { "$ref": "#/engine_nest_base" },
       {
         "properties": {
@@ -50,6 +50,11 @@
           "NestServerPort": {
             "type": "integer",
             "description": "Nest Server Port"
+          },
+          "MPIProcs": {
+            "type": "integer",
+            "default": 1,
+            "description": "Number of MPI processes used in the NEST simulation"
           }
         }
       }

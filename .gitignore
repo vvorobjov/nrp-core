@@ -13,3 +13,7 @@ test_env_cmake.h
 .vscode
 .orig
 .idea
+.cache
+*.log
+tools/build_grpc_engine/
+tools/build_json_engine/

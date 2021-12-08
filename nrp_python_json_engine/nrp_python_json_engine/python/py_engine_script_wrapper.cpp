@@ -22,31 +22,44 @@
 
 #include "nrp_python_json_engine/python/py_engine_script_wrapper.h"
 
-#include "nrp_python_device/python/python_module.h"
+#include "nrp_general_library/python/python_module.h"
 
 namespace python = boost::python;
 
 void PyEngineScriptWrapper::initialize()
 {
-	if(python::override initializeFcn = this->get_override("initialize"))
-		initializeFcn();
+    if(python::override initializeFcn = this->get_override("initialize"))
+        initializeFcn();
 
-	return PyEngineScript::initialize();
+    return PyEngineScript::initialize();
 }
 
 void PyEngineScriptWrapper::defaultInitialize()
-{	return PyEngineScript::initialize();	}
+{   return PyEngineScript::initialize();    }
 
 void PyEngineScriptWrapper::runLoopFcn(SimulationTime timestep)
-{	this->get_override("runLoop")(timestep);	}
+{   this->get_override("runLoop")(timestep);    }
 
 void PyEngineScriptWrapper::shutdown()
 {
-	if(python::override shutdownFcn = this->get_override("shutdown"))
-		shutdownFcn();
+    if(python::override shutdownFcn = this->get_override("shutdown"))
+        shutdownFcn();
 
-	return PyEngineScript::shutdown();
+    return PyEngineScript::shutdown();
 }
 
 void PyEngineScriptWrapper::defaultShutdown()
-{	return PyEngineScript::shutdown();	}
+{   return PyEngineScript::shutdown();  }
+
+bool PyEngineScriptWrapper::reset()
+{
+    if(python::override resetFcn = this->get_override("reset")) {
+        resetFcn();
+        return PyEngineScript::reset();
+    }
+    else
+        return false;
+}
+
+bool PyEngineScriptWrapper::defaultReset()
+{   return PyEngineScript::reset();  }

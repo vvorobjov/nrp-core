@@ -6,12 +6,12 @@
     "properties" : {
       "GazeboWorldFile": {
         "type": "string",
-        "description": "Gazebo SDF World file"
+        "description": "Path to Gazebo SDF World file"
       },
       "GazeboPlugins": {
         "type": "array",
         "items": {"type": "string"},
-        "description": "Plugins to load into gazebo"
+        "description": "Additional system plugins that should be loaded on startup"
       },
       "GazeboRNGSeed": {
         "type": "integer",
@@ -21,7 +21,7 @@
       "WorldLoadTime": {
         "type": "integer",
         "default": 20,
-        "description": "Maximum time (in seconds) to wait for the NRPCommunicatioPlugin to load the world file, and for the world sdf to be loaded. 0 means it will wait forever"
+        "description": "Maximum time (in seconds) to wait for the NRPCommunicatioPlugin to load the world sdf file. 0 means it will wait indefinitely"
       }
     },
     "required": ["GazeboWorldFile"]

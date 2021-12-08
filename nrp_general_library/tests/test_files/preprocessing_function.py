@@ -18,16 +18,16 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from NRPPythonModule import *
-from NRPGeneralPythonTestModule import TestInputDevice, TestOutputDevice
+from nrp_core import *
+from nrp_core.data.nrp_json import *
 
-@FromEngineDevice(keyword='device', id=DeviceIdentifier('pf_input', 'engine', 'type'))
+@EngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
 @PreprocessingFunction("engine")
-def transceiver_function(device):
-    test_val = device.test_value
+def transceiver_function(datapack):
+    test_val = datapack.test_value
     
-    ret_dev = PythonDevice("tf_input_preprocessing", "engine")
-    ret_dev.data = {"test_value" : str(test_val + 1)}
+    ret_dev = JsonDataPack("tf_input_preprocessing", "engine")
+    ret_dev.data["test_value"] = str(test_val + 1)
     
     return [ret_dev]
 

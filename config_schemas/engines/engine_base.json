@@ -11,7 +11,7 @@
     },
     "EngineType" : {
       "type" : "string",
-      "description": "Engine type. Used by EngineLauncherManager to select correct engine"
+      "description": "Engine type. Used by EngineLauncherManager to select the correct engine launcher"
     },
     "EngineProcCmd" : {
       "type" : "string",
@@ -40,7 +40,7 @@
     "EngineCommandTimeout" : {
       "type" : "number",
       "default": 0.0,
-      "description": "Engine Timeout (in seconds). How long the simulator should wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout"
+      "description": "Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout"
     }
   },
   "required" : ["EngineName", "EngineType"]

@@ -35,16 +35,15 @@ using nlohmann::json_uri;
 using jsonSharedPtr = std::shared_ptr<nlohmann::json>;
 using jsonConstSharedPtr = std::shared_ptr<const nlohmann::json>;
 
-/*!
- * \brief Loads schema from json file given its uri. To be passed to a nlohmann::json_schema::json_validator constructor.
- * 
- * The function is parametrized with two parameters: uri and schema.
- * uri provides the path to the json schema within NRP_CONFIG_INSTALL_DIR directory.
- * the schema will be loaded into "schema" json object.
- */
-
 namespace json_utils {
 
+    /*!
+     * \brief Loads schema from json file given its uri. To be passed to a nlohmann::json_schema::json_validator constructor.
+     *
+     * The function is parametrized with two parameters: uri and schema.
+     * uri provides the path to the json schema within NRP_CONFIG_INSTALL_DIR directory.
+     * the schema will be loaded into "schema" json object.
+     */
     static void json_schema_loader(const json_uri &uri, json &schema) {
         std::string schema_path = NRP_CONFIG_INSTALL_DIR;
         schema_path += uri.path();
@@ -60,7 +59,13 @@ namespace json_utils {
         }
     }
 
-    //TODO: document behaviour and how-to set defaults in schema or in code
+    /*!
+     * \brief  Sets default value for a given parameter
+     *
+     * The function is parametrized with three parameters: instance, key, new_value.
+     * A value 'new_value' for parameter 'key' is set in 'instance'. If 'key' already exists in 'instance' nothing is
+     * done
+     */
     template <typename VALUE_T>
     static void set_default(nlohmann::json &instance, const std::string key, const VALUE_T new_value) {
         // if key doesn't exist set it with new_value
@@ -69,7 +74,15 @@ namespace json_utils {
     }
 
 
-    //validate
+    /*!
+     * \brief  Validates a json object using a given json schema
+     *
+     * Parameters:
+     *  instance: json object to be validated
+     *  schema_path: URI of the schema to use for validation
+     *  addPatch: boolean attribute. If true, parameter default values defined in the schema are added to 'instance'
+     *            after validation.
+     */
     static void validate_json(nlohmann::json &instance, std::string schema_path, bool addPatch = true) {
         // set schema
         nlohmann::json schema = {{"$ref", schema_path}};

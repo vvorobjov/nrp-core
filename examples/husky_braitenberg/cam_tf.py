@@ -1,14 +1,13 @@
-from NRPPythonModule import *
-import NRPGazeboDevicesPython
-from NRPNestJSONPythonModule import NestDevice
-import numpy
+from nrp_core import *
+from nrp_core.data.nrp_protobuf import *
+from nrp_core.data.nrp_json import *
 import numpy as np
 from PIL import Image
 import time
 import cv2
 
 
-def detect_red(camDevice):
+def detect_red(camDataPack):
     """
     Performs a very simple image detection as used in the Braitenberg demo.
     Copied and modified from original NRP, see hbp_nrp_cle/hbp_nrp_cle/tf_framework/tf_lib.py
@@ -25,16 +24,18 @@ def detect_red(camDevice):
     The lightest color that is recognized as red is (255,127,127).
     """
     red_left = red_right = green_blue = 0
-    if len(camDevice.image_data) > 0:
+    if not camDataPack.isEmpty():
+
         lower_red = np.array([0, 30, 30])
         upper_red = np.array([0, 255, 255])
 
         # Reshape to proper size
-        cv_image = camDevice.image_data.reshape((camDevice.image_height,camDevice.image_width,3))
-        
+        d = np.frombuffer(camDataPack.data.imageData, np.uint8)
+        cv_image = d.reshape((camDataPack.data.imageHeight,camDataPack.data.imageWidth,3))
+
         # Transform image to HSV (easier to detect colors).
         hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2HSV)
-        
+
         # Create a mask where every non red pixel will be a Zero.
         mask = cv2.inRange(hsv_image, lower_red, upper_red)
         image_size = (cv_image.shape[0] * cv_image.shape[1])
@@ -61,30 +62,32 @@ def detect_red(camDevice):
     return __results(red_left, red_right, green_blue)
 
 
-@FromEngineDevice(keyword='camera', id=DeviceIdentifier('mouse_right_eye::camera', 'gazebo'))
+@EngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
 @TransceiverFunction("nest")
 def transceiver_function(camera):
-    print("Camera Depth: " + str(camera.image_depth))
-
-    res = detect_red(camera)
+    #print("Camera Depth: " + str(camera.image_depth))
     
     # Set to True to display camera image data and pause for 10 s
-    if False and camera.image_height > 0 and camera.image_width > 0:
-        img = Image.fromarray(camera.image_data.reshape((camera.image_height,camera.image_width,3)))
+    if False and not camera.isEmpty():
+        d = np.frombuffer(camera.data.imageData, np.uint8)
+        cv_image = d.reshape((camera.data.imageHeight,camera.data.imageWidth,3))
+        img = Image.fromarray(cv_image)
         img.show()
-        time.sleep(10)
+        time.sleep(2)
+
+    res = detect_red(camera)
 
     # print("Left Red:  " + str(res.left))
     # print("Right Red: " + str(res.right))
     # print("Go On:     " + str(res.go_on))
 
-    lpg = NestDevice("lpg", "nest")
-    rpg = NestDevice("rpg", "nest")
-    gpg = NestDevice("gpg", "nest")
+    lpg = JsonDataPack("lpg", "nest")
+    rpg = JsonDataPack("rpg", "nest")
+    gpg = JsonDataPack("gpg", "nest")
 
-    lpg.data = {'rate': 2000.0*res.left}
-    rpg.data = {'rate': 2000.0*res.right}
-    gpg.data = {'rate': 75.0*res.go_on}
+    lpg.data['rate'] = 2000.0*res.left
+    rpg.data['rate'] = 2000.0*res.right
+    gpg.data['rate'] = 75.0*res.go_on
 
     return [ lpg, rpg, gpg ]
 

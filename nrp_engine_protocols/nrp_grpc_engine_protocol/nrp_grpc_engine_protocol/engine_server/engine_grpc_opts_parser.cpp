@@ -21,23 +21,27 @@
 //
 
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised)
 {
-	cxxopts::Options options("NRP Gazebo Server");
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-	if(allowUnrecognised)
-		options.allow_unrecognised_options();
+    cxxopts::Options options("NRP Gazebo Server");
 
-	options.add_options()
-	        (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
-	        (EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data(), "NRP URL Registration Address", cxxopts::value<std::string>())
-	        (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+    if(allowUnrecognised)
+        options.allow_unrecognised_options();
 
-	return options;
+    options.add_options()
+            (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
+            (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+
+    return options;
 }
 
 cxxopts::ParseResult EngineGRPCOptsParser::parseOpts(int argc, char *argv[], cxxopts::Options parser)
 {
-	return parser.parse(argc, argv);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    
+    return parser.parse(argc, argv);
 }

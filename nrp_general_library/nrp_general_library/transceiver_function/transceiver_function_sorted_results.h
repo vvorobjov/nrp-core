@@ -25,42 +25,41 @@
 #include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
 
-#include "nrp_general_library/device_interface/device.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <map>
 
 struct TransceiverFunctionSortedResults
-        : public std::map<std::string, EngineClientInterface::devices_ptr_t>
+        : public std::map<std::string, EngineClientInterface::datapacks_ptr_t>
 {
-	using devices_t = EngineClientInterface::devices_ptr_t;
-	using interface_results_t = std::map<std::string, devices_t>;
+    using datapacks_t = EngineClientInterface::datapacks_ptr_t;
+    using interface_results_t = std::map<std::string, datapacks_t>;
 
-	/*!
-	 * \brief Add additional results to existing SortedResults
-	 * \param results Results to add
-	 */
-	void addResults(const TransceiverFunctionManager::tf_results_t &results);
+    /*!
+     * \brief Add additional results to existing SortedResults
+     * \param results Results to add
+     */
+    void addResults(const TransceiverFunctionManager::tf_results_t &results);
 
-	/*!
-	 * \brief Sort results according to interface type
-	 * \param results Results to sort
-	 * \return Returns sorted results
-	 */
-	static TransceiverFunctionSortedResults sortResults(const TransceiverFunctionManager::tf_results_t &results);
+    /*!
+     * \brief Sort results according to interface type
+     * \param results Results to sort
+     * \return Returns sorted results
+     */
+    static TransceiverFunctionSortedResults sortResults(const TransceiverFunctionManager::tf_results_t &results);
 
-	private:
-	    /*!
-		 * \brief All python lists. Manage them to prevent devices from destructing before their respective devices_ptr_t
-		 */
-	    std::list<TransceiverFunctionInterpreter::device_list_t> _pyList;
+    private:
+        /*!
+         * \brief All python lists. Manage them to prevent datapacks from destructing before their respective datapacks_ptr_t
+         */
+        std::list<TransceiverFunctionInterpreter::datapack_list_t> _pyList;
 
-		/*!
-		 * \brief Adds TF Result to the map corresponding to the result interface
-		 * \param result Device to add
-		 * \result Returns iterator to mapping in which device is stored
-		 */
-		interface_results_t::iterator addResult(DeviceInterface *result);
+        /*!
+         * \brief Adds TF Result to the map corresponding to the result interface
+         * \param result DataPack to add
+         * \result Returns iterator to mapping in which datapack is stored
+         */
+        interface_results_t::iterator addResult(DataPackInterface *result);
 };
 
 #endif // TRANSCEIVER_FUNCTION_SORTED_RESULTS_H

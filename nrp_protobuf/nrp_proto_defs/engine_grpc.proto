@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+import "engine_msgs.proto";
+
+package EngineGrpc;
+
+/*
+ * Remote Procedure Calls available to the gRPC engine
+ * These are commands that the engine client can send to the engine server
+ */
+service EngineGrpcService
+{
+    rpc init        (InitRequest)        returns (InitReply)        {}
+    rpc shutdown    (ShutdownRequest)    returns (ShutdownReply)    {}
+    rpc runLoopStep (RunLoopStepRequest) returns (RunLoopStepReply) {}
+    rpc setDataPack   (SetDataPackRequest)   returns (SetDataPackReply)   {}
+    rpc getDataPack   (GetDataPackRequest)   returns (GetDataPackReply)   {}
+    rpc resetHandle (ResetRequest)       returns (ResetReply)       {}
+}
+
+/*
+ * Message sent by client with the init command
+ * Contains initialization configuration in form of a stringified JSON
+ */
+message InitRequest
+{
+    string json = 1;
+}
+
+/*
+ * Server's response to the init command
+ */
+message InitReply
+{
+    // Empty
+}
+
+/*
+ * Message sent by client with the shutdown command
+ * Contains additional shutdown parameters in form of a stringified JSON
+ */
+message ShutdownRequest
+{
+    string json = 1;
+}
+
+/*
+ * Server's response to the shutdown command
+ */
+message ShutdownReply
+{
+    // Empty
+}
+
+/*
+ * Message sent by client with the runLoopStep command
+ * Contains requested time step of the simulation
+ */
+message RunLoopStepRequest
+{
+    int64 timeStep = 1;
+}
+
+/*
+ * Server's response to the runLoopStep command
+ * Contains current time of the simulation (after running the requested time step)
+ */
+message RunLoopStepReply
+{
+    int64 engineTime = 1;
+}
+
+/*
+ * Message sent by client with the setDataPack command
+ * Contains data for multiple datapacks
+ */
+message SetDataPackRequest
+{
+    repeated Engine.DataPackMessage request = 1;
+}
+
+/*
+ * Server's response to the setDataPack command
+ */
+message SetDataPackReply
+{
+    // Empty
+}
+
+/*
+ * Message sent by client with the getDataPack command
+ * Contains metadata of multiple datapacks
+ */
+message GetDataPackRequest
+{
+    repeated Engine.DataPackIdentifier datapackId = 1;
+}
+
+/*
+ * Server's response to the getDataPack command
+ * Contains data of multiple datapacks
+ */
+message GetDataPackReply
+{
+    repeated Engine.DataPackMessage reply = 1;
+}
+
+/*
+ * Request sent by reset command
+ */
+message ResetRequest
+{
+    // Empty
+}
+
+/*
+ * Server's response to the reset command
+ */
+message ResetReply
+{
+    // Empty
+}
+
+// EOF

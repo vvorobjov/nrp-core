@@ -1,0 +1,46 @@
+/*! \page gazebo_datapacks Gazebo DataPacks
+
+The JSON implementation always uses \ref datapacks_json to exchange data with TFs. This datapack can contain arbitrary data in a JSON object. The gRPC implementation uses \ref datapacks_protobuf. Below are listed the protobuf message definitions used by the Gazebo engine:
+
+\include gazebo_msgs.proto
+
+For each of these definitions, a datapack Python class is generated, see \ref datapacks_protobuf "here" for more details. Concretely, these datapack types are generated:
+
+- GazeboCameraDataPack: contains a camera image
+- GazeboJointDataPack: contains a single joint state information
+- GazeboLinkDataPack: contains a single link state information
+
+In the case of the JSON implementation, even if \ref datapacks_json, the content of the datapacks data will be the same, but stored as a JSON object. This content is summarized below for each datapack type.
+
+The GazeboCameraDataPack consists of the following attributes:
+<table>
+<caption id="physics_camera_attributes_table">GazeboCameraDataPack Attributes</caption>
+<tr><th>Attribute       <th>Description                                      <th>Python Type <th>C type
+<tr><td>image_height    <td>Camera Image height                              <td>uint32 <td>uint32
+<tr><td>image_width     <td>Camera Image width                               <td>uint32 <td>uint32
+<tr><td>image_depth     <td>Camera Image depth. Number of bytes per pixel    <td>uint8 <td>uint32
+<tr><td>image_data      <td>Camera Image data. 1-D array of pixel data       <td>numpy.array(image_height * image_width * image_depth, numpy.uint8) <td>std::vector<unsigned char>
+</table>
+
+The GazeboJointDataPack consists of the following attributes:
+<table>
+<caption id="physics_joint_attributes_table">GazeboJointDataPack Attributes</caption>
+<tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
+<tr><td>position    <td>Joint angle position (in rad)    <td>float <td>float
+<tr><td>velocity     <td>Joint angle velocity (in rad/s) <td>float <td>float
+<tr><td>effort     <td>Joint angle effort (in N)         <td>float <td>float
+</table>
+
+The GazeboLinkDataPack consists of the following attributes:
+<table>
+<caption id="physics_link_attributes_table">GazeboLinkDataPack Attributes</caption>
+<tr><th>Attribute  <th>Description                                 <th>Python Type                   <th>C type
+<tr><td>pos        <td>Link Position                              <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+<tr><td>rot        <td>Link Rotation as quaternion                <td>numpy.array(4, numpy.float32) <td>std::array<float,4>
+<tr><td>lin_vel    <td>Link Linear Velocity                       <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+<tr><td>ang_vel    <td>Link Angular Velocity                      <td>numpy.array(3, numpy.float32) <td>std::array<float,3>
+</table>
+
+Each of this attributes can be accessed under their respective names from the *data* attribute of each DataPack type.
+
+*/

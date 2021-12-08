@@ -34,96 +34,82 @@
  */
 class TransceiverFunctionManager
 {
-		/*!
-		 * \brief Custom comparator function for json objects representing TF configurations
-		 */
+        /*!
+         * \brief Custom comparator function for json objects representing TF configurations
+         */
         struct less_tf_settings {
             bool operator() (const nlohmann::json &a, const nlohmann::json &b) const {
                 return a.at("Name") < b.at("Name");
             }
         };
 
-	public:
+    public:
 
-		using tf_settings_t = std::set<nlohmann::json, less_tf_settings>;
-		using tf_results_t = std::list<TransceiverFunctionInterpreter::TFExecutionResult>;
+        using tf_settings_t = std::set<nlohmann::json, less_tf_settings>;
+        using tf_results_t = std::list<TransceiverFunctionInterpreter::TFExecutionResult>;
 
-		TransceiverFunctionManager() = default;
-		TransceiverFunctionManager(boost::python::dict tfGlobals);
+        TransceiverFunctionManager() = default;
+        TransceiverFunctionManager(boost::python::dict tfGlobals);
 
-		/*!
-		 * \brief Return list of devices that the TFs request
-		 * \return Returns container with all requested device IDs
-		 */
-		EngineClientInterface::device_identifiers_set_t updateRequestedDeviceIDs() const;
+        /*!
+         * \brief Return list of datapacks that the TFs request
+         * \return Returns container with all requested datapack IDs
+         */
+        EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs() const;
 
-		/*!
-		 * \brief Load TF from given configuration
-		 * \param tfConfig TF Configuration
-		 * \param isPreprocessing Flag that tells if the function is a preprocessing function or regular transceiver function
-		 * \exception Throws an exception if a TF with the same name is already loaded. Use updateTF to change loaded TFs
-		 */
-		void loadTF(const nlohmann::json &tfConfig, const bool isPreprocessing);
+        /*!
+         * \brief Load TF from given configuration
+         * \param tfConfig TF Configuration
+         * \exception Throws an exception if a TF with the same name is already loaded. Use updateTF to change loaded TFs
+         */
+        void loadTF(const nlohmann::json &tfConfig);
 
-		/*!
-		 * \brief Updates an existing TF or creates a new one
-		 * \param Name of old TF
-		 * \param tfConfig TF Configuration
-		 */
-		void updateTF(const nlohmann::json &tfConfig);
+        /*!
+         * \brief Updates an existing TF or creates a new one
+         * \param Name of old TF
+         * \param tfConfig TF Configuration
+         */
+        void updateTF(const nlohmann::json &tfConfig);
 
-		/*!
-		 * \brief Execute all preprocessing TFs linked to an engine
-		 * \param engineName Name of engine
-		 * \return Returns results of linked preprocessing TFs
-		 */
-		tf_results_t executeActiveLinkedPreprocessingTFs(const std::string &engineName);
+        /*!
+         * \brief Execute all preprocessing TFs linked to an engine
+         * \param engineName Name of engine
+         * \return Returns results of linked preprocessing TFs
+         */
+        tf_results_t executeActiveLinkedPFs(const std::string &engineName);
 
-		/*!
-		 * \brief Execute all TFs linked to an engine
-		 * \param engineName Name of engine
-		 * \return Returns results of linked TFs
-		 */
-		tf_results_t executeActiveLinkedTFs(const std::string &engineName);
+        /*!
+         * \brief Execute all TFs linked to an engine
+         * \param engineName Name of engine
+         * \return Returns results of linked TFs
+         */
+        tf_results_t executeActiveLinkedTFs(const std::string &engineName);
 
-		/*!
-		 * \brief Get TF Interpreter
-		 */
-		TransceiverFunctionInterpreter &getInterpreter();
+        /*!
+         * \brief Get TF Interpreter
+         */
+        TransceiverFunctionInterpreter &getInterpreter();
 
-	private:
-		/*!
-		 * \brief Set containing TF configurations
-		 */
-		tf_settings_t _tfSettings;
+    private:
+        /*!
+         * \brief Set containing TF configurations
+         */
+        tf_settings_t _tfSettings;
 
-		/*!
-		 * \brief Python Interpreter for TFs
-		 */
-		TransceiverFunctionInterpreter _tfInterpreter;
+        /*!
+         * \brief Python Interpreter for TFs
+         */
+        TransceiverFunctionInterpreter _tfInterpreter;
 
-		/*!
-		 * \brief Is TF a preprocessing function
-		 * \param tfName Name of TF
-		 * \return Returns true if it's a preprocessing function, false otherwise.
-		 * If TF settings with given name are not stored, returns false
-		 */
-		bool isPreprocessing(const std::string &tfName) const;
+        /*!
+         * \brief Is TF active
+         * \param tfName Name of TF
+         * \return Returns true if active, false otherwise.
+         * If TF settings with given name are not stored, returns false
+         */
+        bool isActive(const std::string &tfName);
 
-		/*!
-		 * \brief Is TF active
-		 * \param tfName Name of TF
-		 * \return Returns true if active, false otherwise.
-		 * If TF settings with given name are not stored, returns false
-		 */
-		bool isActive(const std::string &tfName);
-
-		/*!
-		 * \brief List of names of all preprocessing functions
-		 */
-		std::set<std::string> _preprocessingNames;
-
-		TransceiverFunctionManager::tf_results_t executeActiveLinkedTFsGeneric(const std::string &engineName, const bool preprocessing);
+        TransceiverFunctionManager::tf_results_t executeActiveLinkedTFsGeneric(const std::string &engineName, const bool preprocessing);
 };
 
 using TransceiverFunctionManagerSharedPtr = std::shared_ptr<TransceiverFunctionManager>;

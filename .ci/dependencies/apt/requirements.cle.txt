@@ -24,3 +24,6 @@ python3-restrictedpython
 uwsgi-core
 uwsgi-plugin-python3
 xvfb
+cppcheck
+python3-pip
+ros-noetic-ros-base

@@ -8,17 +8,17 @@
     "SimulationTimeout" : {
       "type" : "integer",
       "default": 0,
-      "description": "Experiment Timeout (in seconds). 0 means no timeout"
+      "description": "Experiment Timeout (in seconds). It refers to simulation time. 0 means no timeout"
     },
     "SimulationTimestep" : {
       "type" : "number",
       "default": 0.01,
-      "description": "Time in seconds the simulation advances in between processing client requests."
+      "description": "Time in seconds the simulation advances in each Simulation Loop"
     },
     "ProcessLauncherType" : {
       "type" : "string",
       "default": "Basic",
-      "description": "Process Launcher Type. Can be used to change the way engine processes are started"
+      "description": "ProcessLauncher type to be used for launching engine processes"
     },
     "EngineConfigs" : {
       "type" : "array",
@@ -26,17 +26,11 @@
       "minItems": 1,
       "description": "Engines that will be started in the experiment"
     },
-    "TransceiverFunctionConfigs" : {
+    "DataPackProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
-      "default": [],
-      "description": "Transceiver functions that will be used in the experiment"
-    },
-    "PreprocessingFunctionConfigs" : {
-      "type" : "array",
-      "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
-      "description": "Preprocessing functions that will be used in the experiment"
+      "description": "Transceiver and Preprocessing functions that will be used in the experiment"
     }
   },
-  "required": ["EngineConfigs", "TransceiverFunctionConfigs"]
+  "required": ["EngineConfigs"]
 }

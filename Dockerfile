@@ -4,6 +4,8 @@ FROM nvidia/cudagl:11.0-base-ubuntu20.04
 
 ARG NRP_USER=nrpuser
 ARG NRP_GROUP=nrpgroup
+ARG UID=1000
+ARG GID=1000
 ARG HOME_PARENT_FOLDER=/home
 
 # Set environment
@@ -34,8 +36,8 @@ COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 # Set NRP_USER user
 
 RUN mkdir -p ${HOME_PARENT_FOLDER} \
-    && groupadd --gid 11860 ${NRP_GROUP} \
-    && useradd --home-dir ${HOME} --create-home --uid 901325 --gid 11860 --groups ${NRP_GROUP} -ms /bin/bash ${NRP_USER} \
+    && groupadd --gid ${GID} ${NRP_GROUP} \
+    && useradd --home-dir ${HOME} --create-home --uid ${UID} --gid ${GID} --groups ${NRP_GROUP} -ms /bin/bash ${NRP_USER} \
     && echo "${NRP_USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Set NRP_USER directories
@@ -65,6 +67,11 @@ RUN add-apt-repository ppa:pistache+team/unstable
 
 RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
 RUN wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+
+# ROS
+
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 
 # Install CLE dependencies
 

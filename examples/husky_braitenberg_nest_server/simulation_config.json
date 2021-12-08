@@ -16,7 +16,7 @@
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"TransceiverFunctionConfigs": [
+	"DataPackProcessingFunctions": [
 		{
 			"Name": "cam_tf",
 			"FileName": "cam_tf.py"

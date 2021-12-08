@@ -2,61 +2,91 @@
 #define EXAMPLE_ENGINE_CLIENT_H
 
 #include "nrp_example_engine/config/example_config.h"
-#include "nrp_example_engine/devices/example_device.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-
-#include <future>
+#include "nrp_general_library/plugin_system/plugin.h"
 
 class ExampleEngineClient
-        : public EngineClient<ExampleEngineClient, ExampleConfig>
+        : public EngineClient<ExampleEngineClient, ExampleConfigConst::EngineSchema>
 {
-	public:
-		ExampleEngineClient(EngineConfigConst::config_storage_t &config, ProcessLauncherInterface::unique_ptr &&launcher)
-		    : EngineClient(config, std::move(launcher))
-		{}
+    public:
 
-		virtual ~ExampleEngineClient() override;
+        /*!
+         * \brief Constructor
+         *
+         * The function should initialize all necessary structures and objects, like RPC stub or
+         * REST client. It should also, if it's possible, establish a connection with the engine
+         * server.
+         *
+         * \param[in] config Simulation configuration. Will be stored by the client for further use
+         *            and should be accessible with getEngineConfig method.
+         * \param[in] launcher Process launcher for the engine server. Based on the configuration,
+         *            it will either spawn a server in a separate process, or do nothing.
+         */
+        ExampleEngineClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
 
-		virtual void initialize() override;
-		virtual void shutdown() override;
+        /*!
+         * \brief Initializes the engine
+         *
+         * The function will be called at the start of the simulation. It should
+         * execute RPC / REST calls that will prepare the engine server and simulator
+         * to run the simulation.
+         */
+        void initialize() override;
 
-		virtual float getEngineTime() const override;
-		virtual step_result_t runLoopStep(float timeStep) override
-		{
-			this->_loopStepThread = std::async(std::launch::async, std::bind(&ExampleEngineClient::sendRunLoopStepCommand, this, timeStep));
-			return EngineClientInterface::SUCCESS;
-		}
+        void reset() override;
 
-		float sendRunLoopStepCommand(float timeStep);
+        /*!
+         * \brief Shutdowns the engine
+         *
+         * The function will be called at the end of the simulation. It should
+         * execute RPC / REST calls that will shutdown the simulator and engine
+         * server gracefully.
+         */
+        void shutdown() override;
 
-		virtual void waitForStepCompletion(float timeOut) override
-		{
-			// If thread state is invalid, loop thread has completed and waitForStepCompletion was called once before
-			if(!this->_loopStepThread.valid())
-				return;
+        void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) override;
+        datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
 
-			// Wait until timeOut has passed
-			if(timeOut > 0)
-			{
-				if(this->_loopStepThread.wait_for(std::chrono::duration<double>(timeOut)) != std::future_status::ready)
-					return EngineClientInterface::ERROR;
-			}
-			else
-				this->_loopStepThread.wait();
+        /*!
+         * \brief Returns start parameters that should be passed to the engine server
+         *
+         * The function should prepare and return start parameters that are going to be passed
+         * to the engine server on startup.
+         *
+         * \return Vector of start parameters for the engine server. The parameters must
+         *         be strings.
+         */
+        const std::vector<std::string> engineProcStartParams() const override;
 
-			this->_engineTime = this->_loopStepThread.get();
-			return EngineClientInterface::SUCCESS;
-		}
+        /*!
+         * \brief Returns environment variables that should be used when starting the engine server
+         *
+         * The function should prepare and return additional environment variables that
+         * will be used when spawning the engine server process.
+         *
+         * \return Vector of start parameters for the engine server. The parameters must
+         *         be strings.
+         */
+        const std::vector<std::string> engineProcEnvParams() const override;
 
-		virtual void sendDevicesToEngine(const devices_ptr_t &devicesArray) override;
-		virtual devices_set_t getDevicesFromEngine(const device_identifiers_set_t &deviceIdentifiers) override;
+    protected:
 
-	private:
-		float _engineTime     = 0.0f;
-		std::future<float> _loopStepThread;
+        /*!
+         * \brief Runs a single step of the simulation
+         *
+         * The function will be called every simulation loop, after getDataPacksFromEngine and
+         * before sendDataPacksToEngine. It should execute RPC / REST calls that will advance the simulation
+         * by the requested time step, and that will retrieve current simulation time after the current
+         * step is completed.
+         *
+         * \param[in] timeStep Requested time step, by which the simulation should advance
+         *
+         * \return Simulation time after the loop step
+         */
+        SimulationTime runLoopStepCallback(SimulationTime timeStep) override;
 };
 
-using ExampleEngineLauncher = ExampleEngineClient::EngineLauncher<ExampleConfig::DefEngineType>;
+using ExampleEngineLauncher = ExampleEngineClient::EngineLauncher<ExampleConfigConst::EngineType>;
 
 CREATE_NRP_ENGINE_LAUNCHER(ExampleEngineLauncher);
 

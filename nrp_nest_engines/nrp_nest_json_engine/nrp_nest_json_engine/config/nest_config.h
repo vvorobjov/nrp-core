@@ -28,38 +28,43 @@
 
 struct NestConfigConst
 {
-    static constexpr FixedString EngineType = "nest_json";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_nest.json#/engine_nest_json";
+    static constexpr char EngineType[] = "nest_json";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_nest.json#/engine_nest_json";
 
-	/*!
-	 * \brief Python Path to Nest. Automatically generated via cmake on installation
-	 */
-	static constexpr std::string_view NestPythonPath = "PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH";
+    /*!
+     * \brief Python Path to Nest. Automatically generated via cmake on installation
+     */
+    static constexpr std::string_view NestPythonPath = "PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH";
 
-	/*!
-	 * \brief Path to NRP Nest Server Executable. Automatically generated via cmake on installation
-	 */
-	static constexpr std::string_view NestExecutablePath = "PATH=$PATH:" NRP_NEST_BIN_PATH;
+    /*!
+     * \brief Path to NRP Nest Server Executable. Automatically generated via cmake on installation
+     */
+    static constexpr std::string_view NestExecutablePath = "PATH=$PATH:" NRP_NEST_BIN_PATH;
 
-	/*!
-	 * \brief Argument to pass RNG seed argument to Nest
-	 */
-	static constexpr std::string_view NestRNGSeedArg = "--nrprng";
+    /*!
+     * \brief Argument to pass RNG seed argument to Nest
+     */
+    static constexpr std::string_view NestRNGSeedArg = "--nrprng";
 
-	/*!
-	 * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under InitFileErrorMsg).
-	 */
-	static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
+    /*!
+     * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
+     */
+    static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
 
-	/*!
-	 * \brief After the server executes the init file, the parsed devMap will be passed back with this param
-	 */
-	static constexpr std::string_view InitFileParseDevMap = "InitFileParseDevMap";
+    /*!
+     * \brief After the server executes the init file, this status flag will either be 1 for success or 0 for fail. If the execution fails, a JSON message with more details will be passed as well (under ErrorMsg).
+     */
+    static constexpr std::string_view ResetExecStatus = "ResetStatus";
 
-	/*!
-	 * \brief If the init file could not be parsed, the python error message will be stored under this JSON property name
-	 */
-	static constexpr std::string_view InitFileErrorMsg = "Message";
+    /*!
+     * \brief After the server executes the init file, the parsed devMap will be passed back with this param
+     */
+    static constexpr std::string_view InitFileParseDevMap = "InitFileParseDevMap";
+
+    /*!
+     * \brief If the init file could not be parsed, the python error message will be stored under this JSON property name
+     */
+    static constexpr std::string_view ErrorMsg = "Message";
 };
 
 #endif // NEST_CONFIG_H

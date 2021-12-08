@@ -27,18 +27,18 @@
 
 struct GazeboGrpcConfigConst
 {
-    static constexpr FixedString EngineType = "gazebo_grpc";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_grpc";
+    static constexpr char EngineType[] = "gazebo_grpc";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_grpc";
 
-	/*!
-	 * \brief Gazebo Start Parameters Argument for plugins
-	 */
-	static constexpr std::string_view GazeboPluginArg = "-s";
+    /*!
+     * \brief Gazebo Start Parameters Argument for plugins
+     */
+    static constexpr std::string_view GazeboPluginArg = "-s";
 
-	/*!
-	 * \brief Gazebo Start Parameters Argument for random seed value
-	 */
-	static constexpr std::string_view GazeboRNGSeedArg = "--seed";
+    /*!
+     * \brief Gazebo Start Parameters Argument for random seed value
+     */
+    static constexpr std::string_view GazeboRNGSeedArg = "--seed";
 };
 
 #endif // GAZEBO_GRPC_CONFIG_H

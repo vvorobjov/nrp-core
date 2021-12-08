@@ -30,13 +30,13 @@
 // Add a macro to block creation of Engine Launcher function. Useful for testing
 #ifndef DEBUG_NO_CREATE_ENGINE_LAUNCHER_FCN
 /*!
- *	\brief Create a new engine launcher. Will be used to load a launcher out of a dynamically loaded library
+ *  \brief Create a new engine launcher. Will be used to load a launcher out of a dynamically loaded library
  */
 #define CREATE_NRP_ENGINE_LAUNCHER(engine_launcher_name)                    \
-	extern "C" EngineLauncherInterface *CreateNRPEngineLauncher ();  \
-	EngineLauncherInterface *CreateNRPEngineLauncher ()            { \
-	    return new engine_launcher_name();                                  \
-	}
+    extern "C" EngineLauncherInterface *CreateNRPEngineLauncher ();  \
+    EngineLauncherInterface *CreateNRPEngineLauncher ()            { \
+        return new engine_launcher_name();                                  \
+    }
 #else
 #define CREATE_NRP_ENGINE_LAUNCHER(engine_launcher_name)
 #endif

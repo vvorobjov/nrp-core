@@ -1,0 +1,83 @@
+/*! \page python_json_engine Python JSON Engine
+
+This versatile engine enables users to execute a user-defined python script as an engine server, thus ensuring synchronization and enabling datapack data transfer with the Simulation Loop process. It can be used to integrate any simulator with a Python API in a NRP-core experiment.
+
+Engines based on PythonJSONEngine can be implemented as Python classes based on <b>EngineScript</b> (as in the example listed below). To register the engine with the SimulationManager in an experiment, the decorator <b>@RegisterEngine()</b> must be prepended to the class definition.
+
+\section python_json_engine_script EngineScript
+
+`EngineScript` provides a base class from which custom Engines can inherit. The derived class must implement methods:
+
+- `initialize()`: executed when the engine is initialized
+- `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `shutdown()`: executed when the engine is requested to shutdown
+
+Optionally, the derived class can implement a `reset()` function. If it is implemented, it will be used for resetting the Engine. Otherwise the Engine is reset by calling `shutdown()` and `initialize()` sequentially.
+
+Besides, `EngineScript` provides the following ready-to-use methods to handle datapack communication:
+
+- `_time()`: returns the internal simulation time of the Engine.
+- `_getDataPack(datapack_name)`: returns the latest value available of a datapack with name `datapack_name`
+- `_setDataPack(datapack_name, data)`: sets a new value for a datapack with name `datapack_name`. `data` is always a Python dictionary.
+- `_registerDataPack(datapack_name)`: registers a datapack with the engine. Just registered datapacks can be `set` and `get`. Under the hood, registered datapacks are sent to the corresponding EngineClient upon request and their values updated when the EngineClient send them.
+- `_config`: returns the engine configuration as a \ref datapacks_json "JsonDataPack" object
+
+Below is an example of a class inheriting from `EngineScript`. The example is taken from the `examples/tf_exchange` experiment.
+
+\include tf_exchange/engine_1.py
+
+\section python_json_datapacks DataPacks
+
+The Python JSON engine supports a unique datapack type: *JsonDataPack*, which can be used to transfer information between the engine and TFs. The data contained in this datapack can be any JSON-serializable Python object; that is, any object that can be decoded/encoded by <a href="https://docs.python.org/3/library/json.html">JSONDecoder/JSONEncoder</a>.
+This data can be accessed in TransceiverFunctions from the datapack *data* attribute, as shown in this example TF (also taken from `examples/tf_exchange`):
+
+\include tf_exchange/tf_1.py
+
+  <table>
+  <caption id="python_datapack_attributes_table">JsonDataPack Attributes</caption>
+  <tr><th>Attribute       <th>Description                  <th>Python Type <th>C type
+  <tr><td>data    <td>data contained in the datapack as a NlohmannJson object    <td>NlohmannJson <td>nlohmann::json
+  </table>
+
+\section python_json_configuration Engine Configuration Parameters
+
+This Engine type parameters are defined in the PythonJSONEngine schema (listed \ref python_json_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineJSON" schemas and thus inherits all parameters from them.
+
+To use the Python JSON engine in an experiment, set `EngineType` to <b>"python_json"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from \ref engine_json "EngineJSON" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>EngineJSONServer address. Should this address already be in use, the server will continue trying ports higher up<td>string<td>localhost:9002<td><td>
+<tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>PythonFileName<td>Path to the Python script containing the engine definition<td>string<td><td>X<td>
+</table>
+
+\section python_json_schema Schema
+
+As explained above, the schema used by the PythonJSON engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
+
+\include engines/engine_python.json
+
+*/

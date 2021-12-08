@@ -1,0 +1,56 @@
+/*! \page gazebo_engine Gazebo Engine
+
+This is an engine implementation that integrates the <a href="http://gazebosim.org/">Gazebo physics simulator</a> in NRP-core: the <a href="http://manpages.ubuntu.com/manpages/focal/man1/gzserver.1.html">gzserver executable</a> is running inside the gazebo engine server process.
+
+The integration of gzserver in NRP-core is implemented through gazebo plugins, which must be used in the gazebo simulation sdf file in order to register the engine with the SimulationManager and setup datapack communication.
+
+Two implementations of the Gazebo engine are provided. One is based on \ref engine_json and another on \ref engine_grpc. The latter performs much better and it is recommended. The former is provided for situations in which gRPC may not be available. The gRPC implementation uses protobuf objects to encapsulate data exchanged between the Engine and TFs, whereas the JSON implementation uses nlohmann::json objects. Besides from this fact, both engines are very similar both in their configuration and behavior. The rest of the documentation below is implicitely referred to the gRPC implementation even though in most cases the JSON implementation shows no differences.
+
+A description of the implemented <b>gazebo plugins</b> can be found \subpage gazebo_plugins "here", and a description of the <b>datapacks</b> supported off-the-shelf by the gazebo engine can be found \subpage gazebo_datapacks "here"
+
+\section engine_gazebo_config_section Engine Configuration Parameters
+
+This Engine type parameters are defined in GazeboGRPCEngine schema (listed \ref engine_gazebo_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas and thus inherits all parameters from them.
+
+To use the Gazebo engine in an experiment, set `EngineType` to <b>"gazebo_grpc"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from the \ref engine_grpc "EngineGRPC" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>GazeboWorldFile<td>Path to Gazebo SDF World file<td>string<td><td>X<td>
+<tr><td>GazeboPlugins<td>Additional system plugins that should be loaded on startup<td>string<td>[]<td><td>X
+<tr><td>GazeboRNGSeed<td>Seed parameters passed to gzserver start command<td>integer<td>0<td><td>
+<tr><td>WorldLoadTime<td>Maximum time (in seconds) to wait for the NRPCommunicationPlugin to load the world sdf file. 0 means it will wait indefinitely<td>integer<td>20<td><td>
+</table>
+
+\section engine_gazebo_schema Schema
+
+As explained above, the schema used by the Gazebo engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
+
+\include engines/engines_gazebo.json
+
+
+
+*/

@@ -1,166 +1,94 @@
-# NewNRP
+This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details and much more can be found at the nrp-core [online documentation](hbpneurorobotics.bitbucket.io)
+
+**WARNING:** nrp-core is in alpha release state, use it at your own risk. Also notice that nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in instructions below. Installation in other environments might be possible but has not been tested yet.
 
 ## Dependency Installation
 
-    # Pistache REST Server
-    sudo add-apt-repository ppa:pistache+team/unstable
+```
+# Pistache REST Server
+sudo add-apt-repository ppa:pistache+team/unstable
     
-    # Gazebo
-    sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
-    wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+# Gazebo
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
-    sudo apt update
-    sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil
+sudo apt update
+sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip
 
-    # required by gazebo
-    sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
+# required by gazebo engine
+sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
 
-    # required by nest-server 
-    sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3
-    
-    # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
-    sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
+# required by nest-server (which is built and installed along with nrp-core)
+sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
 
+# required by nrp-server, which uses gRPC python bindings and mpi
+pip install grpcio-tools pytest docopt mpi4py
+   
+# ROS
+Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
+
+Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an exisiting catking workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
     
- - CAN ONLY BE INSTALLED ON UBUNTU 20+ AT THE MOMENT
- - gazebo: For GazeboEngine
- - pistache: REST Server
- - restclient-cpp: REST Client
- - nlohmann_json: JSON Format handling
- - libzip: ZIP File Handling (not used yet)
- - nest: For NestEngine
- - Python: For everything Python
- - Boost-Python: Easier Python handling
- - GTest: Testing Suite
- - spdlog: Logging functions
- - Cython3: Required by Nest
+# Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
+sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
+```
 
 ## Installation
 
- 1. `git clone git@bitbucket.org:hbpneurorobotics/nrp-core.git`
- 2. `cd nrp-core`
- 3. `mkdir build`
- 4. `cd build`
- 5. `export C=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10`
- 6. `cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp`
- 7. `mkdir -p /home/${USER}/.local/nrp`
- 9. `make -j8`
-     Note that the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
- 10. `make install`
+```
+git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
+cd nrp-core
+mkdir build
+cd build
+export CC=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10
+cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp
+mkdir -p /home/${USER}/.local/nrp
+# the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
+make
+make install
+# just in case of wanting to build the documentation. Documentation can then be found in a new doxygen folder
+make doxygen_nrp
+```
+
+## Running an experiment
+
+ * Set environment:
  
-## Building documentation
+ ```
+export NRP=/home/${USER}/.local/nrp
+export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
+export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
+export PATH=$PATH:${NRP}/bin
+export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
+. /usr/share/gazebo-11/setup.sh
+. /opt/ros/noetic/setup.bash
+. ${CATKIN_WS}/devel/setup.bash
 
-1. `cp -r docs build/docs` 
-2. `cd build`
-3. `doxygen Doxyfile.doxygen` 
-
-documentation can be found in a new `doxygen` folder
-
-## Running the simulation
-
- 1. Set environment:
- 
- 		 export NRP=/home/${USER}/.local/nrp
-		 export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
-		 export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
-		 export PATH=$PATH:${NRP}/bin
-		 . /usr/share/gazebo-11/setup.sh
-		 
-      	
- 3. Start simulation:
-	`NRPSimulation -c <SIMULATION_CONFIG_FILE>`
-
-## Terminology and Classes
-
- - NRPSimulation: Main Program. Runs the CLE
- - Engine: Child process of NRPSimulation. Will run a single module and communicate with main CLE process. Each Engine is defined by a unique name as well as a type that designates what kind of engine is being run (Gazebo/Nest/Python/...)
-	 - EngineServer: Server running in a separate process to facilitate communication between Engine and CLE
-	 - EngineDeviceController: Server side device controller. Handles the sending and receiving of devices. Each device requires a controller
-	 - NRPClient: CLE-side client that communicates with a single EngineServer
-	 - DeviceConversionMechanism: Mechanism to convert a device to/from a communication data type. Currently, it converts devices to/from a JSON structure which can then be exchanged between the EngineServer and NRPClient [TODO: deprecated]
- - Device: Data Type used for communication between Engine and CLE. Can be anything, from single integer value, over string, to a mixture of differently-typed arrays
-	 - DeviceIdentifier: Unique Identifier for device data. 
-	Contains 3 strings:
-		 - Name: Name of device. Must be unique to the engine
-		 - Engine Name: Name of engine that has sent/will receive the device
-		 - Device Type: String identifying the current device type. Will be used to properly de-/serialize the device data
-	 - Input and Output: Devices are defined from the viewpoint of the engine. Devices that are sent from the engine to the CLE are considered OutputDevices, devices that are sent to the engine are considered InputDevices (This are merely terms. Programmatically, there is no difference between them).
- - TransceiverFunctionManager and TransceiverFunctionInterpreter: Classes to manage TransceiverFunctions. The TFManager will read TF configuration files and organize the functions appropriately. The TFInterpreter provides Python environments for the TFs to run
- - TransceiverFunctions: Same as TransferFunction. A python script executed inside the CLE to exchange data between engines
-	 - TransceiverFunction Decorator: Registers a function with the TransceiverFunctionInterpreter. Users must designate the TF with this decorator
-	 - SingleTransceiverDevice Decorator: Registers a device as required by this TF. Similar to how the current CLE TFs work
-	 - Return value: A user-defined TF must return a list of devices. These devices will be sent to the appropriate engines
- - SimulationManager: Main Simulation class. Starts the simulation loop, integrates engines, manages TransceiverFunctions
- - SimulationLoop: Main CLE loop. Will call NRPClient of an engine to transfer device data as well as TransceiverFunctions
- - PropertyTemplate: A C++ template class to create devices with structured data. Used to make de-/serialization easier. Also used for config files
- - PluginSystem: Load additional engines on startup by supplying their .so library
- - ProcessLaunchers: Different options can be supplied to launch processes. This is important when switching from a local machine to an HPC cluster with managed ressources, or when integrating MPI
-
-### Current Engine Interface: EngineJSON [OUTDATED]
-
- - EngineJSONServer: Server-side engine. 
-   Supports the following communication functions:
-	 - initialize: After startup, the NRPClient will send an initialize command. Can be used to perform initialization routines
-	 - runLoopStep: Run the engine for a given amount of time
-	 - shutdown: Stop the engine at end of simulation
-	 - getDeviceData: Receives an array of DeviceIdentifiers in JSON format from the NRPClient. Will retrieve the requested devices via the EngineDeviceController and send them back
-	 - setDeviceData: Receives an array of Devicedata in JSON format from NRPClient. Will set data in the engine and perform any functions stored inside the corresponding EngineDeviceController
- - EngineJSONNRPClient: CLE-side communicator that sends/receives data to/from the corresponding EngineJSONServer
- - JSONDeviceConversionMechanism: [TODO: deprecated]
-	 - A type of DeviceConversionMechanism. Will de-/serialize devices from/to JSON format
-
-### Current Engines:
-
-##### Gazebo
-
- - In subdirectory nrp_gazebo_device_interface
- - Uses an EngineJSONServer
- - Has three device types:
-	 - JSONPhysicsCamera
-	 - JSONPhysicsJoint
-	 - JSONPhysicsLink
- - Uses an unmodified gazebo as base, all modifications are done via plugin
- - Starts gazebo and loads plugins to communicate with the CLE
-
-##### Nest
- - In subdirectory nrp_nest_device_interface
- - Uses an EngineJSONServer
- - Takes a python file as input to define the initialize function (Start nest, define devices, ...)
- - Has single device types:
-	 - NestJSONDeviceInterface: Should be able to interface with all Nest devices, as they all use the same format
- - Uses an unmodified Nest as base
- - Start NRPNestExecutable as a child process
-
-##### Python
- - In subdirectory nrp_python_device_interface
- - Uses an EngineJSONServer
- - Takes a python file as input to define the initialize, runStep, and shutdown functions
- - Has single device types:
-	 - PythonObjectDeviceInterface: Should be able to interface with many Python datatypes. Uses Python-side JSON converter
- - Starts NRPPythonExecutable as a child process
-
-##### Additional Engines
-Additional engines can be defined in a similar manner. 
+```
+ * Start the simulation:
+	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
 
 ## Basic Information
 
  - The project is divided into multiple libraries, separated by folders:
 	 - nrp_general_library: Main Library. Contains classes and methods to interface with Python, Engines, and Transceiver-Functions
-	 - nrp_nest_device_interface: Nest Engine
-	 - nrp_gazebo_device_interface: Gazebo Engine
-	 - nrp_python_device_interface: Python Engine
-	 - nrp_simulation: Contains the SimulationLoop and -Manager. Creates the NRPSimulation executable
- - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running the simulation**
- - All libraries generate a python module. This can be used to interface with the devices from the TFs. After installation, they will be located inside `/usr/local/nrp/lib/python3.8/site-packages`
- - Both nrp_nest_device_interface and nrp_python_device_interface create executables that can be started as child processes of the main NRP
+	 - nrp_engine_protocols: Engine interfaces implementing server/client communication for different communication protocols
+	 - nrp_nest_engines: Nest Engine
+	 - nrp_gazebo_engines: Gazebo Engine
+	 - nrp_python_json_engine: Python JSON Engine
+	 - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
+ - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
+ - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
 
 ## Examples
 
  - Examples are located in the examples subfolder:
-	 - To run them, first set the environment as described in **Running the simulation**. Then:
+	 - To run them, first set the environment as described in **Running an experiment**. Then:
 
 			cd examples/<EXAMPLE_NAME>
-			NRPSimulation -c <SIMULATION_CONFIG> -p "NRPPythonDeviceInterface.so"
+			NRPCoreSim -c <SIMULATION_CONFIG>
 			
-	 - If gazebo is running in the experiment, you can use `gzclient` to view what's happening
+	 - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
+
+
 

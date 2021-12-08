@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package NrpCore;
+
+service NrpCore
+{
+    rpc initialize(EmptyMessage)   returns (EmptyMessage) {}
+    rpc runLoop   (RunLoopMessage) returns (EmptyMessage) {}
+    rpc shutdown  (EmptyMessage)   returns (EmptyMessage) {}
+}
+
+message EmptyMessage
+{
+
+}
+
+message RunLoopMessage
+{
+    int32 numIterations = 1;
+}
+
+// EOF

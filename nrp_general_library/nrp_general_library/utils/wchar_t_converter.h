@@ -31,15 +31,15 @@
  */
 class WCharTConverter
 {
-	public:
-		WCharTConverter(int argc, const char *const *argv);
+    public:
+        WCharTConverter(int argc, const char *const *argv);
 
-		wchar_t **getWCharTPointers();
-		int getWCharSize() const;
+        wchar_t **getWCharTPointers();
+        int getWCharSize() const;
 
-	private:
-		std::vector<std::wstring> _wCharTContainer;
-		std::vector<wchar_t*> _wCharTPointer;
+    private:
+        std::vector<std::wstring> _wCharTContainer;
+        std::vector<wchar_t*> _wCharTPointer;
 };
 
 #endif // WCHAR_T_CONVERTER_H

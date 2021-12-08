@@ -1,3 +1,4 @@
+
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
  * Copyright 2020-2021 NRP Team
@@ -22,40 +23,24 @@
 #ifndef PYTHON_ENGINE_JSON_NRP_CLIENT_H
 #define PYTHON_ENGINE_JSON_NRP_CLIENT_H
 
-#include "nrp_python_device/devices/pyobject_device.h"
-#include "nrp_json_engine_protocol/nrp_client/engine_json_nrp_client.h"
-#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "nrp_python_json_engine/config/python_config.h"
 
-#include <unistd.h>
 
 /*!
- * \brief NRP - Python Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
+ * \brief PythonJSONEngine client
  */
-class PythonEngineJSONNRPClient
-        : public EngineJSONNRPClient<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema, PyObjectDevice>
+class PythonEngineJSONNRPClient: public PythonEngineJSONNRPClientBase<PythonEngineJSONNRPClient, PythonConfigConst::EngineSchema>
 {
-		/*!
-		 * \brief Time (in seconds) to wait for Python to exit cleanly after first SIGTERM signal. Afterwards, send a SIGKILL
-		 */
-		static constexpr size_t _killWait = 10;
+public:
 
-	public:
-		PythonEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
-		virtual ~PythonEngineJSONNRPClient() override;
+    PythonEngineJSONNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+            : PythonEngineJSONNRPClientBase(config, std::move(launcher))
+    {
+        NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-		virtual void initialize() override;
-
-		virtual void shutdown() override;
-
-        virtual const std::vector<std::string> engineProcStartParams() const override;
-
-	private:
-		/*!
-		 * \brief Error message returned by init command
-		 */
-		std::string _initErrMsg = "";
+        setDefaultProperty<std::string>("EngineProcCmd", NRP_PYTHON_EXECUTABLE_PATH);
+    }
 };
 
 using PythonEngineJSONLauncher = PythonEngineJSONNRPClient::EngineLauncher<PythonConfigConst::EngineType>;

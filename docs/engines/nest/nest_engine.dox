@@ -1,0 +1,10 @@
+/*! \page nest_engine NEST Engine
+
+This engine enables the interfacing of the <a href="https://www.nest-simulator.org/">NEST</a> spiking neural network simulator to NRP-core. Two implementations are provided:
+
+- \subpage nest_json "NEST JSON Engine": based on the \ref engine_json engine
+- \subpage nest_server "NEST Server Engine": this is a client-only engine implementation that enables the use of <a href="https://pypi.org/project/nest-server/">nest-server</a> with NRP-core.
+
+Both implementations behave and are configured in a very similar way. At initialisation time, they take as input a python script where a NEST network is defined; then, at run time, they handle the communication with the Simulation Loop. The details of their behaviour and configuration are described in the pages linked above.
+
+*/

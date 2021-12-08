@@ -22,7 +22,6 @@
 #ifndef PY_ENGINE_SCRIPT_H
 #define PY_ENGINE_SCRIPT_H
 
-#include "nrp_python_device/devices/pyobject_device.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 #include "nrp_python_json_engine/engine_server/python_json_server.h"
 
@@ -35,91 +34,101 @@
 class PyEngineScript
         : public PtrTemplates<PyEngineScript>
 {
-	public:
-		PyEngineScript() = default;
-		virtual ~PyEngineScript();
+    public:
+        PyEngineScript() = default;
+        virtual ~PyEngineScript();
 
-		/*!
-		 * \brief Initialization function. Called at start of simulation
-		 */
-		virtual void initialize();
+        /*!
+         * \brief Initialization function. Called at start of simulation
+         */
+        virtual void initialize();
 
-		/*!
-		 * \brief Runs main script loop and updates _time
-		 * \param timestep Time (in seconds) to run the loop
-		 * \return Returns total simulation time of this engine
-		 */
-		inline SimulationTime runLoop(SimulationTime timestep)
-		{
-			this->runLoopFcn(timestep);
-			this->_time += timestep;
+        /*!
+         * \brief Runs main script loop and updates _time
+         * \param timestep Time (in seconds) to run the loop
+         * \return Returns total simulation time of this engine
+         */
+        inline SimulationTime runLoop(SimulationTime timestep)
+        {
+            this->_time += timestep;
+            this->runLoopFcn(timestep);
 
-			return this->_time;
-		}
+            return this->_time;
+        }
 
-		/*!
-		 * \brief Shutdown function. Called at end of simulation
-		 */
-		virtual void shutdown();
+        /*!
+         * \brief Shutdown function. Called at end of simulation
+         */
+        virtual void shutdown();
 
-		/*!
-		 * \brief Get simulation time of this engine
-		 */
-		SimulationTime simTime() const;
+        /*!
+         * \brief Reset function
+         */
+        virtual bool reset();
 
-		/*!
-		 * \brief Register device
-		 * \param deviceName Name of device
-		 */
-		void registerDevice(std::string deviceName);
+        /*!
+         * \brief Get simulation time of this engine
+         */
+        SimulationTime simTime() const;
 
-		/*!
-		 * \brief Get Device Data
-		 * \param deviceName Name of device
-		 * \return Returns device data
-		 */
-		boost::python::object &getDevice(const std::string &deviceName);
+        /*!
+         * \brief Get this engine configuration
+         */
+        nlohmann::json engineConfig() const;
 
-		/*!
-		 * \brief Set Device Data
-		 * \param deviceName Name of device
-		 * \param data Data to store in device
-		 */
-		void setDevice(const std::string &deviceName, boost::python::object data);
+        /*!
+         * \brief Register datapack
+         * \param datapackName Name of datapack
+         */
+        void registerDataPack(std::string datapackName);
 
-		/*!
-		 * \brief Save ptr to PythonJSONServer instance that owns this script
-		 * \param pServer Pointer to PythonJSONServer
-		 */
-		void setPythonJSONServer(PythonJSONServer *pServer);
+        /*!
+         * \brief Get DataPack Data
+         * \param datapackName Name of datapack
+         * \return Returns datapack data
+         */
+        boost::python::object &getDataPack(const std::string &datapackName);
 
-	protected:
-		/*!
-		 * \brief Main script loop. Will run for timestep seconds
-		 * \param timestep Time (in seconds) to run the loop
-		 */
-		virtual void runLoopFcn(SimulationTime timestep) = 0;
+        /*!
+         * \brief Set DataPack Data
+         * \param datapackName Name of datapack
+         * \param data Data to store in datapack
+         */
+        void setDataPack(const std::string &datapackName, boost::python::object data);
 
-	private:
-		/*!
-		 * \brief Engine Time
-		 */
-		SimulationTime _time = SimulationTime::zero();
+        /*!
+         * \brief Save ptr to PythonJSONServer instance that owns this script
+         * \param pServer Pointer to PythonJSONServer
+         */
+        void setPythonJSONServer(PythonJSONServer *pServer);
 
-		/*!
-		 * \brief Ptr to PythonJSONServer instance that owns this script
-		 */
-		PythonJSONServer *_pServer = nullptr;
+    protected:
+        /*!
+         * \brief Main script loop. Will run for timestep seconds
+         * \param timestep Time (in seconds) to run the loop
+         */
+        virtual void runLoopFcn(SimulationTime timestep) = 0;
 
-		/*!
-		 * \brief Device Controllers
-		 */
-		std::list<EngineJSONDeviceControllerInterface::shared_ptr> _deviceControllers;
+    private:
+        /*!
+         * \brief Engine Time
+         */
+        SimulationTime _time = SimulationTime::zero();
 
-		/*!
-		 * \brief Map from keyword to device data
-		 */
-		std::map<std::string, boost::python::object*> _nameDeviceMap;
+        /*!
+         * \brief Ptr to PythonJSONServer instance that owns this script
+         */
+        PythonJSONServer *_pServer = nullptr;
+
+        /*!
+         * \brief DataPack Controllers
+         */
+        std::list<std::shared_ptr<PythonEngineJSONDataPackController>> _datapackControllers;
+
+        /*!
+         * \brief Map from keyword to datapack data
+         */
+        std::map<std::string, boost::python::object*> _nameDataPackMap;
 };
 
 using PyEngineScriptSharedPtr = PyEngineScript::shared_ptr;

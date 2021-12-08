@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
-export NRP=/home/${USER}/.local/nrp
-export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
-export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:${NRP}/bin
-export PATH=$PATH:${HOME}/nrp-core/examples/unity:${HOME}/nrp-core/examples/roboskate
+export PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
+export LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+export PATH=$PATH:$NRP_INSTALL_DIR/bin
+
+export CC=/usr/bin/gcc-10
+export CXX=/usr/bin/g++-10
+
+source /opt/ros/noetic/setup.sh
+
+export CATKIN_WS=${HOME}/catkin_ws
+export ROS_PACKAGE_PATH=${CATKIN_WS}/src:${ROS_PACKAGE_PATH}

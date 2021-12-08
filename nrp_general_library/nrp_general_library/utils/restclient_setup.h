@@ -31,35 +31,35 @@
  */
 class RestClientSetup
 {
-	public:
-		~RestClientSetup();
+    public:
+        ~RestClientSetup();
 
-		// Delete move/copy constructors+operators for singleton
-		RestClientSetup(const RestClientSetup&) = delete;
-		RestClientSetup(RestClientSetup&&) = delete;
+        // Delete move/copy constructors+operators for singleton
+        RestClientSetup(const RestClientSetup&) = delete;
+        RestClientSetup(RestClientSetup&&) = delete;
 
-		RestClientSetup &operator=(const RestClientSetup&) = delete;
-		RestClientSetup &operator=(RestClientSetup&&) = delete;
+        RestClientSetup &operator=(const RestClientSetup&) = delete;
+        RestClientSetup &operator=(RestClientSetup&&) = delete;
 
-		/*!
-		 * \brief Get RestClientSetup instance. Returns nullptr if not yet initialized
-		 */
-		static RestClientSetup *getInstance();
+        /*!
+         * \brief Get RestClientSetup instance. Returns nullptr if not yet initialized
+         */
+        static RestClientSetup *getInstance();
 
-		/*!
-		 * \brief Resets RestClientSetup
-		 */
-		static RestClientSetup *resetInstance();
+        /*!
+         * \brief Resets RestClientSetup
+         */
+        static RestClientSetup *resetInstance();
 
-		/*!
-		 * \brief Ensure that RestClientSetup has been initialized
-		 */
-		static RestClientSetup *ensureInstance();
+        /*!
+         * \brief Ensure that RestClientSetup has been initialized
+         */
+        static RestClientSetup *ensureInstance();
 
-	private:
-		static std::unique_ptr<RestClientSetup> _instance;
+    private:
+        static std::unique_ptr<RestClientSetup> _instance;
 
-		RestClientSetup();
+        RestClientSetup();
 };
 
 #endif // RESTCLIENT_SETUP_H

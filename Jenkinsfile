@@ -7,56 +7,100 @@
 
 pipeline {
     environment {
-        NRP_CORE_DIR = "nrp-core"
-        // GIT_CHECKOUT_DIR is a dir of the main project (that was pushed)
-        GIT_CHECKOUT_DIR = "${env.NRP_CORE_DIR}"
-
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
     }
     agent {
-        docker {
-            image 'hbpneurorobotics/nrp-core:latest'
-            args '--entrypoint="" -u root --privileged'
+        dockerfile {
+            label 'ci_label'
+            // --net=host solves the problem with gRPC resolving localhost to IPv6 ("Address family not supported" errors)
+            args '-u nrpuser:nrpgroup --privileged --net=host'
         }
-    }
-    options { 
-        // Skip code checkout prior running pipeline (only Jenkinsfile is checked out)
-        skipDefaultCheckout true
     }
 
     stages {
-        stage('Code checkout') {
+       
+        stage('Prepare Build') {
             steps {
-                // Notify BitBucket on the start of the job
-                // The Bitbucket Build Status Notifier is used
-                // REF: https://plugins.jenkins.io/bitbucket-build-status-notifier/
-                
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Code checkout')
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'CMake nrp-core')
 
-                // Debug information on available environment
-                echo sh(script: 'env|sort', returnStdout: true)
-
-                // Checkout main project to GIT_CHECKOUT_DIR
-                dir(env.GIT_CHECKOUT_DIR) {
-                    checkout scm
-                    sh 'chown -R "${USER}" ./'
-                }
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/10-prepare-build.sh'
             }
         }
-        
+       
         stage('Build') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
 
-                // Build operations (starting in .ci directory)
-                dir(env.GIT_CHECKOUT_DIR){
-                    // Determine explicitly the shell as bash (needed for proper user-scripts operation)
-                    sh 'bash .ci/build.sh'
-
-                    junit 'build/xml/**/*.xml'
-                }
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/20-build.sh'
             }
         }
+       
+        stage('Unit tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/30-run-tests.sh'
+                cobertura coberturaReportFile: 'build/gcovr.xml'
+            }
+        }
+       
+        stage('Static tests') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/40-run-cppcheck.sh'
+            }
+        }
+       
+        stage('Publishing results') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+
+                junit 'build/xml/**/*.xml'
+                publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
+            }
+        }
+       
+        // NOTE: uncomment this block to enable online documentation auto update
+//         stage('Publishing docs') {
+//             when {
+//                 expression { env.BRANCH_NAME == "documentation" || env.BRANCH_NAME == "development" }
+//             }
+//             steps {
+//                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+//
+//                 sh 'cd build && make doxygen_nrp'
+//
+//                 sshagent(['vorobev_key']) {
+//                     sh('''
+//                         #!/usr/bin/env bash
+//                         set +x
+//
+//                         git config --global user.name "nrp-jenkins"
+//                         git config --global user.email "neurorobotics@ebrains.eu"
+//
+//                         export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
+//
+//                         git clone git@bitbucket.org:hbpneurorobotics/hbpneurorobotics.bitbucket.io.git
+//
+//                         cp -rf build/doxygen/html/* hbpneurorobotics.bitbucket.io/
+//                         cd hbpneurorobotics.bitbucket.io
+//                         if [ -z $(git status --porcelain) ];
+//                         then
+//                             echo "Nothing to commit!"
+//                         else
+//                             git add -A
+//                             git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
+//                             git push
+//                         fi
+//                     ''')
+//                 }
+//             }
+//         }
     }
 
     post {

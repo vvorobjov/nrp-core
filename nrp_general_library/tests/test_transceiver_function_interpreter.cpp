@@ -22,53 +22,53 @@
 
 #include "tests/test_transceiver_function_interpreter.h"
 
-TestSimpleTransceiverDevice::TestSimpleTransceiverDevice(boost::python::api::object fcn)
+TestSimpleTransceiverDataPack::TestSimpleTransceiverDataPack(boost::python::api::object fcn)
     : _fcn(fcn)
 {}
 
-TestOutputDevice::~TestOutputDevice() = default;
+TestOutputDataPack::~TestOutputDataPack() = default;
 
-TestSimpleTransceiverDevice::~TestSimpleTransceiverDevice()
-{	this->_tfInterpreterRegistry = nullptr;	}
+TestSimpleTransceiverDataPack::~TestSimpleTransceiverDataPack()
+{   this->_tfInterpreterRegistry = nullptr; }
 
-TransceiverDeviceInterface::shared_ptr *TestSimpleTransceiverDevice::getTFInterpreterRegistry()
-{	return this->_tfInterpreterRegistry;	}
+TransceiverDataPackInterface::shared_ptr *TestSimpleTransceiverDataPack::getTFInterpreterRegistry()
+{   return this->_tfInterpreterRegistry;    }
 
-const std::string &TestSimpleTransceiverDevice::linkedEngineName() const
+const std::string &TestSimpleTransceiverDataPack::linkedEngineName() const
 {
-	return this->_linkedEngine;
+    return this->_linkedEngine;
 }
 
-boost::python::object TestSimpleTransceiverDevice::runTf(python::tuple &args, python::dict &kwargs)
-{	return this->_fcn(*args, **kwargs);	}
+boost::python::object TestSimpleTransceiverDataPack::runTf(python::tuple &args, python::dict &kwargs)
+{   return this->_fcn(*args, **kwargs); }
 
-EngineClientInterface::device_identifiers_set_t TestSimpleTransceiverDevice::updateRequestedDeviceIDs(EngineClientInterface::device_identifiers_set_t &&deviceIDs) const
-{	return std::move(deviceIDs);	}
+EngineClientInterface::datapack_identifiers_set_t TestSimpleTransceiverDataPack::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
+{   return std::move(datapackIDs);  }
 
-TestInputDevice::~TestInputDevice() = default;
+TestInputDataPack::~TestInputDataPack() = default;
 
-DeviceIdentifier TestOutputDevice::ID(const std::string & name)
+DataPackIdentifier TestOutputDataPack::ID(const std::string & name)
 {
-	return DeviceIdentifier(name, "engine", "type");
+    return DataPackIdentifier(name, "engine", "type");
 }
 
-TestOutputDevice::TestOutputDevice()
-    : DeviceInterface(TestOutputDevice::ID())
+TestOutputDataPack::TestOutputDataPack()
+    : DataPackInterface(TestOutputDataPack::ID())
 {}
 
-DeviceIdentifier TestInputDevice::ID()
+DataPackIdentifier TestInputDataPack::ID()
 {
-	return DeviceIdentifier("in", "engine", "type");
+    return DataPackIdentifier("in", "engine", "type");
 }
 
-TestInputDevice::TestInputDevice()
-    : DeviceInterface(TestInputDevice::ID())
+TestInputDataPack::TestInputDataPack()
+    : DataPackInterface(TestInputDataPack::ID())
 {}
 
-TestTransceiverDevice::~TestTransceiverDevice()
-{	this->_tfInterpreterRegistry = nullptr;	}
+TestTransceiverDataPack::~TestTransceiverDataPack()
+{   this->_tfInterpreterRegistry = nullptr; }
 
-const std::string &TestTransceiverDevice::linkedEngineName() const
+const std::string &TestTransceiverDataPack::linkedEngineName() const
 {
-	return this->_linkedEngine;
+    return this->_linkedEngine;
 }

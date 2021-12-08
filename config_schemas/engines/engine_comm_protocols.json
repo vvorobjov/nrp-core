@@ -34,11 +34,6 @@
             "type": "string",
             "default": "localhost:50051",
             "description": "Address from which the engine server sends/receives data"
-          },
-          "RegistrationServerAddress": {
-            "type": "string",
-            "default": "localhost:9001",
-            "description": "Address to which servers should register to"
           }
         }
       }

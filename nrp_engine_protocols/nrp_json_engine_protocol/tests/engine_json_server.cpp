@@ -24,8 +24,9 @@
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_server.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 
-#include "tests/test_engine_json_device_controllers.h"
+#include "tests/test_engine_json_datapack_controllers.h"
 
 #include <future>
 #include <restclient-cpp/restclient.h>
@@ -35,164 +36,176 @@ using namespace testing;
 class TestEngineJSONServer
         : public EngineJSONServer
 {
-	public:
-	template<class ...T>
-	TestEngineJSONServer(T &&...properties)
-	    : EngineJSONServer(std::forward<T>(properties)...)
-	{}
+    public:
+    template<class ...T>
+    TestEngineJSONServer(T &&...properties)
+        : EngineJSONServer(std::forward<T>(properties)...)
+    {}
 
-	virtual ~TestEngineJSONServer() override = default;
+    virtual ~TestEngineJSONServer() override = default;
 
-	SimulationTime curTime = SimulationTime::zero();
+    SimulationTime curTime = SimulationTime::zero();
 
-	SimulationTime runLoopStep(SimulationTime timeStep) override
-	{
-		if(timeStep < SimulationTime::zero())
-			throw std::invalid_argument("error");
+    SimulationTime runLoopStep(SimulationTime timeStep) override
+    {
+        if(timeStep < SimulationTime::zero())
+            throw std::invalid_argument("error");
 
-		curTime += timeStep;
+        curTime += timeStep;
 
-		return curTime;
-	}
+        return curTime;
+    }
 
-	nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t&) override
-	{
-		return nlohmann::json({{"status", "success"}, {"original", data}});
-	}
+    nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t&) override
+    {
+        return nlohmann::json({{"status", "success"}, {"original", data}});
+    }
 
-	// TODO: Test shutdown
-	nlohmann::json shutdown(const nlohmann::json &data) override
-	{
-		return nlohmann::json({{"status", "shutdown"}, {"original", data}});
-	}
+    nlohmann::json reset(EngineJSONServer::lock_t&) override
+    {
+        return nlohmann::json({{"status", "success"}});
+    }
 
-	template<class EXCEPTION = std::exception>
-	void startCatchException()
-	{
-		ASSERT_THROW(this->startServer(), EXCEPTION);
-		this->_serverRunning = false;
-	}
+    // TODO: Test shutdown
+    nlohmann::json shutdown(const nlohmann::json &data) override
+    {
+        return nlohmann::json({{"status", "shutdown"}, {"original", data}});
+    }
+
+    template<class EXCEPTION = std::exception>
+    void startCatchException()
+    {
+        ASSERT_THROW(this->startServer(), EXCEPTION);
+        this->_serverRunning = false;
+    }
 };
 
+// TODO Split the test into multiple simpler ones. Every test should test a single use case.
 TEST(EngineJSONServerTest, Functions)
 {
     const std::string address = "localhost:5434";
-	TestEngineJSONServer server(address);
+    TestEngineJSONServer server(address);
 
-	auto data = nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
-	data = nlohmann::json({{"", {{"data", 2}}}});
-	auto dev2 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice2>(TestJSONDevice2::createID("device2", "engine_name_2"), data.begin());
-	data = nlohmann::json({{"", {{"data", -1}}}});
-	auto devThrow = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDeviceThrow>(TestJSONDeviceThrow::createID("deviceThrow", "engine_throw"), data.begin());
+    // Create test datapack
 
-	// Register device controllers
-	auto dev1Ctrl = TestJSONDevice1Controller(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
-	auto dev2Ctrl = TestJSONDevice2Controller(DeviceIdentifier(dev2.id()));
-	server.registerDevice(dev2.name(), &dev2Ctrl);
-	auto devThrowCtrl = TestJSONDeviceThrowController(DeviceIdentifier(devThrow.id()));
-	server.registerDevice(devThrow.name(), &devThrowCtrl);
+    const std::string datapackName = "test_name";
+    const std::string engineName = "test_engine_name";
+    auto data = new nlohmann::json({{datapackName, {{"data", 1}}}});
+    auto dev1 = JsonDataPack(datapackName, engineName, data);
 
-	// Set Data
-	auto retData = server.setDeviceData(nlohmann::json());
-	ASSERT_TRUE(retData.empty());
+    // Register datapack controllers
 
-	retData = server.setDeviceData(nlohmann::json({{"fakeDevice", {}}}));
-	ASSERT_STREQ(retData.find("fakeDevice")->get<std::string>().data(), "");
-	ASSERT_EQ(retData.size(), 1);
+    auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+    server.registerDataPack(dev1.name(), &dev1Ctrl);
 
-	data.clear();
-	data.update(DeviceSerializerMethods<nlohmann::json>::serialize(dev1));
-	data.update(DeviceSerializerMethods<nlohmann::json>::serialize(dev2));
-	retData = server.setDeviceData(data);
-	ASSERT_EQ(dev1Ctrl.data().data(), dev1.data());
-	ASSERT_EQ(dev2Ctrl.data().data(), dev2.data());
-	ASSERT_EQ(retData.size(), 2);
+    // Test setting empty data
+    // The JSON object in the controller should not be updated
 
-	data.clear();
-	data.update(DeviceSerializerMethods<nlohmann::json>::serialize(devThrow));
-	ASSERT_THROW(server.setDeviceData(data), NRPExceptionNonRecoverable);
+    auto retData = server.setDataPackData(nlohmann::json());
+    ASSERT_FALSE(dev1Ctrl.data().contains("data"));
+    ASSERT_TRUE(retData.empty());
 
-	// Get Data
-	retData = server.getDeviceData(nlohmann::json());
-	ASSERT_TRUE(retData.empty());
+    // Test setting data for an unregistered datapack
+    // The JSON object in the controller should not be updated
 
-	retData = server.getDeviceData(nlohmann::json({{"fakeDevice", {}}}));
-	ASSERT_TRUE(retData.find("fakeDevice")->empty());
-	ASSERT_EQ(retData.size(), 1);
+    retData = server.setDataPackData(nlohmann::json({{"fakeDataPack", {}}}));
+    ASSERT_FALSE(dev1Ctrl.data().contains("data"));
+    ASSERT_STREQ(retData.find("fakeDataPack")->get<std::string>().data(), "");
+    ASSERT_EQ(retData.size(), 1);
 
-	data = nlohmann::json();
-	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev1.id()));
-	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev2.id()));
-	retData = server.getDeviceData(data);
-	ASSERT_STREQ(retData["device1"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
-	ASSERT_STREQ(retData["device2"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
-	ASSERT_EQ(retData.size(), 2);
+    // Test setting data for a registered datapack
+    // The JSON object in the controller should be updated
 
-	data = DeviceSerializerMethods<nlohmann::json>::serializeID(devThrow.id());
-	ASSERT_THROW(server.getDeviceData(data), std::invalid_argument);
+    retData = server.setDataPackData(*data);
+    ASSERT_EQ(retData.size(), 1);
+    ASSERT_TRUE(dev1Ctrl.data().contains(datapackName));
+    ASSERT_EQ(dev1Ctrl.data()[datapackName]["type"       ], JsonDataPack::getType());
+    ASSERT_EQ(dev1Ctrl.data()[datapackName]["engine_name"], engineName);
+    ASSERT_EQ(dev1Ctrl.data()[datapackName]["data"       ], dev1.getData()[datapackName]["data"]);
 
-	// Clear devices
-	server.clearRegisteredDevices();
-	ASSERT_EQ(server._devicesControllers.size(), 0);
+    // Test getting empty data
+
+    retData = server.getDataPackData(nlohmann::json());
+    ASSERT_TRUE(retData.empty());
+
+    // Test getting data for an unregistered datapack
+    // The response should contain an empty JSON
+
+    retData = server.getDataPackData(nlohmann::json({{"fakeDataPack", {}}}));
+    ASSERT_TRUE(retData.find("fakeDataPack")->empty());
+    ASSERT_EQ(retData.size(), 1);
+
+    // Test getting data for a registered datapack
+    // The response should contain an empty JSON
+
+    auto request = nlohmann::json();
+    request[datapackName] = {{"engine_name", engineName}};
+    retData = server.getDataPackData(request);
+    ASSERT_EQ(retData.size(), 1);
+    ASSERT_TRUE(retData.contains("test_name"));
+    ASSERT_EQ(retData[datapackName]["type"       ], JsonDataPack::getType());
+    ASSERT_EQ(retData[datapackName]["engine_name"], engineName);
+    ASSERT_EQ(retData[datapackName]["data"       ], (*data)[datapackName]["data"]);
+
+    // Clear datapacks
+
+    server.clearRegisteredDataPacks();
+    ASSERT_EQ(server._datapacksControllers.size(), 0);
 }
 
 TEST(EngineJSONServerTest, HttpRequests)
 {
-	const std::string address = "localhost:5434";
-	TestEngineJSONServer server(address);
+    const std::string address = "localhost:5434";
+    TestEngineJSONServer server(address);
 
-	auto data = nlohmann::json({{"", {{"data", 1}}}});
-	auto dev1 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice1>(TestJSONDevice1::createID("device1", "engine_name_1"), data.begin());
-	data = nlohmann::json({{"", {{"data", 2}}}});
-	auto dev2 = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDevice2>(TestJSONDevice2::createID("device2", "engine_name_2"), data.begin());
-	data = nlohmann::json({{"", {{"data", -1}}}});
-	auto devThrow = DeviceSerializerMethods<nlohmann::json>::deserialize<TestJSONDeviceThrow>(TestJSONDeviceThrow::createID("deviceThrow", "engine_throw"), data.begin());
+    // Create test datapack
 
-	// Register device controllers
-	auto dev1Ctrl = TestJSONDevice1Controller(DeviceIdentifier(dev1.id()));
-	server.registerDevice(dev1.name(), &dev1Ctrl);
-	auto dev2Ctrl = TestJSONDevice2Controller(DeviceIdentifier(dev2.id()));
-	server.registerDevice(dev2.name(), &dev2Ctrl);
-	auto devThrowCtrl = TestJSONDeviceThrowController(DeviceIdentifier(devThrow.id()));
-	server.registerDevice(devThrow.name(), &devThrowCtrl);
+    const std::string datapackName = "test_name";
+    const std::string engineName = "test_engine_name";
+    auto devData = new nlohmann::json({{datapackName, {{"data", 1}}}});
+    auto dev1 = JsonDataPack(datapackName, "test_engine_name", devData);
 
-	ASSERT_FALSE(server.isServerRunning());
-	server.startServerAsync();
-	ASSERT_TRUE(server.isServerRunning());
+    // Register datapack controllers
 
-	// Init command
-	data.clear();
-	data.emplace("init", nlohmann::json());
-	auto resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
-	nlohmann::json retData = nlohmann::json::parse(resp.body);
-	ASSERT_STREQ(retData["status"].get<std::string>().data(), "success");
+    auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
+    server.registerDataPack(dev1.name(), &dev1Ctrl);
 
-	SimulationTime runTime = toSimulationTime<int, std::milli>(1);
-	// Run step command
-	data.clear();
-	data[EngineJSONConfigConst::EngineTimeStepName.data()] = runTime.count();
-	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
-	ASSERT_EQ(server.curTime, runTime);
+    ASSERT_FALSE(server.isServerRunning());
+    server.startServerAsync();
+    ASSERT_TRUE(server.isServerRunning());
 
-	// Run get server command
-	data.clear();
-	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev1.id()));
-	data.update(DeviceSerializerMethods<nlohmann::json>::serializeID(dev2.id()));
-	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
-	retData = nlohmann::json::parse(resp.body);
-	ASSERT_STREQ(retData["device1"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice1::TypeName.data());
-	ASSERT_STREQ(retData["device2"][DeviceSerializerMethods<nlohmann::json>::JSONTypeID.data()].get<std::string>().data(), TestJSONDevice2::TypeName.data());
-	ASSERT_EQ(retData.size(), 2);
+    // Init command
+    nlohmann::json data;
+    data.emplace("init", nlohmann::json());
+    auto resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
+    nlohmann::json retData = nlohmann::json::parse(resp.body);
+    ASSERT_STREQ(retData["status"].get<std::string>().data(), "success");
 
-	// Run set server command
-	data.clear();
-	data.update(DeviceSerializerMethods<nlohmann::json>::serialize(dev1));
-	data.update(DeviceSerializerMethods<nlohmann::json>::serialize(dev2));
-	resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerSetDevicesRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
-	retData = nlohmann::json::parse(resp.body);
-	ASSERT_EQ(dev1Ctrl.data().data(), dev1.data());
-	ASSERT_EQ(dev2Ctrl.data().data(), dev2.data());
-	ASSERT_EQ(retData.size(), 2);
+    SimulationTime runTime = toSimulationTime<int, std::milli>(1);
+    // Run step command
+    data.clear();
+    data[EngineJSONConfigConst::EngineTimeStepName.data()] = runTime.count();
+    resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerRunLoopStepRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
+    ASSERT_EQ(server.curTime, runTime);
+
+    // Run set server command
+    auto request = nlohmann::json();
+    request[datapackName] = {{"engine_name", engineName}, {"data", 2}};
+    resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
+    retData = nlohmann::json::parse(resp.body);
+    // DataPack name with no data should be returned as confirmation
+    ASSERT_EQ(retData.size(), 1);
+    ASSERT_EQ(retData[datapackName], "");
+
+    // Run get server command
+    request.clear();
+    request[datapackName] = {{"engine_name", engineName}};
+    resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
+    retData = nlohmann::json::parse(resp.body);
+    ASSERT_EQ(retData.size(), 1);
+    ASSERT_TRUE(retData.contains(datapackName));
+    ASSERT_EQ(retData[datapackName]["type"       ], JsonDataPack::getType());
+    ASSERT_EQ(retData[datapackName]["engine_name"], engineName);
+    // We should get the same value as was set by the setDataPacks function above
+    ASSERT_EQ(retData[datapackName]["data"       ], 2);
 }

@@ -29,17 +29,15 @@
  */
 class GazeboStepController
 {
-	public:
-		GazeboStepController();
-		virtual ~GazeboStepController();
+    public:
+        GazeboStepController();
+        virtual ~GazeboStepController();
 
-		virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
+        virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
 
-		virtual bool finishWorldLoading() = 0;
+        virtual bool finishWorldLoading() = 0;
+
+        virtual bool resetWorld() = 0;
 };
-
-/*! \addtogroup gazebo_json_engine
- *  The loop is controlled via GazeboStepController.
- */
 
 #endif // GAZEBO_STEP_CONTROLLER_H

@@ -1,0 +1,17 @@
+/*! \page python_engine_guide Using the Python JSON engine
+
+The \ref python_json_engine "Python JSON engine" can be used to easily integrate simulators with a Python API.
+There is a minimal working example with two Python JSON engines exchanging simulation time, located in <em>examples/tf_exchange</em> directory.
+We explain how to run it on \ref getting_started_experiment_tf_exchange "this page".
+
+In order to create your engine, you can use <em>examples/tf_exchange/engine_1.py</em> (listed below) as a reference.
+Just modify the following methods of the `Script` class to suit your needs:
+- `initialize()`: executed when the engine is initialized
+- `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `shutdown()`: executed when the engine is requested to shutdown
+
+\include tf_exchange/engine_1.py
+
+More details about the `EngineScript` and other Python JSON engine components can be found \ref python_json_engine_script "here".
+
+*/
