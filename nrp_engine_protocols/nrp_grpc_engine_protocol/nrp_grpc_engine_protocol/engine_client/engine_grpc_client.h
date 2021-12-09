@@ -220,9 +220,7 @@ class EngineGrpcClient
                     if(datapack->isEmpty())
                         throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
                     else {
-                        request.add_boardcranejointangles(0);
-                        request.add_boardcranejointangles(1);
-                        request.add_boardcranejointangles(2);
+                        request.CopyFrom(dynamic_cast<DataPack<communication::SetInfoRequest> *>(datapack)->getData());
                         //auto r = request.add_request();
                         //setProtoFromDataPackInterface<MSG_TYPES...>(request, datapack);
                     }
@@ -317,9 +315,9 @@ class EngineGrpcClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            communication::NoParams request;
-            communication::GetInfoReply   reply;
-            grpc::ClientContext          context;
+            communication::NoParams request_info;
+            communication::GetInfoReply   reply_info;
+            grpc::ClientContext          context_info;
 
             for(const auto &devID : datapackIdentifiers)
             {
@@ -333,7 +331,7 @@ class EngineGrpcClient
                 }
             }
 
-            grpc::Status status = _stub->get_info(&context, request, &reply);
+            grpc::Status status = _stub->get_info(&context_info, request_info, &reply_info);
 
             if(!status.ok())
             {
@@ -342,8 +340,28 @@ class EngineGrpcClient
             }
 
             typename EngineClientInterface::datapacks_set_t interfaces;
-            //for(int i = 0; i < reply.reply_size(); i++)
-              //  interfaces.insert(this->getDataPackInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
+
+            communication::GetInfoReply * info = new communication::GetInfoReply();
+            info->CopyFrom(reply_info);
+
+            interfaces.insert(DataPackInterfaceConstSharedPtr(new DataPack<communication::GetInfoReply>("get_info", this->engineName(), info)));
+
+            communication::NoParams request_camera;
+            communication::GetCameraReply   reply_camera;
+            grpc::ClientContext          context_camera;
+
+            status = _stub->get_camera(&context_camera, request_camera, &reply_camera);
+
+            if(!status.ok())
+            {
+                const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                throw std::runtime_error(errMsg);
+            }
+
+            communication::GetCameraReply * camera = new communication::GetCameraReply();
+            camera->CopyFrom(reply_camera);
+
+            interfaces.insert(DataPackInterfaceConstSharedPtr(new DataPack<communication::GetCameraReply>("get_camera", this->engineName(), camera)));
 
             return interfaces;
         }
