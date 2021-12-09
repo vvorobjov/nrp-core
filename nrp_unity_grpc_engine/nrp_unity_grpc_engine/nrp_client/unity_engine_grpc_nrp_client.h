@@ -25,8 +25,7 @@
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "devices/info.h"
-#include "devices/camera.h"
+#include "nrp_protobuf/engine_grpc.grpc.pb.h"
 
 #include "nrp_unity_grpc_engine/config/unity_grpc_config.h"
 
@@ -37,7 +36,7 @@
  *  \brief NRP - Gazebo Communicator on the NRP side. Converts DeviceInterface classes from/to JSON objects
  */
 class UnityEngineGrpcNRPClient
-: public EngineGrpcClient<UnityEngineGrpcNRPClient, UnityGrpcConfigConst::EngineSchema, GetInfo, SetInfo, Camera>
+: public EngineGrpcClient<UnityEngineGrpcNRPClient, UnityGrpcConfigConst::EngineSchema>
 {
 	public:
 		UnityEngineGrpcNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
@@ -46,6 +45,8 @@ class UnityEngineGrpcNRPClient
 		virtual void initialize() override;
 
 		virtual void shutdown() override;
+
+		virtual void reset() override {}
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 

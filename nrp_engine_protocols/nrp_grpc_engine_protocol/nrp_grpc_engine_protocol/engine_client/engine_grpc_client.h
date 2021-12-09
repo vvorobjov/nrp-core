@@ -78,7 +78,7 @@ class EngineGrpcClient
             }
 
             _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
-            _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
+            _stub    = communication::CommunicationService::NewStub(_channel);
         }
 
         grpc_connectivity_state getChannelStatus()
@@ -100,8 +100,8 @@ class EngineGrpcClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             sleep(1);
-            EngineGrpc::InitRequest  request;
-            EngineGrpc::InitReply    reply;
+            communication::InitializeRequest  request;
+            communication::InitializeReply    reply;
             grpc::ClientContext      context;
 
             prepareRpcContext(&context);
@@ -109,7 +109,7 @@ class EngineGrpcClient
             request.set_json(data.dump());
 
             NRPLogger::debug("Sending init command to server [ {} ]", this->engineName());
-            grpc::Status status = _stub->init(&context, request, &reply);
+            grpc::Status status = _stub->initialize(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -120,7 +120,7 @@ class EngineGrpcClient
 
         void sendResetCommand()
         {
-            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+            /*NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             EngineGrpc::ResetRequest  request;
             EngineGrpc::ResetReply    reply;
             grpc::ClientContext       context;
@@ -134,20 +134,20 @@ class EngineGrpcClient
             {
                 const auto errMsg = "Engine server reset failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
-            }
+            }*/
         }
 
-        void sendShutdownCommand(const nlohmann::json & data)
+        void sendShutdownCommand(const nlohmann::json & /*data*/)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::ShutdownRequest request;
-            EngineGrpc::ShutdownReply   reply;
+            communication::NoParams request;
+            communication::ShutdownReply   reply;
             grpc::ClientContext         context;
 
             prepareRpcContext(&context);
 
-            request.set_json(data.dump());
+            //request.set_json(data.dump());
 
             NRPLogger::debug("Sending shutdown command to server [ {} ]", this->engineName());
             grpc::Status status = _stub->shutdown(&context, request, &reply);
@@ -163,15 +163,15 @@ class EngineGrpcClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::RunLoopStepRequest request;
-            EngineGrpc::RunLoopStepReply   reply;
+            communication::RunGameRequest request;
+            communication::RunGameReply   reply;
             grpc::ClientContext            context;
 
             prepareRpcContext(&context);
 
-            request.set_timestep(timeStep.count());
+            request.set_time(fromSimulationTime<float, std::ratio<1,1>>(timeStep));
 
-            grpc::Status status = _stub->runLoopStep(&context, request, &reply);
+            grpc::Status status = _stub->run_game(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -179,7 +179,8 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
-            const SimulationTime engineTime(reply.enginetime());
+            //const SimulationTime engineTime(reply.totalsimulatedtime());
+            const SimulationTime engineTime = toSimulationTime<float, std::ratio<1, 1>>(reply.totalsimulatedtime());
 
             if(engineTime < SimulationTime::zero())
             {
@@ -206,8 +207,8 @@ class EngineGrpcClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::SetDataPackRequest request;
-            EngineGrpc::SetDataPackReply   reply;
+            communication::SetInfoRequest request;
+            communication::SetInfoReply   reply;
             grpc::ClientContext          context;
 
             prepareRpcContext(&context);
@@ -219,13 +220,16 @@ class EngineGrpcClient
                     if(datapack->isEmpty())
                         throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
                     else {
-                        auto r = request.add_request();
-                        setProtoFromDataPackInterface<MSG_TYPES...>(r, datapack);
+                        request.add_boardcranejointangles(0);
+                        request.add_boardcranejointangles(1);
+                        request.add_boardcranejointangles(2);
+                        //auto r = request.add_request();
+                        //setProtoFromDataPackInterface<MSG_TYPES...>(request, datapack);
                     }
                 }
             }
 
-            grpc::Status status = _stub->setDataPack(&context, request, &reply);
+            grpc::Status status = _stub->set_info(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -255,7 +259,7 @@ class EngineGrpcClient
             return this->engineConfig().at("EngineEnvParams");
         }
 
-        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+        /*template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
         DataPackInterfaceConstSharedPtr getDataPackInterfaceFromProto(Engine::DataPackMessage &datapackData) const
         {
             const google::protobuf::OneofDescriptor *fieldOne = datapackData.GetDescriptor()->FindOneofByName("data");
@@ -306,30 +310,30 @@ class EngineGrpcClient
             else
                 throw NRPException::logCreate("DataPack " + datapack->name() + " is not supported by engine" +
                                         this->engineName());
-        }
+        }*/
 
 
         virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::GetDataPackRequest request;
-            EngineGrpc::GetDataPackReply   reply;
+            communication::NoParams request;
+            communication::GetInfoReply   reply;
             grpc::ClientContext          context;
 
             for(const auto &devID : datapackIdentifiers)
             {
                 if(this->engineName().compare(devID.EngineName) == 0)
                 {
-                    auto r = request.add_datapackid();
+                    //auto r = request.add_datapackid();
 
-                    r->set_datapackname(devID.Name);
-                    r->set_datapacktype(devID.Type);
-                    r->set_enginename(devID.EngineName);
+                    //r->set_datapackname(devID.Name);
+                    //r->set_datapacktype(devID.Type);
+                    //r->set_enginename(devID.EngineName);
                 }
             }
 
-            grpc::Status status = _stub->getDataPack(&context, request, &reply);
+            grpc::Status status = _stub->get_info(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -338,8 +342,8 @@ class EngineGrpcClient
             }
 
             typename EngineClientInterface::datapacks_set_t interfaces;
-            for(int i = 0; i < reply.reply_size(); i++)
-                interfaces.insert(this->getDataPackInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
+            //for(int i = 0; i < reply.reply_size(); i++)
+              //  interfaces.insert(this->getDataPackInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
 
             return interfaces;
         }
@@ -355,7 +359,7 @@ class EngineGrpcClient
     private:
 
         std::shared_ptr<grpc::Channel>                       _channel;
-        std::unique_ptr<EngineGrpc::EngineGrpcService::Stub> _stub;
+        std::unique_ptr<communication::CommunicationService::Stub> _stub;
 
         SimulationTime _prevEngineTime = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();

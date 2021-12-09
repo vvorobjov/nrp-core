@@ -20,11 +20,6 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "devices/info.h"
-#include "devices/camera.h"
-
-#include "nrp_general_library/device_interface/device.h"
-#include "nrp_general_library/device_interface/device_python_wrappers.h"
 #include "nrp_general_library/config/cmake_constants.h"
 
 #include "nrp_unity_grpc_engine/config/cmake_constants.h"
@@ -36,8 +31,4 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(UNITY_PYTHON_MODULE_NAME)
 {
 	import(PYTHON_MODULE_NAME_STR);
-
-	python_property_device_class<GetInfo>::create();
-	python_property_device_class<SetInfo>::create();
-	python_property_device_class<Camera>::create();
 }

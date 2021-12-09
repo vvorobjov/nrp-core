@@ -19,11 +19,8 @@ include(GNUInstallDirs)
 
 # List library build files
 set(LIB_SRC_FILES
-	devices/info.cpp
-	devices/camera.cpp
 	nrp_unity_grpc_engine/config/unity_grpc_config.cpp
 	nrp_unity_grpc_engine/nrp_client/unity_engine_grpc_nrp_client.cpp
-#	nrp_unity_grpc_engine/python/python_module.cpp
 )
 
 # List of python module build files
@@ -71,7 +68,6 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 
 target_link_libraries(${LIBRARY_NAME}
 	PUBLIC
-	    #NRPGazeboDevices::NRPGazeboDevices
 		NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
 )
 

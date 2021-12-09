@@ -21,7 +21,7 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
     nrp_grpc_engine_protocol/config/engine_grpc_config.cpp
     nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
-    nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
+    #nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp  
     nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
 )
 
@@ -35,7 +35,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-    tests/engine_grpc.cpp
+    #tests/engine_grpc.cpp
 )
 
 

@@ -183,6 +183,13 @@ else()
     message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
 endif()
 
+if(NOT DEFINED ENABLE_UNITY)
+    message(VERBOSE "ENABLE_UNITY defaults to FULL")
+    set(ENABLE_UNITY FULL)
+else()
+    message(VERBOSE "ENABLE_UNITY is set to ${ENABLE_ROS}")
+endif()
+
 
 ##########################################
 ## NRP Engines
@@ -202,6 +209,14 @@ if(NOT ENABLE_NEST STREQUAL OFF)
     add_subdirectory(nrp_nest_engines)
 else()
     message(STATUS "NEST engines will not be built")
+endif()
+
+## Unity Engines
+if(NOT ENABLE_UNITY STREQUAL OFF)
+    message(STATUS "Building Unity engines")
+    add_subdirectory(nrp_unity_grpc_engine)
+else()
+    message(STATUS "Unity engines will not be built")
 endif()
 
 ## Python Engine
@@ -274,7 +289,7 @@ execute_process(
     COMMAND tools/create_new_engine.py --name Build --type json
 )
 
-add_subdirectory("tools/build_grpc_engine")
+#add_subdirectory("tools/build_grpc_engine")
 add_subdirectory("tools/build_json_engine")
 
 ##########################################

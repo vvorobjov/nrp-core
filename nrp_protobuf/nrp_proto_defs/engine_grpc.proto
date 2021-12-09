@@ -1,124 +1,71 @@
 syntax = "proto3";
 
-import "engine_msgs.proto";
 
-package EngineGrpc;
+package communication;
 
-/*
- * Remote Procedure Calls available to the gRPC engine
- * These are commands that the engine client can send to the engine server
- */
-service EngineGrpcService
+// The service definition.
+service CommunicationService
 {
-    rpc init        (InitRequest)        returns (InitReply)        {}
-    rpc shutdown    (ShutdownRequest)    returns (ShutdownReply)    {}
-    rpc runLoopStep (RunLoopStepRequest) returns (RunLoopStepReply) {}
-    rpc setDataPack   (SetDataPackRequest)   returns (SetDataPackReply)   {}
-    rpc getDataPack   (GetDataPackRequest)   returns (GetDataPackReply)   {}
-    rpc resetHandle (ResetRequest)       returns (ResetReply)       {}
+  rpc initialize(InitializeRequest) returns (InitializeReply) {}
+  rpc shutdown(NoParams) returns (ShutdownReply) {}
+  rpc get_info(NoParams) returns (GetInfoReply) {}
+  rpc set_info(SetInfoRequest) returns (SetInfoReply) {}
+  rpc get_camera(NoParams) returns (GetCameraReply) {}
+  rpc run_game(RunGameRequest) returns (RunGameReply) {}
 }
 
-/*
- * Message sent by client with the init command
- * Contains initialization configuration in form of a stringified JSON
- */
-message InitRequest
+message InitializeRequest
 {
-    string json = 1;
+  string json = 1;
 }
 
-/*
- * Server's response to the init command
- */
-message InitReply
+message InitializeReply
 {
-    // Empty
+  bytes success = 1;
+  uint32 imageWidth = 2;
+  uint32 imageHeight = 3;
 }
 
-/*
- * Message sent by client with the shutdown command
- * Contains additional shutdown parameters in form of a stringified JSON
- */
-message ShutdownRequest
-{
-    string json = 1;
-}
 
-/*
- * Server's response to the shutdown command
- */
 message ShutdownReply
 {
-    // Empty
+  bytes success = 1;
 }
 
-/*
- * Message sent by client with the runLoopStep command
- * Contains requested time step of the simulation
- */
-message RunLoopStepRequest
+message GetInfoReply
 {
-    int64 timeStep = 1;
+  bytes success = 1;
+  repeated float boardPosition = 2;
+  repeated float boardRotation = 3;
+  repeated float boardCraneJointAngles = 4;
 }
 
-/*
- * Server's response to the runLoopStep command
- * Contains current time of the simulation (after running the requested time step)
- */
-message RunLoopStepReply
+message SetInfoRequest
 {
-    int64 engineTime = 1;
+  repeated float boardCraneJointAngles = 1;
+
 }
 
-/*
- * Message sent by client with the setDataPack command
- * Contains data for multiple datapacks
- */
-message SetDataPackRequest
+message SetInfoReply
 {
-    repeated Engine.DataPackMessage request = 1;
+  bytes success = 1;
 }
 
-/*
- * Server's response to the setDataPack command
- */
-message SetDataPackReply
+message GetCameraReply
 {
-    // Empty
+  bytes success = 1;
+  bytes imageData = 2;
 }
 
-/*
- * Message sent by client with the getDataPack command
- * Contains metadata of multiple datapacks
- */
-message GetDataPackRequest
+message RunGameRequest
 {
-    repeated Engine.DataPackIdentifier datapackId = 1;
+  float time = 1;
 }
 
-/*
- * Server's response to the getDataPack command
- * Contains data of multiple datapacks
- */
-message GetDataPackReply
+message RunGameReply
 {
-    repeated Engine.DataPackMessage reply = 1;
+  bytes success = 1;
+  float totalSimulatedTime = 2;
 }
 
-/*
- * Request sent by reset command
- */
-message ResetRequest
-{
-    // Empty
-}
-
-/*
- * Server's response to the reset command
- */
-message ResetReply
-{
-    // Empty
-}
-
-// EOF
+message NoParams {}

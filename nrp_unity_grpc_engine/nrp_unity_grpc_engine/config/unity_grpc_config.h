@@ -27,8 +27,8 @@
 
 struct UnityGrpcConfigConst
 {
-    static constexpr FixedString EngineType = "unity_grpc";
-    static constexpr FixedString EngineSchema = "https://neurorobotics.net/engines/engines_unity.json#/engine_unity_grpc";
+    static constexpr char EngineType[] = "unity_grpc";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_unity.json#/engine_unity_grpc";
 };
 
 #endif // UNITY_GRPC_CONFIG_H
