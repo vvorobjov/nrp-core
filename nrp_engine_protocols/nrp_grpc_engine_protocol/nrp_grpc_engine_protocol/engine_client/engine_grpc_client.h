@@ -96,7 +96,7 @@ class EngineGrpcClient
             return _channel->GetState(false);
         }
 
-        void sendInitCommand(const nlohmann::json & data)
+        void sendInitCommand(const nlohmann::json & )
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             sleep(1);
@@ -106,7 +106,7 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            request.set_json(data.dump());
+            request.set_json("1");
 
             NRPLogger::debug("Sending init command to server [ {} ]", this->engineName());
             grpc::Status status = _stub->initialize(&context, request, &reply);
@@ -188,15 +188,15 @@ class EngineGrpcClient
                throw std::runtime_error(errMsg);
             }
 
-            if(engineTime < this->_prevEngineTime)
-            {
-                const auto errMsg = "Invalid engine time (should be greater than previous time): "
-                                  + std::to_string(engineTime.count())
-                                  + ", previous: "
-                                  + std::to_string(this->_prevEngineTime.count());
+            // if(engineTime < this->_prevEngineTime)
+            // {
+            //     const auto errMsg = "Invalid engine time (should be greater than previous time): "
+            //                       + std::to_string(engineTime.count())
+            //                       + ", previous: "
+            //                       + std::to_string(this->_prevEngineTime.count());
 
-                throw std::runtime_error(errMsg);
-            }
+            //     throw std::runtime_error(errMsg);
+            // }
 
             this->_prevEngineTime = engineTime;
 
@@ -224,16 +224,24 @@ class EngineGrpcClient
                         //auto r = request.add_request();
                         //setProtoFromDataPackInterface<MSG_TYPES...>(request, datapack);
                     }
+
+                    grpc::Status status = _stub->set_info(&context, request, &reply);
+
+                    if(!status.ok())
+                    {
+                        const auto errMsg = "Engine server sendDataPacksToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                        throw std::runtime_error(errMsg);
+                    }
                 }
             }
 
-            grpc::Status status = _stub->set_info(&context, request, &reply);
+            // grpc::Status status = _stub->set_info(&context, request, &reply);
 
-            if(!status.ok())
-            {
-                const auto errMsg = "Engine server sendDataPacksToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
-                throw std::runtime_error(errMsg);
-            }
+            // if(!status.ok())
+            // {
+            //     const auto errMsg = "Engine server sendDataPacksToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+            //     throw std::runtime_error(errMsg);
+            // }
         }
 
         virtual const std::vector<std::string> engineProcStartParams() const override
