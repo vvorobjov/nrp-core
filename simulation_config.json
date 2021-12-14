@@ -1,0 +1,28 @@
+{
+	"SimulationName": "unity",
+	"SimulationDescription": "Unity engine test",
+	"SimulationTimeout": 200,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "unity_grpc",
+			"EngineName": "unity_grpc",
+			"EngineCommandTimeout": 10,
+			"EngineTimestep": 0.2,
+			"EngineProcCmd": "games/RoboSkate/roboskate.x86_64"
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "python",
+			"PythonFileName": "python_engine/client.py",
+			"EngineTimestep": 0.2
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "tf_1",
+			"FileName": "python_engine/tf_1.py"
+		}
+	]
+}

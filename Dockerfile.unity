@@ -87,4 +87,28 @@ RUN sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/i
 USER ${NRP_USER}
 ENV USER ${NRP_USER}
 
+RUN echo "You run the Dockerfile.unity"
+RUN pip install grpcio-tools pytest docopt mpi4py
+
+WORKDIR /home/${USER}
+RUN git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
+WORKDIR nrp-core
+RUN git checkout unity_fix
+RUN mkdir build
+WORKDIR build
+RUN export CC=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10
+RUN cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp -DENABLE_GAZEBO=OFF -DENABLE_NEST=OFF -DENABLE_ROS=OFF
+RUN mkdir -p /home/${USER}/.local/nrp
+RUN make
+RUN make -j12 install
+
+ENV NRP /home/${USER}/.local/nrp
+# RUN echo "export NRP=/home/${USER}/.local/nrp" >> /home/${USER}/.bashrc
+RUN echo "export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH" >> /home/${USER}/.bashrc
+RUN echo "export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH" >> /home/${USER}/.bashrc
+RUN echo "export PATH=$PATH:${NRP}/bin:" >> /home/${USER}/.bashrc
+RUN echo ". /usr/share/gazebo-11/setup.sh" >> /home/${USER}/.bashrc
+RUN echo ". /usr/share/gazebo-11/setup.sh" >> /home/${USER}/.bashrc
+
+
 # EOF

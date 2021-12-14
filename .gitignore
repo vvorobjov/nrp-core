@@ -17,3 +17,5 @@ test_env_cmake.h
 *.log
 tools/build_grpc_engine/
 tools/build_json_engine/
+
+games/*
