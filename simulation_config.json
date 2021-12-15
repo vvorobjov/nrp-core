@@ -1,7 +1,7 @@
 {
 	"SimulationName": "unity",
 	"SimulationDescription": "Unity engine test",
-	"SimulationTimeout": 200,
+	"SimulationTimeout": 10,
 	"EngineConfigs": 
 	[
 		{
