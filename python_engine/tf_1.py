@@ -2,6 +2,7 @@ import random
 
 from nrp_core import *
 from nrp_core.data.nrp_json import *
+from nrp_core.data.nrp_protobuf import *
 
 def get_info(info):
     print("Board position: " + str(info.board_position))

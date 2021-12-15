@@ -28,6 +28,8 @@
 #include "proto_python_bindings/proto_python_bindings.h"
 #include "proto_python_bindings/repeated_field_proxy.h"
 
+#include "nrp_protobuf/engine_grpc.pb.h"
+
 @PROTO_PYTHON_INCLUDE_STR@
 
 /*!
@@ -44,6 +46,15 @@ BOOST_PYTHON_MODULE(PROTO_PYTHON_MODULE_NAME) {
     // Create bindings for Repeated scalar field helpers
     RepeatedScalarFieldProxy::create();
     RepeatedScalarFieldIterProxy::create();
+
+    proto_python_bindings<communication::GetInfoReply>::create();
+    DataPack<communication::GetInfoReply>::create_python("GetInfoReplyDataPack");
+
+    proto_python_bindings<communication::GetCameraReply>::create();
+    DataPack<communication::GetCameraReply>::create_python("GetCameraReplyDataPack");
+
+    proto_python_bindings<communication::SetInfoRequest>::create();
+    DataPack<communication::SetInfoRequest>::create_python("SetInfoRequestDataPack");
 
     // Proto msg and related DataPack class python bindings goes below
 @PROTO_PYTHON_BODY_STR@
