@@ -20,6 +20,11 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
+#ifdef ROS_ON
+#include "ros/ros.h"
+#include "nrp_ros_proxy/nrp_ros_proxy.h"
+#endif
+
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
@@ -29,6 +34,8 @@
 #include "nrp_simulation/config/cmake_conf.h"
 #include "nrp_simulation/simulation/simulation_manager.h"
 #include "nrp_simulation/simulation/nrp_core_server.h"
+
+#include "nrp_event_loop/event_loop/event_loop.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -136,6 +143,7 @@ static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
 
 int main(int argc, char *argv[])
 {
+
     RestClientSetup::ensureInstance();
 
     // Parse start params
@@ -164,6 +172,18 @@ int main(int argc, char *argv[])
 
     // Setup working directory and get config based on start pars
     jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
+    json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
+
+    // Start ROS node
+#ifdef ROS_ON
+    if(simConfig->at("StartROSNode")) {
+        ros::init(std::map<std::string, std::string>(), "nrp_core");
+        NRPROSProxy::resetInstance();
+    }
+#else
+    if(simConfig->at("StartROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
+#endif
 
     // Create default logger for the launcher
     auto logger = NRPLogger
@@ -181,8 +201,30 @@ int main(int argc, char *argv[])
 
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
+    // Setup Python and start ELE
+    if(simConfig->at("SimulationLoop") == "EventLoop" && startParams[SimulationParams::ParamMode.data()].as<std::string>() != "standalone") {
+        NRPLogger::info("The Event Loop is only supported when running NRPCoreSim standalone, not in server mode. It will be disabled.");
+        simConfig->at("SimulationLoop") = "FTILoop";
+    }
+
+    bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
+
     // Setup Python
-    PythonInterpreterState pythonInterp(argc, argv);
+    PythonInterpreterState pythonInterp(argc, argv, startELE);
+
+    // Creates and start ELE
+    std::unique_ptr<EventLoop> e;
+    if(startELE) {
+        NRPLogger::debug("Starting simulation with Event Loop");
+
+        // Set up configuration
+        json_utils::set_default<std::vector<std::string>>(*simConfig, "ComputationalGraph", std::vector<std::string>());
+
+        // Starts event loop
+        int e_tstep = 1000 * simConfig->at("SimulationTimestep").get<float>();
+        e.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(e_tstep), false, simConfig->at("StartROSNode")));
+        e->runLoopAsync();
+    }
 
     // Create Process launchers
     MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());

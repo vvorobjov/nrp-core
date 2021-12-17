@@ -1,0 +1,4 @@
+{
+	"EventLoopFreq": 10,
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
+}

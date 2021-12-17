@@ -37,7 +37,7 @@ class FTILoop
     public:
 
         FTILoop() = default;
-        FTILoop(jsonSharedPtr config, DataPackHandle::engine_interfaces_t engines);
+        FTILoop(jsonSharedPtr config, DataPackProcessor::engine_interfaces_t engines);
 
         /*!
          * \brief Initialize engines before running loop
@@ -82,7 +82,7 @@ class FTILoop
         /*!
          * \brief Engines
          */
-        DataPackHandle::engine_interfaces_t _engines;
+        DataPackProcessor::engine_interfaces_t _engines;
 
         using engine_queue_t = std::multimap<SimulationTime, EngineClientInterfaceSharedPtr>;
 
@@ -99,7 +99,7 @@ class FTILoop
         /*!
          * \brief Used to handle datapack operations in engines
          */
-        std::unique_ptr<DataPackHandle> _devHandler;
+        std::unique_ptr<DataPackProcessor> _devHandler;
 
 
         friend class FTILoopTest_InitTFManager_Test;

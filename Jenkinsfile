@@ -73,7 +73,7 @@ pipeline {
 //             steps {
 //                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
 //
-//                 sh 'cd build && make doxygen_nrp'
+//                 sh 'cd build && make nrp_doxygen'
 //
 //                 sshagent(['vorobev_key']) {
 //                     sh('''

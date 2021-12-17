@@ -183,7 +183,9 @@ SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
 
     // Set default values
 
+    json_utils::set_default<std::vector<std::string>>(*config, "EngineConfigs", std::vector<std::string>());
     json_utils::set_default<std::vector<std::string>>(*config, "DataPackProcessingFunctions", std::vector<std::string>());
+    json_utils::set_default<std::vector<std::string>>(*config, "ComputationalGraph", std::vector<std::string>());
 
     return SimulationManager(config);
 }
@@ -321,7 +323,7 @@ FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedP
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    DataPackHandle::engine_interfaces_t engines;
+    DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
     // Create all engines required by simConfig

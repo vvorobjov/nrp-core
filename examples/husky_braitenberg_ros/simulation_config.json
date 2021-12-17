@@ -1,0 +1,17 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimulationTimeout": 10,
+	"DataPackProcessor": "cg",
+	"SimulationLoop": "EventLoop",
+	"StartROSNode": true,
+	"EngineConfigs": [
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
+}
