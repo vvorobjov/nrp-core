@@ -1,8 +1,9 @@
 {
 	"SimulationName": "test_sim",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between the simulators. The CG is executed by the EventLoop. The experiment exhibits the same behavior as the original.",
 	"SimulationTimeout": 5,
 	"DataPackProcessor": "cg",
+	"SimulationLoop": "EventLoop",
 	"EngineConfigs": [
 		{
 			"EngineType": "gazebo_grpc",
@@ -17,5 +18,5 @@
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"ComputationalGraph": ["cam_tf.py", "mot_tf.py", "grayscale.py"]
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
 }

@@ -359,4 +359,9 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
 
+        "docs/event_loop/event_loop.dox"
+        "docs/event_loop/computational_graph.dox"
+        "docs/event_loop/python_graph.dox"
+        "docs/event_loop/computational_graph_integration.dox"
+
         COMMENT "Generating documentation")

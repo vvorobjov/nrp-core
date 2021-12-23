@@ -1,6 +1,6 @@
 {
 	"SimulationName": "test_sim",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimDescription": "Adaptation of the example `husky_braitenberg_cg` in which the communication with the gazebo simulator is performed with ROS publisher and subscriber nodes. Please refer to the file 'README.md' for instructions on how to setup and run the experiment.",
 	"SimulationTimeout": 10,
 	"DataPackProcessor": "cg",
 	"SimulationLoop": "EventLoop",

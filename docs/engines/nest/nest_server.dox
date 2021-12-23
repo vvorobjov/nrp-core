@@ -1,6 +1,6 @@
 /*! \page nest_server NEST Server Engine
 
-This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with NEST 3 together with nrp-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting datapack data to nest-server using its REST API.
+This engine allows to use out of the box the <a href="https://pypi.org/project/nest-server/">nest-server</a> application that comes with NEST 3 together with NRP-core. In this case the Engine server is nest-server itself without modifications. Thus the engine implementation is reduced to the engine client, which translates requests for advancing the simulation and sending or getting datapack data to nest-server using its REST API.
 
 From a user point of view, this engine is very similar to \ref nest_json. At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling datapack data transfer.
 
@@ -12,7 +12,7 @@ This engine supports a unique datapack type: JsonDataPack. It contains the statu
 
 The way to register a JsonDataPack datapack is adding it to the <b>populations</b> dictionary in the initialization Python script. Afterwards, the status of the value to this key in the dictionary can be accessed or set in TransceiverFunctions.
 
-The experiment located in `examples/husky_braitenberg_nest_server` shows how the NEST Server Engine can be configured in nrp-core. It can be observed that it is almost indistinguishable from its \ref nest_json version, which can be found in `examples/husky_braitenberg`. The only difference is that datapacks are registered through the populations dictionary:
+The experiment located in `examples/husky_braitenberg_nest_server` shows how the NEST Server Engine can be configured in NRP-core. It can be observed that it is almost indistinguishable from its \ref nest_json version, which can be found in `examples/husky_braitenberg`. The only difference is that datapacks are registered through the populations dictionary:
 
 \dontinclude husky_braitenberg_nest_server/braitenberg.py
 \skip populations

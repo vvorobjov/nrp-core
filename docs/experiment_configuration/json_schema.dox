@@ -1,8 +1,8 @@
 /*! \page json_schema General notes about the use of JSON schema
 
-\section json_schema_in_nrp Use of JSON Schema in nrp-core
+\section json_schema_in_nrp Use of JSON Schema in NRP-core
 
-JSON Schema is a highly readable, JSON-based schema language which offers similar capabilities for JSON as the XML Schema does for XML. In nrp-core it is used to define the structure of the experiment configuration as well as constraints and default values of the different parameters. At run-time, it is used to validate the simulation configuration file and to set default values for those parameters which are not present in this configuration file.
+JSON Schema is a highly readable, JSON-based schema language which offers similar capabilities for JSON as the XML Schema does for XML. In NRP-core it is used to define the structure of the experiment configuration as well as constraints and default values of the different parameters. At run-time, it is used to validate the simulation configuration file and to set default values for those parameters which are not present in this configuration file.
 
 JSON Schema allows for composability and inheritance. Taking advantage of this capability, the simulation configuration schema is distributed in different sub-schemas, which are then composed or inherited as needed. <b>Composition</b> can be achieved using the <a href="https://json-schema.org/understanding-json-schema/structuring.html#reuse">ref</a> keyword, which allows to reference other schemas. <b>Inheritance</b> is achieved by using <a href="https://json-schema.org/understanding-json-schema/reference/combining.html#allof">allOf</a>, which allows to validate against all the schemas referenced or defined inside of the allOf section. In this way an inherited schema can include a reference to its base schema and its own definition overriding, extending or over-constraining the defined parameters. An example of inheritance can be found in each of the engine schemas.
 
