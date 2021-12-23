@@ -61,7 +61,7 @@ TEST(EventLoop, EVENT_LOOP) {
 
     auto odummy_p = dynamic_cast<OutputDummy*>(ComputationalGraphManager::getInstance().getNode("odummy1"));
     ASSERT_EQ(bpy::extract<int>(*(odummy_p->lastData)), 10);
-    ASSERT_TRUE(time_lapse.count() >= 10000000 &&time_lapse.count() < 11000000);
+    ASSERT_TRUE(time_lapse.count() >= 10000000 && time_lapse.count() < 11000000);
 
     // run loop async
     ASSERT_FALSE(e_l.isRunning());
@@ -69,10 +69,17 @@ TEST(EventLoop, EVENT_LOOP) {
     e_l.runLoopAsync();
     ASSERT_TRUE(e_l.isRunning());
     std::this_thread::sleep_until(now + std::chrono::seconds(1));
-    e_l.shutdownLoop();
+    e_l.stopLoop();
 
     ASSERT_FALSE(e_l.isRunning());
     ASSERT_TRUE(odummy_p->call_count == 100 || odummy_p->call_count == 101);
+
+    // run loop with timeout
+    now = std::chrono::steady_clock::now();
+    e_l.runLoopAsync(std::chrono::seconds(1));
+    e_l.waitForLoopEnd();
+    time_lapse = std::chrono::steady_clock::now() - now;
+    ASSERT_TRUE(time_lapse.count() >= 1000000000 && time_lapse.count() < 1100000000);
 }
 
 // EOF

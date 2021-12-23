@@ -241,9 +241,7 @@ bool SimulationManager::runSimulationUntilTimeout(int frac)
         if(hasTimedOut)
             break;
 
-        SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
-        this->_loop->runLoop(timeStep);
+        this->runSimulationOnce();
     }
 
     return hasTimedOut;
@@ -285,21 +283,22 @@ bool SimulationManager::resetSimulation()
     return true;
 }
 
+void SimulationManager::runSimulationOnce()
+{
+    if(this->_loop != nullptr)
+        this->_loop->runLoop(this->_timeStep);
+    else
+        throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
+}
+
 void SimulationManager::runSimulation(unsigned numIterations)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    if(this->_loop == nullptr)
-        throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
-
-    const SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
     unsigned iteration = 0;
 
     while(iteration++ < numIterations)
-    {
-        this->_loop->runLoop(timeStep);
-    }
+        runSimulationOnce();
 }
 
 void SimulationManager::shutdownLoop()
@@ -322,6 +321,8 @@ void SimulationManager::shutdownLoop()
 FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+   this-> _timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
 
     DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");

@@ -7,7 +7,8 @@ The sections below explain how to configure an NRP-core experiment to use the Ev
 
 Below are commented the relevant configuration parameters in the experiment configuration file (see \ref simulation_configuration "here" for more details on configuring experiments in NRP-core):
 - SimulationLoop: this parameter can be set to two values: "FTILoop", "EventLoop". By default "FTILoop" is used. If set to "EventLoop", at startup time, an EventLoop is created and run at a fixed frequency.
-- SimulationTimestep: this parameter sets the frequency at which the Event Loop is run. By default is set to 10 ms.
+- EventLoopTimestep: this parameter sets the frequency at which the Event Loop is run. By default is set to 10 ms.
+- EventLoopTimeout: time in seconds the Event Loop will run before shutting down automatically. If set to 0 no timeout is used.
 - ComputationalGraph: this is an array of strings containing the filenames of the Python scripts defining the Computational Graph that will be loaded and executed by the EventLoop.
 - StartROSNode: if this boolean parameter is set to `true`, a ROS node will be started along with the experiment. This is needed when using \ref ros_nodes in the Computational Graph.
 

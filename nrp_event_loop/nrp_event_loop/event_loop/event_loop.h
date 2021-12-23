@@ -61,17 +61,22 @@ class EventLoop
         /*!
          * \brief Run loop in a thread
          */
-        void runLoopAsync();
+        void runLoopAsync(std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 
         /*!
-         * \brief Shutdown loop
+         * \brief Stop loop
          */
-        void shutdownLoop();
+        void stopLoop();
 
         /*!
          * \brief Returns true if the event loop is currently running, false otherwise
          */
         bool isRunning();
+
+        /*!
+         * \brief Blocks execution until the loop reaches timeout
+         */
+        void waitForLoopEnd();
 
     private:
 
@@ -80,7 +85,7 @@ class EventLoop
          *
          * This method is kept private. 'runLoopAsync' should be used instead.
          */
-        void runLoop();
+        void runLoop(std::chrono::milliseconds timeout);
 
         /*! \brief future state of the event loop thread run async  */
         std::future<void> _runFuture;

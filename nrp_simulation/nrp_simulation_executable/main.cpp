@@ -104,7 +104,7 @@ static void runServerMode(EngineLauncherManagerSharedPtr & engines,
                     break;
                 case NrpCoreServer::RequestType::Shutdown:
                     isShutdown = true;
-                    // manager.shutdownLoop() will be called on SimulationManager destruction
+                    // manager.stopLoop() will be called on SimulationManager destruction
                     break;
                 default:
                     throw NRPException::logCreate("Unknown request received");
@@ -138,6 +138,39 @@ static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
     // NRRPLT-8246: uncomment to test reset
     // manager.resetSimulation();
     // manager.runSimulationUntilTimeout();
+}
+
+
+static void runEventLoopMode(EngineLauncherManagerSharedPtr & engines,
+                             MainProcessLauncherManager::shared_ptr & processLaunchers,
+                             SimulationManager & manager,
+                             std::unique_ptr<EventLoop> & eLoop,
+                             std::chrono::milliseconds & timeout,
+                             bool runFTILoop)
+{
+    std::future<void> runFuture;
+    std::atomic<bool> runLoop = true;
+
+    // start FTILoop
+    if(runFTILoop) {
+        manager.initFTILoop(engines, processLaunchers);
+        std::function<void()> run_ftiloop = [&]() {
+            while (runLoop)
+                manager.runSimulationOnce();
+        };
+
+        runFuture = std::async(run_ftiloop);
+    }
+
+    // run EventLoop
+    eLoop->runLoopAsync(timeout);
+    eLoop->waitForLoopEnd();
+
+    // stop FTILoop
+    if(runFTILoop) {
+        runLoop = false;
+        runFuture.wait();
+    }
 }
 
 
@@ -201,19 +234,13 @@ int main(int argc, char *argv[])
 
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
-    // Setup Python and start ELE
-    if(simConfig->at("SimulationLoop") == "EventLoop" && startParams[SimulationParams::ParamMode.data()].as<std::string>() != "standalone") {
-        NRPLogger::info("The Event Loop is only supported when running NRPCoreSim standalone, not in server mode. It will be disabled.");
-        simConfig->at("SimulationLoop") = "FTILoop";
-    }
-
-    bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
-
     // Setup Python
+    bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
     PythonInterpreterState pythonInterp(argc, argv, startELE);
 
     // Creates and start ELE
-    std::unique_ptr<EventLoop> e;
+    std::unique_ptr<EventLoop> eLoop;
+    std::chrono::milliseconds eTout;
     if(startELE) {
         NRPLogger::debug("Starting simulation with Event Loop");
 
@@ -221,9 +248,21 @@ int main(int argc, char *argv[])
         json_utils::set_default<std::vector<std::string>>(*simConfig, "ComputationalGraph", std::vector<std::string>());
 
         // Starts event loop
-        int e_tstep = 1000 * simConfig->at("SimulationTimestep").get<float>();
-        e.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(e_tstep), false, simConfig->at("StartROSNode")));
-        e->runLoopAsync();
+        int eTstep;
+
+        if(simConfig->contains("EventLoopTimestep"))
+            eTstep = 1000 * simConfig->at("EventLoopTimestep").get<float>();
+        else
+            eTstep = 1000 * simConfig->at("SimulationTimestep").get<float>();
+
+        if(simConfig->contains("EventLoopTimeout"))
+            eTout = std::chrono::milliseconds(1000 * simConfig->at("EventLoopTimeout").get<int>());
+        else
+            eTout = std::chrono::milliseconds(1000 * simConfig->at("SimulationTimeout").get<int>());
+
+        eLoop.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(eTstep),
+                                  false, simConfig->at("StartROSNode")));
+
     }
 
     // Create Process launchers
@@ -249,7 +288,11 @@ int main(int argc, char *argv[])
 
     const auto mode = startParams[SimulationParams::ParamMode.data()].as<std::string>();
 
-    if(mode == "server")
+    if(eLoop) {
+        bool runFTILoop = simConfig->at("EngineConfigs").size() > 0;
+        runEventLoopMode(engines, processLaunchers, manager, eLoop, eTout, runFTILoop);
+    }
+    else if(mode == "server")
     {
         const std::string serverAddress = startParams[SimulationParams::ParamServerAddressLong.data()].as<std::string>();
 

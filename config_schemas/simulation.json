@@ -13,12 +13,12 @@
     "SimulationTimeout" : {
       "type" : "integer",
       "default": 0,
-      "description": "Experiment Timeout (in seconds). It refers to simulation time. 0 means no timeout"
+      "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
     "SimulationTimestep" : {
       "type" : "number",
       "default": 0.01,
-      "description": "Time in seconds the simulation advances in each Simulation Loop"
+      "description": "Time in seconds the simulation advances in each Simulation Loop. It refers to simulation time."
     },
     "DataPackProcessor" : {
       "type" : "string",
@@ -50,6 +50,14 @@
       "type": "boolean",
       "default": false,
       "description": "If true a ROS node is started by NRPCoreSim"
+    },
+    "EventLoopTimeout" : {
+      "type" : "integer",
+      "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
+    },
+    "EventLoopTimestep" : {
+      "type" : "number",
+      "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
     }
   },
   "required": []

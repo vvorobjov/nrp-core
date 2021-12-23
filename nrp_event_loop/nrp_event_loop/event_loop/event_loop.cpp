@@ -46,16 +46,19 @@ EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::millisecon
 
 EventLoop::~EventLoop()
 {
-    this->shutdownLoop();
+    this->stopLoop();
 }
 
-void EventLoop::runLoop()
+void EventLoop::runLoop(std::chrono::milliseconds timeout)
 {
     NRPLogger::debug("in loop");
 
     _doRun = true;
+    bool useTimeout = timeout != std::chrono::milliseconds(0);
 
-    while(_doRun)
+    auto start = std::chrono::steady_clock::now();
+
+    while(_doRun && (!useTimeout || std::chrono::steady_clock::now() - start < timeout))
         runLoopOnce();
 
     NRPLogger::debug("out loop");
@@ -82,17 +85,17 @@ void EventLoop::runLoopOnce()
     std::this_thread::sleep_until(now + _timestep);
 }
 
-void EventLoop::runLoopAsync()
+void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)
 {
     if(!this->isRunning()) {
         NRPLogger::debug("EventLoop was started");
-        _runFuture = std::async(&EventLoop::runLoop, this);
+        _runFuture = std::async(&EventLoop::runLoop, this, timeout);
     }
     else
         NRPLogger::info("EventLoop is already running. You must shut it down before running it again");
 }
 
-void EventLoop::shutdownLoop()
+void EventLoop::stopLoop()
 {
     if(!this->isRunning())
         return;
@@ -100,6 +103,12 @@ void EventLoop::shutdownLoop()
     _doRun = false;
     _runFuture.wait();
     NRPLogger::debug("EventLoop was shutdown");
+}
+
+void EventLoop::waitForLoopEnd()
+{
+    if(this->isRunning())
+        _runFuture.wait();
 }
 
 bool EventLoop::isRunning()
