@@ -65,10 +65,12 @@ pipeline {
             }
         }
        
-        // NOTE: uncomment this block to enable online documentation auto update
-        stage('Publishing docs') {
+        
+        stage('Publishing dev docs') {
+
+            // updates dev documentation
             steps {
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating dev documentation')
 
                 sh 'cd build && make nrp_doxygen'
 
@@ -86,6 +88,44 @@ pipeline {
 
                         cp -rf build/doxygen/html/* nrp-core-dev-docs.bitbucket.io/
                         cd nrp-core-dev-docs.bitbucket.io
+                        if [ -z $(git status --porcelain) ];
+                        then
+                            echo "Nothing to commit!"
+                        else
+                            git add -A
+                            git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
+                            git push
+                        fi
+                    ''')
+                }
+            }
+
+        }
+
+        stage('Publishing docs') {
+            // when master branch, update main documentation
+            when {
+                expression { env.BRANCH_NAME == "master" }
+            }
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating main documentation')
+
+                sh 'cd build && make doxygen'
+
+                sshagent(['vorobev_key']) {
+                    sh('''
+                        #!/usr/bin/env bash
+                        set +x
+
+                        git config --global user.name "nrp-jenkins"
+                        git config --global user.email "neurorobotics@ebrains.eu"
+
+                        export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
+
+                        git clone git@bitbucket.org:hbpneurorobotics/hbpneurorobotics.bitbucket.io.git
+
+                        cp -rf build/doxygen/html/* hbpneurorobotics.bitbucket.io/
+                        cd hbpneurorobotics.bitbucket.io
                         if [ -z $(git status --porcelain) ];
                         then
                             echo "Nothing to commit!"
