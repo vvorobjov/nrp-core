@@ -43,6 +43,7 @@ pipeline {
 
                 // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                 sh 'bash .ci/30-run-tests.sh'
+                cobertura coberturaReportFile: 'build/gcovr.xml'
             }
         }
        
@@ -65,41 +66,38 @@ pipeline {
         }
        
         // NOTE: uncomment this block to enable online documentation auto update
-//         stage('Publishing docs') {
-//             when {
-//                 expression { env.BRANCH_NAME == "documentation" || env.BRANCH_NAME == "development" }
-//             }
-//             steps {
-//                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
-//
-//                 sh 'cd build && make doxygen'
-//
-//                 sshagent(['vorobev_key']) {
-//                     sh('''
-//                         #!/usr/bin/env bash
-//                         set +x
-//
-//                         git config --global user.name "nrp-jenkins"
-//                         git config --global user.email "neurorobotics@ebrains.eu"
-//
-//                         export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
-//
-//                         git clone git@bitbucket.org:hbpneurorobotics/hbpneurorobotics.bitbucket.io.git
-//
-//                         cp -rf build/doxygen/html/* hbpneurorobotics.bitbucket.io/
-//                         cd hbpneurorobotics.bitbucket.io
-//                         if [ -z $(git status --porcelain) ];
-//                         then
-//                             echo "Nothing to commit!"
-//                         else
-//                             git add -A
-//                             git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
-//                             git push
-//                         fi
-//                     ''')
-//                 }
-//             }
-//         }
+        stage('Publishing docs') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+
+                sh 'cd build && make nrp_doxygen'
+
+                sshagent(['vorobev_key']) {
+                    sh('''
+                        #!/usr/bin/env bash
+                        set +x
+
+                        git config --global user.name "nrp-jenkins"
+                        git config --global user.email "neurorobotics@ebrains.eu"
+
+                        export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
+
+                        git clone git@bitbucket.org:nrp-core-dev-docs/nrp-core-dev-docs.bitbucket.io.git
+
+                        cp -rf build/doxygen/html/* nrp-core-dev-docs.bitbucket.io/
+                        cd nrp-core-dev-docs.bitbucket.io
+                        if [ -z $(git status --porcelain) ];
+                        then
+                            echo "Nothing to commit!"
+                        else
+                            git add -A
+                            git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
+                            git push
+                        fi
+                    ''')
+                }
+            }
+        }
     }
 
     post {

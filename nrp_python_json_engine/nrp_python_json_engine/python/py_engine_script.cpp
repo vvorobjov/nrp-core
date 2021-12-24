@@ -37,6 +37,12 @@ void PyEngineScript::initialize()
 void PyEngineScript::shutdown()
 {}
 
+bool PyEngineScript::reset()
+{
+    this->_time = SimulationTime::zero();
+    return true;
+}
+
 SimulationTime PyEngineScript::simTime() const
 {   return this->_time; }
 

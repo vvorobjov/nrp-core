@@ -20,6 +20,11 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
+#ifdef ROS_ON
+#include "ros/ros.h"
+#include "nrp_ros_proxy/nrp_ros_proxy.h"
+#endif
+
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
@@ -29,6 +34,8 @@
 #include "nrp_simulation/config/cmake_conf.h"
 #include "nrp_simulation/simulation/simulation_manager.h"
 #include "nrp_simulation/simulation/nrp_core_server.h"
+
+#include "nrp_event_loop/event_loop/event_loop.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -97,7 +104,7 @@ static void runServerMode(EngineLauncherManagerSharedPtr & engines,
                     break;
                 case NrpCoreServer::RequestType::Shutdown:
                     isShutdown = true;
-                    // manager.shutdownLoop() will be called on SimulationManager destruction
+                    // manager.stopLoop() will be called on SimulationManager destruction
                     break;
                 default:
                     throw NRPException::logCreate("Unknown request received");
@@ -134,8 +141,42 @@ static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
 }
 
 
+static void runEventLoopMode(EngineLauncherManagerSharedPtr & engines,
+                             MainProcessLauncherManager::shared_ptr & processLaunchers,
+                             SimulationManager & manager,
+                             std::unique_ptr<EventLoop> & eLoop,
+                             std::chrono::milliseconds & timeout,
+                             bool runFTILoop)
+{
+    std::future<void> runFuture;
+    std::atomic<bool> runLoop = true;
+
+    // start FTILoop
+    if(runFTILoop) {
+        manager.initFTILoop(engines, processLaunchers);
+        std::function<void()> run_ftiloop = [&]() {
+            while (runLoop)
+                manager.runSimulationOnce();
+        };
+
+        runFuture = std::async(run_ftiloop);
+    }
+
+    // run EventLoop
+    eLoop->runLoopAsync(timeout);
+    eLoop->waitForLoopEnd();
+
+    // stop FTILoop
+    if(runFTILoop) {
+        runLoop = false;
+        runFuture.wait();
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
+
     RestClientSetup::ensureInstance();
 
     // Parse start params
@@ -164,6 +205,18 @@ int main(int argc, char *argv[])
 
     // Setup working directory and get config based on start pars
     jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
+    json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
+
+    // Start ROS node
+#ifdef ROS_ON
+    if(simConfig->at("StartROSNode")) {
+        ros::init(std::map<std::string, std::string>(), "nrp_core");
+        NRPROSProxy::resetInstance();
+    }
+#else
+    if(simConfig->at("StartROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
+#endif
 
     // Create default logger for the launcher
     auto logger = NRPLogger
@@ -182,7 +235,35 @@ int main(int argc, char *argv[])
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
     // Setup Python
-    PythonInterpreterState pythonInterp(argc, argv);
+    bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
+    PythonInterpreterState pythonInterp(argc, argv, startELE);
+
+    // Creates and start ELE
+    std::unique_ptr<EventLoop> eLoop;
+    std::chrono::milliseconds eTout;
+    if(startELE) {
+        NRPLogger::debug("Starting simulation with Event Loop");
+
+        // Set up configuration
+        json_utils::set_default<std::vector<std::string>>(*simConfig, "ComputationalGraph", std::vector<std::string>());
+
+        // Starts event loop
+        int eTstep;
+
+        if(simConfig->contains("EventLoopTimestep"))
+            eTstep = 1000 * simConfig->at("EventLoopTimestep").get<float>();
+        else
+            eTstep = 1000 * simConfig->at("SimulationTimestep").get<float>();
+
+        if(simConfig->contains("EventLoopTimeout"))
+            eTout = std::chrono::milliseconds(1000 * simConfig->at("EventLoopTimeout").get<int>());
+        else
+            eTout = std::chrono::milliseconds(1000 * simConfig->at("SimulationTimeout").get<int>());
+
+        eLoop.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(eTstep),
+                                  false, simConfig->at("StartROSNode")));
+
+    }
 
     // Create Process launchers
     MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
@@ -207,7 +288,11 @@ int main(int argc, char *argv[])
 
     const auto mode = startParams[SimulationParams::ParamMode.data()].as<std::string>();
 
-    if(mode == "server")
+    if(eLoop) {
+        bool runFTILoop = simConfig->at("EngineConfigs").size() > 0;
+        runEventLoopMode(engines, processLaunchers, manager, eLoop, eTout, runFTILoop);
+    }
+    else if(mode == "server")
     {
         const std::string serverAddress = startParams[SimulationParams::ParamServerAddressLong.data()].as<std::string>();
 

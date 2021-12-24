@@ -1,0 +1,29 @@
+/*! \page tutorial_add_ros_msg_definition Adding new ROS message definitions
+
+This guide shows how to extend the ROS message definitions available in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and ROS Engines.
+
+The process is very simple and consists of these steps:
+
+1. Add your new message definitions into a separate `.msg` file. Refer to <a href="http://wiki.ros.org/action/show/msg?action=show&redirect=ROS%2FMessage_Description_Language">creating a ROS msg guide</a> to check available possibilities.
+2. Place the new `.msg` file in the folder `nrp_ros/nrp_ros_msgs/nrp_ros_msgs/msg`. In this way your message definitions will be automatically compiled during the NRP-core build process. Also the Python bindings required (see \ref datapacks_rosmsg section) to use these new msg classes in tranceiver functions will be generated and compiled.
+3. Add the new `.msg` to `add_message_files()` FILES in `nrp_ros/nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt` so it is compiled:
+\code
+add_message_files(
+  FILES
+  Test.msg
+)
+\endcode
+4. If needed, extend DEPENDENCIES in generates_messages() function with the necessary packages your messages depend on:
+\code
+generate_messages(DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
+\endcode
+5. Again only if needed, add these dependencies to `package.xml`:
+\code
+<build_depend>std_msgs</build_depend>
+<run_depend>std_msgs</run_depend>
+\endcode
+
+*/

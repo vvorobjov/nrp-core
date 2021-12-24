@@ -50,3 +50,16 @@ void PyEngineScriptWrapper::shutdown()
 
 void PyEngineScriptWrapper::defaultShutdown()
 {   return PyEngineScript::shutdown();  }
+
+bool PyEngineScriptWrapper::reset()
+{
+    if(python::override resetFcn = this->get_override("reset")) {
+        resetFcn();
+        return PyEngineScript::reset();
+    }
+    else
+        return false;
+}
+
+bool PyEngineScriptWrapper::defaultReset()
+{   return PyEngineScript::reset();  }

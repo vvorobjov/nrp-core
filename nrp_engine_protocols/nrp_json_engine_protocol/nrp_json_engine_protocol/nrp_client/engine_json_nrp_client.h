@@ -110,7 +110,9 @@ class EngineJSONNRPClient
             {
                 if(curDataPack->engineName().compare(this->engineName()) == 0)
                 {
-                    if(curDataPack->type() != JsonDataPack::getType())
+                    if(curDataPack->isEmpty())
+                        throw NRPException::logCreate("Attempt to send empty datapack " + curDataPack->name() + " to Engine " + this->engineName());
+                    else if(curDataPack->type() != JsonDataPack::getType())
                     {
                         throw NRPException::logCreate("Engine \"" +
                                                     this->engineName() +
@@ -120,7 +122,6 @@ class EngineJSONNRPClient
 
                     // We get ownership of the datapack's data
                     // We'll have to delete the object after we're done
-
                     nlohmann::json * data = (dynamic_cast<JsonDataPack *>(curDataPack))->releaseData();
 
                     const auto & name = curDataPack->name();
@@ -166,7 +167,6 @@ class EngineJSONNRPClient
             return this->engineConfig().at("EngineEnvParams");
         }
 
-    protected:
         virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -189,6 +189,7 @@ class EngineJSONNRPClient
             return this->getDataPackInterfacesFromJSON(resp);
         }
 
+protected:
         /*!
          * \brief Send an initialization command
          * \param data Data that should be passed to the engine

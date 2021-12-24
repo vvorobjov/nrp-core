@@ -22,12 +22,9 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/nrp_core_server.cpp
     nrp_simulation/simulation/fti_loop.cpp
     nrp_simulation/simulation/simulation_manager.cpp
-        nrp_simulation/datapack_handle/datapack_handle.cpp
-        nrp_simulation/datapack_handle/tf_manager_handle.cpp
-)
-
-# List of python module build files
-set(PYTHON_MODULE_SRC_FILES
+    nrp_simulation/datapack_handle/datapack_handle.cpp
+    nrp_simulation/datapack_handle/tf_manager_handle.cpp
+    nrp_simulation/datapack_handle/computational_graph_handle.cpp
 )
 
 # List executable build files
@@ -52,6 +49,10 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
+if(ENABLE_ROS STREQUAL FULL)
+    find_package(catkin REQUIRED COMPONENTS roscpp)
+endif()
+
 
 ##########################################
 ## Header configuration
@@ -74,6 +75,9 @@ target_link_libraries(${LIBRARY_NAME}
     ${NRP_PROTO_LIB_TARGET}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
+    ${NRP_ELE_LIB_TARGET}
+        ${NRP_ROS_PROXY_TARGET}
+        ${catkin_LIBRARIES}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
@@ -81,6 +85,8 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+
+        ${catkin_INCLUDE_DIRS}
 
     PRIVATE
 )
@@ -137,6 +143,7 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}

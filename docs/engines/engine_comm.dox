@@ -42,7 +42,7 @@ This engine type parameters are defined in EngineJSON schema (listed \ref engine
 
 \section engine_grpc Protobuf over gRPC
 
-In this case a GRPC server is used for communication. DataPacks are serialized into protobuf format.
+In this case a gRPC server is used for communication. DataPacks are serialized into protobuf format.
 
 \subsection engine_grpc_config_section Engine Configuration Parameters
 
@@ -66,7 +66,7 @@ This engine type parameters are defined in EngineGRPC schema (listed \ref engine
 
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
-<tr><td>ServerAddress<td>GRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
 </table>
 
 \section engine_comm_protocols_schema Schema

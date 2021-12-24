@@ -12,6 +12,8 @@ Engines based on PythonJSONEngine can be implemented as Python classes based on 
 - `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
 - `shutdown()`: executed when the engine is requested to shutdown
 
+Optionally, the derived class can implement a `reset()` function. If it is implemented, it will be used for resetting the Engine. Otherwise the Engine is reset by calling `shutdown()` and `initialize()` sequentially.
+
 Besides, `EngineScript` provides the following ready-to-use methods to handle datapack communication:
 
 - `_time()`: returns the internal simulation time of the Engine.
@@ -74,7 +76,7 @@ To use the Python JSON engine in an experiment, set `EngineType` to <b>"python_j
 
 \section python_json_schema Schema
 
-As explained above, the schema used by the OpenSim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below: 
+As explained above, the schema used by the PythonJSON engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below:
 
 \include engines/engine_python.json
 

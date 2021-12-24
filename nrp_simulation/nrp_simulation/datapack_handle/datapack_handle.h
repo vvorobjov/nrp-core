@@ -29,13 +29,13 @@
 /*!
  * \brief Helper class for FTILoop encapsulating the datapack operations between Engines in a simulation loop
  */
-class DataPackHandle {
+class DataPackProcessor {
 
 public:
 
     using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
-    virtual ~DataPackHandle() = default;
+    virtual ~DataPackProcessor() = default;
 
     /*!
      * \brief Initializes the handler

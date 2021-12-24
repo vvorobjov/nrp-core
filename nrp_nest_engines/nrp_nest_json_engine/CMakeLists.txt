@@ -133,6 +133,7 @@ if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" S
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}

@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.0.0)
+set(NRP_VERSION 1.1.0)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -12,7 +12,18 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 #string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--no-undefined")
 
-set (NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror)
+set(COVERAGE OFF CACHE BOOL "Enables code coverage")
+
+if(${COVERAGE} STREQUAL ON)
+    set(GCOV_CXX_FLAGS -coverage)
+    set(GCOV_LD_FLAGS -coverage)
+else()
+    set(GCOV_CXX_FLAGS "")
+    set(GCOV_LD_FLAGS "")
+endif()
+
+set(NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror ${GCOV_CXX_FLAGS})
+set(NRP_COMMON_LD_FLAGS ${GCOV_LD_FLAGS})
 
 # Uncomment to compile a production version of code (without trace calls)
 # add_definitions(-DPRODUCTION_RELEASE)
@@ -62,7 +73,7 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
 ##########################################
 ## Boost Python libraries
-## find_package(Boost) changes behvior after Boost version 1.67, so adapt component names accordingly
+## find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
 add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
 find_package(Boost REQUIRED)
 if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
@@ -120,8 +131,30 @@ add_subdirectory(nrp_general_library)
 
 ##########################################
 ## NRP Supported payload libraries
+# Protobuf
 add_subdirectory(nrp_protobuf)
 
+# ROS
+set(NRP_CATKIN_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "Catkin packages containing msg definitions supported in nrp-core")
+if(NOT DEFINED ENABLE_ROS)
+    message(VERBOSE "ENABLE_ROS defaults to FULL")
+    set(ENABLE_ROS FULL)
+else()
+    message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
+endif()
+
+if(NOT ENABLE_ROS STREQUAL OFF)
+    message(STATUS "Building ROS msgs Python bindings")
+    add_definitions(-DROS_ON)
+    add_subdirectory(nrp_ros/nrp_ros_msgs)
+    add_subdirectory(nrp_ros/nrp_ros_proxy)
+else()
+    message(STATUS "Ros msgs python bindings will not be built")
+endif()
+
+##########################################
+## NRP Event Loop Library
+add_subdirectory(nrp_event_loop)
 
 ##########################################
 ## NRP Communication Protocols
@@ -148,28 +181,42 @@ add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 ##   - the engine server side components might or might not be built, depending on if the related simulator is required at compilation time
 ## - if the flag is set to FULL the simulator is assumed to be installed or it will be installed from source if this option is available. All targets connected with this simulator will be built
 ##
-## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential denpendency conflicts
+## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential dependency conflicts
 ## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
 
-set(ENABLE_NEST FULL)
-set(ENABLE_GAZEBO FULL)
+if(NOT DEFINED ENABLE_NEST)
+    message(VERBOSE "ENABLE_NEST defaults to FULL")
+    set(ENABLE_NEST FULL)
+else()
+    message(VERBOSE "ENABLE_NEST is set to ${ENABLE_NEST}")
+endif()
+
+if(NOT DEFINED ENABLE_GAZEBO)
+    message(VERBOSE "ENABLE_GAZEBO defaults to FULL")
+    set(ENABLE_GAZEBO FULL)
+else()
+    message(VERBOSE "ENABLE_GAZEBO is set to ${ENABLE_GAZEBO}")
+endif()
+
 
 ##########################################
 ## NRP Engines
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
+    message(STATUS "Building Gazebo engines")
     add_subdirectory(nrp_gazebo_engines/nrp_gazebo_json_engine)
     add_subdirectory(nrp_gazebo_engines/nrp_gazebo_grpc_engine)
 else()
     message(STATUS "Gazebo engines will not be built")
 endif()
 
-## Nest Engines
+## NEST Engines
 if(NOT ENABLE_NEST STREQUAL OFF)
+    message(STATUS "Building NEST engines")
     add_subdirectory(nrp_nest_engines)
 else()
-    message(STATUS "Nest engines will not be built")
+    message(STATUS "NEST engines will not be built")
 endif()
 
 ## Python Engine
@@ -218,20 +265,20 @@ add_custom_target(cppcheck
 )
 
 ##########################################
-## Template engines
+## coverage
 
-# All execute_process() commands will be executed sequentially during the configuration step
-
-# Generate code from the template JSON engine
-execute_process(
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND tools/create_new_engine.py --name Build --type json
+add_custom_target(gcovr
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND gcovr -r ../ --exclude "_deps" --exclude ".*example_engine.*" --xml gcovr.xml --html gcovr.html
+    COMMENT "Running gcovr"
+    VERBATIM
 )
 
 # Generate code from the template gRPC engine
 execute_process(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMAND tools/create_new_engine.py --name Build --type grpc
+    COMMAND tools/create_new_engine.py --name Build --type json
 )
 
 add_subdirectory("tools/build_grpc_engine")
@@ -255,13 +302,14 @@ set(DOXYGEN_EXAMPLE_PATH
         "nrp_protobuf/engine_proto_defs"
         "nrp_general_library/CMakeLists.txt"
         "CMakeLists.txt"
+        "nrp_ros/nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt"
         "README.md")
 
 ## Example Engine. It is built to ensure the examples are not out of date in the documentation
 add_subdirectory("docs/example_engine")
 
 get_property(DOXYGEN_SOURCES GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
-doxygen_add_docs(doxygen
+doxygen_add_docs(nrp_doxygen
         ${DOXYGEN_SOURCES}
         "docs/main_page.dox"
 
@@ -306,8 +354,14 @@ doxygen_add_docs(doxygen
         "docs/guides/general_developer_guide.dox"
         "docs/guides/helpful_info.dox"
         "docs/guides/add_proto_definition.dox"
+        "docs/guides/add_custom_ros_msgs.dox"
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
+
+        "docs/event_loop/event_loop.dox"
+        "docs/event_loop/computational_graph.dox"
+        "docs/event_loop/python_graph.dox"
+        "docs/event_loop/computational_graph_integration.dox"
 
         COMMENT "Generating documentation")

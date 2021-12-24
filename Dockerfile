@@ -57,6 +57,11 @@ RUN add-apt-repository ppa:pistache+team/unstable
 RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
 RUN wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
 
+# ROS
+
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+
 # Install CLE dependencies
 
 RUN apt-get update

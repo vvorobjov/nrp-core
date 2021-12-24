@@ -90,7 +90,7 @@ cd tools
 
 In the case of a JSON based Engine, it will always used \ref datapacks_json, so there is no need to implement new types.
 
-In the case of a GRPC based Engine, by default the new engine created by the script will only accept protobuf messages of the type *EngineTest.TestPayload*. As it names indicate, this is a message definition used for testing purposes. In order to extend the engine to accept other protobuf message definitions:
+In the case of a gRPC based Engine, by default the new engine created by the script will only accept protobuf messages of the type *EngineTest.TestPayload*. As it names indicate, this is a message definition used for testing purposes. In order to extend the engine to accept other protobuf message definitions:
 1. Follow this guide: \ref tutorial_add_proto_definition to make the new definitions available to NRP-core 
 2. Adapt the engine client class definition (TestEngineGrpcClient) by including in the EngineGrpcClient template it inherits from the additional protobuf message classes the engine should support (see file *test_grpc_engine/engine_client/test_grpc_client.h* in the *test_grpc_engine* folder) 
 

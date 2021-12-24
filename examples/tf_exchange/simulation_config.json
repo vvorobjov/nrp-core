@@ -1,7 +1,7 @@
 {
 	"SimulationName": "tf_exchange",
 	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
-	"SimulationTimeout": 2,
+	"SimulationTimeout": 1,
 	"EngineConfigs": 
 	[
 		{

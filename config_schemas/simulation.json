@@ -5,15 +5,26 @@
   "$id": "#Simulation",
   "type": "object",
   "properties" : {
+    "SimulationLoop" : {
+      "enum" : ["FTILoop", "EventLoop"],
+      "default": "FTILoop",
+      "description": "Type of simulation loop used in the experiment"
+    },
     "SimulationTimeout" : {
       "type" : "integer",
       "default": 0,
-      "description": "Experiment Timeout (in seconds). It refers to simulation time. 0 means no timeout"
+      "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
     "SimulationTimestep" : {
       "type" : "number",
       "default": 0.01,
-      "description": "Time in seconds the simulation advances in each Simulation Loop"
+      "description": "Time in seconds the simulation advances in each Simulation Loop. It refers to simulation time."
+    },
+    "DataPackProcessor" : {
+      "type" : "string",
+      "enum" :  ["tf", "cg"],
+      "default": "tf",
+      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg)"
     },
     "ProcessLauncherType" : {
       "type" : "string",
@@ -23,14 +34,31 @@
     "EngineConfigs" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase"},
-      "minItems": 1,
       "description": "Engines that will be started in the experiment"
     },
     "DataPackProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
       "description": "Transceiver and Preprocessing functions that will be used in the experiment"
+    },
+    "ComputationalGraph" : {
+      "type" : "array",
+      "items": "string",
+      "description": "List of filenames defining the ComputationalGraph that will be used in the experiment"
+    },
+    "StartROSNode" : {
+      "type": "boolean",
+      "default": false,
+      "description": "If true a ROS node is started by NRPCoreSim"
+    },
+    "EventLoopTimeout" : {
+      "type" : "integer",
+      "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
+    },
+    "EventLoopTimestep" : {
+      "type" : "number",
+      "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
     }
   },
-  "required": ["EngineConfigs"]
+  "required": []
 }

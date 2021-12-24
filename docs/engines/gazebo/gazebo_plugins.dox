@@ -9,7 +9,7 @@ gRPC and JSON versions are provided for each of the plugins described below. Bot
 
 \section NRPGazeboGrpcCommunicationPlugin
 
-General communication plugin. Sets up a GRPC server and waits for NRP commands
+General communication plugin. Sets up a gRPC server and waits for NRP commands
 \code{.xml}
 <world>
 ...

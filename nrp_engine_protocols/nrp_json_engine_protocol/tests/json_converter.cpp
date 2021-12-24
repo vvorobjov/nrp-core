@@ -25,6 +25,8 @@
 #include <boost/python.hpp>
 #include <nlohmann/json.hpp>
 
+#include "nrp_general_library/utils/utils.h"
+
 #include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 #include "python/python_module.cpp"
 
@@ -38,15 +40,6 @@ using namespace boost;
 class JsonConverter : public testing::Test
 {
     protected:
-
-        static void appendPythonPath(const std::string &path)
-        {
-            boost::python::handle pathH(boost::python::borrowed(PySys_GetObject("path")));
-            boost::python::list paths(pathH);
-            paths.append(path);
-
-            PySys_SetObject("path", paths.ptr());
-        }
 
         static void SetUpTestSuite()
         {

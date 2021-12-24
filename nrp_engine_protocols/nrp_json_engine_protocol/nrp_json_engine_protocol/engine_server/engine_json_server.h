@@ -236,7 +236,7 @@ class EngineJSONServer
          * \param req DataPack Data. A JSON array containing datapack names linked to the individual datapack's data
          * \param res Response writer that sends execution result back to the NRP
          */
-        void setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
+        void setDataPackProcessorr(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res);
 
         /*!
          * \brief Try to get iterator key, print error message and throw exception if no key is available

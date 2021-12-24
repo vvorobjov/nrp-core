@@ -195,6 +195,13 @@ class SimulationManager
         void runSimulation(unsigned numIterations);
 
         /*!
+         * \brief Run the Simulation for one timestep
+         * \param secs Time (in seconds) to run simulation
+         * \return Returns true if no error was encountered, false otherwise
+         */
+        void runSimulationOnce();
+
+        /*!
          * \brief Shuts down simulation loop. Will shutdown any running engines and transceiver functions after any currently running steps are completed
          */
         void shutdownLoop();
@@ -210,6 +217,11 @@ class SimulationManager
          * \brief Simulation loop
          */
         FTILoopSharedPtr _loop;
+
+        /*!
+         * \brief Timestep size of each simulation loop
+         */
+        SimulationTime _timeStep;
 
         /*!
          * \brief Creates a simulation loop using the engines specified in the config file

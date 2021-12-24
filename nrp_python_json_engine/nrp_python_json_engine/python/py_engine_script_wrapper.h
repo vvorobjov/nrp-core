@@ -41,6 +41,10 @@ struct PyEngineScriptWrapper
 
     void defaultShutdown();
 
+    bool reset() override;
+
+    bool defaultReset();
+
 
 };
 

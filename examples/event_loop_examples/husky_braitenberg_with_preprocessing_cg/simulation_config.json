@@ -1,0 +1,21 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Adaptation of the example `husky_braitenberg_with_preprocessing` in which a Computational Graph (CG) is used to process and rely data between the simulators. The CG is executed by the EventLoop. The experiment exhibits the same behavior as the original.",
+	"SimulationTimeout": 5,
+	"DataPackProcessor": "cg",
+	"EngineConfigs": [
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "husky_world.sdf",
+			"EngineProcStartParams": ["--verbose"]
+		},
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py", "grayscale.py"]
+}

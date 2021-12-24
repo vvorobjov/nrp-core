@@ -183,7 +183,9 @@ SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
 
     // Set default values
 
+    json_utils::set_default<std::vector<std::string>>(*config, "EngineConfigs", std::vector<std::string>());
     json_utils::set_default<std::vector<std::string>>(*config, "DataPackProcessingFunctions", std::vector<std::string>());
+    json_utils::set_default<std::vector<std::string>>(*config, "ComputationalGraph", std::vector<std::string>());
 
     return SimulationManager(config);
 }
@@ -239,9 +241,7 @@ bool SimulationManager::runSimulationUntilTimeout(int frac)
         if(hasTimedOut)
             break;
 
-        SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
-        this->_loop->runLoop(timeStep);
+        this->runSimulationOnce();
     }
 
     return hasTimedOut;
@@ -283,21 +283,22 @@ bool SimulationManager::resetSimulation()
     return true;
 }
 
+void SimulationManager::runSimulationOnce()
+{
+    if(this->_loop != nullptr)
+        this->_loop->runLoop(this->_timeStep);
+    else
+        throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
+}
+
 void SimulationManager::runSimulation(unsigned numIterations)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    if(this->_loop == nullptr)
-        throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
-
-    const SimulationTime timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
     unsigned iteration = 0;
 
     while(iteration++ < numIterations)
-    {
-        this->_loop->runLoop(timeStep);
-    }
+        runSimulationOnce();
 }
 
 void SimulationManager::shutdownLoop()
@@ -321,7 +322,9 @@ FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedP
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    DataPackHandle::engine_interfaces_t engines;
+   this-> _timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
+
+    DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");
 
     // Create all engines required by simConfig

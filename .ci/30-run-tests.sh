@@ -21,7 +21,7 @@ export GTEST_OUTPUT="xml:$test_results_dir"
 
 ctest_result=0
 if [ -z "$DISPLAY" ]; then
-    xvfb-run ctest
+    xvfb-run --auto-servernum -e /dev/stdout ctest
     ctest_result=$?
 else
     ctest
@@ -35,5 +35,9 @@ fi
 if (((ctest_result & ~0x8) != 0)); then
     exit $ctest_result
 fi
+
+python3 -m pip install --user gcovr
+
+make gcovr
 
 # EOF
