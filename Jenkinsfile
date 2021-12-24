@@ -66,7 +66,7 @@ pipeline {
         }
        
         
-        stage('Publishing docs') {
+        stage('Publishing dev docs') {
 
             // updates dev documentation
             steps {
@@ -100,6 +100,9 @@ pipeline {
                 }
             }
 
+        }
+
+        stage('Publishing docs') {
             // when master branch, update main documentation
             when {
                 expression { env.BRANCH_NAME == "master" }
