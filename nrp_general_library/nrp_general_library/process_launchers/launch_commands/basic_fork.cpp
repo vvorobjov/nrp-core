@@ -86,8 +86,13 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         // Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + engineProcCmd + --param1 + --param2 + ... + nullptr)
         startParamPtrs.reserve(envParams.size() + startParams.size() + 3);
 
+        startParamPtrs.push_back("FLASK_ENV=development");
+        startParamPtrs.push_back("FLASK_APP=nrp_python/server.py");
+        startParamPtrs.push_back("flask");
+        startParamPtrs.push_back("run");
+        startParamPtrs.push_back("--port=9002");
         // Environment set command
-        startParamPtrs.push_back(BasicFork::EnvCfgCmd.data());
+        /*startParamPtrs.push_back(BasicFork::EnvCfgCmd.data());
 
         // Environment variables
         for(const auto &curParam : envParams)
@@ -101,7 +106,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         for(const auto &curParam : startParams){
             startParamPtrs.push_back(curParam.data());
             startParamStr += " " + std::string(curParam.data());
-        }
+        }*/
 
         // Parameter end
         startParamPtrs.push_back(nullptr);
@@ -113,7 +118,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
         // Don't use the logger here, as this is a separate process
-        std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
+        //std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
         std::cerr.flush();
 
         // If the exec call fails, exit the child process without any further processing. Prevents the child process from assuming it's the main proc

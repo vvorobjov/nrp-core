@@ -89,13 +89,16 @@ class EngineJSONNRPClient
             // Wait for engine to register itself if process launching has succeeded
             if(enginePID > 0 && !this->engineConfig().at("RegistrationServerAddress").empty())
             {
-                const auto serverAddr = this->waitForRegistration(20, 1);
-                if(serverAddr.empty())
-                    throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
+                const auto serverAddr = this->waitForRegistration(2, 1);
+                //if(serverAddr.empty())
+                  //  throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
 
                 this->engineConfig()["ServerAddress"] = serverAddr;
                 this->_serverAddress = serverAddr;
             }
+
+            this->engineConfig()["ServerAddress"] = "localhost:9002";
+            this->_serverAddress = "localhost:9002";
 
             return enginePID;
         }
@@ -214,7 +217,7 @@ class EngineJSONNRPClient
         nlohmann::json sendResetCommand(const nlohmann::json &data)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-            
+
             NRPLogger::debug("EngineJSONNRPClient::sendResetCommand [ data: {} ]", data.dump());
 
             // Post reset request to Engine JSON server
