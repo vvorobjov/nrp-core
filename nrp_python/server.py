@@ -45,6 +45,10 @@ def get_datapack():
     global script
 
     requested_datapacks = request.json
+
+    if not requested_datapacks:
+        return jsonify({})
+
     return_data = {}
     
     for datapack_name in requested_datapacks.keys():
