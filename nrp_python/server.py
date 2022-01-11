@@ -42,7 +42,25 @@ def set_datapack():
 
 @app.route('/get_datapack_information', methods=["POST"])
 def get_datapack():
-    return jsonify({})
+    global script
+
+    requested_datapacks = request.json
+    return_data = {}
+    
+    for datapack_name in requested_datapacks.keys():
+        data = script._getDataPack(datapack_name)
+        if(data):
+            return_data[datapack_name] = {}
+            return_data[datapack_name]["engine_name"] = "python"
+            return_data[datapack_name]["type"] = ""
+            return_data[datapack_name]["data"] = data
+        else:
+            return_data[datapack_name] = {}
+            return_data[datapack_name]["engine_name"] = "python"
+            return_data[datapack_name]["type"] = ""
+            return_data[datapack_name]["data"] = None
+
+    return jsonify(return_data)
 
 @app.route('/reset', methods=["POST"])
 def reset():

@@ -1,7 +1,7 @@
 import cv2
 
 def preprocess_image(iteration): #-> np.ndarray:
-    
+
     # Load image of the current step
     frame = cv2.imread('./images/received-image-' + str(iteration) + '.jpg')
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -23,13 +23,14 @@ from engine_script import EngineScript
 class Script(EngineScript):
     def initialize(self):
         print("Python engine is initializing. Registering datapack...")
+        self._registerDataPack("JointAngles")
         agent_name_g = "PPO_agent_canny_image_cnn_policy_150"
         log_dir_g = "./scripts/python_nrp/sb3/agent_models/" + agent_name_g
         self.model_g = PPO.load(log_dir_g + str(0))#, env)
- 
+
     def runLoop(self):
         img = preprocess_image(1)
         self.model_g.predict(img, deterministic=True)
- 
+
     def shutdown(self):
         print("Python engine is shutting down")
