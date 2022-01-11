@@ -18,8 +18,9 @@ def preprocess_image(iteration): #-> np.ndarray:
 
 
 from stable_baselines3 import A2C, PPO
+from engine_script import EngineScript
 
-class Script():
+class Script(EngineScript):
     def initialize(self):
         print("Python engine is initializing. Registering datapack...")
         agent_name_g = "PPO_agent_canny_image_cnn_policy_150"
