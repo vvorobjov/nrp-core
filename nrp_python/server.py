@@ -38,7 +38,20 @@ def run_loop():
 
 @app.route('/set_datapack', methods=["POST"])
 def set_datapack():
-    return jsonify({})
+    global script
+
+    datapacks = request.json
+
+    if not datapacks:
+        return jsonify({})
+
+    for datapack_name in datapacks.keys():
+        data = datapacks[datapack_name]["data"]
+        script._setDataPack(datapack_name, data)
+        # TODO Is this needed? Do we have to return anything?
+        datapacks[datapack_name] = None
+
+    return jsonify(datapacks)
 
 @app.route('/get_datapack_information', methods=["POST"])
 def get_datapack():
@@ -50,7 +63,7 @@ def get_datapack():
         return jsonify({})
 
     return_data = {}
-    
+
     for datapack_name in requested_datapacks.keys():
         data = script._getDataPack(datapack_name)
         if(data):

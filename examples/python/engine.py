@@ -25,12 +25,15 @@ class Script(EngineScript):
     def initialize(self):
         print("Python engine is initializing. Registering datapack...")
         self._registerDataPack("JointAngles")
+        self._registerDataPack("Angles")
         self._setDataPack("JointAngles", { "joint_angles" : [1, 1, 1]})
         agent_name_g = "PPO_agent_canny_image_cnn_policy_150"
         log_dir_g = "./scripts/python_nrp/sb3/agent_models/" + agent_name_g
         self.model_g = PPO.load(log_dir_g + str(0))#, env)
 
     def runLoop(self):
+        dev = self._getDataPack("Angles")
+        print(dev)
         img = preprocess_image(1)
         self.model_g.predict(img, deterministic=True)
         self._setDataPack("JointAngles", { "joint_angles" : [(random.random() - 0.5) * 100, 1, 1]})
