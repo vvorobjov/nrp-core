@@ -86,13 +86,8 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         // Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + engineProcCmd + --param1 + --param2 + ... + nullptr)
         startParamPtrs.reserve(envParams.size() + startParams.size() + 3);
 
-        startParamPtrs.push_back("FLASK_ENV=development");
-        startParamPtrs.push_back("FLASK_APP=nrp_python/server.py");
-        startParamPtrs.push_back("flask");
-        startParamPtrs.push_back("run");
-        startParamPtrs.push_back("--port=9002");
         // Environment set command
-        /*startParamPtrs.push_back(BasicFork::EnvCfgCmd.data());
+        startParamPtrs.push_back(BasicFork::EnvCfgCmd.data());
 
         // Environment variables
         for(const auto &curParam : envParams)
@@ -104,9 +99,14 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         startParamStr.append(engineProcCmd.data());
 
         for(const auto &curParam : startParams){
-            startParamPtrs.push_back(curParam.data());
-            startParamStr += " " + std::string(curParam.data());
-        }*/
+            if(engineProcCmd == "flask run" && std::string(curParam.data()) == "--port=9002")
+            {
+                startParamPtrs.push_back(curParam.data());
+                startParamStr += " " + std::string(curParam.data());
+            }
+        }
+
+        std::cout << startParamStr << std::endl;
 
         // Parameter end
         startParamPtrs.push_back(nullptr);
