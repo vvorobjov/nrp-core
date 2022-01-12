@@ -21,30 +21,20 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
     nrp_python_json_engine/config/python_config.cpp
-    nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.cpp
-    nrp_python_json_engine/engine_server/python_json_server.cpp
     nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.cpp
     nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.cpp
-    nrp_python_json_engine/python/py_engine_script.cpp
-    nrp_python_json_engine/python/py_engine_script_wrapper.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-    nrp_python_json_engine/python/nrp_python_engine_module.cpp
 )
 
 # List executable build files
 set(EXEC_SRC_FILES
-    python_server_executable/main.cpp
-    python_server_executable/python_server_executable.cpp
 )
 
 # List testing build files
 set(TEST_SRC_FILES
-    python_server_executable/python_server_executable.cpp
-    tests/test_python_executable.cpp
-    tests/test_python_server.cpp
 )
 
 
@@ -195,13 +185,9 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 )
 
 # Install python module
-if(TARGET ${PYTHON_MODULE_NAME})
-    install(TARGETS ${PYTHON_MODULE_NAME}
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-endif()
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/engine_script.py"
+    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
