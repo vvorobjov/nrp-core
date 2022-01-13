@@ -79,9 +79,9 @@ void EngineJSONRegistrationServer::clearInstance()
 
 EngineJSONRegistrationServer::~EngineJSONRegistrationServer()
 {
-    //NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    //this->shutdownServer();
+    this->shutdownServer();
 }
 
 void EngineJSONRegistrationServer::startServerAsync()

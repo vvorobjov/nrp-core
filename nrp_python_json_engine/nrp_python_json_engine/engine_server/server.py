@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from importlib import import_module
+import requests
 
 app = Flask(__name__)
 
@@ -10,6 +11,11 @@ import os
 import sys
 
 script = None
+
+# Register in the registration server of the client
+
+registration_data = { "engine_name": "python", "address": "localhost:9002" }
+response = requests.post('http://localhost:9001', json=registration_data).content
 
 @app.route('/initialize', methods=["POST"])
 def initialize():
