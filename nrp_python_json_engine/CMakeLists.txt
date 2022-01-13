@@ -63,9 +63,6 @@ set(NRP_PYTHON_CMAKE_INSTALL_BINDIR "${NRP_PYTHON_INSTALL_PREFIX}/${CMAKE_INSTAL
 set(NRP_PYTHON_EXECUTABLE ${EXECUTABLE_NAME})
 configure_file(${PYTHON_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
-# Python module dependencies
-configure_file("nrp_python_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 
 ##########################################
 # NRPPythonJSONEngine
