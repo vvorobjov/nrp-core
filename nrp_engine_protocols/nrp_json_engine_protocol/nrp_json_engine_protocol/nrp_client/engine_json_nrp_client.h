@@ -214,7 +214,7 @@ class EngineJSONNRPClient
         nlohmann::json sendResetCommand(const nlohmann::json &data)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-            
+
             NRPLogger::debug("EngineJSONNRPClient::sendResetCommand [ data: {} ]", data.dump());
 
             // Post reset request to Engine JSON server
@@ -386,8 +386,8 @@ class EngineJSONNRPClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            if(datapackID.Type == JsonDataPack::getType())
-            {
+            //if(datapackID.Type == JsonDataPack::getType())
+            //{
                 // Check whether the requested datapack has new data
                 // A datapack that has no data will contain two JSON objects with "engine_name" and "type" keys (parts of datapack ID)
 
@@ -404,11 +404,11 @@ class EngineJSONNRPClient
                 newDataPack->setEngineName(this->engineName());
 
                 return newDataPack;
-            }
+            /*}
             else
             {
                 throw NRPException::logCreate("DataPack type \"" + datapackID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
-            }
+            }*/
         }
 };
 
