@@ -44,14 +44,16 @@ public:
     /*!
      * \brief Constructor
      */
-    SimpleInputEdge(std::string keyword, std::string id, std::string port) :
-            _keyword(std::move(keyword)), _id(std::move(id)), _port(std::move(port))
+    SimpleInputEdge(std::string keyword, std::string id, std::string port, InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                    InputNodePolicies::MsgCachePolicy msgCachePolicy) :
+            _keyword(std::move(keyword)), _id(std::move(id)), _port(std::move(port)), _msgPublishPolicy(std::move(msgPublishPolicy)),
+            _msgCachePolicy(std::move(msgCachePolicy))
     {}
 
     /*!
      * \brief __call__ function in the decorator
      *
-     * It creates and registers an input node with MsgPublishPolicy = LAST. Afterwards add a port to it and registers an edge
+     * It creates and registers an input node. Afterwards add a port to it and registers an edge
      * to 'obj'. 'obj' is expected to be a Python object wrapping a PythonFunctionalNode
      */
     boost::python::object pySetup(const boost::python::object& obj)
@@ -63,18 +65,25 @@ public:
         if(!i_node)
             throw NRPException::logCreate("When creating InputEdge: node with the same name (\"+node->id()+\") already registered with a different type");
 
-        assert(i_node->msgPublishPolicy() == INPUT_CLASS::MsgPublishPolicy::LAST);
+        i_node->setMsgPublishPolicy(_msgPublishPolicy);
+        i_node->setMsgCachePolicy(_msgCachePolicy);
         i_node->registerOutput(_port);
 
         // Register edge
         try {
             std::shared_ptr<PythonFunctionalNode> f = boost::python::extract<std::shared_ptr<PythonFunctionalNode> >(
                     obj);
-            ComputationalGraphManager::getInstance().registerEdge<T_IN, boost::python::object>(
-                    i_node->getSinglePort(_port), f->getOrRegisterInput<T_IN>(_keyword));
+
+            auto& cgm = ComputationalGraphManager::getInstance();
+            if(i_node->msgPublishPolicy() == InputNodePolicies::MsgPublishPolicy::LAST)
+                cgm.registerEdge<T_IN, boost::python::object>(
+                        i_node->getSinglePort(_port), f->getOrRegisterInput<T_IN>(_keyword));
+            else
+                cgm.registerEdge<std::vector<const T_IN*>, boost::python::object>(
+                        i_node->getListPort(_port), f->getOrRegisterInput<std::vector<const T_IN*>>(_keyword));
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating InputEdge. Check that Functional Node definition is correct");
+            NRPLogger::error("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
             PyErr_Print();
             boost::python::throw_error_already_set();
         }
@@ -95,6 +104,9 @@ protected:
     std::string _keyword;
     std::string _id;
     std::string _port;
+
+    InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
+    InputNodePolicies::MsgCachePolicy _msgCachePolicy;
 };
 
 #endif //INPUT_EDGE_H

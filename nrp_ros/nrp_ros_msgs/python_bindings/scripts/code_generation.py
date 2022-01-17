@@ -44,6 +44,8 @@ def generate_export_function(spec, s):
     with Indent(s, 2):
         s.write("using {0}::{1};".format(spec.package, msg))
         s.write('DataPack<{0}>::create_python("{0}DataPack");'.format(msg))
+        s.write('class_<vector<const {0}*> >("{0}Vector").def(vector_indexing_suite<vector<const {0}*> >());'
+                .format(msg))
         s.write('class_<{0}, {0}*, shared_ptr<{0}> >("{0}", "{1}")'.format(msg, class_docstring(spec)))
 
         array_fields = []

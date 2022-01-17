@@ -46,7 +46,7 @@ public:
      * Constructor
      */
     InputEngineNode(const std::string &id, const std::string &engineName) :
-            InputNode(id, MsgPublishPolicy::LAST),
+            InputNode(id),
             _engineName(engineName)
     {}
 
@@ -63,6 +63,8 @@ public:
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
+        // TODO: in order to use MsgPublishPolicy::ALL policy with this type of node a vector of datapacks should be
+        //  store, not just one which is being overwritten
         // move datapacks into temporary storage without copying the shared pointer
         while(!dpacks.empty()) {
             auto n = dpacks.extract(dpacks.begin());
@@ -119,8 +121,10 @@ class InputEngineEdge : public SimpleInputEdge<DataPackInterface, InputEngineNod
 
 public:
 
-    InputEngineEdge(const std::string& keyword, const std::string& address) :
-            SimpleInputEdge(keyword, extractNodePortFromAddress(address).first+"_input", extractNodePortFromAddress(address).second),
+    InputEngineEdge(const std::string& keyword, const std::string& address,
+                    InputNodePolicies::MsgCachePolicy msgCachePolicy) :
+            SimpleInputEdge(keyword, extractNodePortFromAddress(address).first+"_input", extractNodePortFromAddress(address).second,
+                            InputNodePolicies::LAST, msgCachePolicy),
             _engineName(extractNodePortFromAddress(address).first)
     {}
 

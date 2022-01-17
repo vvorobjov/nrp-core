@@ -1,8 +1,19 @@
 from nrp_core.event_loop import *
 
+msgs = []
 
-@FunctionalNode(name='function', outputs=["output1"])
+
+@FunctionalNode(name='function', outputs=["output1"], exec_policy=node_policies.functional_node.exec_policy.on_new_message)
 def f_node(input1):
+    global msgs
+    msgs.append(input1)
+    return [input1]
+
+
+@FunctionalNode(name='function_always', outputs=["output1"], exec_policy=node_policies.functional_node.exec_policy.always)
+def f_node(input1):
+    global msgs
+    msgs.append(input1)
     return [input1]
 
 

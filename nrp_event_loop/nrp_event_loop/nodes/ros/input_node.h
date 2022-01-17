@@ -120,8 +120,10 @@ class InputROSEdge : public SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>> {
 
 public:
 
-    InputROSEdge(const std::string& keyword, const std::string& address) :
-            SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>>(keyword, address, address)
+    InputROSEdge(const std::string& keyword, const std::string& address,
+                 InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                 InputNodePolicies::MsgCachePolicy msgCachePolicy) :
+            SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>>(keyword, address, address, msgPublishPolicy, msgCachePolicy)
     {}
 
 protected:

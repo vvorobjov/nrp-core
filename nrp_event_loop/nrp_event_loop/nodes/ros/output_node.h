@@ -63,7 +63,7 @@ protected:
     //  published. Maybe a new class OutputROSArrayNode
     void sendBatchMsg(const std::string& /*id*/, const std::vector<const MSG_TYPE*>& /*data*/) override
     {
-        throw NRPException::logCreate("BATCH update policy is not supported in OutputROSEdge");
+        throw NRPException::logCreate("BATCH update policy is not supported by OutputROSNode");
     }
 
 };

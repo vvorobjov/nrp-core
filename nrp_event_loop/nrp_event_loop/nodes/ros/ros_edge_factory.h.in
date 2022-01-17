@@ -23,9 +23,14 @@ public:
     /*!
      * \brief Constructor
      */
-    RosEdgeFactory(const std::string& keyword, const std::string& address, const bpy::object& msgType, bool isInput = true) :
+    RosEdgeFactory(const std::string& keyword, const std::string& address, const bpy::object& msgType,
+                   InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                   InputNodePolicies::MsgCachePolicy msgCachePolicy,
+                   bool isInput = true) :
         _keyword(keyword),
         _address(address),
+        _msgPublishPolicy(msgPublishPolicy),
+        _msgCachePolicy(msgCachePolicy),
         _isInput(isInput)
     {
         _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
@@ -38,7 +43,7 @@ public:
     template<class MSG_TYPE>
     boost::python::object pySetupInput(const boost::python::object& obj)
     {
-        auto rosEdge = InputROSEdge<MSG_TYPE>(_keyword, _address);
+        auto rosEdge = InputROSEdge<MSG_TYPE>(_keyword, _address, _msgPublishPolicy, _msgCachePolicy);
         return rosEdge.pySetup(obj);
     }
 
@@ -83,6 +88,8 @@ private:
     std::string _address;
     std::string _className;
     std::string _moduleName;
+    InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
+    InputNodePolicies::MsgCachePolicy _msgCachePolicy;
     bool _isInput;
 };
 
@@ -92,6 +99,6 @@ class RosEdgeFactoryOutput
 public:
 
     RosEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType) :
-            RosEdgeFactory(keyword, address, msgType, false)
+            RosEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false)
     {}
 };

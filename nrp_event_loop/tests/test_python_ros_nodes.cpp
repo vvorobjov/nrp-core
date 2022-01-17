@@ -60,14 +60,8 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
 
         //// Test normal case
         // load and configure nodes
-        try {
-            bpy::import("test_ros_nodes");
-        }
-        catch (const boost::python::error_already_set &) {
-            NRPLogger::error("Test failed when loading test_engine_nodes.py");
-            PyErr_Print();
-            boost::python::throw_error_already_set();
-        }
+        bpy::object test_module(bpy::import("test_ros_nodes"));
+        bpy::dict test_module_dict(test_module.attr("__dict__"));
 
         ComputationalGraphManager::getInstance().configure();
 
@@ -78,8 +72,16 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         NRPROSProxy::getInstance().subscribe("/test_pub/test", callback);
 
         nrp_ros_msgs::Test msg_sent;
-        msg_sent.string_msg = "hi";
+        msg_sent.string_msg = "first";
         NRPROSProxy::getInstance().publish("/test_sub/test", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_all", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_clear", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_clear_all", msg_sent);
+        msg_sent.string_msg = "second";
+        NRPROSProxy::getInstance().publish("/test_sub/test", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_all", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_clear", msg_sent);
+        NRPROSProxy::getInstance().publish("/test_sub/test_clear_all", msg_sent);
         // TODO: these sleep commands are required since msgs are actually sent and received through ROS.
         //  Find a way to mock the ROS side of this test
         sleep(1);
@@ -87,8 +89,22 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         ComputationalGraphManager::getInstance().compute();
         sleep(1);
         ros::spinOnce();
+        std::string s = "second";
 
-        ASSERT_EQ(msg_got->string_msg, "hi");
+        ASSERT_EQ(msg_got->string_msg, "second");
+        ASSERT_EQ(bpy::len(test_module_dict["msgs_all"]), 2);
+        ASSERT_EQ(bpy::len(test_module_dict["msgs_clear"]), 2);
+
+        // 'keep' policy
+        msg_got.reset();
+        ComputationalGraphManager::getInstance().compute();
+        sleep(1);
+        ros::spinOnce();
+        ASSERT_EQ(msg_got->string_msg, "second");
+        ASSERT_EQ(bpy::len(test_module_dict["msgs_all"]), 4);
+
+        // 'clear' policy
+        ASSERT_EQ(bpy::len(test_module_dict["msgs_clear"]), 2);
 
         kill(pid,SIGTERM);
         int status;

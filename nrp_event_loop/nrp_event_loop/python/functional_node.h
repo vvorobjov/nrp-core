@@ -67,7 +67,7 @@ public:
     /*!
      * \brief Constructor
      */
-    PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, ExecutionPolicy policy = ExecutionPolicy::ON_NEW_INPUT) :
+    PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
         FunctionalNode(id, [] (params_t&) {}, policy)
     {
         bpy::stl_input_iterator<std::string> begin(o_ports), end;
