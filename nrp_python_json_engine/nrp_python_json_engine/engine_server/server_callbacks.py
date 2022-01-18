@@ -3,9 +3,7 @@ import os
 import sys
 
 script = None
-
 engine_time = 0
-timestep = 200000000
 
 def initialize(request_json):
 
@@ -36,9 +34,17 @@ def run_loop(request_json):
     global engine_time
     global script
 
-    engine_time = engine_time + timestep
-    script.runLoop()
-    return {"time": engine_time}
+    run_loop_exec_status = True
+    run_loop_error_message = ""
+
+    try:
+        engine_time = engine_time + request_json["time_step"]
+        script.runLoop()
+    except Exception as e:
+        run_loop_exec_status = False
+        run_loop_error_message = str(e)
+
+    return {"RunLoopExecStatus": run_loop_exec_status, "Message": run_loop_error_message, "time": engine_time}
 
 
 def set_datapack(request_json):

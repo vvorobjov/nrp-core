@@ -8,6 +8,9 @@ class Script(EngineScript):
     def shutdown(self):
         pass
 
+    def runLoop(self):
+        pass
+
     def reset(self):
         pass
 

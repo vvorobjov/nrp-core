@@ -8,6 +8,9 @@ class Script(EngineScript):
     def shutdown(self):
         raise Exception("Shutdown failed")
 
+    def runLoop(self):
+        raise Exception("RunLoop failed")
+
     def reset(self):
         raise Exception("Reset failed")
 
