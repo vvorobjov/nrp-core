@@ -1,0 +1,31 @@
+{
+	"SimulationName": "tf_exchange_tvb_gazebo",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 10,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "husky_world.sdf",
+			"EngineProcStartParams": ["--verbose"]
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "tvb",
+			"PythonFileName": "engine_2_TVB.py"
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "cam_tf",
+			"FileName": "cam_tf.py"
+		},
+		{
+			"Name": "mot_tf",
+			"FileName": "mot_tf.py"
+		}
+		
+	]
+}
