@@ -47,7 +47,7 @@ def set_datapack(request_json):
     if not request_json:
         return {}
 
-    return_dict = []
+    return_dict = {}
     for datapack_name in request_json.keys():
         data = request_json[datapack_name]["data"]
         script._setDataPack(datapack_name, data)

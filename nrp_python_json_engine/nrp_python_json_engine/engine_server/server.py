@@ -22,7 +22,7 @@ def run_loop():
 
 @app.route('/set_datapack', methods=["POST"])
 def set_datapack():
-    return jsonify(server_callbacks.run_loop(request.json))
+    return jsonify(server_callbacks.set_datapack(request.json))
 
 
 @app.route('/get_datapack_information', methods=["POST"])
