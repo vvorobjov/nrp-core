@@ -105,6 +105,35 @@ class TestServer(unittest.TestCase):
         self.assertEqual(result["Message"], "RunLoop failed")
 
 
+    def test_set_datapack(self):
+        """
+        Try to set datapacks on the Script class using proper callback.
+        The _setDataPack() method of the script class should succeed and the callback
+        should return a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script.py"}
+        server_callbacks.initialize(request_json)
+        request_json = {}
+        request_json["test_datapack"] = {"data": {"test_int": 1}}
+        result = server_callbacks.set_datapack(request_json)
+        self.assertTrue(result["SetDataPackExecStatus"])
+
+
+    def test_set_datapack_failure(self):
+        """
+        Try to set datapacks on the Script class using proper callback.
+        The _setDataPack() method of the script class should raise an exception.
+        It should be caught by the callback and translated into a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        server_callbacks.initialize(request_json)
+        request_json = {}
+        request_json["test_datapack"] = {"data": {"test_int": 1}}
+        result = server_callbacks.set_datapack(request_json)
+        self.assertFalse(result["SetDataPackExecStatus"])
+        self.assertEqual(result["Message"], "Attempting to set data on an unregistered DataPack (test_datapack)")
+
+
 if __name__ == '__main__':
     unittest.main()
 

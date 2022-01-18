@@ -50,18 +50,20 @@ def run_loop(request_json):
 def set_datapack(request_json):
     global script
 
+    set_datapack_exec_status = True
+    set_datapack_error_message = ""
+
     if not request_json:
         return {}
 
-    return_dict = {}
-    for datapack_name in request_json.keys():
-        data = request_json[datapack_name]["data"]
-        script._setDataPack(datapack_name, data)
-        # TODO Is this needed? Do we have to return anything?
-        return_dict[datapack_name] = None
+    try:
+        for datapack_name in request_json.keys():
+            script._setDataPack(datapack_name, request_json[datapack_name]["data"])
+    except Exception as e:
+        set_datapack_exec_status = False
+        set_datapack_error_message = str(e)
 
-    return return_dict
-
+    return {"SetDataPackExecStatus": set_datapack_exec_status, "Message": set_datapack_error_message}
 
 def get_datapack(request_json):
     global script
