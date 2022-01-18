@@ -126,6 +126,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 # Add python tests
 add_test(NAME EngineScript COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EngineScript.xml" test_engine_script.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME ServerCallbacks COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/ServerCallbacks.xml" test_server_callbacks.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 
 ##########################################
@@ -166,6 +167,7 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 
 # Install python module
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server_callbacks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/engine_script.py"
     DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
