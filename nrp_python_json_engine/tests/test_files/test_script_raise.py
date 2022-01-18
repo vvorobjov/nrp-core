@@ -8,4 +8,7 @@ class Script(EngineScript):
     def shutdown(self):
         raise Exception("Shutdown failed")
 
+    def reset(self):
+        raise Exception("Reset failed")
+
 # EOF

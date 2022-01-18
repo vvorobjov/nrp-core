@@ -82,7 +82,18 @@ def get_datapack(request_json):
 
 
 def reset(request_json):
-    return {}
+    global script
+
+    reset_exec_status = True
+    reset_error_message = ""
+
+    try:
+        script.reset()
+    except Exception as e:
+        reset_exec_status = False
+        reset_error_message = str(e)
+
+    return {"ResetExecStatus": reset_exec_status, "Message": reset_error_message}
 
 
 def shutdown(request_json):

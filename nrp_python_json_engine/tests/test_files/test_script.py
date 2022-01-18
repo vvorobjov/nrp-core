@@ -8,4 +8,7 @@ class Script(EngineScript):
     def shutdown(self):
         pass
 
+    def reset(self):
+        pass
+
 # EOF

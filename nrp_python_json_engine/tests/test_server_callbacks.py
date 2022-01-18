@@ -51,6 +51,31 @@ class TestServer(unittest.TestCase):
         self.assertEqual(result["Message"], "Shutdown failed")
 
 
+    def test_reset(self):
+        """
+        Try to resest the Script class using proper callback.
+        The reset() method of the script class should succeed and the callback
+        should return a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script.py"}
+        server_callbacks.initialize(request_json)
+        result = server_callbacks.reset(request_json)
+        self.assertTrue(result["ResetExecStatus"])
+
+
+    def test_reset_failure(self):
+        """
+        Try to reset the Script class using proper callback.
+        The reset() method of the Script class should raise an exception.
+        It should be caught by the callback and translated into a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        server_callbacks.initialize(request_json)
+        result = server_callbacks.reset(request_json)
+        self.assertFalse(result["ResetExecStatus"])
+        self.assertEqual(result["Message"], "Reset failed")
+
+
 if __name__ == '__main__':
     unittest.main()
 
