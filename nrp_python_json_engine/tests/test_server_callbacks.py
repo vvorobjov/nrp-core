@@ -137,6 +137,19 @@ class TestServer(unittest.TestCase):
             server_callbacks.set_datapack(request_json)
 
 
+    def test_get_datapack_failure(self):
+        """
+        Try to set datapacks on the Script class using proper callback.
+        The _setDataPack() method of the script class should raise an exception.
+        It should be caught by the callback and translated into a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        server_callbacks.initialize(request_json)
+        get_request = {"test_datapack": {"engine_name": "python", "type": ""}}
+        with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
+            server_callbacks.get_datapack(get_request)
+
+
 if __name__ == '__main__':
     unittest.main()
 
