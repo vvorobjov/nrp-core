@@ -298,7 +298,9 @@ class EngineJSONNRPClient
                 auto resp = RestClient::post(serverName, contentType, request);
                 if(resp.code != 200)
                 {
-                    throw std::domain_error(exceptionMessage.data());
+                    throw std::domain_error("Request failed with code " + std::to_string(resp.code) +
+                                            " and message:" + "\n" + resp.body +
+                                            "Client context message: " + exceptionMessage.data());
                 }
 
                 return nlohmann::json::parse(resp.body);
