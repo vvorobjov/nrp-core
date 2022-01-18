@@ -34,8 +34,9 @@ class TestServer(unittest.TestCase):
         """
         request_json = {"PythonFileName": "test_files/test_script.py"}
         server_callbacks.initialize(request_json)
-        result = server_callbacks.shutdown(request_json)
-        self.assertTrue(result["ShutdownExecStatus"])
+        self.assertEqual(server_callbacks.script.shutdown_num_execs, 0)
+        server_callbacks.shutdown(request_json)
+        self.assertEqual(server_callbacks.script.shutdown_num_execs, 1)
 
 
     def test_shutdown_failure(self):
@@ -46,9 +47,8 @@ class TestServer(unittest.TestCase):
         """
         request_json = {"PythonFileName": "test_files/test_script_raise.py"}
         server_callbacks.initialize(request_json)
-        result = server_callbacks.shutdown(request_json)
-        self.assertFalse(result["ShutdownExecStatus"])
-        self.assertEqual(result["Message"], "Shutdown failed")
+        with self.assertRaisesRegex(Exception, "Shutdown failed"):
+            server_callbacks.shutdown(request_json)
 
 
     def test_reset(self):
@@ -79,17 +79,18 @@ class TestServer(unittest.TestCase):
     def test_run_loop(self):
         """
         Try to run loop step of the Script class using proper callback.
-        The runLoop() method of the script class should succeed and the callback
-        should return a status message and integrated simulation time.
+        The runLoop() method of the script class should succeed (and increment a counter)
+        and the callback should return an integrated simulation time.
         """
         request_json = {"PythonFileName": "test_files/test_script.py", "time_step": 20000000}
         server_callbacks.initialize(request_json)
+        self.assertEqual(server_callbacks.script.run_loop_num_execs, 0)
         result = server_callbacks.run_loop(request_json)
-        self.assertTrue(result["RunLoopExecStatus"])
         self.assertEqual(result["time"], 20000000)
+        self.assertEqual(server_callbacks.script.run_loop_num_execs, 1)
         result = server_callbacks.run_loop(request_json)
-        self.assertTrue(result["RunLoopExecStatus"])
         self.assertEqual(result["time"], 40000000)
+        self.assertEqual(server_callbacks.script.run_loop_num_execs, 2)
 
 
     def test_run_loop_failure(self):
@@ -100,12 +101,11 @@ class TestServer(unittest.TestCase):
         """
         request_json = {"PythonFileName": "test_files/test_script_raise.py", "time_step": 20000000}
         server_callbacks.initialize(request_json)
-        result = server_callbacks.run_loop(request_json)
-        self.assertFalse(result["RunLoopExecStatus"])
-        self.assertEqual(result["Message"], "RunLoop failed")
+        with self.assertRaisesRegex(Exception, "RunLoop failed"):
+            server_callbacks.run_loop(request_json)
 
 
-    def test_set_datapack(self):
+    def test_set_get_datapack(self):
         """
         Try to set datapacks on the Script class using proper callback.
         The _setDataPack() method of the script class should succeed and the callback
@@ -115,8 +115,12 @@ class TestServer(unittest.TestCase):
         server_callbacks.initialize(request_json)
         request_json = {}
         request_json["test_datapack"] = {"data": {"test_int": 1}}
-        result = server_callbacks.set_datapack(request_json)
-        self.assertTrue(result["SetDataPackExecStatus"])
+        server_callbacks.set_datapack(request_json)
+        get_request = {"test_datapack": {"engine_name": "python", "type": ""}}
+        datapacks = server_callbacks.get_datapack(get_request)
+        self.assertEqual(datapacks["test_datapack"]["engine_name"], "python")
+        self.assertEqual(datapacks["test_datapack"]["type"], "")
+        self.assertEqual(datapacks["test_datapack"]["data"], {"test_int": 1})
 
 
     def test_set_datapack_failure(self):
@@ -129,9 +133,8 @@ class TestServer(unittest.TestCase):
         server_callbacks.initialize(request_json)
         request_json = {}
         request_json["test_datapack"] = {"data": {"test_int": 1}}
-        result = server_callbacks.set_datapack(request_json)
-        self.assertFalse(result["SetDataPackExecStatus"])
-        self.assertEqual(result["Message"], "Attempting to set data on an unregistered DataPack (test_datapack)")
+        with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
+            server_callbacks.set_datapack(request_json)
 
 
 if __name__ == '__main__':

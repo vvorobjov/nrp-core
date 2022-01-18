@@ -34,36 +34,21 @@ def run_loop(request_json):
     global engine_time
     global script
 
-    run_loop_exec_status = True
-    run_loop_error_message = ""
+    engine_time = engine_time + request_json["time_step"]
+    script.runLoop()
 
-    try:
-        engine_time = engine_time + request_json["time_step"]
-        script.runLoop()
-    except Exception as e:
-        run_loop_exec_status = False
-        run_loop_error_message = str(e)
-
-    return {"RunLoopExecStatus": run_loop_exec_status, "Message": run_loop_error_message, "time": engine_time}
+    return {"time": engine_time}
 
 
 def set_datapack(request_json):
     global script
 
-    set_datapack_exec_status = True
-    set_datapack_error_message = ""
-
     if not request_json:
-        return {}
+        return
 
-    try:
-        for datapack_name in request_json.keys():
-            script._setDataPack(datapack_name, request_json[datapack_name]["data"])
-    except Exception as e:
-        set_datapack_exec_status = False
-        set_datapack_error_message = str(e)
+    for datapack_name in request_json.keys():
+        script._setDataPack(datapack_name, request_json[datapack_name]["data"])
 
-    return {"SetDataPackExecStatus": set_datapack_exec_status, "Message": set_datapack_error_message}
 
 def get_datapack(request_json):
     global script
@@ -107,15 +92,6 @@ def reset(request_json):
 def shutdown(request_json):
     global script
 
-    init_exec_status = True
-    init_error_message = ""
-
-    try:
-        script.shutdown()
-    except Exception as e:
-        init_exec_status = False
-        init_error_message = str(e)
-
-    return {"ShutdownExecStatus": init_exec_status, "Message": init_error_message}
+    script.shutdown()
 
 # EOF
