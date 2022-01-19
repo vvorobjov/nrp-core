@@ -5,7 +5,7 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "python_json")
-set(EXECUTABLE_NAME "NRPPythonExecutable")
+set(EXECUTABLE_NAME "python_json_engine.py")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
