@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 
@@ -8,6 +8,11 @@ app = Flask(__name__)
 
 registration_data = { "engine_name": "python", "address": "localhost:9002" }
 response = requests.post('http://localhost:9001', json=registration_data).content
+
+
+@app.errorhandler(500)
+def all_exception_handler(error):
+    return jsonify(str(error)), 500
 
 
 @app.route('/initialize', methods=["POST"])
@@ -27,7 +32,11 @@ def set_datapack():
 
 @app.route('/get_datapack_information', methods=["POST"])
 def get_datapack():
-    return jsonify(server_callbacks.get_datapack(request.json))
+    try:
+        response = server_callbacks.get_datapack(request.json)
+    except Exception as e:
+        abort(500, str(e))
+    return jsonify(response)
 
 
 @app.route('/reset', methods=["POST"])
