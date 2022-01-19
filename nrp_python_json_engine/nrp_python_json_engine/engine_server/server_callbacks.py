@@ -1,4 +1,5 @@
 from importlib import import_module
+from nrp_core.data.nrp_json import JsonDataPack
 import os
 import sys
 
@@ -42,12 +43,30 @@ def run_loop(request_json):
 
 def set_datapack(request_json):
     global script
+    expected_keys = set(("data", "engine_name", "type"))
 
     if not request_json:
         return
 
     for datapack_name in request_json.keys():
-        script._setDataPack(datapack_name, request_json[datapack_name]["data"])
+
+        # Check if all expected keys are in the datapack
+
+        if expected_keys > request_json[datapack_name].keys():
+            raise Exception("Malformed DataPack. Expected keys: " +
+                            str(expected_keys) +
+                            "; actual keys: " +
+                            str(request_json[datapack_name].keys()))
+
+        # Check if DataPack type is correct and save the data
+
+        if(request_json[datapack_name]["type"] == JsonDataPack.getType()):
+            script._setDataPack(datapack_name, request_json[datapack_name]["data"])
+        else:
+            raise Exception("Unable to set datapacks of type \"" +
+                            request_json[datapack_name]["type"] +
+                            "\" (DataPack named \"" +
+                            request_json[datapack_name]["name"] + "\")")
 
 
 def get_datapack(request_json):
@@ -63,12 +82,12 @@ def get_datapack(request_json):
         if(data):
             return_data[datapack_name] = {}
             return_data[datapack_name]["engine_name"] = "python"
-            return_data[datapack_name]["type"] = ""
+            return_data[datapack_name]["type"] = JsonDataPack.getType()
             return_data[datapack_name]["data"] = data
         else:
             return_data[datapack_name] = {}
             return_data[datapack_name]["engine_name"] = "python"
-            return_data[datapack_name]["type"] = ""
+            return_data[datapack_name]["type"] = JsonDataPack.getType()
             return_data[datapack_name]["data"] = None
 
     return return_data

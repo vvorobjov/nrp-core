@@ -128,6 +128,7 @@ public:
             binder(name.data(), init<const std::string&, const std::string& >((boost::python::arg("name"), boost::python::arg("engine_name"))));
         binder.add_property("data", make_function(&DataPack<DATA_TYPE>::getData, return_internal_reference<>()));
         binder.def("__str__", &DataPack<DATA_TYPE>::toPythonString);
+        binder.def("getType", &DataPack<DATA_TYPE>::getType).staticmethod("getType");
     }
 
     DataPackInterfaceConstSharedPtr moveToSharedPtr() final

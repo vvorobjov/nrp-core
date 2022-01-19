@@ -1,5 +1,5 @@
-from http import server
 import unittest
+from nrp_core.data.nrp_json import JsonDataPack
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 
 
@@ -114,16 +114,18 @@ class TestServer(unittest.TestCase):
         request_json = {"PythonFileName": "test_files/test_script.py"}
         server_callbacks.initialize(request_json)
         request_json = {}
-        request_json["test_datapack"] = {"data": {"test_int": 1}}
+        request_json["test_datapack"] = {"engine_name": "python",
+                                         "type": JsonDataPack.getType(),
+                                         "data": {"test_int": 1}}
         server_callbacks.set_datapack(request_json)
-        get_request = {"test_datapack": {"engine_name": "python", "type": ""}}
+        get_request = {"test_datapack": {"engine_name": "python", "type": JsonDataPack.getType()}}
         datapacks = server_callbacks.get_datapack(get_request)
         self.assertEqual(datapacks["test_datapack"]["engine_name"], "python")
-        self.assertEqual(datapacks["test_datapack"]["type"], "")
+        self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
         self.assertEqual(datapacks["test_datapack"]["data"], {"test_int": 1})
 
 
-    def test_set_datapack_failure(self):
+    def test_set_datapack_unregistered(self):
         """
         Try to set datapacks on the Script class using proper callback.
         The _setDataPack() method of the script class should raise an exception.
@@ -132,12 +134,29 @@ class TestServer(unittest.TestCase):
         request_json = {"PythonFileName": "test_files/test_script_raise.py"}
         server_callbacks.initialize(request_json)
         request_json = {}
-        request_json["test_datapack"] = {"data": {"test_int": 1}}
+        request_json["test_datapack"] = {"engine_name": "python",
+                                         "type": JsonDataPack.getType(),
+                                         "data": {"test_int": 1}}
         with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
             server_callbacks.set_datapack(request_json)
 
 
-    def test_get_datapack_failure(self):
+    def test_set_datapack_malformed(self):
+        """
+        Try to set datapacks on the Script class using proper callback.
+        The _setDataPack() method of the script class should raise an exception.
+        It should be caught by the callback and translated into a status message.
+        """
+        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        server_callbacks.initialize(request_json)
+        request_json = {}
+        request_json["test_datapack"] = {"engine_name": "python",
+                                         "data": {"test_int": 1}}
+        with self.assertRaisesRegex(Exception, "Malformed DataPack. .*"):
+            server_callbacks.set_datapack(request_json)
+
+
+    def test_get_datapack_unregistered(self):
         """
         Try to set datapacks on the Script class using proper callback.
         The _setDataPack() method of the script class should raise an exception.
