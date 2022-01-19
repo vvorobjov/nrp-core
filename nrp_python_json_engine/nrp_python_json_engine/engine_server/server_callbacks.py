@@ -35,10 +35,10 @@ def run_loop(request_json):
     global engine_time
     global script
 
-    engine_time = engine_time + request_json["time_step"]
+    script._advanceTime(request_json["time_step"])
     script.runLoop()
 
-    return {"time": engine_time}
+    return {"time": script._time}
 
 
 def set_datapack(request_json):

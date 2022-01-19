@@ -2,6 +2,11 @@ class EngineScript:
 
     def __init__(self) -> None:
         self._datapacks = {}
+        self._time = 0
+
+
+    def _advanceTime(self, timestep) -> None:
+        self._time = self._time + timestep
 
 
     def _registerDataPack(self, datapack_name):

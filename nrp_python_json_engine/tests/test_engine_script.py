@@ -78,6 +78,17 @@ class TestServer(unittest.TestCase):
             script._getDataPack(datapack_name)
 
 
+    def test_time(self):
+        """Try to advance the simulation time."""
+        script = Script()
+        self.assertEqual(script._time, 0)
+        timestep = 1000000
+        script._advanceTime(timestep)
+        self.assertEqual(script._time, timestep)
+        script._advanceTime(timestep)
+        self.assertEqual(script._time, 2 * timestep)
+
+
 if __name__ == '__main__':
     unittest.main()
 

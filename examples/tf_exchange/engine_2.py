@@ -7,7 +7,7 @@ class Script(EngineScript):
         """Initialize datapack1 with empty time"""
         print("Engine 2 is initializing. Registering datapack...")
         self._registerDataPack("rec_datapack2")
-        self._setDataPack("rec_datapack2", { "time" : self._time.count(), "timestep": 0 })
+        self._setDataPack("rec_datapack2", { "time" : self._time, "timestep": 0 })
 
     def runLoop(self, timestep):
         """Receive datapack1 at every timestep"""
