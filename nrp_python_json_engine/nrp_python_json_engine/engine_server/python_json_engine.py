@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from flask import Flask, request, jsonify, abort
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
