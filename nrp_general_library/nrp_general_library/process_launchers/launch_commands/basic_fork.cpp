@@ -99,14 +99,9 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         startParamStr.append(engineProcCmd.data());
 
         for(const auto &curParam : startParams){
-            if(engineProcCmd == "flask run" && std::string(curParam.data()) == "--port=9002")
-            {
-                startParamPtrs.push_back(curParam.data());
-                startParamStr += " " + std::string(curParam.data());
-            }
+            startParamPtrs.push_back(curParam.data());
+            startParamStr += " " + std::string(curParam.data());
         }
-
-        std::cout << startParamStr << std::endl;
 
         // Parameter end
         startParamPtrs.push_back(nullptr);
@@ -118,7 +113,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
         // Don't use the logger here, as this is a separate process
-        //std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
+        std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
         std::cerr.flush();
 
         // If the exec call fails, exit the child process without any further processing. Prevents the child process from assuming it's the main proc

@@ -1,13 +1,9 @@
 from flask import Flask, request, jsonify, abort
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
+import urllib.parse
 
 app = Flask(__name__)
-
-# Register in the registration server of the client
-
-registration_data = { "engine_name": "python", "address": "localhost:9002" }
-response = requests.post('http://localhost:9001', json=registration_data).content
 
 
 @app.errorhandler(500)
@@ -47,5 +43,26 @@ def reset():
 @app.route('/shutdown', methods=["POST"])
 def shutdown():
     return jsonify(server_callbacks.shutdown(request.json))
+
+
+if __name__ == '__main__':
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('--engine', type=str, default="")
+    parser.add_argument('--serverurl', type=str, default="")
+    parser.add_argument('--regservurl', type=str, default="")
+    args = parser.parse_args()
+
+    # Register in the registration server of the client
+
+    if(args.regservurl):
+        registration_data = { "engine_name": args.engine, "address": args.serverurl }
+        response = requests.post("http://" + args.regservurl, json=registration_data).content
+
+    # urlsplit() insists on absolute URLs starting with "//"
+
+    result = urllib.parse.urlsplit('//' + args.serverurl)
+
+    app.run(host=result.hostname, port=result.port)
 
 # EOF
