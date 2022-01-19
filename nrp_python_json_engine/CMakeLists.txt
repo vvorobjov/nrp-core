@@ -167,6 +167,7 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 
 # Install python module
 install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/__init__.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server_callbacks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/engine_script.py"
     DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
