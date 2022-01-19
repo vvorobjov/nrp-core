@@ -1,8 +1,7 @@
 """Python Engine 2. Will get time from Engine 1 and print it"""
 
-from nrp_core.engines.python_json import EngineScript, RegisterEngine
+from nrp_core.engines.python_json import EngineScript
 
-@RegisterEngine()
 class Script(EngineScript):
     def initialize(self):
         """Initialize datapack1 with empty time"""

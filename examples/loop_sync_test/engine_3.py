@@ -1,8 +1,7 @@
 """Python Engine 1. Will get current engine time and make it accessible as a datapack"""
 
-from nrp_core.engines.python_json import EngineScript,RegisterEngine
+from nrp_core.engines.python_json import EngineScript
 
-@RegisterEngine()
 class Script(EngineScript):
     def initialize(self):
         """Initialize datapack3 with time"""
