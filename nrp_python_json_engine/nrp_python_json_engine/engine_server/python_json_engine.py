@@ -64,7 +64,6 @@ if __name__ == '__main__':
     # urlsplit() insists on absolute URLs starting with "//"
 
     result = urllib.parse.urlsplit('//' + args.serverurl)
-
     app.run(host=result.hostname, port=result.port)
 
 # EOF

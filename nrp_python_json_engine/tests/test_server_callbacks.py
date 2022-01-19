@@ -85,12 +85,15 @@ class TestServer(unittest.TestCase):
         request_json = {"PythonFileName": "test_files/test_script.py", "time_step": 20000000}
         server_callbacks.initialize(request_json)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 0)
+        self.assertEqual(server_callbacks.script.timestep, 0)
         result = server_callbacks.run_loop(request_json)
         self.assertEqual(result["time"], 20000000)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 1)
+        self.assertEqual(server_callbacks.script.timestep, 20000000)
         result = server_callbacks.run_loop(request_json)
         self.assertEqual(result["time"], 40000000)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 2)
+        self.assertEqual(server_callbacks.script.timestep, 20000000)
 
 
     def test_run_loop_failure(self):

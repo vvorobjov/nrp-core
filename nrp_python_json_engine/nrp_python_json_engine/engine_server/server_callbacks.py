@@ -36,7 +36,7 @@ def run_loop(request_json):
     global script
 
     script._advanceTime(request_json["time_step"])
-    script.runLoop()
+    script.runLoop(request_json["time_step"])
 
     return {"time": script._time}
 
