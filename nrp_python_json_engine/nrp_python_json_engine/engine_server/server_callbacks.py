@@ -4,24 +4,29 @@ import os
 import sys
 
 script = None
-engine_time = 0
+
+
+def _import_python_script(filename):
+    global script
+
+    script_dirname = os.path.dirname(filename)
+    script_basename = os.path.basename(filename)
+
+    # Append path of the script to sys.path. This is needed for the import to work
+    sys.path.append(script_dirname)
+    script_module = import_module(script_basename[:len(script_basename) - 3])
+
+    script = script_module.Script()
+
 
 def initialize(request_json):
+    global script
 
     init_exec_status = True
     init_error_message = ""
 
     try:
-        script_filename = request_json["PythonFileName"]
-        script_dirname = os.path.dirname(script_filename)
-        script_basename = os.path.basename(script_filename)
-
-        # Append path of the script to sys.path. This is needed for the import to work
-        sys.path.append(script_dirname)
-        script_module = import_module(script_basename[:len(script_basename) - 3])
-
-        global script
-        script = script_module.Script()
+        _import_python_script(request_json["PythonFileName"])
 
         script.initialize()
     except Exception as e:
@@ -32,7 +37,6 @@ def initialize(request_json):
 
 
 def run_loop(request_json):
-    global engine_time
     global script
 
     script._advanceTime(request_json["time_step"])
