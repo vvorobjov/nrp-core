@@ -22,6 +22,7 @@ source "$HOME"/.bashrc
 
 python3 -m pip install --user grpcio-tools
 python3 -m pip install --user pytest
+python3 -m pip install --user flask==2.0
 
 # Run cmake
 
