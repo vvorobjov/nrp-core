@@ -11,7 +11,7 @@ class Script(EngineScript):
 
     def runLoop(self, timestep):
         """Update datapack3 at every timestep"""
-        self._setDataPack("datapack3", { "time" : self._time, "timestep": timestep.count() })
+        self._setDataPack("datapack3", { "time" : self._time, "timestep": timestep })
 
     def shutdown(self):
         print("Engine 3 is shutting down")
