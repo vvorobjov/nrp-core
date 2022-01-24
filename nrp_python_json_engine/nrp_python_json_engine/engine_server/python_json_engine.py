@@ -4,8 +4,22 @@ from flask import Flask, request, jsonify, abort
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 import urllib.parse
+import socket
+from contextlib import closing
 
 app = Flask(__name__)
+
+
+def is_port_in_use(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 @app.errorhandler(500)
@@ -55,15 +69,25 @@ if __name__ == '__main__':
     parser.add_argument('--regservurl', type=str, default="")
     args = parser.parse_args()
 
-    # Register in the registration server of the client
-
-    if(args.regservurl):
-        registration_data = { "engine_name": args.engine, "address": args.serverurl }
-        response = requests.post("http://" + args.regservurl, json=registration_data).content
-
     # urlsplit() insists on absolute URLs starting with "//"
 
     result = urllib.parse.urlsplit('//' + args.serverurl)
-    app.run(host=result.hostname, port=result.port)
+    port = result.port
+    hostname = result.hostname
+
+    # Check if requested port is free
+
+    if is_port_in_use(port):
+        port = find_free_port()
+
+    # Register in the registration server of the client
+
+    if(args.regservurl):
+        registration_data = { "engine_name": args.engine, "address": hostname + ":" + str(port) }
+        response = requests.post("http://" + args.regservurl, json=registration_data).content
+
+    # Start the server
+
+    app.run(host=hostname, port=port)
 
 # EOF
