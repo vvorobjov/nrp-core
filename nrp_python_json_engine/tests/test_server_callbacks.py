@@ -185,6 +185,22 @@ class TestServer(unittest.TestCase):
             server_callbacks.get_datapack(self.get_datapack_json)
 
 
+    def test_get_datapack_incorrect_engine_name(self):
+        """
+        Get datapack data using proper callback.
+        The _getDataPack method of EngineScript class should raise an exception
+        because of engine name in the request not matching the actual engine name.
+        """
+        server_callbacks.initialize(self.init_json_raise)
+
+        request_json = {}
+        request_json["test_datapack"] = {"engine_name": "other_engine_name",
+                                         "type": JsonDataPack.getType()}
+
+        with self.assertRaisesRegex(Exception, "Requesting DataPack .* from incorrect engine .*"):
+            server_callbacks.get_datapack(request_json)
+
+
 if __name__ == '__main__':
     unittest.main()
 

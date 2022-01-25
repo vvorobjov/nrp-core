@@ -1,5 +1,7 @@
 from importlib import import_module
 from types import ModuleType
+
+from flask import request
 from nrp_core.data.nrp_json import JsonDataPack
 import os
 import sys
@@ -86,6 +88,14 @@ def get_datapack(request_json: dict) -> dict:
     return_data = {}
 
     for datapack_name in request_json.keys():
+
+        # Check if engine name in the request matches the actual name
+        if(request_json[datapack_name]["engine_name"] != script._name):
+            raise Exception("Requesting DataPack '" + datapack_name +
+                            "' from incorrect engine (engine name in the request '" +
+                            request_json[datapack_name]["engine_name"] +
+                            "', engine that received the request '" + script._name + "'")
+
         data = script._getDataPack(datapack_name)
 
         return_data[datapack_name] = {}
