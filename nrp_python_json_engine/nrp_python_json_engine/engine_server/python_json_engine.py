@@ -21,6 +21,7 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 
+from argparse import Namespace, ArgumentParser
 import flask
 from flask import Flask, request, jsonify, abort
 import requests
@@ -34,20 +35,6 @@ from contextlib import closing
 assert flask.__version__.startswith("2"), "Required flask version 2.x.x, found " + flask.__version__
 
 app = Flask(__name__)
-
-
-def is_port_in_use(port: int) -> bool:
-    """Checks if given port is already in use"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
-
-
-def find_free_port() -> int:
-    """Returns a random free port number"""
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        # If we bind to port 0, the OS will choose an available port for us
-        s.bind(('', 0))
-        return s.getsockname()[1]
 
 
 @app.errorhandler(500)
@@ -89,32 +76,54 @@ def shutdown():
     return jsonify(server_callbacks.shutdown(request.json))
 
 
-if __name__ == '__main__':
-    from argparse import ArgumentParser
+def parse_arguments() -> Namespace:
     parser = ArgumentParser()
-    parser.add_argument('--engine', type=str, default="")
-    parser.add_argument('--serverurl', type=str, default="")
-    parser.add_argument('--regservurl', type=str, default="")
-    args = parser.parse_args()
+    parser.add_argument('--engine',     type=str, required=True)
+    parser.add_argument('--serverurl',  type=str, required=True)
+    parser.add_argument('--regservurl', type=str, required=True)
+    return parser.parse_args()
 
+
+def is_port_in_use(port: int) -> bool:
+    """Checks if given port is already in use"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+
+def find_free_port() -> int:
+    """Returns a random free port number"""
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        # If we bind to port 0, the OS will choose an available port for us
+        s.bind(('', 0))
+        return s.getsockname()[1]
+
+
+def extract_hostname_port_from_url(url: str) -> tuple:
     # urlsplit() insists on absolute URLs starting with "//"
 
-    result = urllib.parse.urlsplit('//' + args.serverurl)
+    result = urllib.parse.urlsplit('//' + url)
     port = result.port
     hostname = result.hostname
 
-    # Check if requested port is free
+    # Check if the requested port is free. If it's not, then choose another one randomly
 
     if is_port_in_use(port):
         port = find_free_port()
 
-    # Register in the registration server of the client
+    return hostname, port
 
-    if(args.regservurl):
-        registration_data = { "engine_name": args.engine, "address": hostname + ":" + str(port) }
-        response = requests.post("http://" + args.regservurl, json=registration_data).content
 
-    # Start the server
+def register_in_regserver(regserver_url: str, engine_name: str, hostname: str, port: int) -> None:
+    """Registers in the registration server of the client"""
+
+    registration_data = { "engine_name": engine_name, "address": hostname + ":" + str(port) }
+    response = requests.post("http://" + regserver_url, json=registration_data).content
+
+
+if __name__ == '__main__':
+    args = parse_arguments()
+    hostname, port = extract_hostname_port_from_url(args.serverurl)
+    register_in_regserver(args.regservurl, args.engine, hostname, port)
 
     app.run(host=hostname, port=port)
 
