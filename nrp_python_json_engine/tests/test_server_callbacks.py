@@ -21,6 +21,11 @@ class TestServer(unittest.TestCase):
     init_json_raise = {"PythonFileName": "test_files/test_script_raise.py",
                        "EngineName": engine_name}
 
+    # Dictrionary used for initialize() requests.
+    # The Script class doesn't inherit from EngineScript
+    init_json_fake = {"PythonFileName": "test_files/test_script_fake.py",
+                       "EngineName": engine_name}
+
     # Dictrionary used for set_datapack() requests
     set_datapack_json = {}
     set_datapack_json["test_datapack"] = {"engine_name": engine_name,
@@ -38,6 +43,17 @@ class TestServer(unittest.TestCase):
         """
         result = server_callbacks.initialize(self.init_json)
         self.assertTrue(result["InitExecStatus"])
+
+
+    def test_initialize_script_inheritance(self):
+        """
+        Initialize the Script class using proper callback.
+        The Script class doesn't inherit from EngineScript
+        and the callback should return False and an error message
+        """
+        result = server_callbacks.initialize(self.init_json_fake)
+        self.assertFalse(result["InitExecStatus"])
+        self.assertEqual(result["Message"], "Script class must inherit from EngineScript class")
 
 
     def test_initialize_failure(self):

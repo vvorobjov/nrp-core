@@ -3,8 +3,10 @@ from types import ModuleType
 
 from flask import request
 from nrp_core.data.nrp_json import JsonDataPack
+from nrp_core.engines.python_json import EngineScript
 import os
 import sys
+
 
 script = None
 
@@ -28,10 +30,18 @@ def initialize(request_json: dict) -> dict:
     init_error_message = ""
 
     try:
+        # Load the python script module and check if the Script class inherits from EngineScript
+
         script_module = _import_python_script(request_json["PythonFileName"])
+        if not issubclass(script_module.Script, EngineScript):
+            raise Exception("Script class must inherit from EngineScript class")
+
+        # Instantiate the Script class and run its intialize() method
+
         script = script_module.Script()
         script._name = request_json["EngineName"]
         script.initialize()
+
     except Exception as e:
         init_exec_status = False
         init_error_message = str(e)
