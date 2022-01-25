@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
+import flask
 from flask import Flask, request, jsonify, abort
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 import urllib.parse
 import socket
 from contextlib import closing
+
+# Make sure that we are running flask version 2.x.x
+
+assert flask.__version__.startswith("2"), "Required flask version 2.x.x, found " + flask.__version__
 
 app = Flask(__name__)
 
