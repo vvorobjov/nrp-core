@@ -122,17 +122,6 @@ class PythonEngineJSONNRPClientBase
             return startParams;
         }
 
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        {
-            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            std::vector<std::string> envParams = this->EngineJSONNRPClient<ENGINE, SCHEMA>::engineProcEnvParams();
-
-            envParams.push_back("FLASK_APP=nrp_core.engines.python_json.server");
-
-            return envParams;
-        }
-
     private:
         /*!
          * \brief Error message returned by init command
