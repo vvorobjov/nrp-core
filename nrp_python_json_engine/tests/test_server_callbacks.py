@@ -19,7 +19,7 @@ class TestServer(unittest.TestCase):
     # Dictrionary used for initialize() requests.
     # Methods of the EngineScript class included in PythonFileName raise exceptions
     init_json_raise = {"PythonFileName": "test_files/test_script_raise.py",
-                       "EngineName": "test"}
+                       "EngineName": engine_name}
 
     # Dictrionary used for set_datapack() requests
     set_datapack_json = {}
@@ -137,10 +137,16 @@ class TestServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json)
 
+        # If the data was never set, it should return None accompanied by some metadata
+        datapacks = server_callbacks.get_datapack(self.get_datapack_json)
+        self.assertEqual(datapacks["test_datapack"]["engine_name"], self.engine_name)
+        self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
+        self.assertEqual(datapacks["test_datapack"]["data"], None)
+
         # Set the data
         server_callbacks.set_datapack(self.set_datapack_json)
 
-        # Retrieve the data
+        # Retrieve the data. It should match the data that was set.
         datapacks = server_callbacks.get_datapack(self.get_datapack_json)
 
         self.assertEqual(datapacks["test_datapack"], self.set_datapack_json["test_datapack"])

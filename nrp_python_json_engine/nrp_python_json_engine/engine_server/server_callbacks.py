@@ -101,11 +101,7 @@ def get_datapack(request_json: dict) -> dict:
         return_data[datapack_name] = {}
         return_data[datapack_name]["engine_name"] = script._name
         return_data[datapack_name]["type"] = JsonDataPack.getType()
-
-        if(data):
-            return_data[datapack_name]["data"] = data
-        else:
-            return_data[datapack_name]["data"] = None
+        return_data[datapack_name]["data"] = data
 
     return return_data
 
