@@ -125,6 +125,8 @@ def get_datapack(request_json: dict) -> dict:
                             request_json[datapack_name]["engine_name"] +
                             "', engine that received the request '" + script._name + "'")
 
+        # TODO: "type" in the request is currently empty, so we can't validate it...
+
         data = script._getDataPack(datapack_name)
 
         return_data[datapack_name] = {}
