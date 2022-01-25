@@ -28,6 +28,7 @@ def initialize(request_json):
     try:
         _import_python_script(request_json["PythonFileName"])
 
+        script._name = request_json["EngineName"]
         script.initialize()
     except Exception as e:
         init_exec_status = False
@@ -83,15 +84,14 @@ def get_datapack(request_json):
 
     for datapack_name in request_json.keys():
         data = script._getDataPack(datapack_name)
+
+        return_data[datapack_name] = {}
+        return_data[datapack_name]["engine_name"] = script._name
+        return_data[datapack_name]["type"] = JsonDataPack.getType()
+
         if(data):
-            return_data[datapack_name] = {}
-            return_data[datapack_name]["engine_name"] = "python"
-            return_data[datapack_name]["type"] = JsonDataPack.getType()
             return_data[datapack_name]["data"] = data
         else:
-            return_data[datapack_name] = {}
-            return_data[datapack_name]["engine_name"] = "python"
-            return_data[datapack_name]["type"] = JsonDataPack.getType()
             return_data[datapack_name]["data"] = None
 
     return return_data

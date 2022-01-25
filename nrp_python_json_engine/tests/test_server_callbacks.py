@@ -10,7 +10,8 @@ class TestServer(unittest.TestCase):
         Try to initialize the Script class using proper callback.
         The initialize() method should succeed and the callback should return a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py"}
+        request_json = {"PythonFileName": "test_files/test_script.py",
+                        "EngineName": "test"}
         result = server_callbacks.initialize(request_json)
         self.assertTrue(result["InitExecStatus"])
 
@@ -21,7 +22,8 @@ class TestServer(unittest.TestCase):
         The initialize() method should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": "test"}
         result = server_callbacks.initialize(request_json)
         self.assertFalse(result["InitExecStatus"])
         self.assertEqual(result["Message"], "Initialization failed")
@@ -32,7 +34,8 @@ class TestServer(unittest.TestCase):
         Try to shutdown the Script class using proper callback.
         The shutdown() method should succeed and the callback should return a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py"}
+        request_json = {"PythonFileName": "test_files/test_script.py",
+                        "EngineName": "test"}
         server_callbacks.initialize(request_json)
         self.assertEqual(server_callbacks.script.shutdown_num_execs, 0)
         server_callbacks.shutdown(request_json)
@@ -45,7 +48,8 @@ class TestServer(unittest.TestCase):
         The shutdown() method should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": "test"}
         server_callbacks.initialize(request_json)
         with self.assertRaisesRegex(Exception, "Shutdown failed"):
             server_callbacks.shutdown(request_json)
@@ -57,7 +61,8 @@ class TestServer(unittest.TestCase):
         The reset() method of the script class should succeed and the callback
         should return a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py"}
+        request_json = {"PythonFileName": "test_files/test_script.py",
+                        "EngineName": "test"}
         server_callbacks.initialize(request_json)
         result = server_callbacks.reset(request_json)
         self.assertTrue(result["ResetExecStatus"])
@@ -69,7 +74,8 @@ class TestServer(unittest.TestCase):
         The reset() method of the Script class should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": "test"}
         server_callbacks.initialize(request_json)
         result = server_callbacks.reset(request_json)
         self.assertFalse(result["ResetExecStatus"])
@@ -82,7 +88,9 @@ class TestServer(unittest.TestCase):
         The runLoop() method of the script class should succeed (and increment a counter)
         and the callback should return an integrated simulation time.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py", "time_step": 20000000}
+        request_json = {"PythonFileName": "test_files/test_script.py",
+                        "EngineName": "test",
+                        "time_step": 20000000}
         server_callbacks.initialize(request_json)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 0)
         self.assertEqual(server_callbacks.script.timestep, 0)
@@ -114,16 +122,18 @@ class TestServer(unittest.TestCase):
         The _setDataPack() method of the script class should succeed and the callback
         should return a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py"}
+        engine_name = "test_engine"
+        request_json = {"PythonFileName": "test_files/test_script.py",
+                        "EngineName": engine_name}
         server_callbacks.initialize(request_json)
         request_json = {}
-        request_json["test_datapack"] = {"engine_name": "python",
+        request_json["test_datapack"] = {"engine_name": engine_name,
                                          "type": JsonDataPack.getType(),
                                          "data": {"test_int": 1}}
         server_callbacks.set_datapack(request_json)
-        get_request = {"test_datapack": {"engine_name": "python", "type": JsonDataPack.getType()}}
+        get_request = {"test_datapack": {"engine_name": engine_name, "type": JsonDataPack.getType()}}
         datapacks = server_callbacks.get_datapack(get_request)
-        self.assertEqual(datapacks["test_datapack"]["engine_name"], "python")
+        self.assertEqual(datapacks["test_datapack"]["engine_name"], engine_name)
         self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
         self.assertEqual(datapacks["test_datapack"]["data"], {"test_int": 1})
 
@@ -134,10 +144,12 @@ class TestServer(unittest.TestCase):
         The _setDataPack() method of the script class should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        engine_name = "test_engine"
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": engine_name}
         server_callbacks.initialize(request_json)
         request_json = {}
-        request_json["test_datapack"] = {"engine_name": "python",
+        request_json["test_datapack"] = {"engine_name": engine_name,
                                          "type": JsonDataPack.getType(),
                                          "data": {"test_int": 1}}
         with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
@@ -150,10 +162,12 @@ class TestServer(unittest.TestCase):
         The _setDataPack() method of the script class should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        engine_name = "test_engine"
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": engine_name}
         server_callbacks.initialize(request_json)
         request_json = {}
-        request_json["test_datapack"] = {"engine_name": "python",
+        request_json["test_datapack"] = {"engine_name": engine_name,
                                          "data": {"test_int": 1}}
         with self.assertRaisesRegex(Exception, "Malformed DataPack. .*"):
             server_callbacks.set_datapack(request_json)
@@ -165,9 +179,11 @@ class TestServer(unittest.TestCase):
         The _setDataPack() method of the script class should raise an exception.
         It should be caught by the callback and translated into a status message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py"}
+        engine_name = "test_engine"
+        request_json = {"PythonFileName": "test_files/test_script_raise.py",
+                        "EngineName": engine_name}
         server_callbacks.initialize(request_json)
-        get_request = {"test_datapack": {"engine_name": "python", "type": ""}}
+        get_request = {"test_datapack": {"engine_name": engine_name, "type": ""}}
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
             server_callbacks.get_datapack(get_request)
 
