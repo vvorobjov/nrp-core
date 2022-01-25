@@ -55,11 +55,7 @@ def set_datapack():
 
 @app.route('/get_datapack_information', methods=["POST"])
 def get_datapack():
-    try:
-        response = server_callbacks.get_datapack(request.json)
-    except Exception as e:
-        abort(500, str(e))
-    return jsonify(response)
+    return jsonify(server_callbacks.get_datapack(request.json))
 
 
 @app.route('/reset', methods=["POST"])
