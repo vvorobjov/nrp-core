@@ -143,7 +143,7 @@ class TestServer(unittest.TestCase):
         # Test set_datapack with empty request
         server_callbacks.set_datapack({})
 
-        # If the data was never set, it should return None accompanied by some metadata
+        # If the data was never set, get_datapack() should return None accompanied by some metadata
         datapacks = server_callbacks.get_datapack(self.get_datapack_json)
         self.assertEqual(datapacks["test_datapack"]["engine_name"], self.engine_name)
         self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
