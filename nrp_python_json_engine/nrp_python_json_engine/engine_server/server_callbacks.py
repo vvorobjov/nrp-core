@@ -21,8 +21,6 @@
 
 from importlib import import_module
 from types import ModuleType
-
-from flask import request
 from nrp_core.data.nrp_json import JsonDataPack
 from nrp_core.engines.python_json import EngineScript
 import os
