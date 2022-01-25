@@ -16,19 +16,25 @@ app = Flask(__name__)
 
 
 def is_port_in_use(port: int) -> bool:
+    """Checks if given port is already in use"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
 
 
-def find_free_port():
+def find_free_port() -> int:
+    """Returns a random free port number"""
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        # If we bind to port 0, the OS will choose an available port for us
         s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
 
 
 @app.errorhandler(500)
 def all_exception_handler(error):
+    """
+    Custom error handler for error code 500. The default handler returns a html response,
+    which doesn't look very nice when printed to terminal.
+    """
     return jsonify(str(error)), 500
 
 

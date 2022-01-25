@@ -5,187 +5,184 @@ import nrp_core.engines.python_json.server_callbacks as server_callbacks
 
 class TestServer(unittest.TestCase):
 
+    engine_name = "test_engine"
+    time_step = 20000000
+
+    # Dictrionary used for run_loop() requests
+    run_loop_json = {"time_step": time_step}
+
+    # Dictrionary used for initialize() requests
+    # Contains a path to valid EngineScript class
+    init_json = {"PythonFileName": "test_files/test_script.py",
+                "EngineName": engine_name}
+
+    # Dictrionary used for initialize() requests.
+    # Methods of the EngineScript class included in PythonFileName raise exceptions
+    init_json_raise = {"PythonFileName": "test_files/test_script_raise.py",
+                       "EngineName": "test"}
+
+    # Dictrionary used for set_datapack() requests
+    set_datapack_json = {}
+    set_datapack_json["test_datapack"] = {"engine_name": engine_name,
+                                          "type": JsonDataPack.getType(),
+                                          "data": {"test_int": 1}}
+
+    # Dictrionary used for get_datapack() requests
+    get_datapack_json = {"test_datapack": {"engine_name": engine_name, "type": JsonDataPack.getType()}}
+
     def test_initialize(self):
         """
-        Try to initialize the Script class using proper callback.
-        The initialize() method should succeed and the callback should return a status message.
+        Initialize the Script class using proper callback.
+        The initialize() method of EngineScript class should succeed
+        and the callback should return True.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py",
-                        "EngineName": "test"}
-        result = server_callbacks.initialize(request_json)
+        result = server_callbacks.initialize(self.init_json)
         self.assertTrue(result["InitExecStatus"])
 
 
     def test_initialize_failure(self):
         """
-        Try to initialize the Script class using proper callback.
-        The initialize() method should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Initialize the Script class using proper callback.
+        The initialize() method of EngineScript class should raise an exception
+        and the callback should return False and an error message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": "test"}
-        result = server_callbacks.initialize(request_json)
+        result = server_callbacks.initialize(self.init_json_raise)
         self.assertFalse(result["InitExecStatus"])
         self.assertEqual(result["Message"], "Initialization failed")
 
 
     def test_shutdown(self):
         """
-        Try to shutdown the Script class using proper callback.
-        The shutdown() method should succeed and the callback should return a status message.
+        Shutdown the Script class using proper callback.
+        The shutdown() method of EngineScript class should succeed
+        and increment a counter.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py",
-                        "EngineName": "test"}
-        server_callbacks.initialize(request_json)
+        server_callbacks.initialize(self.init_json)
         self.assertEqual(server_callbacks.script.shutdown_num_execs, 0)
-        server_callbacks.shutdown(request_json)
+        server_callbacks.shutdown({})
         self.assertEqual(server_callbacks.script.shutdown_num_execs, 1)
 
 
     def test_shutdown_failure(self):
         """
-        Try to shutdown the Script class using proper callback.
-        The shutdown() method should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Shutdown the Script class using proper callback.
+        The shutdown() method of EngineScript class should raise an exception.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": "test"}
-        server_callbacks.initialize(request_json)
+        server_callbacks.initialize(self.init_json_raise)
         with self.assertRaisesRegex(Exception, "Shutdown failed"):
-            server_callbacks.shutdown(request_json)
+            server_callbacks.shutdown({})
 
 
     def test_reset(self):
         """
-        Try to resest the Script class using proper callback.
-        The reset() method of the script class should succeed and the callback
-        should return a status message.
+        Reset the Script class using proper callback.
+        The reset() method of EngineScript class should succeed
+        and the callback should return True.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py",
-                        "EngineName": "test"}
-        server_callbacks.initialize(request_json)
-        result = server_callbacks.reset(request_json)
+        server_callbacks.initialize(self.init_json)
+        result = server_callbacks.reset({})
         self.assertTrue(result["ResetExecStatus"])
 
 
     def test_reset_failure(self):
         """
-        Try to reset the Script class using proper callback.
-        The reset() method of the Script class should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Reset the Script class using proper callback.
+        The reset() method of EngineScript class should raise an exception
+        and the callback should return False and an error message.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": "test"}
-        server_callbacks.initialize(request_json)
-        result = server_callbacks.reset(request_json)
+        server_callbacks.initialize(self.init_json_raise)
+        result = server_callbacks.reset({})
         self.assertFalse(result["ResetExecStatus"])
         self.assertEqual(result["Message"], "Reset failed")
 
 
     def test_run_loop(self):
         """
-        Try to run loop step of the Script class using proper callback.
-        The runLoop() method of the script class should succeed (and increment a counter)
+        Run loop step of the Script class using proper callback.
+        The runLoop() method of EngineScript class should succeed and increment a counter,
         and the callback should return an integrated simulation time.
         """
-        request_json = {"PythonFileName": "test_files/test_script.py",
-                        "EngineName": "test",
-                        "time_step": 20000000}
-        server_callbacks.initialize(request_json)
+        server_callbacks.initialize(self.init_json)
+
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 0)
         self.assertEqual(server_callbacks.script.timestep, 0)
-        result = server_callbacks.run_loop(request_json)
-        self.assertEqual(result["time"], 20000000)
+
+        result = server_callbacks.run_loop(self.run_loop_json)
+        self.assertEqual(result["time"], self.time_step)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 1)
-        self.assertEqual(server_callbacks.script.timestep, 20000000)
-        result = server_callbacks.run_loop(request_json)
-        self.assertEqual(result["time"], 40000000)
+        self.assertEqual(server_callbacks.script.timestep, self.time_step)
+
+        # Run second loop step to check if time is integrated correctly
+        result = server_callbacks.run_loop(self.run_loop_json)
+        self.assertEqual(result["time"], 2 * self.time_step)
         self.assertEqual(server_callbacks.script.run_loop_num_execs, 2)
-        self.assertEqual(server_callbacks.script.timestep, 20000000)
+        self.assertEqual(server_callbacks.script.timestep, self.time_step)
 
 
     def test_run_loop_failure(self):
         """
-        Try to run loop step of the Script class using proper callback.
-        The runLoop() method of the Script class should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Run loop step of the Script class using proper callback.
+        The runLoop() method of EngineScript class should raise an exception.
         """
-        request_json = {"PythonFileName": "test_files/test_script_raise.py", "time_step": 20000000}
-        server_callbacks.initialize(request_json)
+        server_callbacks.initialize(self.init_json_raise)
         with self.assertRaisesRegex(Exception, "RunLoop failed"):
-            server_callbacks.run_loop(request_json)
+            server_callbacks.run_loop(self.run_loop_json)
 
 
     def test_set_get_datapack(self):
         """
-        Try to set datapacks on the Script class using proper callback.
-        The _setDataPack() method of the script class should succeed and the callback
-        should return a status message.
+        Set and then retrieve datapack data using proper callbacks.
+        The data passed to set_datapack() and retrieved from get_datapack()
+        callbacks should match.
         """
-        engine_name = "test_engine"
-        request_json = {"PythonFileName": "test_files/test_script.py",
-                        "EngineName": engine_name}
-        server_callbacks.initialize(request_json)
-        request_json = {}
-        request_json["test_datapack"] = {"engine_name": engine_name,
-                                         "type": JsonDataPack.getType(),
-                                         "data": {"test_int": 1}}
-        server_callbacks.set_datapack(request_json)
-        get_request = {"test_datapack": {"engine_name": engine_name, "type": JsonDataPack.getType()}}
-        datapacks = server_callbacks.get_datapack(get_request)
-        self.assertEqual(datapacks["test_datapack"]["engine_name"], engine_name)
-        self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
-        self.assertEqual(datapacks["test_datapack"]["data"], {"test_int": 1})
+        server_callbacks.initialize(self.init_json)
+
+        # Set the data
+        server_callbacks.set_datapack(self.set_datapack_json)
+
+        # Retrieve the data
+        datapacks = server_callbacks.get_datapack(self.get_datapack_json)
+
+        self.assertEqual(datapacks["test_datapack"], self.set_datapack_json["test_datapack"])
 
 
     def test_set_datapack_unregistered(self):
         """
-        Try to set datapacks on the Script class using proper callback.
-        The _setDataPack() method of the script class should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Set datapack data using proper callback.
+        The _setDataPack method of EngineScript class should raise an exception
+        because of unregistered datapack name.
         """
-        engine_name = "test_engine"
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": engine_name}
-        server_callbacks.initialize(request_json)
-        request_json = {}
-        request_json["test_datapack"] = {"engine_name": engine_name,
-                                         "type": JsonDataPack.getType(),
-                                         "data": {"test_int": 1}}
+        server_callbacks.initialize(self.init_json_raise)
+
         with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
-            server_callbacks.set_datapack(request_json)
+            server_callbacks.set_datapack(self.set_datapack_json)
 
 
     def test_set_datapack_malformed(self):
         """
-        Try to set datapacks on the Script class using proper callback.
-        The _setDataPack() method of the script class should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Set datapack data using proper callback.
+        The _setDataPack method of EngineScript class should raise an exception
+        because of datapack type missing in the request.
         """
-        engine_name = "test_engine"
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": engine_name}
-        server_callbacks.initialize(request_json)
+        server_callbacks.initialize(self.init_json_raise)
         request_json = {}
-        request_json["test_datapack"] = {"engine_name": engine_name,
+        request_json["test_datapack"] = {"engine_name": self.engine_name,
                                          "data": {"test_int": 1}}
+
         with self.assertRaisesRegex(Exception, "Malformed DataPack. .*"):
             server_callbacks.set_datapack(request_json)
 
 
     def test_get_datapack_unregistered(self):
         """
-        Try to set datapacks on the Script class using proper callback.
-        The _setDataPack() method of the script class should raise an exception.
-        It should be caught by the callback and translated into a status message.
+        Get datapack data using proper callback.
+        The _getDataPack method of EngineScript class should raise an exception
+        because of unregistered datapack name.
         """
-        engine_name = "test_engine"
-        request_json = {"PythonFileName": "test_files/test_script_raise.py",
-                        "EngineName": engine_name}
-        server_callbacks.initialize(request_json)
-        get_request = {"test_datapack": {"engine_name": engine_name, "type": ""}}
+        server_callbacks.initialize(self.init_json_raise)
+
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
-            server_callbacks.get_datapack(get_request)
+            server_callbacks.get_datapack(self.get_datapack_json)
 
 
 if __name__ == '__main__':

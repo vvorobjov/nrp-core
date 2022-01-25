@@ -1,4 +1,5 @@
 from importlib import import_module
+from types import ModuleType
 from nrp_core.data.nrp_json import JsonDataPack
 import os
 import sys
@@ -6,28 +7,27 @@ import sys
 script = None
 
 
-def _import_python_script(filename):
-    global script
-
+def _import_python_script(filename: str) -> ModuleType:
+    """Imports a module with given name and returns a handle to it"""
     script_dirname = os.path.dirname(filename)
     script_basename = os.path.basename(filename)
 
     # Append path of the script to sys.path. This is needed for the import to work
     sys.path.append(script_dirname)
-    script_module = import_module(script_basename[:len(script_basename) - 3])
 
-    script = script_module.Script()
+    return import_module(script_basename[:len(script_basename) - 3])
 
 
-def initialize(request_json):
+def initialize(request_json: dict) -> dict:
+    """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
 
     init_exec_status = True
     init_error_message = ""
 
     try:
-        _import_python_script(request_json["PythonFileName"])
-
+        script_module = _import_python_script(request_json["PythonFileName"])
+        script = script_module.Script()
         script._name = request_json["EngineName"]
         script.initialize()
     except Exception as e:
@@ -37,7 +37,8 @@ def initialize(request_json):
     return {"InitExecStatus": init_exec_status, "Message": init_error_message}
 
 
-def run_loop(request_json):
+def run_loop(request_json: dict) -> dict:
+    """Advances the simulation time and runs the runLoop method of the Script object"""
     global script
 
     script._advanceTime(request_json["time_step"])
@@ -46,7 +47,8 @@ def run_loop(request_json):
     return {"time": script._time}
 
 
-def set_datapack(request_json):
+def set_datapack(request_json: dict) -> None:
+    """Sets given data on requested datapacks stored in the Script object"""
     global script
     expected_keys = set(("data", "engine_name", "type"))
 
@@ -74,7 +76,8 @@ def set_datapack(request_json):
                             request_json[datapack_name]["name"] + "\")")
 
 
-def get_datapack(request_json):
+def get_datapack(request_json: dict) -> dict:
+    """Returns requested datapacks stored in the Script object"""
     global script
 
     if not request_json:
@@ -97,7 +100,8 @@ def get_datapack(request_json):
     return return_data
 
 
-def reset(request_json):
+def reset(request_json: dict) -> dict:
+    """Calls the reset() method of the Script object"""
     global script
 
     reset_exec_status = True
@@ -112,7 +116,8 @@ def reset(request_json):
     return {"ResetExecStatus": reset_exec_status, "Message": reset_error_message}
 
 
-def shutdown(request_json):
+def shutdown(request_json: dict) -> None:
+    """Calls the shutdown() method of the Script object"""
     global script
 
     script.shutdown()
