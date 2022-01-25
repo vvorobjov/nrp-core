@@ -47,7 +47,7 @@ mkdir -p /home/${USER}/.local/nrp
 make
 make install
 # just in case of wanting to build the documentation. Documentation can then be found in a new doxygen folder
-make doxygen_nrp
+make nrp_doxygen
 ```
 
 ## Running an experiment

@@ -1,0 +1,17 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Adaptation of the example `husky_braitenberg_cg` in which the communication with the gazebo simulator is performed with ROS publisher and subscriber nodes. Please refer to the file 'README.md' for instructions on how to setup and run the experiment.",
+	"SimulationTimeout": 10,
+	"DataPackProcessor": "cg",
+	"SimulationLoop": "EventLoop",
+	"StartROSNode": true,
+	"EngineConfigs": [
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
+}

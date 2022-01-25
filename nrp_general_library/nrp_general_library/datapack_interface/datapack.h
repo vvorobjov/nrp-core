@@ -136,6 +136,9 @@ public:
         return typename PtrTemplates<DataPack<DATA_TYPE>>::const_shared_ptr(new DataPack<DATA_TYPE>(this->name(), this->engineName(), this->releaseData()));
     }
 
+    DataPackInterface* clone() const override
+    { return new DataPack<DATA_TYPE>(this->name(), this->engineName(), new DATA_TYPE(*data)); }
+
 private:
 
     std::unique_ptr<DATA_TYPE> data;

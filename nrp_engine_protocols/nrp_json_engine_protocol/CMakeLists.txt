@@ -76,7 +76,6 @@ target_include_directories(${LIBRARY_NAME} BEFORE
     PRIVATE
 )
 
-
 ##########################################
 ## nrp_core.data.nrp_json
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")

@@ -2,9 +2,12 @@
 
 The NRP Core framework (NRP-core) allows NRP users to design and execute experiments where multiple "simulation modules", running in separate processes, synchronize with each other at different frequencies to create a single, coherent simulation. The architecture components that run these "simulations modules" will hereafter be referred to as Engines.
 
-An experiment in NRP-core therefore consists of multiple engine processes that synchronize with a central Simulation Loop process at predetermined frequencies defined by the user. These frequencies (expressed in simulation time) determine the engine time step, which defines the duration (also in simulation time) for which that engine carries out a simulation independently (i.e. without communication to the central process). Note that: 1) the engine time step can be different for each engine and is set in the experiment configuration; 2) that the internal time step of the simulator at the heart of a given engine is independent from the engine time step (the latter should nevertheless be a multiple of this internal time step).
+An experiment in NRP-core, therefore, consists of multiple engine processes that synchronize with a central Simulation Loop process at predetermined frequencies defined by the user. These frequencies (expressed in simulation time) determine the engine time step, which defines the duration (also in simulation time) for which that engine carries out a simulation independently (i.e. without communication to the central process). Note that: 1) the engine time step can be different for each engine and is set in the experiment configuration; 2) that the internal time step of the simulator at the heart of a given engine is independent of the engine time step (the latter should nevertheless be a multiple of this internal time step).
 
 For more explanations, this \subpage sync_model_details "page" contains a more detailed description of the <b>synchronization model</b>.
+
+Additionally, NRP-core offers an asynchronous mode which allows to interact with external simulation modules or other processes asynchronously.
+This asynchronous mode is implemented by the EventLoop and is described in detail in this \subpage event_loop "page".
 
 Please also note that, while NRP-core is - quite literally - the beating heart of the NRP, the so-called NRPCoreSim is the standalone application based on NRP-core. This standalone application can execute experiments through the same lifecycle process, but without the additional functionalities of the NRP (e.g. front end, etc.). This \subpage nrp_simulation "page" contains more information about NRPCoreSim.
 

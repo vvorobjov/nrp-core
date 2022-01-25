@@ -112,6 +112,12 @@ class DataPackInterface
         }
 
         /*!
+        * \brief Virtual clone method to support polymorphic copy
+        */
+        virtual DataPackInterface* clone() const
+        { return new DataPackInterface(this->name(), this->engineName(), this->type()); }
+
+        /*!
          * \brief Indicates if the datapack contains any data aside from datapack ID
          *
          * The function will return true, if the datapack is of DataPackInterface type, which

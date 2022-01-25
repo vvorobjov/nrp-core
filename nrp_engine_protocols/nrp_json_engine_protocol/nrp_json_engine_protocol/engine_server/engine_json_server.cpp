@@ -257,7 +257,7 @@ Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
 
     Pistache::Rest::Router router;
     Pistache::Rest::Routes::Post(router, EngineJSONServer::GetDataPackInformationRoute.data(), Pistache::Rest::Routes::bind(&EngineJSONServer::getDataPackDataHandler, server));
-    Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDataPackRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDataPackHandler, server));
+    Pistache::Rest::Routes::Post(router, EngineJSONServer::SetDataPackRoute.data(),            Pistache::Rest::Routes::bind(&EngineJSONServer::setDataPackProcessorr, server));
     Pistache::Rest::Routes::Post(router, EngineJSONServer::RunLoopStepRoute.data(),          Pistache::Rest::Routes::bind(&EngineJSONServer::runLoopStepHandler, server));
     Pistache::Rest::Routes::Post(router, EngineJSONServer::InitializeRoute.data(),           Pistache::Rest::Routes::bind(&EngineJSONServer::initializeHandler, server));
     Pistache::Rest::Routes::Post(router, EngineJSONServer::ResetRoute.data(),                Pistache::Rest::Routes::bind(&EngineJSONServer::resetHandler, server));
@@ -290,7 +290,7 @@ void EngineJSONServer::getDataPackDataHandler(const Pistache::Rest::Request &req
     res.send(Pistache::Http::Code::Ok, this->getDataPackData(jrequest).dump());
 }
 
-void EngineJSONServer::setDataPackHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
+void EngineJSONServer::setDataPackProcessorr(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 

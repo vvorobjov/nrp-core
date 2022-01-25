@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.0.0)
+set(NRP_VERSION 1.1.0)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -131,8 +131,30 @@ add_subdirectory(nrp_general_library)
 
 ##########################################
 ## NRP Supported payload libraries
+# Protobuf
 add_subdirectory(nrp_protobuf)
 
+# ROS
+set(NRP_CATKIN_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "Catkin packages containing msg definitions supported in nrp-core")
+if(NOT DEFINED ENABLE_ROS)
+    message(VERBOSE "ENABLE_ROS defaults to FULL")
+    set(ENABLE_ROS FULL)
+else()
+    message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
+endif()
+
+if(NOT ENABLE_ROS STREQUAL OFF)
+    message(STATUS "Building ROS msgs Python bindings")
+    add_definitions(-DROS_ON)
+    add_subdirectory(nrp_ros/nrp_ros_msgs)
+    add_subdirectory(nrp_ros/nrp_ros_proxy)
+else()
+    message(STATUS "Ros msgs python bindings will not be built")
+endif()
+
+##########################################
+## NRP Event Loop Library
+add_subdirectory(nrp_event_loop)
 
 ##########################################
 ## NRP Communication Protocols
@@ -176,13 +198,6 @@ else()
     message(VERBOSE "ENABLE_GAZEBO is set to ${ENABLE_GAZEBO}")
 endif()
 
-if(NOT DEFINED ENABLE_ROS)
-    message(VERBOSE "ENABLE_ROS defaults to FULL")
-    set(ENABLE_ROS FULL)
-else()
-    message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
-endif()
-
 
 ##########################################
 ## NRP Engines
@@ -208,14 +223,6 @@ endif()
 add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
-
-## ROS Messages
-if(NOT ENABLE_ROS STREQUAL OFF)
-    message(STATUS "Building ROS msgs Python bindings")
-    add_subdirectory(nrp_ros_msgs)
-else()
-    message(STATUS "ROS msgs Python bindings will not be built")
-endif()
 
 ##########################################
 ## NRP Simulation
@@ -253,7 +260,7 @@ add_custom_target(cppcheck
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND cppcheck --quiet --verbose --enable=all --suppressions-list=cppcheck/cppcheck_suppress.txt --project=compile_commands.json
     COMMENT "Running cppcheck"
-	DEPENDS cppcheck-base
+    DEPENDS cppcheck-base
     VERBATIM
 )
 
@@ -295,14 +302,14 @@ set(DOXYGEN_EXAMPLE_PATH
         "nrp_protobuf/engine_proto_defs"
         "nrp_general_library/CMakeLists.txt"
         "CMakeLists.txt"
-        "nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt"
+        "nrp_ros/nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt"
         "README.md")
 
 ## Example Engine. It is built to ensure the examples are not out of date in the documentation
 add_subdirectory("docs/example_engine")
 
 get_property(DOXYGEN_SOURCES GLOBAL PROPERTY DOXYGEN_SOURCE_LIST)
-doxygen_add_docs(doxygen_nrp
+doxygen_add_docs(nrp_doxygen
         ${DOXYGEN_SOURCES}
         "docs/main_page.dox"
 
@@ -351,5 +358,10 @@ doxygen_add_docs(doxygen_nrp
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
+
+        "docs/event_loop/event_loop.dox"
+        "docs/event_loop/computational_graph.dox"
+        "docs/event_loop/python_graph.dox"
+        "docs/event_loop/computational_graph_integration.dox"
 
         COMMENT "Generating documentation")

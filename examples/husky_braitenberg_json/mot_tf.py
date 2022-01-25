@@ -20,10 +20,10 @@ def transceiver_function(actors):
     front_right_j.data["velocity"] = (forward_vel + rot_vel) * 10
 
     print("------------------")
-    print("Left voltage:  " + str(back_left_j.data["velocity"]))
-    print("Right voltage: " + str(back_right_j.data["velocity"]))
-    print("Forward velocity: " + str(front_left_j.data["velocity"]))
-    print("Rotational vel:   " + str(front_right_j.data["velocity"]))
+    print("Left voltage:  " + str(left_voltage))
+    print("Right voltage: " + str(right_voltage))
+    print("Forward velocity: " + str(forward_vel))
+    print("Rotational vel:   " + str(rot_vel))
     # return []
     return [ back_left_j, back_right_j, front_left_j, front_right_j ]
 
