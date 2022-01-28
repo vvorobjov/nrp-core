@@ -1,0 +1,54 @@
+{"engine_datatransfer_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Data Transfer Base",
+    "description": "Data Transfer Engine configuration schema. Configuration for all DataTransfer engine implementations inherit from this one",
+    "$id": "#DataTransfer",
+    "definitions": {
+      "dumpItem":{
+        "type": "object",
+        "properties": {
+          "name":{
+            "type": "string",
+            "description": "Name of the datapack for transfer"
+          },
+          "network": {
+            "type": "boolean",
+            "default": false,
+            "description": "Trigger, if the datapack should be sent to network"
+          },
+          "file": {
+            "type": "boolean",
+            "default": false,
+            "description": "Trigger, if the datapack should be sent to file"
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    "allOf": [
+      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc" },
+      {
+        "properties": {
+          "MQTTBroker": {
+            "type": "string",
+            "default": "localhost:1883",
+            "description": "Address of the MQTT broker"
+          },
+          "dataDirectory": {
+            "type": "string",
+            "default": "data",
+            "description": "Path to the storage of file streams."
+          },
+          "dumps": {
+            "type": "array",
+            "items": { "$ref": "#/engine_datatransfer_base/definitions/dumpItem" },
+            "uniqueItems": true,
+            "default": [],
+            "description": "List of datapacks for transfer"
+          },
+          "EngineType": { "enum": ["datatransfer_grpc_engine"] }
+        }
+      }
+    ]
+  }
+}

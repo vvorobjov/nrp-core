@@ -88,6 +88,8 @@ list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
 
 
+
+
 ##########################################
 ## Log library
 find_package(spdlog 1.8.1 QUIET)
@@ -150,6 +152,19 @@ if(NOT ENABLE_ROS STREQUAL OFF)
     add_subdirectory(nrp_ros/nrp_ros_proxy)
 else()
     message(STATUS "Ros msgs python bindings will not be built")
+endif()
+
+#MQTT
+if(NOT DEFINED ENABLE_MQTT)
+    message(VERBOSE "ENABLE_MQTT defaults to FULL")
+    set(ENABLE_MQTT FULL)
+else()
+    message(VERBOSE "ENABLE_MQTT is set to ${ENABLE_MQTT}")
+endif()
+
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    message(STATUS "Building with MQTT support")
+    add_definitions(-DMQTT_ON)
 endif()
 
 ##########################################
@@ -223,6 +238,9 @@ endif()
 add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
+
+## Data Transfer Engine
+add_subdirectory("nrp_datatransfer_grpc_engine")
 
 ##########################################
 ## NRP Simulation
