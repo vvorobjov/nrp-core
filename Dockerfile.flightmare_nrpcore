@@ -1,0 +1,195 @@
+# Download base image ubuntu 20.04
+
+FROM nvidia/cudagl:11.0-base-ubuntu20.04
+
+ARG NRP_USER=nrpuser
+ARG NRP_GROUP=nrpgroup
+ARG UID=1000
+ARG GID=1000
+ARG HOME_PARENT_FOLDER=/home
+
+# Set environment
+
+ENV HOME ${HOME_PARENT_FOLDER}/${NRP_USER}
+ENV HOME_PARENT_FOLDER ${HOME_PARENT_FOLDER}
+ENV NRP_INSTALL_DIR ${HOME}/.local
+
+# Disable Prompt During Packages Installation
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# INSTALL sudo
+
+RUN apt update -y && apt-get install -y sudo
+
+ENV NVIDIA_DRIVER_CAPABILITIES compute,graphics,utility
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget
+
+# Install Vulkan SDK
+RUN wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | apt-key add - && \
+wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.1.121-bionic.list http://packages.lunarg.com/vulkan/1.1.121/lunarg-vulkan-1.1.121-bionic.list && \
+apt update && DEBIAN_FRONTEND=noninteractive apt install -y vulkan-sdk && apt upgrade -y && apt autoremove -y
+
+COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
+
+# Set NRP_USER user
+
+RUN mkdir -p ${HOME_PARENT_FOLDER} \
+    && groupadd --gid ${GID} ${NRP_GROUP} \
+    && useradd --home-dir ${HOME} --create-home --uid ${UID} --gid ${GID} --groups ${NRP_GROUP} -ms /bin/bash ${NRP_USER} \
+    && echo "${NRP_USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Set NRP_USER directories
+
+RUN mkdir -p \
+    ${NRP_INSTALL_DIR} \
+    && chown -R ${NRP_USER}:${NRP_GROUP} $HOME
+
+# Copy .bashrc for the NRP_USER
+
+COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/bashrc $HOME/.bashrc
+
+# Copy requirements files
+
+COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies ${HOME}/.dependencies
+
+# Install basic dependencies
+
+RUN apt-get update
+RUN apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.basic.txt  | tr "\n" " ")
+
+# Pistache REST Server
+
+RUN add-apt-repository ppa:pistache+team/unstable
+
+# Gazebo
+
+RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+RUN wget https://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+
+# ROS
+
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+
+# Install CLE dependenciesnrpuser
+
+RUN apt-get update
+RUN apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
+
+# Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
+
+RUN sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   lsb-release \
+   build-essential \
+   python3 python3-dev python3-pip \
+   cmake \
+   git \
+   vim \
+   ca-certificates \
+   libzmqpp-dev \
+   libopencv-dev \
+   gnupg2 \
+   && rm -rf /var/lib/apt/lists/*
+
+
+RUN /bin/bash -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
+    apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 
+
+#Installing ROS  noetic
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   ros-noetic-desktop-full 
+
+# Installing catkin tools
+RUN apt-get update && apt-get install -y python3-setuptools && pip3 install catkin-tools
+
+RUN apt-get install -y libgoogle-glog-dev protobuf-compiler ros-noetic-octomap-msgs ros-noetic-octomap-ros ros-noetic-joy python3-vcstool
+
+
+
+# Switch to NRP user
+
+USER ${NRP_USER}
+ENV USER ${NRP_USER}
+WORKDIR ${HOME}
+RUN echo "You run the Dockerfile.unity"
+RUN pip install grpcio-tools pytest docopt mpi4py
+RUN sudo apt-get install  -y python3-pip
+RUN sudo pip install catkin-tools
+
+
+# MQTT
+RUN git clone https://github.com/eclipse/paho.mqtt.c.git \
+    && cd paho.mqtt.c \
+    && git checkout v1.3.8 \
+    && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"\
+    && cmake --build build/ --target install \
+    && sudo ldconfig && cd .. && rm -rf paho.mqtt.c
+
+RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
+    && cd paho.mqtt.cpp \
+    && git checkout v1.2.0 \
+    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
+    && cmake --build build/ --target install \
+    && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
+
+
+
+ENV NRP /home/${USER}/.local/nrp
+# RUN echo "export NRP=/home/${USER}/.local/nrp" >> /home/${USER}/.bashrc
+RUN echo "export CC=/usr/bin/gcc-10" >> /home/${USER}/.bashrc
+RUN echo "export CXX=/usr/bin/g++-10" >> /home/${USER}/.bashrc
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/${USER}/.bashrc
+RUN echo "export CATKIN_WS=${HOME}/catkin_ws" >> /home/${USER}/.bashrc
+RUN echo "export ROS_PACKAGE_PATH=${CATKIN_WS}/src:${ROS_PACKAGE_PATH}" >> /home/${USER}/.bashrc
+RUN echo "export NRP=/home/${USER}/.local/nrp" >> /home/${USER}/.bashrc
+RUN echo "export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH" >> /home/${USER}/.bashrc
+RUN echo "export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH" >> /home/${USER}/.bashrc
+RUN echo "export PATH=$PATH:${NRP}/bin" >> /home/${USER}/.bashrc
+RUN echo ". /usr/share/gazebo-11/setup.sh" >> /home/${USER}/.bashrc
+RUN echo ". /opt/ros/noetic/setup.bash" >> /home/${USER}/.bashrc
+RUN echo ". ${CATKIN_WS}/devel/setup.bash" >> /home/${USER}/.bashrc
+RUN echo "source /opt/ros/noetic/setup.bash" >> /home/${USER}/.bashrc
+
+ADD nrp_core_installer.sh /home/nrpuser/   
+RUN sudo chown -R ${NRP_USER}:${NRP_GROUP} /home/nrpuser/nrp_core_installer.sh
+RUN /bin/bash -c "source /home/nrpuser/nrp_core_installer.sh"
+
+RUN mkdir -p ~/flightmare_ws/src
+WORKDIR /home/${USER}/flightmare_ws/
+
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd ~/flightmare_ws/; catkin config --init --mkdirs --extend /opt/ros/$ROS_DISTRO --merge-devel --cmake-args -DCMAKE_BUILD_TYPE=Release'
+
+
+WORKDIR /home/${USER}/flightmare_ws/src
+
+# RUN mkdir -p ~/flightmare_ws/src/flightmare
+ADD /flightmare /home/${USER}/flightmare_ws/src/flightmare/
+RUN sudo chown -R ${NRP_USER}:${NRP_GROUP} /home/${USER}/flightmare_ws/src/flightmare/
+# RUN git clone https://gitlab.com/erditum/flightmare.git \
+#     && echo "export FLIGHTMARE_PATH=/home/flightmare" >>  /home/${USER}/.bashrc \
+#     && .  /home/${USER}/.bashrc
+
+RUN catkin build
+
+
+
+
+# WORKDIR /home/${USER}
+# RUN git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
+# WORKDIR nrp-core
+# RUN git checkout event-loop-spinnaker
+# RUN mkdir build
+# WORKDIR build
+# RUN export CC=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10
+# RUN cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp -DENABLE_MQTT=OFF
+# RUN mkdir -p /home/${USER}/.local/nrp
+# RUN make
+
+
+
+# EOF
