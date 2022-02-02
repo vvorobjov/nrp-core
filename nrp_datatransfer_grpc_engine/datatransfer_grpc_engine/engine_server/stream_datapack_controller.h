@@ -123,6 +123,13 @@ class StreamDataPackController
          *
          * \param[in] data protobuf message to be formatted
          */
+        std::string fmtMessage(const google::protobuf::Message &data);
+
+        /*!
+         * \brief Function for formatting Dump::String protobuf to string
+         *
+         * \param[in] data protobuf message to be formatted
+         */
         std::string fmtString(const google::protobuf::Message &data);
 
         /*!
@@ -180,6 +187,11 @@ class StreamDataPackController
          * \brief the first message flag (`true` if the first message has already been processed)
          */
         bool _initialized;
+
+        /*!
+         * \brief true if this controller is receiving messages of type DataPackMessage
+         */
+        bool _isDataPackMessage = false;
 
         /*!
          * \brief formatting function that is used to convert protobuf to string, it is initialized when the first message is received

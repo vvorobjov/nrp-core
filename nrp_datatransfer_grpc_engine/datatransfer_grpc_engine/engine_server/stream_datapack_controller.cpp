@@ -26,6 +26,9 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "nrp_general_library/utils/time_utils.h"
 
+#include "proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/protobuf_utils.h"
+
 StreamDataPackController::StreamDataPackController( const std::string & datapackName,
                                                     const std::string & engineName)
     : _datapackName(datapackName)
@@ -76,35 +79,51 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
     std::string msg;
     if (!this->_initialized){
         msg = data.GetTypeName();
-        if (_fileDump){
-            if (msg == "Dump.String")
-            {
-                _fmtCallback = &StreamDataPackController::fmtString;
-            }
-            else if (msg == "Dump.ArrayFloat"){
-                _fmtCallback = &StreamDataPackController::fmtFloat;            
-            }
-            else {
-                NRPLogger::warn("Protobuf type {} is not supported for saving to file", msg);
-            }
-        }
+
 #ifdef MQTT_ON
+        // Stream msg type
         if (_netDump){
             this->_mqttTypeTopic->publish(msg);
         }
 #endif
+
+        // Check Engine.DataPackMessage case. Only relevant for file dump
+        if(msg == "Engine.DataPackMessage") {
+            this->_isDataPackMessage = true;
+            const auto& d = protobuf_utils::getDataFromDataPackMessage(
+                    dynamic_cast<const Engine::DataPackMessage &>(data));
+            msg = d.GetTypeName();
+        }
+
+        // Check message type case. Only relevant for file dump
+        if (_fileDump){
+            if (msg == "Dump.String") {
+                _fmtCallback = &StreamDataPackController::fmtString;
+            }
+            else if (msg == "Dump.ArrayFloat") {
+                _fmtCallback = &StreamDataPackController::fmtFloat;            
+            }
+            else {
+                _fmtCallback = &StreamDataPackController::fmtMessage;
+                // log msg field names
+                this->streamToFile(data, this->_fmtCallback);
+            }
+        }
+
         this->_initialized = true;
     }
-    // In order to access the data from the message, you need to cast it to the proper type
-    if (_fileDump){
-        this->streamToFile(data, this->_fmtCallback);
-    }
+
 #ifdef MQTT_ON
     if (_netDump){
         data.SerializeToString(&msg);
         _mqttDataTopic->publish(msg);
     }
 #endif
+
+    // In order to access the data from the message, you need to cast it to the proper type
+    if (_fileDump)
+        this->streamToFile(data, this->_fmtCallback);
+
 }
 
 google::protobuf::Message * StreamDataPackController::getDataPackInformation()
@@ -114,11 +133,32 @@ google::protobuf::Message * StreamDataPackController::getDataPackInformation()
 
 void StreamDataPackController::streamToFile(const google::protobuf::Message &data, std::string (StreamDataPackController::*fmtCallback) (const google::protobuf::Message&))
 {
+    std::string data_str;
+    if(this->_isDataPackMessage)
+        data_str = (this->*fmtCallback)(protobuf_utils::getDataFromDataPackMessage(
+                dynamic_cast<const Engine::DataPackMessage &>(data)));
+    else
+        data_str = (this->*fmtCallback)(data);
+
     _fileLogger->info(
         "{},{}",
         fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime),
-        (this->*fmtCallback)(data)
+        data_str
     );
+}
+
+std::string StreamDataPackController::fmtMessage(const google::protobuf::Message &data){
+
+    std::stringstream m_data;
+
+    auto n = data.GetDescriptor()->field_count();
+    for(int i=0;i<n;++i)
+        if(!this->_initialized)
+            m_data << data.GetDescriptor()->field(i)->name() << " ";
+        else
+            m_data << proto_field_ops::GetScalarFieldAsString(data, data.GetDescriptor()->field(i)) << " ";
+
+    return m_data.str();
 }
 
 std::string StreamDataPackController::fmtString(const google::protobuf::Message &data){

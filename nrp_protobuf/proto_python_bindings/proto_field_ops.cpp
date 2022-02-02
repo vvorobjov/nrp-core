@@ -61,7 +61,44 @@ namespace proto_field_ops {
                 break;
         }
 
-        throw NRPException::logCreate("Getting value from a field of non scalar type");
+        throw NRPException::logCreate("Getting value from a field of non scalar type or repeated");
+    }
+
+    // TODO: address code duplication
+    std::string GetScalarFieldAsString(const gpb::Message &m, const gpb::FieldDescriptor *field) {
+        switch(field->cpp_type()) {
+            case gpb::FieldDescriptor::CPPTYPE_INT32: // TYPE_INT32, TYPE_SINT32, TYPE_SFIXED32
+                return std::to_string(m.GetReflection()->GetInt32(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_INT64: // TYPE_INT64, TYPE_SINT64, TYPE_SFIXED64
+                return std::to_string(m.GetReflection()->GetInt64(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_UINT32: // TYPE_UINT32, TYPE_FIXED32
+                return std::to_string(m.GetReflection()->GetUInt32(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_UINT64: // TYPE_UINT64, TYPE_FIXED64
+                return std::to_string(m.GetReflection()->GetUInt64(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_DOUBLE: // TYPE_DOUBLE
+                return std::to_string(m.GetReflection()->GetDouble(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_FLOAT: // TYPE_FLOAT
+                return std::to_string(m.GetReflection()->GetFloat(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_BOOL: // TYPE_BOOL
+                return std::to_string(m.GetReflection()->GetBool(m, field));
+            case gpb::FieldDescriptor::CPPTYPE_ENUM: // TYPE_ENUM
+                return std::to_string(m.GetReflection()->GetEnumValue(m, field));
+            default:
+                break;
+        }
+
+        // CPPTYPE_STRING
+        switch(field->type()) {
+            case gpb::FieldDescriptor::TYPE_STRING:
+                return m.GetReflection()->GetString(m, field);
+            case gpb::FieldDescriptor::TYPE_BYTES: {
+                return m.GetReflection()->GetString(m, field);
+            }
+            default:
+                break;
+        }
+
+        throw NRPException::logCreate("Getting value from a field of non scalar type or repeated");
     }
 
     bpy::object GetRepeatedScalarField(gpb::Message &m, const gpb::FieldDescriptor *field, int index) {

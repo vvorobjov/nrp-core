@@ -27,7 +27,7 @@
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 class ${engine_name}GrpcServer
-    : public EngineGrpcServer<EngineTest::TestPayload>
+    : public EngineGrpcServer
 {
     public:
         ${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);

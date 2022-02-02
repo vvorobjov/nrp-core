@@ -73,7 +73,7 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
     }
     catch(std::exception &e)
     {
-        NRPLogger::critical("Connection to MQTT broker is failing! Network data streaming is unavailable.");
+        NRPLogger::warn("Connection to MQTT broker is failing! Network data streaming will be disabled.");
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -81,6 +81,8 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
 
     auto &dumps = data.at("dumps");
     std::string dataDir = std::string(data.at("dataDirectory")) + timeStamp;
+
+    this->_handleDataPackMessage = data.at("streamDataPackMessage") && mqttConnected;
 
     for(auto &dump : dumps){
         const auto datapackName = dump.at("name");

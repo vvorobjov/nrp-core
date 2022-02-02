@@ -38,7 +38,7 @@
  * \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
  */
 class NRPCommunicationController
-        : public EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>
+        : public EngineGrpcServer
 {
     public:
 

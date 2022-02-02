@@ -39,6 +39,11 @@
             "default": "data",
             "description": "Path to the storage of file streams."
           },
+          "streamDataPackMessage" : {
+            "type": "boolean",
+            "default": false,
+            "description": "if true the engine will stream DataPackMessages, if false it will stream their contained data"
+          },
           "dumps": {
             "type": "array",
             "items": { "$ref": "#/engine_datatransfer_base/definitions/dumpItem" },

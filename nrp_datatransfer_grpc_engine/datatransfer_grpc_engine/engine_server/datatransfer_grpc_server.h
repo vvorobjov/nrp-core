@@ -33,7 +33,7 @@
 #endif
 
 class DataTransferGrpcServer
-    : public EngineGrpcServer<Dump::String, Dump::ArrayFloat>
+    : public EngineGrpcServer
 {
     public:
         DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);

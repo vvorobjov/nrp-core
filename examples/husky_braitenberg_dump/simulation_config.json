@@ -21,10 +21,12 @@
 			"ServerAddress": "localhost:9006",
 			"MQTTBroker": "localhost:1883",
 			"dataDirectory": "data/test",
+			"streamDataPackMessage": true,
 			"dumps":[
 				{"name": "test_datapack1", "network": true, "file": true},
 				{"name": "test_datapack2", "network": true, "file": true},
-				{"name": "test_datapack3", "network": true, "file": true}
+				{"name": "test_datapack3", "network": true, "file": true},
+				{"name": "husky::back_left_joint", "network": true, "file": true}
 			]
 		}
 	],

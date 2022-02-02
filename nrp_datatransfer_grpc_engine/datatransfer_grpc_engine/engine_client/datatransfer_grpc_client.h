@@ -30,7 +30,7 @@
 #include "nrp_protobuf/dump_msgs.pb.h"
 
 class DataTransferEngineGrpcClient
-    : public EngineGrpcClient<DataTransferEngineGrpcClient, DataTransferGrpcConfigConst::EngineSchema, Dump::String, Dump::ArrayFloat>
+    : public EngineGrpcClient<DataTransferEngineGrpcClient, DataTransferGrpcConfigConst::EngineSchema>
 {
     public:
         DataTransferEngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);

@@ -5,8 +5,9 @@ from nrp_core.data.nrp_protobuf import DumpStringDataPack
 import numpy as np
 
 @EngineDataPack(keyword='actors_dump', id=DataPackIdentifier('actors', 'nest'))
+@EngineDataPack(keyword='joint_dump', id=DataPackIdentifier("husky::back_left_joint", "gazebo"))
 @TransceiverFunction("datatransfer_engine")
-def transceiver_function(actors_dump):
+def transceiver_function(actors_dump, joint_dump):
 
     # Streaming formatted string
     string_datapack = DumpStringDataPack("test_datapack1", "datatransfer_engine")
@@ -23,4 +24,6 @@ def transceiver_function(actors_dump):
     float_datapack1d = DumpArrayFloatDataPack("test_datapack3", "datatransfer_engine")
     float_datapack1d.data.float_stream.extend(rand_data)
 
-    return [float_datapack1d, float_datapack2d, string_datapack]
+    joint_dump.engine_name = "datatransfer_engine"
+
+    return [float_datapack1d, float_datapack2d, string_datapack, joint_dump]
