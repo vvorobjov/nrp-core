@@ -191,6 +191,7 @@ target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}
+        Boost::filesystem
         cxxopts::cxxopts
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator

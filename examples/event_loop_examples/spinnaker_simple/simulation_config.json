@@ -1,0 +1,8 @@
+{
+  "SimulationName": "test_sim",
+  "SimDescription": "Spinnaker test experiment",
+  "SimulationTimeout": 30,
+  "DataPackProcessor": "cg",
+  "SimulationLoop": "EventLoop",
+  "ComputationalGraph": ["cg_spinnaker.py"]
+}

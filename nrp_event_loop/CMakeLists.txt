@@ -54,6 +54,12 @@ set(ROS_SRC_FILES
         nrp_event_loop/nodes/ros/output_node.cpp
         )
 
+set(SPINNAKER_SRC_FILES
+        nrp_event_loop/nodes/spinnaker/input_node.cpp
+        nrp_event_loop/nodes/spinnaker/output_node.cpp
+        nrp_event_loop/nodes/spinnaker/spinnaker_proxy.cpp
+        )
+
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
         python_module/python_module.cpp
@@ -132,11 +138,12 @@ target_link_libraries(${LIBRARY_NAME}
         ${Boost_LIBRARIES}
         ${catkin_LIBRARIES}
 
+
     PRIVATE
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-    PUBLIC 
+    PUBLIC
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
@@ -174,6 +181,45 @@ if(ENABLE_ROS STREQUAL FULL)
             )
 endif()
 
+# SPINNAKER nodes target
+if(ENABLE_SPINNAKER STREQUAL FULL)
+    set(SPINNAKER_LIBRARY_NAME "${LIBRARY_NAME}SPINNAKERNodes")
+    add_library(${SPINNAKER_LIBRARY_NAME} STATIC ${SPINNAKER_SRC_FILES})
+    add_library(${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME} ALIAS ${SPINNAKER_LIBRARY_NAME})
+    target_compile_options(${SPINNAKER_LIBRARY_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+
+    find_package(SpyNNakerExternalDeviceLib QUIET)
+    if(NOT ${SpyNNakerExternalDeviceLib_FOUND})
+        message("Downloading SpyNNakerExternalDeviceLib")
+        FetchContent_Declare(SpyNNakerVisualiser
+                GIT_REPOSITORY https://github.com/SpiNNakerManchester/Visualiser)
+        FetchContent_MakeAvailable(SpyNNakerVisualiser)
+        add_custom_target(
+                sPyNNakerExternalDevices ALL
+                COMMAND make clean && make CPPFLAGS=-fPIC
+                WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+        include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+        add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)
+    endif()
+
+    target_include_directories(${SPINNAKER_LIBRARY_NAME} BEFORE
+            PUBLIC
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+
+            ${Boost_INCLUDE_DIRS}
+            )
+
+    target_link_libraries(${SPINNAKER_LIBRARY_NAME}
+            PUBLIC
+            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_GEN_LIB_TARGET}
+            ${Boost_LIBRARIES}
+            ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib/libspynnaker_external_device_lib.a
+            )
+endif()
+
 ##########################################
 ## Python Module
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
@@ -195,6 +241,13 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${ROS_LIBRARY_NAME}
+                )
+    endif()
+
+    if(ENABLE_SPINNAKER STREQUAL FULL)
+        target_link_libraries(${PYTHON_MODULE_NAME}
+                PUBLIC
+                ${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME}
                 )
     endif()
 endif()

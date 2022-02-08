@@ -69,6 +69,11 @@ class EventLoop
         void stopLoop();
 
         /*!
+         * \brief Shutdown loop
+         */
+        void shutdown();
+
+        /*!
          * \brief Returns true if the event loop is currently running, false otherwise
          */
         bool isRunning();
@@ -81,6 +86,11 @@ class EventLoop
     private:
 
         /*!
+         * \brief Initialize loop
+         */
+        void initialize();
+
+        /*!
          * \brief Run loop
          *
          * This method is kept private. 'runLoopAsync' should be used instead.
@@ -89,6 +99,8 @@ class EventLoop
 
         /*! \brief future state of the event loop thread run async  */
         std::future<void> _runFuture;
+        /*! \brief Configuration of the Computational Graph run by this EventLoop  */
+        nlohmann::json _graph_config;
         /*! \brief timestep of the event loop  */
         std::chrono::milliseconds _timestep;
         /*! \brief boolean variable used to step the event loop from parent thread */

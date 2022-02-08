@@ -47,7 +47,7 @@ public:
         _maxPortConnections(maxPortConnections)
     { }
 
-    void configure() override final
+    void configure() override
     {
         // Allocate space for _storedMsgs. It is assumed that no new ports are registered nor existing ones are subscribed after this call.
         // To enforce the latter ports can't be accessed or registered after the node is configured.

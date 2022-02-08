@@ -154,6 +154,21 @@ else()
     message(STATUS "Ros msgs python bindings will not be built")
 endif()
 
+# Spinnaker
+if(NOT DEFINED ENABLE_SPINNAKER)
+    message(VERBOSE "ENABLE_SPINNAKER defaults to FULL")
+    set(ENABLE_SPINNAKER FULL)
+else()
+    message(VERBOSE "ENABLE_SPINNAKER is set to ${ENABLE_SPINNAKER}")
+endif()
+
+if(ENABLE_SPINNAKER STREQUAL FULL)
+    message(STATUS "Building Spinnaker support")
+    add_definitions(-DSPINNAKER_ON)
+else()
+    message(STATUS "Spinnaker support will not be built")
+endif()
+
 #MQTT
 if(NOT DEFINED ENABLE_MQTT)
     message(VERBOSE "ENABLE_MQTT defaults to FULL")

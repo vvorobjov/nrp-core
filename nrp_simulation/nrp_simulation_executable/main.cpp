@@ -312,6 +312,7 @@ int main(int argc, char *argv[])
     if(eLoop) {
         bool runFTILoop = simConfig->at("EngineConfigs").size() > 0;
         runEventLoopMode(engines, processLaunchers, manager, eLoop, eTout, runFTILoop);
+        eLoop->shutdown();
     }
     else if(mode == "server")
     {

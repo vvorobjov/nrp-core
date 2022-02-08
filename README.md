@@ -38,6 +38,11 @@ Tell nrp-core where your catkin workspace is located: export a variable CATKIN_W
 # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
 sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
 
+# SpiNNaker
+Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
+Ensure that if using a virtualenv, this is active when running any SpiNNaker scripts.
+
+
 # MQTT Paho library, required by datatransfer engine for streaming data over network
 # More information on the project web site https://github.com/eclipse/paho.mqtt.cpp
 # If you do not want to add network data streaming feature, you can skip this step.

@@ -148,6 +148,66 @@ The decorator arguments are analogous to those in `@RosSubscriber`, but in this 
 It is not possible to subscribe and publish to the same topic from a graph. 
 Attempting to do this will result in having two nodes with the same id, which is not allowed.
 
+\section from_spinnaker_decorator @FromSpiNNaker
+
+This decorator creates an \ref spinnaker_nodes "InputSpiNNakerNode" and connects it to one of the decorated Functional Node inputs.
+It, therefore, creates a node and an edge in the Computational Graph.
+
+The code below connects `input_1` in `my_node` to the spiking output of a Population `pop_1` defined in SpiNNaker PyNN code.
+Note that the label of the Population is the import part, not the Python variable name.
+Also note that the Population must be activated for live output for this to be recieved by the function.
+
+\code{.py}
+import pyNN.spiNNaker as sim
+sim.setup(1.0)
+my_pop_1 = sim.Population(5, sim.IF_curr_exp(), label="pop_1")
+sim.external_devices.activate_live_output_for(my_pop_1, notify=False)
+
+@FromSpiNNaker(keyword='input_1', address='pop_1')
+@FunctionalNode(name="my_node", outputs=[])
+def my_function(input_1):
+    print(f"Spikes received from {input_1['label']} at time {input_1['time']}:"
+          f" {input_1['neuron_ids']}")
+    return []
+\endcode
+
+The decorator has four arguments:
+- `keyword`: specifies the name of the Functional Node input port that the decorator connects.
+- `address`: the SpiNNaker population to receive spikes or voltage from.
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+- `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
+
+For a complete example using Spinnaker node decorators see `examples/event_loop_examples/husky_braitenberg_spinnaker`.
+In this experiment can be seen how to use `@FromSpiNNaker` decorator to access neuron voltages from the Computational Graph.
+
+\section to_spinnaker_decorator @ToSpiNNaker
+
+This decorator creates an \ref spinnaker_nodes "OutputSpiNNakerNode" and connects it to one of the decorated Functional Node outputs.
+It, therefore, creates a node and an edge in the Computational Graph.
+
+The code below connects `output_1` in `my_node` to a SpikeInjector Population `pop_1` defined in SpiNNaker PyNN code.
+Note that the label of the Population is the import part, not the Python variable name.
+
+\code{.py}
+import pyNN.spiNNaker as sim
+sim.setup(1.0)
+my_pop_1 = sim.Population(5, sim.SpikeInjector(), label="pop_1")
+sim.external_devices.activate_live_output_for(my_pop_1, notify=False)
+
+@ToSpiNNaker(keyword='output_1', address='pop_1')
+@FunctionalNode(name="my_node", outputs=[output_1])
+def my_function():
+    out = NlohmannJson()
+    out['neuron_ids'] = list(range(5))
+    return [out]
+\endcode
+
+The decorator has two arguments:
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
+- `address`: the SpiNNaker population to send spikes to or update the rates of.
+
+In the aforementioned experiment located at `examples/event_loop_examples/husky_braitenberg_spinnaker` can be seen how to use `@ToSpiNNaker` decorator to control the rate of a SpikeSourcePoisson.
+
 \section python_graph_example Putting the Examples Together
 
 To conclude the overview of the available Computational Graph decorators lets put together the different examples shown in the sections above:
