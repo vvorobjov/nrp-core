@@ -352,6 +352,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/experiment_configuration/transceiver_function_schema.dox"
         "docs/experiment_configuration/simulation_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
+        "docs/experiment_configuration/process_launcher_schema.dox"
 
         "docs/engines/nrp_engines.dox"
         "docs/engines/engine_comm.dox"

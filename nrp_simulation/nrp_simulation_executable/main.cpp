@@ -207,17 +207,6 @@ int main(int argc, char *argv[])
     jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
     json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
 
-    // Start ROS node
-#ifdef ROS_ON
-    if(simConfig->at("StartROSNode")) {
-        ros::init(std::map<std::string, std::string>(), "nrp_core");
-        NRPROSProxy::resetInstance();
-    }
-#else
-    if(simConfig->at("StartROSNode"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
-#endif
-
     // Create default logger for the launcher
     auto logger = NRPLogger
     (
@@ -233,6 +222,57 @@ int main(int argc, char *argv[])
     );
 
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+
+    // Create Process launchers
+    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
+
+    // Create engine launchers
+    PluginManager pluginManager;
+    EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
+
+    loadEngines(pluginManager, engines, startParams);
+
+    // Load simulation
+
+    SimulationManager manager = SimulationManager::createFromConfig(simConfig);
+
+    if(manager.simulationConfig() == nullptr)
+    {
+        NRPLogger::error("Simulation configuration file not specified");
+        return 1;
+    }
+
+    // Start external processes
+    std::vector<std::unique_ptr<ProcessLauncherInterface>> extProcs;
+    for(auto &procConf : simConfig->at("ExternalProcesses")) {
+        auto procLaunch = processLaunchers->createProcessLauncher(simConfig->at("ProcessLauncherType"));
+
+        pid_t procPID;
+
+        try {
+            procPID = procLaunch->launchProcess(procConf);
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Error when launching process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+        }
+
+        if(procPID == 0)
+            throw NRPException::logCreate("Failed to launch process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+
+        extProcs.push_back(std::move(procLaunch));
+    }
+
+    // Start ROS node
+#ifdef ROS_ON
+    if(simConfig->at("StartROSNode")) {
+        ros::init(std::map<std::string, std::string>(), "nrp_core");
+        NRPROSProxy::resetInstance();
+    }
+#else
+    if(simConfig->at("StartROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
+#endif
 
     // Setup Python
     bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
@@ -263,25 +303,6 @@ int main(int argc, char *argv[])
         eLoop.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(eTstep),
                                   false, simConfig->at("StartROSNode")));
 
-    }
-
-    // Create Process launchers
-    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
-
-    // Create engine launchers
-    PluginManager pluginManager;
-    EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
-
-    loadEngines(pluginManager, engines, startParams);
-
-    // Load simulation
-
-    SimulationManager manager = SimulationManager::createFromConfig(simConfig);
-
-    if(manager.simulationConfig() == nullptr)
-    {
-        NRPLogger::error("Simulation configuration file not specified");
-        return 1;
     }
 
     // Run the simulation in the specified mode

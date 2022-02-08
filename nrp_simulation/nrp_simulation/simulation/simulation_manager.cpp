@@ -183,8 +183,9 @@ SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
 
     // Set default values
 
-    json_utils::set_default<std::vector<std::string>>(*config, "EngineConfigs", std::vector<std::string>());
-    json_utils::set_default<std::vector<std::string>>(*config, "DataPackProcessingFunctions", std::vector<std::string>());
+    json_utils::set_default<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());
+    json_utils::set_default<std::vector<nlohmann::json>>(*config, "ExternalProcesses", std::vector<nlohmann::json>());
+    json_utils::set_default<std::vector<nlohmann::json>>(*config, "DataPackProcessingFunctions", std::vector<nlohmann::json>());
     json_utils::set_default<std::vector<std::string>>(*config, "ComputationalGraph", std::vector<std::string>());
 
     return SimulationManager(config);

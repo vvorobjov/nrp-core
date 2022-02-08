@@ -13,5 +13,8 @@
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
+	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"],
+	"ExternalProcesses" : [
+		{"ProcCmd": "roslaunch husky_world.launch"}
+	]
 }
