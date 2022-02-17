@@ -392,6 +392,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
+        "docs/guides/troubleshooting.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"

@@ -1,0 +1,27 @@
+/*! \page guide_troubleshooting Troubleshooting guide
+
+\section guide_troubleshooting_gazebo_headless Running gazebo experiments on a headless machine
+
+If you are trying to run a gazebo experiment on a headless machine (e.g. a virtual machine),
+you are likely to encounter the following error:
+
+\code
+[Err] [CameraSensor.cc:125] Unable to create CameraSensor. Rendering is disabled.
+\endcode
+
+Gazebo needs a defined display to render images. To run on a headless machine, you can use `Xvfb`,
+which runs all graphical operations in virtual memory, without displaying anything on a screen.
+
+To install Xvfb on your machine:
+
+\code
+sudo apt install xvfb
+\endcode
+
+To run an experiment using Xvfb:
+
+\code
+xvfb-run NRPCoreSim -c simulation_config.json
+\endcode
+
+*/
