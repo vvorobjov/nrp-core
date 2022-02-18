@@ -179,7 +179,7 @@ class EngineJSONServer
          * \return Execution result
          */
         // TODO What is this function supposed to return?
-        virtual nlohmann::json setDataPackData(const nlohmann::json &reqData);
+        virtual void setDataPackData(const nlohmann::json &reqData);
 
     private:
         /*!
