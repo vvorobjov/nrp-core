@@ -69,6 +69,9 @@ pipeline {
         stage('Publishing dev docs') {
 
             // updates dev documentation
+            when {
+                expression { env.BRANCH_NAME == "development" }
+            }
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating dev documentation')
 
