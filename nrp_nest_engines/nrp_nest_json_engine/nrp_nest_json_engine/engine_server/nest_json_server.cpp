@@ -304,5 +304,4 @@ void NestJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
     PythonGILLock lock(this->_pyGILState, true);
     this->EngineJSONServer::setDataPackData(reqData);
-    //return this->EngineJSONServer::setDataPackData(reqData);
 }

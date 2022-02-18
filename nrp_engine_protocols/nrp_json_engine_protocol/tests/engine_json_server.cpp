@@ -101,26 +101,19 @@ TEST(EngineJSONServerTest, Functions)
     // Test setting empty data
     // The JSON object in the controller should not be updated
 
-    //auto retData
     server.setDataPackData(nlohmann::json());
     ASSERT_FALSE(dev1Ctrl.data().contains("data"));
-    //ASSERT_TRUE(retData.empty());
 
     // Test setting data for an unregistered datapack
     // The JSON object in the controller should not be updated
 
-    //retData =
     server.setDataPackData(nlohmann::json({{"fakeDataPack", {}}}));
     ASSERT_FALSE(dev1Ctrl.data().contains("data"));
-    //ASSERT_STREQ(retData.find("fakeDataPack")->get<std::string>().data(), "");
-    //ASSERT_EQ(retData.size(), 1);
 
     // Test setting data for a registered datapack
     // The JSON object in the controller should be updated
 
-    //retData
     server.setDataPackData(*data);
-    //ASSERT_EQ(retData.size(), 1);
     ASSERT_TRUE(dev1Ctrl.data().contains(datapackName));
     ASSERT_EQ(dev1Ctrl.data()[datapackName]["type"       ], JsonDataPack::getType());
     ASSERT_EQ(dev1Ctrl.data()[datapackName]["engine_name"], engineName);
@@ -180,9 +173,6 @@ TEST(EngineJSONServerTest, HttpRequests)
     nlohmann::json data;
     data.emplace("init", nlohmann::json());
     auto resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerInitializeRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), data.dump());
-    std::cout<<"Resp add "<<EngineJSONConfigConst::EngineServerInitializeRoute.data()<<std::endl;
-    std::cout<<"Resp code 1 "<<resp.code<<std::endl;
-    std::cout<<"Resp body 1 "<<resp.body<<std::endl;
     nlohmann::json retData = nlohmann::json::parse(resp.body);
     ASSERT_STREQ(retData["status"].get<std::string>().data(), "success");
 
@@ -197,21 +187,15 @@ TEST(EngineJSONServerTest, HttpRequests)
     auto request = nlohmann::json();
     request[datapackName] = {{"engine_name", engineName}, {"data", 2}};
     resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerSetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
-    std::cout<<"Resp add "<<EngineJSONConfigConst::EngineServerSetDataPacksRoute.data()<<std::endl;
-    std::cout<<"Resp code 2 "<<resp.code<<std::endl;
-    std::cout<<"Resp body 2 "<<resp.body<<std::endl;
-    //retData = nlohmann::json::parse(resp.body);
-    // DataPack name with no data should be returned as confirmation
-    //ASSERT_EQ(retData.size(), 1);
-    //ASSERT_EQ(retData[datapackName], "");
+    ASSERT_EQ(resp.code, 200);
+
+
 
     // Run get server command
     request.clear();
     request[datapackName] = {{"engine_name", engineName}};
     resp = RestClient::post(address + "/" + EngineJSONConfigConst::EngineServerGetDataPacksRoute.data(), EngineJSONConfigConst::EngineServerContentType.data(), request.dump());
     retData = nlohmann::json::parse(resp.body);
-    std::cout<<"Resp add "<<EngineJSONConfigConst::EngineServerGetDataPacksRoute.data()<<std::endl;
-    std::cout<<"Resp body 3 "<<resp.body<<std::endl;
     ASSERT_EQ(retData.size(), 1);
     ASSERT_TRUE(retData.contains(datapackName));
     ASSERT_EQ(retData[datapackName]["type"       ], JsonDataPack::getType());

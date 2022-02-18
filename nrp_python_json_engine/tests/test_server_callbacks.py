@@ -85,8 +85,6 @@ class TestServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_raise)
         self.assertRaisesRegex(Exception, "Initialization failed")
-        #self.assertRaises(Exception,server_callbacks.initialize(self.init_json_raise))
-        #self.assertEqual(result["Message"], "Initialization failed")
 
 
     def test_shutdown(self):

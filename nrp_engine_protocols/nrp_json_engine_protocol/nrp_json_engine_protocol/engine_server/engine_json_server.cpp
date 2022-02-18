@@ -230,12 +230,8 @@ void EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
     // Prevent other datapack reading/setting calls as well as loop execution
     EngineJSONServer::lock_t lock(this->_datapackLock);
 
-    //json jres;
-    int i=0;
-    std::cout<<"Resp code inside "<<i<<std::endl;
     for(nlohmann::json::const_iterator devDataIterator = reqData.begin(); devDataIterator != reqData.end(); ++devDataIterator)
     {
-        std::cout<<"Resp code inside "<<++i<<std::endl;
         const std::string &devName = EngineJSONServer::getIteratorKey(devDataIterator);
         const auto devInterface = this->_datapacksControllers.find(devName);
 
@@ -243,7 +239,6 @@ void EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
         {
             if(devInterface != this->_datapacksControllers.end())
                 devInterface->second->handleDataPackData(*devDataIterator);
-            //jres[devName] = "";
         }
         catch(std::exception &e)
         {
@@ -251,7 +246,6 @@ void EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
         }
     }
 
-    //return jres;
 }
 
 Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
@@ -313,7 +307,6 @@ void EngineJSONServer::setDataPackProcessorr(const Pistache::Rest::Request &req,
 
     try
     {
-        //res.send(Pistache::Http::Code::Ok, this->setDataPackData(jrequest).dump());
         this->setDataPackData(jrequest);
         res.send(Pistache::Http::Code::Ok, this->getDataPackData(jrequest).dump());
     }
