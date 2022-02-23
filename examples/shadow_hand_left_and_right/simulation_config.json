@@ -1,0 +1,31 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimulationTimeout": 20,
+	"SimulationTimestep": 0.002,
+	"EngineConfigs": [
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "shadowhand_world.sdf",
+			"EngineTimestep": 0.001,
+			"EngineProcStartParams": ["--verbose"]
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "tvb",
+			"EngineTimestep": 0.001,
+			"PythonFileName": "tvb_engine.py"
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "send_position",
+			"FileName": "send_position.py"
+		},
+		{
+			"Name": "get_position",
+			"FileName": "get_position.py"
+		}
+	]
+}

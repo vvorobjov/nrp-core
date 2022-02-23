@@ -1,0 +1,79 @@
+<sdf version="1.4">
+  <world name="default">
+  <scene>
+    <shadows>0</shadows>
+  </scene>
+
+  <gui>
+      <camera name="user_camera">
+        <pose>0.73 0.04 1.6 0 1.22 3.108</pose>
+      </camera>
+    </gui>  
+
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <!-- <real_time_update_rate>0</real_time_update_rate> -->
+      <real_time_update_rate>100</real_time_update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>90</iters>
+          <sor>1.4</sor>
+          <!-- <thread_position_correction>1</thread_position_correction> -->
+        </solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>1</erp>
+          <contact_max_correcting_vel>0</contact_max_correcting_vel>
+          <contact_surface_layer>0</contact_surface_layer>
+        </constraints>
+      </ode>
+
+      <bullet>
+        <solver>
+          <type>quick</type>
+          <iters>90</iters>
+          <sor>1.4</sor>
+          <!-- <thread_position_correction>1</thread_position_correction> -->
+        </solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>1</erp>
+          <contact_max_correcting_vel>0</contact_max_correcting_vel>
+          <contact_surface_layer>0</contact_surface_layer>
+        </constraints>
+
+      </bullet>
+    </physics>
+
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+
+    <include>
+      <pose>0.65 0.14 0.8 -1.57 -1.57 1.57</pose>
+      <uri>model://shadow_hand_right</uri>
+    </include>
+
+
+    <include>
+      <pose>0.65 -0.14 0.8 1.57 1.57 -1.57</pose>
+      <uri>model://shadow_hand_left</uri>
+    </include>
+
+
+     <include>
+      <pose>0 0 0 0 0 0</pose>
+      <uri>model://table_gray</uri>
+    </include>
+
+  <plugin name='nrp_world' filename='NRPGazeboGrpcWorldPlugin.so'/>
+  </world>
+</sdf>
