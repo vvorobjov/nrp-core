@@ -34,6 +34,7 @@
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/protobuf_utils.h"
 
 
 using ProtoDataPackController = DataPackController<google::protobuf::Message>;
@@ -47,7 +48,6 @@ using EngineGrpc::EngineGrpcService;
  * as middleware. All RPC services are implemented. Derived classes are responsible
  * for implementing simulation initialization, shutdown and run step methods.
  */
-template<class ...MSG_TYPES>
 class EngineGrpcServer : public EngineGrpcService::Service
 {
     public:
@@ -57,9 +57,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
         EngineGrpcServer(const std::string &address)
                 : EngineGrpcServer(address, "EngineGrpcServer", "")
-        {
-            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
-        }
+        { }
 
         /*!
          * \brief Constructor
@@ -72,8 +70,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
         EngineGrpcServer(const std::string serverAddress, const std::string &engineName, const std::string &/*registrationAddress*/)
                 : _loggerCfg(engineName), _engineName(engineName)
         {
-            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
-
             this->_serverAddress   = serverAddress;
             this->_isServerRunning = false;
 
@@ -154,7 +150,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
         void registerDataPack(const std::string & datapackName, ProtoDataPackController *interface)
         {
             EngineGrpcServer::lock_t lock(this->_datapackLock);
-            this->_datapacksControllers.emplace(datapackName, interface);
+            this->registerDataPackNoLock(datapackName, interface);
         }
 
         void registerDataPackNoLock(const std::string & datapackName, ProtoDataPackController *interface)
@@ -170,6 +166,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
     protected:
         mutex_t                       _datapackLock;
+
         void clearRegisteredDataPacks()
         {
             // TODO Check if it's true
@@ -178,6 +175,11 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
             this->_datapacksControllers.clear();
         }
+
+        /*!
+        * \brief If true controllers are sent incoming DataPackMessages, if false only the contained data
+        */
+        bool _handleDataPackMessage = false;
 
     private:
 
@@ -265,7 +267,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
                 // Run engine-specific initialization function
-
                 this->initialize(requestJson, lock);
             }
             catch(const std::exception &e)
@@ -439,15 +440,12 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 const auto &r = data.request(i);
                 const auto &devInterface = this->_datapacksControllers.find(r.datapackid().datapackname());
 
-                if(devInterface != _datapacksControllers.end())
-                {
-                    const google::protobuf::OneofDescriptor *fieldOne = r.GetDescriptor()->FindOneofByName("data");
-                    const google::protobuf::FieldDescriptor *field = r.GetReflection()->GetOneofFieldDescriptor(r,fieldOne);
-                    if(!field) {
-                        const auto errorMessage = "DataPack " + r.datapackid().datapackname() + " has been sent with no data";
-                        throw std::invalid_argument(errorMessage);
-                    }
-                    devInterface->second->handleDataPackData(r.GetReflection()->GetMessage(r,field));
+                if(devInterface != _datapacksControllers.end()) {
+                    if(_handleDataPackMessage)
+                        devInterface->second->handleDataPackData(r);
+                    else
+                        devInterface->second->handleDataPackData(
+                                protobuf_utils::getDataFromDataPackMessage(r));
                 }
                 else
                 {
@@ -472,7 +470,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                     // ask controller to fetch datapack data. nullptr means there is no new data available
                     auto d = devInterface->second->getDataPackInformation();
                     if(d != nullptr)
-                        setDataPackMessageData<MSG_TYPES...>(request.datapackid(i).datapackname(), d, r);
+                        protobuf_utils::setDataPackMessageData(d, r);
                 }
                 else
                 {
@@ -480,32 +478,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
                     throw std::invalid_argument(errorMessage);
                 }
             }
-        }
-
-        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        void setDataPackMessageData(const std::string &dev_name, google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
-        {
-            if(dynamic_cast< MSG_TYPE *>(dev_data)) {
-                auto d = dynamic_cast< MSG_TYPE *>(dev_data);
-                auto n = m->GetDescriptor()->field_count();
-                auto datapack_type = d->GetDescriptor()->full_name();
-
-                for(int i=0;i<n;++i) {
-                    auto field_type = m->GetDescriptor()->field(i)->message_type()->full_name();
-                    if (datapack_type == field_type) {
-                        m->GetReflection()->SetAllocatedMessage(m, d, m->GetDescriptor()->field(i));
-                        return;
-                    }
-                }
-            }
-
-            if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-                return setDataPackMessageData<REMAINING_MSG_TYPES...>(dev_name, dev_data, m);
-            else {
-                const auto errorMessage = "DataPack " + dev_name + " has type not supported by engine " + this->_engineName;
-                throw std::invalid_argument(errorMessage);
-            }
-
         }
 
         /*!

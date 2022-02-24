@@ -36,6 +36,11 @@
       "items": {"$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase"},
       "description": "Engines that will be started in the experiment"
     },
+    "ExternalProcesses" : {
+      "type" : "array",
+      "items": {"$ref": "https://neurorobotics.net/process_launcher.json#ProcessLauncher"},
+      "description": "Additional processes that will be started in the experiment"
+    },
     "DataPackProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},

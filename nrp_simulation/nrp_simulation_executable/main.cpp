@@ -39,9 +39,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
-static void loadPlugins(const char *libName, PluginManager &pluginManager, const EngineLauncherManagerSharedPtr &engines)
+static void loadPlugins(const char *libName,
+                        PluginManager &pluginManager,
+                        const EngineLauncherManagerSharedPtr &engines,
+                        const std::set<std::string>& engineTypes)
 {
     NRP_LOGGER_TRACE("{} called [ libName: {} ]", __FUNCTION__, libName);
 
@@ -54,26 +58,30 @@ static void loadPlugins(const char *libName, PluginManager &pluginManager, const
     NRPLogger::info("Plugin {} is loaded", libName);
 
     // Register launcher
-    engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
-    NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    if(engineTypes.count(engineLauncher->engineType())) {
+        engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
+        NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    }
 }
 
 
 static void loadEngines(PluginManager & pluginManager,
                         EngineLauncherManagerSharedPtr & engines,
-                        const cxxopts::ParseResult & startParams)
+                        const cxxopts::ParseResult & startParams,
+                        const std::set<std::string>& engineTypes)
 {
     // Add plugin path to LD_LIBRARY_PATH
     pluginManager.addPluginPath(NRP_PLUGIN_INSTALL_DIR);
 
-    // Iterate over default plugin libs, separated by ' '
-    const auto defaultLaunchers = NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS;
-    for(const auto &libName : defaultLaunchers)
-        loadPlugins(libName, pluginManager, engines);
+    // If user specified a list of plugins use it, otherwise load them all
+    auto pluginsList = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
+    if(pluginsList.empty())
+        pluginsList = NRP_ENGINE_LAUNCHERS;
 
-    auto pluginsParam = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
-    for(const auto &libName : pluginsParam)
-        loadPlugins(libName.c_str(), pluginManager, engines);
+    // Iterate over plugin libs, separated by ' '
+    for(const auto &libName : pluginsList)
+        if(std::strcmp(libName.c_str(), "") != 0)
+            loadPlugins(libName.c_str(), pluginManager, engines, engineTypes);
 }
 
 
@@ -207,17 +215,6 @@ int main(int argc, char *argv[])
     jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
     json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
 
-    // Start ROS node
-#ifdef ROS_ON
-    if(simConfig->at("StartROSNode")) {
-        ros::init(std::map<std::string, std::string>(), "nrp_core");
-        NRPROSProxy::resetInstance();
-    }
-#else
-    if(simConfig->at("StartROSNode"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
-#endif
-
     // Create default logger for the launcher
     auto logger = NRPLogger
     (
@@ -233,6 +230,63 @@ int main(int argc, char *argv[])
     );
 
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+
+    // Create Process launchers
+    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
+
+    // Create engine launchers
+    PluginManager pluginManager;
+    EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
+
+    std::set<std::string> engineTypes;
+    if(simConfig->contains("EngineConfigs"))
+        for(auto &engineConfig : simConfig->at("EngineConfigs"))
+            engineTypes.insert(engineConfig.at("EngineType").get<std::string>());
+
+
+    loadEngines(pluginManager, engines, startParams, engineTypes);
+
+    // Load simulation
+
+    SimulationManager manager = SimulationManager::createFromConfig(simConfig);
+
+    if(manager.simulationConfig() == nullptr)
+    {
+        NRPLogger::error("Simulation configuration file not specified");
+        return 1;
+    }
+
+    // Start external processes
+    std::vector<std::unique_ptr<ProcessLauncherInterface>> extProcs;
+    for(auto &procConf : simConfig->at("ExternalProcesses")) {
+        auto procLaunch = processLaunchers->createProcessLauncher(simConfig->at("ProcessLauncherType"));
+
+        pid_t procPID;
+
+        try {
+            procPID = procLaunch->launchProcess(procConf);
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Error when launching process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+        }
+
+        if(procPID == 0)
+            throw NRPException::logCreate("Failed to launch process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+
+        extProcs.push_back(std::move(procLaunch));
+    }
+
+    // Start ROS node
+#ifdef ROS_ON
+    if(simConfig->at("StartROSNode")) {
+        ros::init(std::map<std::string, std::string>(), "nrp_core");
+        NRPROSProxy::resetInstance();
+    }
+#else
+    if(simConfig->at("StartROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
+#endif
 
     // Setup Python
     bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
@@ -265,25 +319,6 @@ int main(int argc, char *argv[])
 
     }
 
-    // Create Process launchers
-    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
-
-    // Create engine launchers
-    PluginManager pluginManager;
-    EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
-
-    loadEngines(pluginManager, engines, startParams);
-
-    // Load simulation
-
-    SimulationManager manager = SimulationManager::createFromConfig(simConfig);
-
-    if(manager.simulationConfig() == nullptr)
-    {
-        NRPLogger::error("Simulation configuration file not specified");
-        return 1;
-    }
-
     // Run the simulation in the specified mode
 
     const auto mode = startParams[SimulationParams::ParamMode.data()].as<std::string>();
@@ -291,6 +326,7 @@ int main(int argc, char *argv[])
     if(eLoop) {
         bool runFTILoop = simConfig->at("EngineConfigs").size() > 0;
         runEventLoopMode(engines, processLaunchers, manager, eLoop, eTout, runFTILoop);
+        eLoop->shutdown();
     }
     else if(mode == "server")
     {

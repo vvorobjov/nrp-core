@@ -99,7 +99,9 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
         {
             lock.lock();
 
-            const auto errMsg = "Couldn't load world";
+            const auto errMsg = "Gazebo Engine was unable to load world file \"" + data.at("GazeboWorldFile").get<std::string>() +
+                    "\" before the specified timeout of " + std::to_string(data.at("WorldLoadTime").get<int>()) +
+                    " seconds. Check for gazebo errors in the output log or set a larger timeout if needed";
             throw std::runtime_error(errMsg);
         }
     }
@@ -135,9 +137,9 @@ void NRPCommunicationController::shutdown(const json&)
 }
 
 NRPCommunicationController::NRPCommunicationController(const std::string &address)
-    : EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>(address)
+    : EngineGrpcServer(address)
 {}
 
 NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
-    : EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>(serverURL, engineName, registrationURL)
+    : EngineGrpcServer(serverURL, engineName, registrationURL)
 {}

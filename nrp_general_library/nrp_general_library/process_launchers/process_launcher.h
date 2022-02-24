@@ -26,6 +26,7 @@
 #include "nrp_general_library/utils/fixed_string.h"
 #include "nrp_general_library/utils/ptr_templates.h"
 
+#include "nrp_general_library/utils/json_schema_utils.h"
 
 /*!
  * \brief Functions for all process launchers
@@ -53,31 +54,30 @@ class ProcessLauncherInterface
         virtual ProcessLauncherInterface::unique_ptr createLauncher() = 0;
 
         /*!
-         * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
-         * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+         * \brief Fork a new process. Will read environment variables and start params from procConfig
+         * \param procConfig Process Configuration. Env variables and start params take precedence over envParams and startParams
          * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
          * \param startParams Additional Start parameters
          * \param appendParentEnv Should parent env variables be appended to child process
          * \return Returns Process ID of child process on success
          */
-        virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
+        virtual pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) = 0;
         /*!
-         * \brief Stop a running engine process
+         * \brief Stop a running process
          * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinitely
          * \return Returns child PID on success, negative value on error
          */
-        virtual pid_t stopEngineProcess(unsigned int killWait) = 0;
+        virtual pid_t stopProcess(unsigned int killWait) = 0;
 
         /*!
-         * \brief Get the current engine process status. If status cannot be retrieved, return ENGINE_RUNNING_STATUS::UNKNOWN
+         * \brief Get the current process status. If status cannot be retrieved, return ENGINE_RUNNING_STATUS::UNKNOWN
          * \return Returns status as enum ProcessLauncherInterface::ENGINE_RUNNING_STATUS
          */
         virtual ENGINE_RUNNING_STATUS getProcessStatus()
         {   return this->_launchCmd ? this->_launchCmd->getProcessStatus() : ENGINE_RUNNING_STATUS::UNKNOWN;    }
 
         /*!
-         * \brief Get Launch Command. If launchEngineProcess has not yet been called, return nullptr
+         * \brief Get Launch Command. If launchProcess has not yet been called, return nullptr
          */
         LaunchCommandInterface *launchCommand() const;
 
@@ -128,18 +128,22 @@ class ProcessLauncher
         std::string launcherName() const override final
         {   return std::string(LauncherType);   }
 
-        pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) override final
+        pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) override final
         {
-            if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
-            {   throw noLauncherFound(engineConfig.at("EngineLaunchCommand"));  }
+            json_utils::validate_json(procConfig, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
 
-            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(engineConfig.at("EngineLaunchCommand"));
-            return this->_launchCmd->launchEngineProcess(engineConfig, envParams, startParams,appendParentEnv);
+            if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
+            {   throw noLauncherFound(procConfig.at("LaunchCommand"));  }
+
+            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(procConfig.at("LaunchCommand"));
+            return this->_launchCmd->launchProcess(procConfig.at("ProcCmd"),
+                                                   procConfig.contains("ProcEnvParams") ? procConfig.at("ProcEnvParams").get<std::vector<std::string>>() : std::vector<std::string>(),
+                                                   procConfig.contains("ProcStartParams") ? procConfig.at("ProcStartParams").get<std::vector<std::string>>() : std::vector<std::string>(),
+                                                           appendParentEnv);
         }
 
-        pid_t stopEngineProcess(unsigned int killWait) override final
-        {   return this->_launchCmd->stopEngineProcess(killWait);   }
+        pid_t stopProcess(unsigned int killWait) override final
+        {   return this->_launchCmd->stopProcess(killWait);   }
 
     private:
         template<class LAUNCH_CMD, class ...REST>

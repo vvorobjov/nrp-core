@@ -34,6 +34,6 @@
 /*!
  * \brief Engine Launcher plugins that should be added to simulation by default
  */
-#define NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS {"@NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS_STR@"}
+#define NRP_ENGINE_LAUNCHERS {"@NRP_ENGINE_LAUNCHERS_STR@"}
 
 #endif // CMAKE_CONF_H

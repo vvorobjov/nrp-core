@@ -9,6 +9,11 @@
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
 
+#ifdef SPINNAKER_ON
+#include "nrp_event_loop/nodes/spinnaker/input_node.h"
+#include "nrp_event_loop/nodes/spinnaker/output_node.h"
+#endif
+
 #ifdef ROS_ON
 #include "nrp_event_loop/nodes/ros/ros_edge_factory.h"
 #endif
@@ -90,6 +95,7 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
     bpy::class_< OutputEngineEdge >("ToEngine", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
             .def("__call__", &OutputEngineEdge::pySetup);
 
+
 #ifdef ROS_ON
     bpy::class_< RosEdgeFactory >("RosSubscriber", bpy::init<const std::string &, const std::string &,
                                   const bpy::object &, InputNodePolicies::MsgPublishPolicy, InputNodePolicies::MsgCachePolicy>(
@@ -102,4 +108,15 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
             .def("__call__", &RosEdgeFactoryOutput::pySetupSelector);
 #endif
 
+#ifdef SPINNAKER_ON
+    bpy::class_< InputSpinnakerEdge >("FromSpinnaker", bpy::init<const std::string &, const std::string &,
+            InputNodePolicies::MsgPublishPolicy, InputNodePolicies::MsgCachePolicy>(
+                    (bpy::arg("keyword"), bpy::arg("address"),
+                            bpy::arg("publish_policy") =  InputNodePolicies::LAST,
+                            bpy::arg("cache_policy") =  InputNodePolicies::KEEP_CACHE) ))
+            .def("__call__", &InputSpinnakerEdge::pySetup);
+
+    bpy::class_< OutputSpinnakerEdge >("ToSpinnaker", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
+            .def("__call__", &OutputSpinnakerEdge::pySetup);
+#endif
 }

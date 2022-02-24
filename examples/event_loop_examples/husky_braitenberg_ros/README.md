@@ -6,5 +6,4 @@ Steps to start the experiment:
   2. build your catkin workspace and make the built file `${CATKIN_WS}/devel/lib/libhusky_gazebo_plugins.so`, being `${CATKIN_WS}` the path to your catkin workspace, available to gazebo by placing it in a folder in the `GAZEBO_PLUGIN_PATH` env variable.
   3. setup your catkin workspace`source ${CATKIN_WS}/devel/setup.bash`.
 2. Edit the file `${HOME}/.gazebo/models/virtual_room/virtual_room.sdf` and change the material of `right_vr_screen` model from `BlueGlow` to `RedGlow`. This step is optional. Only required to check how the robot moves towards the red screen.
-3. From the experiment folder execute `roslaunch husky_world.launch`. This will start gazebo, which in this case is not handled by NRPCoreSim.
 4. Start the experiment normally with NRPCoreSim.

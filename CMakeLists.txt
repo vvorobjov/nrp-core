@@ -88,6 +88,8 @@ list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
 
 
+
+
 ##########################################
 ## Log library
 find_package(spdlog 1.8.1 QUIET)
@@ -152,6 +154,34 @@ else()
     message(STATUS "Ros msgs python bindings will not be built")
 endif()
 
+# Spinnaker
+if(NOT DEFINED ENABLE_SPINNAKER)
+    message(VERBOSE "ENABLE_SPINNAKER defaults to FULL")
+    set(ENABLE_SPINNAKER FULL)
+else()
+    message(VERBOSE "ENABLE_SPINNAKER is set to ${ENABLE_SPINNAKER}")
+endif()
+
+if(ENABLE_SPINNAKER STREQUAL FULL)
+    message(STATUS "Building Spinnaker support")
+    add_definitions(-DSPINNAKER_ON)
+else()
+    message(STATUS "Spinnaker support will not be built")
+endif()
+
+#MQTT
+if(NOT DEFINED ENABLE_MQTT)
+    message(VERBOSE "ENABLE_MQTT defaults to FULL")
+    set(ENABLE_MQTT FULL)
+else()
+    message(VERBOSE "ENABLE_MQTT is set to ${ENABLE_MQTT}")
+endif()
+
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    message(STATUS "Building with MQTT support")
+    add_definitions(-DMQTT_ON)
+endif()
+
 ##########################################
 ## NRP Event Loop Library
 add_subdirectory(nrp_event_loop)
@@ -201,6 +231,8 @@ endif()
 
 ##########################################
 ## NRP Engines
+set(ENV{NRP_ENGINE_LAUNCHERS} ""
+        CACHE STRING "Default engines which will always be available in the NRP simulation")
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
@@ -224,10 +256,11 @@ add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
 
+## Data Transfer Engine
+add_subdirectory("nrp_datatransfer_grpc_engine")
+
 ##########################################
 ## NRP Simulation
-set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
-    CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
@@ -334,6 +367,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/experiment_configuration/transceiver_function_schema.dox"
         "docs/experiment_configuration/simulation_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
+        "docs/experiment_configuration/process_launcher_schema.dox"
 
         "docs/engines/nrp_engines.dox"
         "docs/engines/engine_comm.dox"
@@ -358,6 +392,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
+        "docs/guides/troubleshooting.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"

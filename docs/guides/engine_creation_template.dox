@@ -72,7 +72,7 @@ In order to verify that the newly created engine works, you can run the example 
 
 \code{.sh}
 cd ../test_grpc_engine/example_experiment
-NRPCoreSim -c simulation_config.json -p "NRPTestGrpcEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 \subsection engine_creation_template_script_json Generating and compiling code for JSON engine

@@ -79,7 +79,7 @@ TEST(EventLoop, EVENT_LOOP) {
     e_l.runLoopAsync(std::chrono::seconds(1));
     e_l.waitForLoopEnd();
     time_lapse = std::chrono::steady_clock::now() - now;
-    ASSERT_TRUE(time_lapse.count() >= 1000000000 && time_lapse.count() < 1100000000);
+    ASSERT_TRUE(time_lapse.count() >= 1000000000);
 }
 
 // EOF

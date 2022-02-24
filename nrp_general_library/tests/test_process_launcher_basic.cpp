@@ -45,14 +45,14 @@ TEST(ProcessLauncherBasicTest, TestLaunch)
     std::vector<std::string> envVars;
     envVars.push_back(TEST_PROC_ENV_VAR_NAME "=" TEST_PROC_ENV_VAR_VAL);
 
-    nlohmann::json config = R"({"EngineName" : "test_engine", "EngineType" : "test_engine"})"_json;
-    json_utils::validate_json(config, "https://neurorobotics.net/engines/engine_base.json#EngineBase");
-
-    config["EngineProcCmd"] = TEST_NRP_PROCESS_EXEC;
-
+    nlohmann::json config;
+    config["ProcCmd"] = TEST_NRP_PROCESS_EXEC;
+    config["ProcStartParams"] = startParams;
+    config["ProcEnvParams"] = envVars;
+    json_utils::validate_json(config, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
 
     // Fork engine process
-    ASSERT_GE(launcher.launchEngineProcess(config, envVars, startParams), 0);
+    ASSERT_GE(launcher.launchProcess(config), 0);
 
     pCommCtP.closeWrite();
     pCommPtC.closeRead();
@@ -69,7 +69,7 @@ TEST(ProcessLauncherBasicTest, TestLaunch)
     ASSERT_STREQ(readDat, TEST_PROC_ENV_VAR_VAL);
 
     // Stop engine
-    ASSERT_LE(launcher.stopEngineProcess(5), 0);
+    ASSERT_LE(launcher.stopProcess(5), 0);
 
     ASSERT_EQ(pCommCtP.readP(readDat, sizeof(TEST_PROC_STR_SIGTERM), 5, 1), sizeof(TEST_PROC_STR_SIGTERM));
     ASSERT_STREQ(readDat, TEST_PROC_STR_SIGTERM);
@@ -81,23 +81,24 @@ TEST(ProcessLauncherBasicTest, TestEmptyLaunchCommand)
 
     ProcessLauncherBasic launcher;
 
-    nlohmann::json config = R"({"EngineName" : "test_engine",
-                                "EngineType" : "test_engine",
-                                "EngineLaunchCommand": "EmptyLaunchCommand"})"_json;
-
-    json_utils::validate_json(config, "https://neurorobotics.net/engines/engine_base.json#EngineBase");
-
     std::vector<std::string> emptyVector;
     auto & envVars = emptyVector;
     auto & startParams = emptyVector;
 
-    // the launching of an Engine with a Empty launch command returns -1
-    ASSERT_GE(launcher.launchEngineProcess(config, startParams, envVars), -1);
+    nlohmann::json config;
+    config["ProcCmd"] = "";
+    config["ProcStartParams"] = startParams;
+    config["ProcEnvParams"] = envVars;
+    config["LaunchCommand"] = "EmptyLaunchCommand";
+    json_utils::validate_json(config, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+
+    // the launching of an Engine with an Empty launch command returns -1
+    ASSERT_GE(launcher.launchProcess(config), -1);
 
     // the RUNNING_STATUS an Empty launch command process is always UNKNOWN
     ASSERT_EQ(launcher.getProcessStatus(), LaunchCommandInterface::ENGINE_RUNNING_STATUS::UNKNOWN);
 
     // stop must return 0
-    ASSERT_EQ(launcher.stopEngineProcess(42), 0);
+    ASSERT_EQ(launcher.stopProcess(42), 0);
 
 }

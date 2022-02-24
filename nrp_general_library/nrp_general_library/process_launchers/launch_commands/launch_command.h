@@ -52,13 +52,13 @@ class LaunchCommandInterface
          * additional strings defined in envParams and startParams before starting the Engine specified in
          * engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child. If set to false, scrub the
          * environment before continuing
-         * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+         * \param procCmd Process command. Env variables and start params take precedence over envParams and startParams
          * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
          * \param startParams Additional Start parameters
          * \param appendParentEnv Should parent env variables be appended to child process
          * \return Returns PID of child process on success
          */
-        virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+        virtual pid_t launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
                                           const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
 
 
@@ -67,7 +67,7 @@ class LaunchCommandInterface
          * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinetly
          * \return Returns 0 on success, negative value on error
          */
-        virtual pid_t stopEngineProcess(unsigned int killWait) = 0;
+        virtual pid_t stopProcess(unsigned int killWait) = 0;
 
         /*!
          * \brief Get the current engine process status. If status cannot be retrieved, return ENGINE_RUNNING_STATUS::UNKNOWN

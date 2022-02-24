@@ -30,24 +30,14 @@
 #include "nrp_event_loop/utils/graph_utils.h"
 
 EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, bool ownGIL, bool spinROS) :
+    _graph_config(graph_config),
     _timestep(timestep),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
-{
-    if(!_ownGIL)
-        _pyGILState = PyGILState_Ensure();
-
-    boost::python::dict globalDict;
-    createPythonGraphFromConfig(graph_config, globalDict);
-
-    if(!_ownGIL)
-        PyGILState_Release(_pyGILState);
-}
+{ this->initialize(); }
 
 EventLoop::~EventLoop()
-{
-    this->stopLoop();
-}
+{ this->shutdown(); }
 
 void EventLoop::runLoop(std::chrono::milliseconds timeout)
 {
@@ -97,12 +87,31 @@ void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)
 
 void EventLoop::stopLoop()
 {
-    if(!this->isRunning())
-        return;
-
+    NRPLogger::debug("Stopping EventLoop");
     _doRun = false;
-    _runFuture.wait();
-    NRPLogger::debug("EventLoop was shutdown");
+    this->waitForLoopEnd();
+    NRPLogger::debug("EventLoop stopped");
+}
+
+void EventLoop::initialize()
+{
+
+    if(!_ownGIL)
+        _pyGILState = PyGILState_Ensure();
+
+    boost::python::dict globalDict;
+    createPythonGraphFromConfig(_graph_config, globalDict);
+
+    if(!_ownGIL)
+        PyGILState_Release(_pyGILState);
+}
+
+void EventLoop::shutdown()
+{
+    NRPLogger::debug("Shutting down EventLoop");
+    this->stopLoop();
+    ComputationalGraphManager::getInstance().clear();
+    NRPLogger::debug("EventLoop was shut down");
 }
 
 void EventLoop::waitForLoopEnd()

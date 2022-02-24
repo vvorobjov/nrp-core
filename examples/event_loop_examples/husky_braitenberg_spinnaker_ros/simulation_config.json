@@ -1,0 +1,9 @@
+{
+  "SimulationName": "test_sim",
+  "SimDescription": "Adaptation of the example `husky_braitenberg` using gazebo/ROS and Spinnaker as brain simulator",
+  "SimulationTimeout": 90,
+  "DataPackProcessor": "cg",
+  "SimulationLoop": "EventLoop",
+  "StartROSNode": true,
+  "ComputationalGraph": ["braitenberg.py", "cam_tf.py", "mot_tf.py"]
+}
