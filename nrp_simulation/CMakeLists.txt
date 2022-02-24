@@ -58,7 +58,8 @@ endif()
 ## Header configuration
 
 # Default engines
-list(JOIN NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "\", \"" NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS_STR)
+set(NRP_ENGINE_LAUNCHERS_LIST "$ENV{NRP_ENGINE_LAUNCHERS}")
+list(JOIN NRP_ENGINE_LAUNCHERS_LIST "\", \"" NRP_ENGINE_LAUNCHERS_STR)
 
 # General Header defines
 configure_file("nrp_simulation/config/cmake_conf.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_conf.h" @ONLY)
@@ -165,7 +166,7 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
     endif()
 
     # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
+    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
 endif()
 
 

@@ -39,9 +39,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
-static void loadPlugins(const char *libName, PluginManager &pluginManager, const EngineLauncherManagerSharedPtr &engines)
+static void loadPlugins(const char *libName,
+                        PluginManager &pluginManager,
+                        const EngineLauncherManagerSharedPtr &engines,
+                        const std::set<std::string>& engineTypes)
 {
     NRP_LOGGER_TRACE("{} called [ libName: {} ]", __FUNCTION__, libName);
 
@@ -54,26 +58,30 @@ static void loadPlugins(const char *libName, PluginManager &pluginManager, const
     NRPLogger::info("Plugin {} is loaded", libName);
 
     // Register launcher
-    engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
-    NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    if(engineTypes.count(engineLauncher->engineType())) {
+        engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
+        NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    }
 }
 
 
 static void loadEngines(PluginManager & pluginManager,
                         EngineLauncherManagerSharedPtr & engines,
-                        const cxxopts::ParseResult & startParams)
+                        const cxxopts::ParseResult & startParams,
+                        const std::set<std::string>& engineTypes)
 {
     // Add plugin path to LD_LIBRARY_PATH
     pluginManager.addPluginPath(NRP_PLUGIN_INSTALL_DIR);
 
-    // Iterate over default plugin libs, separated by ' '
-    const auto defaultLaunchers = NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS;
-    for(const auto &libName : defaultLaunchers)
-        loadPlugins(libName, pluginManager, engines);
+    // If user specified a list of plugins use it, otherwise load them all
+    auto pluginsList = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
+    if(pluginsList.empty())
+        pluginsList = NRP_ENGINE_LAUNCHERS;
 
-    auto pluginsParam = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
-    for(const auto &libName : pluginsParam)
-        loadPlugins(libName.c_str(), pluginManager, engines);
+    // Iterate over plugin libs, separated by ' '
+    for(const auto &libName : pluginsList)
+        if(std::strcmp(libName.c_str(), "") != 0)
+            loadPlugins(libName.c_str(), pluginManager, engines, engineTypes);
 }
 
 
@@ -230,7 +238,13 @@ int main(int argc, char *argv[])
     PluginManager pluginManager;
     EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
 
-    loadEngines(pluginManager, engines, startParams);
+    std::set<std::string> engineTypes;
+    if(simConfig->contains("EngineConfigs"))
+        for(auto &engineConfig : simConfig->at("EngineConfigs"))
+            engineTypes.insert(engineConfig.at("EngineType").get<std::string>());
+
+
+    loadEngines(pluginManager, engines, startParams, engineTypes);
 
     // Load simulation
 

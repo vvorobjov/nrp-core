@@ -188,6 +188,7 @@ if(ENABLE_SPINNAKER STREQUAL FULL)
     add_library(${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME} ALIAS ${SPINNAKER_LIBRARY_NAME})
     target_compile_options(${SPINNAKER_LIBRARY_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
+    # TODO: It is downloaded every time
     find_package(SpyNNakerExternalDeviceLib QUIET)
     if(NOT ${SpyNNakerExternalDeviceLib_FOUND})
         message("Downloading SpyNNakerExternalDeviceLib")

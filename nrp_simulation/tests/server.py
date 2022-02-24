@@ -10,7 +10,7 @@ class TestNrpServer(unittest.TestCase):
         """Test fixture setup method, spawns an instance of NRP Core client."""
         address = "localhost:50051"
         args = ["-c", "simulation_config.json",
-                "-p", "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so"]
+                "-p", "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"]
 
         self.nrp_core = NrpCore(address, args)
 

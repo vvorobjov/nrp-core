@@ -97,7 +97,7 @@ export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
 
 ```
  * Start the simulation:
-	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
+	`NRPCoreSim -c <SIMULATION_CONFIG_FILE>`
 
 ## Basic Information
 

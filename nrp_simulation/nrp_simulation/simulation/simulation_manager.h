@@ -53,7 +53,7 @@ struct SimulationParams
 
     static constexpr std::string_view ParamPlugins = "p";
     static constexpr std::string_view ParamPluginsLong = "p,plugins";
-    static constexpr std::string_view ParamPluginsDesc = "Additional engine plugins to load";
+    static constexpr std::string_view ParamPluginsDesc = "Engine plugins to load. If omitted, all engines compiled with nrp-core are loaded";
     using ParamPluginsT = std::vector<std::string>;
 
     static constexpr std::string_view ParamExpDir = "d";

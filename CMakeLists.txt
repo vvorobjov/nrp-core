@@ -231,6 +231,8 @@ endif()
 
 ##########################################
 ## NRP Engines
+set(ENV{NRP_ENGINE_LAUNCHERS} ""
+        CACHE STRING "Default engines which will always be available in the NRP simulation")
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
@@ -259,8 +261,6 @@ add_subdirectory("nrp_datatransfer_grpc_engine")
 
 ##########################################
 ## NRP Simulation
-set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
-    CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
