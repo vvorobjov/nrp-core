@@ -1,6 +1,6 @@
 /*! \page process_launcher Process Launcher
 
-The ProcessLauncher is in control of spawning Engines in individual computational environments. Depending on the desired behavior, engines can be created in separate processes, containers, or machines.
+The ProcessLauncher is in control of spawning Engines in independent computational environments. Depending on the desired behavior, engines can be created in separate processes, containers, or machines.
 
 Default settings specify forking the NRPCoreSim process and launching the engine in the newly spawned child process. This setup suffices for local simulation execution, however a more complex launching process may be desired for online simulation.
 
@@ -45,18 +45,20 @@ class NewLaunchCommand
 	public:
 		// Launch a new engine. It takes the engine configuration, environment parameters and process start parameters and launch the 
 		// engine according to its implemented behavior. If appendParentEnv is set to true, use the parent environment in the engine process. If set to false, scrub it before continuing.
-		pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+		pid_t launchProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
                                   const std::vector<std::string> &startParams, bool appendParentEnv) override;
 
 		// Stop the engine. Note that this command should be run after the Engine's shutdown routines have already been called.
 		// It should try to gracefully quit the engine process. Should the Engine process not have shut down after killWait seconds,
 		// forcefully shut down the process, e.g. by sending a SIGKILL command
-		pid_t stopEngineProcess(unsigned int killWait) override;
+		pid_t stopProcess(unsigned int killWait) override;
 
 		// Get the current engine process status. If status cannot be retrieved by this process launcher command,
 		// return ENGINE_RUNNING_STATUS::UNKNOWN
 		virtual ENGINE_RUNNING_STATUS getProcessStatus()
 };
 \endcode
+
+As a final note, ProcessLauncher can also be used in NRPCore experiments to launch arbitrary commands not related with Engines. These commands will be managed by NRPCoreSim in the same way as Engine processes. For information on how to use this feature in experiments see \ref process_launcher_schema "here".
 
  */

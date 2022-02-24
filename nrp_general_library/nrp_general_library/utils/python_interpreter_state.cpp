@@ -24,6 +24,26 @@
 #include "nrp_general_library/utils/json_converter.h"
 
 #include <boost/python/numpy.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+
+void setup_venv() {
+    std::vector<std::string> paths;
+    std::string pathEnv = getenv("PATH");
+    boost::split(paths, pathEnv, boost::is_any_of(";:"));
+    for (std::string path : paths)
+    {
+      boost::filesystem::path pythonPath = boost::filesystem::path(path) / "python";
+      if (boost::filesystem::exists(pythonPath))
+      {
+        std::string pythonProgramName = pythonPath.string();
+        std::wstring widestring = std::wstring(pythonProgramName.begin(), pythonProgramName.end());
+        Py_SetProgramName(widestring.c_str());
+        break;
+      }
+    }
+}
+
 
 PythonInterpreterState::PythonInterpreterState(int argc, const char *const *argv, bool allowThreads)
     : _wcharArgs(argc, argv)
@@ -31,7 +51,7 @@ PythonInterpreterState::PythonInterpreterState(int argc, const char *const *argv
     assert(argc >= 1);
 
     Py_SetProgramName(this->_wcharArgs.getWCharTPointers()[0]);
-
+    setup_venv();
     Py_Initialize();
     json_converter::initNumpy();
     boost::python::numpy::initialize();
@@ -51,6 +71,7 @@ PythonInterpreterState::PythonInterpreterState(int argc, const std::vector<const
 PythonInterpreterState::PythonInterpreterState(bool allowThreads)
     : _wcharArgs(0, nullptr)
 {
+    setup_venv();
     Py_Initialize();
     json_converter::initNumpy();
     boost::python::numpy::initialize();

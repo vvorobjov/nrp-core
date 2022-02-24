@@ -233,6 +233,29 @@ generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" 
 generate_proto_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 generate_grpc_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 
+# Protobuf utils
+set(DATAPACK_MSG_TYPES "")
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_msgs.proto" DATAPACK_MSG_FILE)
+
+# Find msg definitions and add python bindings for them
+foreach(LINE IN LISTS DATAPACK_MSG_FILE)
+    if(LINE MATCHES "}")
+        set(DO_PROCESS FALSE)
+    endif()
+    if(DO_PROCESS AND NOT LINE MATCHES "{")
+        # string(FIND  " "  REVERSE)
+        string(STRIP "${LINE}" LINE)
+        string(FIND "${LINE}" " " end)
+        string(SUBSTRING "${LINE}" 0 "${end}" msg_name)
+        string(REPLACE "." "::" msg_name "${msg_name}")
+        string(APPEND DATAPACK_MSG_TYPES "${msg_name},")
+    endif()
+    if(LINE MATCHES "oneof data")
+        set(DO_PROCESS TRUE)
+    endif()
+endforeach()
+string(REGEX REPLACE ",$" "" DATAPACK_MSG_TYPES "${DATAPACK_MSG_TYPES}")
+
 # Forces the generation of proto and grpc python code
 add_custom_target(
         FORCE_PROTO_PYTHON
@@ -248,6 +271,9 @@ configure_file("config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/includ
 # Python Module defines
 configure_file("python_module/python_module.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/python_module/python_module.cpp" @ONLY)
 configure_file("python_module/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+
+# Protobuf utils
+configure_file("utils/protobuf_utils.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/protobuf_utils.h" @ONLY)
 
 ##########################################
 # NRPProtobuf

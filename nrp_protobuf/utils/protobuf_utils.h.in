@@ -1,0 +1,139 @@
+/* * NRP Core - Backend infrastructure to synchronize simulations
+ *
+ * Copyright 2020-2021 NRP Team
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This project has received funding from the European Union’s Horizon 2020
+ * Framework Programme for Research and Innovation under the Specific Grant
+ * Agreement No. 945539 (Human Brain Project SGA3).
+ */
+
+#ifndef PROTO_UTILS_H
+#define PROTO_UTILS_H
+
+#include "google/protobuf/message.h"
+
+#include "nrp_protobuf/engine_msgs.pb.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
+#include "nrp_general_library/utils/nrp_exceptions.h"
+
+namespace gpb = google::protobuf;
+
+
+namespace protobuf_utils {
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, Engine::DataPackMessage *datapackData)
+    {
+        const google::protobuf::OneofDescriptor *fieldOne = datapackData->GetDescriptor()->FindOneofByName("data");
+        const google::protobuf::FieldDescriptor *field = datapackData->GetReflection()->GetOneofFieldDescriptor(*datapackData,fieldOne);
+
+        if(!field) {
+            // There's no data set in the message, so create an empty datapack with datapack ID only
+            // NOTE: datapackData->datapackid().datapacktype() becomes useless, it should always be set internally in DataPack
+            //  constructor
+            return DataPackInterfaceConstSharedPtr(new DataPackInterface(datapackData->datapackid().datapackname(),
+                                                                        engineName, datapackData->datapackid().datapacktype()));
+        }
+        else if(std::strstr(typeid(MSG_TYPE).name(), field->message_type()->name().data())) {
+            auto data = dynamic_cast<MSG_TYPE *>(datapackData->GetReflection()->ReleaseMessage(datapackData, field));
+            return DataPackInterfaceConstSharedPtr(
+                    new DataPack<MSG_TYPE>(datapackData->datapackid().datapackname(), engineName, data));
+        }
+
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, datapackData);
+        else
+            return DataPackInterfaceConstSharedPtr();
+    }
+
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setDataPackMessageFromInterfaceSubset(Engine::DataPackMessage *datapackData, DataPackInterface* datapack)
+    {
+        if(dynamic_cast< DataPack<MSG_TYPE> *>(datapack)) {
+            datapackData->mutable_datapackid()->set_datapackname(datapack->name());
+            MSG_TYPE* d = dynamic_cast< DataPack<MSG_TYPE> *>(datapack)->releaseData();
+            auto n = datapackData->GetDescriptor()->field_count();
+            auto datapack_type = d->GetDescriptor()->full_name();
+            for(int i=0;i<n;++i) {
+                auto field_type = datapackData->GetDescriptor()->field(i)->message_type()->full_name();
+                if (datapack_type == field_type) {
+                    datapackData->GetReflection()->SetAllocatedMessage(datapackData, d,
+                                                                       datapackData->GetDescriptor()->field(i));
+                    return;
+                }
+            }
+
+            throw NRPException::logCreate("DataPackMessage data field cannot be set to data type \"" + d->GetDescriptor()->name());
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setDataPackMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(datapackData, datapack);
+    }
+
+
+    inline DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessage(const std::string &engineName, Engine::DataPackMessage *datapackData)
+    { return getDataPackInterfaceFromMessageSubset<@DATAPACK_MSG_TYPES@>(engineName, datapackData); }
+
+
+    inline void setDataPackMessageFromInterface(Engine::DataPackMessage *datapackData, DataPackInterface* datapack)
+    { setDataPackMessageFromInterfaceSubset<@DATAPACK_MSG_TYPES@>(datapackData, datapack); }
+
+
+    inline const gpb::Message& getDataFromDataPackMessage(const Engine::DataPackMessage& datapackData)
+    {
+        const gpb::OneofDescriptor *fieldOne = datapackData.GetDescriptor()->FindOneofByName("data");
+        const gpb::FieldDescriptor *field = datapackData.GetReflection()->GetOneofFieldDescriptor(datapackData,fieldOne);
+
+        if(!field) {
+            const auto errorMessage = "DataPackMessage " + datapackData.datapackid().datapackname() + " data is not set";
+            throw std::invalid_argument(errorMessage);
+        }
+
+        return datapackData.GetReflection()->GetMessage(datapackData,field);
+    }
+
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setDataPackMessageDataSubset(google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
+    {
+        if(dynamic_cast< MSG_TYPE *>(dev_data)) {
+            auto d = dynamic_cast< MSG_TYPE *>(dev_data);
+            auto n = m->GetDescriptor()->field_count();
+            auto datapack_type = d->GetDescriptor()->full_name();
+
+            for(int i=0;i<n;++i) {
+                auto field_type = m->GetDescriptor()->field(i)->message_type()->full_name();
+                if (datapack_type == field_type) {
+                    m->GetReflection()->SetAllocatedMessage(m, d, m->GetDescriptor()->field(i));
+                    return;
+                }
+            }
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setDataPackMessageDataSubset<REMAINING_MSG_TYPES...>(dev_data, m);
+        else {
+            const auto errorMessage = "DataPackMessage data field cannot be set to data type \"" + dev_data->GetDescriptor()->name();
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+
+    inline void setDataPackMessageData(google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
+    { setDataPackMessageDataSubset<@DATAPACK_MSG_TYPES@>(dev_data, m); }
+}
+
+#endif // PROTO_UTILS_H

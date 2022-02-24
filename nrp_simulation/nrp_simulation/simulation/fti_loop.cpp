@@ -27,9 +27,23 @@
 #include "nrp_general_library/utils/time_utils.h"
 
 #include "nrp_simulation/datapack_handle/tf_manager_handle.h"
+#include "nrp_simulation/datapack_handle/computational_graph_handle.h"
 
 #include <iostream>
 
+// Helper function which reads simulation config and returns the correct DataPackProcessor
+static DataPackProcessor* makeHandleFromConfig(jsonSharedPtr config)
+{
+    std::string dev_p = config->at("DataPackProcessor").get<std::string>();
+    bool spinROS = config->at("StartROSNode");
+    bool slaveMode = config->at("SimulationLoop") == "EventLoop";
+    if(dev_p == "cg" || slaveMode)
+        return new ComputationalGraphHandle(slaveMode, spinROS);
+    else if(dev_p == "tf")
+        return new TFManagerHandle();
+    else
+        throw NRPException::logCreate("Unsupported DataPackProcessor: " + dev_p);
+}
 
 static void runLoopStepAsyncGet(EngineClientInterfaceSharedPtr engine)
 {
@@ -49,10 +63,10 @@ static void runLoopStepAsyncGet(EngineClientInterfaceSharedPtr engine)
 }
 
 
-FTILoop::FTILoop(jsonSharedPtr config, DataPackHandle::engine_interfaces_t engines)
+FTILoop::FTILoop(jsonSharedPtr config, DataPackProcessor::engine_interfaces_t engines)
     : _config(config),
       _engines(engines),
-      _devHandler(new TFManagerHandle())
+      _devHandler(makeHandleFromConfig(config))
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 }

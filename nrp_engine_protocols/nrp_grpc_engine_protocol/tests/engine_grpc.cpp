@@ -107,7 +107,7 @@ class TestEngineGrpcClient
 };
 
 class TestEngineGrpcServer
-    : public EngineGrpcServer<EngineTest::TestPayload>
+    : public EngineGrpcServer
 {
     public:
 

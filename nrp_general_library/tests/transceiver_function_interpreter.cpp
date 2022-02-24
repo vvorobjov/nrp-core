@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include "nrp_general_library/utils/utils.h"
 #include "nrp_general_library/config/cmake_constants.h"
 #include "tests/test_transceiver_function_interpreter.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
@@ -31,15 +32,6 @@
 using JsonDataPack = DataPack<nlohmann::json>;
 
 using namespace boost;
-
-void appendPythonPath(const std::string &path)
-{
-    boost::python::handle pathH(boost::python::borrowed(PySys_GetObject("path")));
-    boost::python::list paths(pathH);
-    paths.append(path);
-
-    PySys_SetObject("path", paths.ptr());
-}
 
 TEST(TransceiverFunctionInterpreterTest, TestSimplePythonFcn)
 {

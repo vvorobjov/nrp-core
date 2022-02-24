@@ -32,7 +32,7 @@
 /*!
  * \brief Uses the TF framework to execute datapack transformation operations
  */
-class TFManagerHandle : public DataPackHandle {
+class TFManagerHandle : public DataPackProcessor {
 
 public:
 

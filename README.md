@@ -1,6 +1,12 @@
-This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details and much more can be found at the nrp-core [online documentation](hbpneurorobotics.bitbucket.io)
+This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details, and much more can be found at the nrp-core [online documentation](hbpneurorobotics.bitbucket.io)
 
-**WARNING:** nrp-core is in alpha release state, use it at your own risk. Also notice that nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in instructions below. Installation in other environments might be possible but has not been tested yet.
+**WARNING:** nrp-core is in alpha release state, use it at your own risk. Also notice that nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in the instructions below. Installation in other environments might be possible but has not been tested yet.
+
+ * Before starting the installation, define, please, the nrp-core installation directory:
+ 
+ ```
+export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
+ ```
 
 ## Dependency Installation
 
@@ -27,10 +33,34 @@ pip install grpcio-tools pytest docopt mpi4py
 # ROS
 Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
 
-Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an exisiting catking workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
+Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an existing catkin workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
     
 # Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
 sudo sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
+
+# SpiNNaker
+Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
+Ensure that if using a virtualenv, this is active when running any SpiNNaker scripts.
+
+
+# MQTT Paho library, required by datatransfer engine for streaming data over network
+# More information on the project web site https://github.com/eclipse/paho.mqtt.cpp
+# If you do not want to add network data streaming feature, you can skip this step.
+# MQTT Paho C library
+git clone https://github.com/eclipse/paho.mqtt.c.git \
+cd paho.mqtt.c \
+git checkout v1.3.8 \
+cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"\
+cmake --build build/ --target install \
+sudo ldconfig && cd ..
+
+# MQTT Paho CPP
+git clone https://github.com/eclipse/paho.mqtt.cpp \
+cd paho.mqtt.cpp \
+git checkout v1.2.0 \
+cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
+cmake --build build/ --target install \
+sudo ldconfig && cd ..
 ```
 
 ## Installation
@@ -41,13 +71,14 @@ cd nrp-core
 mkdir build
 cd build
 export CC=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10
-cmake .. -DCMAKE_INSTALL_PREFIX=/home/${USER}/.local/nrp
-mkdir -p /home/${USER}/.local/nrp
+cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"
+mkdir -p "${NRP_INSTALL_DIR}"
 # the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
+# If you haven't installed MQTT libraries, add ENABLE_MQTT=OFF definition to cmake (-DENABLE_MQTT=OFF).
 make
 make install
 # just in case of wanting to build the documentation. Documentation can then be found in a new doxygen folder
-make doxygen_nrp
+make nrp_doxygen
 ```
 
 ## Running an experiment
@@ -55,10 +86,10 @@ make doxygen_nrp
  * Set environment:
  
  ```
-export NRP=/home/${USER}/.local/nrp
-export PYTHONPATH=${NRP}/lib/python3.8/site-packages:$PYTHONPATH
-export LD_LIBRARY_PATH=${NRP}/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:${NRP}/bin
+export NRP_INSTALL_DIR="/home/${USER}/.local/nrp" # The installation directory, which was given before
+export PYTHONPATH="${NRP_INSTALL_DIR}"/lib/python3.8/site-packages:$PYTHONPATH
+export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}"/lib:$LD_LIBRARY_PATH
+export PATH=$PATH:"${NRP_INSTALL_DIR}"/bin
 export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
 . /usr/share/gazebo-11/setup.sh
 . /opt/ros/noetic/setup.bash
@@ -66,7 +97,7 @@ export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
 
 ```
  * Start the simulation:
-	`NRPCoreSim -c <SIMULATION_CONFIG_FILE> -p <comma separated list of engine plugins>`
+	`NRPCoreSim -c <SIMULATION_CONFIG_FILE>`
 
 ## Basic Information
 
@@ -78,7 +109,7 @@ export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
 	 - nrp_python_json_engine: Python JSON Engine
 	 - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
  - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
- - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `~/.local/nrp/lib/python3.8/site-packages`
+ - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `${NRP_INSTALL_DIR}/lib/python3.8/site-packages`
 
 ## Examples
 

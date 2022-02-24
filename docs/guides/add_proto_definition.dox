@@ -5,7 +5,7 @@ This guide shows how to extend the protobuf message definitions availabe in NRP-
 The process is very simple and consists only of two steps:
 
 1. Add your new message definitions into a separate *.proto* file. Refer to <a href="https://developers.google.com/protocol-buffers/docs/proto3">proto3 language guide</a> to check available possibilities.
-2. Place the new *.proto* file in the folder *nrp_protobuf/engine_proto_defs*. In this way your message defitinions will be automatically compiled during the nrp-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
+2. Place the new *.proto* file in the folder *nrp_protobuf/engine_proto_defs*. In this way your message defitinions will be automatically compiled during the NRP-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
 
 
 Optionally, those new message definitions which will be used to exchange data with gRPC Engines must be manually added to the *Engine.DataPackMessage* message oneof *data* field definition.

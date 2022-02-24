@@ -3,7 +3,7 @@
 In this section, we show how to run some of the example experiments. Different experiments utilize different
 features of the NRP, the use of which will be highlighted.
 
-Experiments are run using the provided application \ref nrp_simulation. It takes as arguments the \ref simulation_configuration "simulation configuration file" used to configure the experiment and, optionally, a list of \ref plugin_system "engine plugins" to be loaded at run time. Please notice that by default only \ref python_json_engine is loaded. Any other plugin required to execute an experiment must be explicitly added with the "-p" parameter. See examples below.
+Experiments are run using the provided application \ref nrp_simulation. It takes as argument the \ref simulation_configuration "simulation configuration file" used to configure the experiment. Optionally a list of \ref plugin_system "engine plugins" to be loaded at run time can be specified. This can be done using the "-p" parameter. If "-p" is not used, all engine plugins built with nrp-core will be loaded.
 
 \section getting_started_experiment_husky Husky braitenberg
 
@@ -50,7 +50,7 @@ To run the example, switch to the proper directory and run the NRP simulation ex
 
 \code{.sh}
 cd examples/husky_braitenberg_with_preprocessing
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 
@@ -60,7 +60,7 @@ This example is again a modification of the husky braitenberg experiment, in thi
 
 \code{.sh}
 cd examples/husky_braitenberg_nest_server
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestServerEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 This will also start nest-server in a separate process.
@@ -99,7 +99,7 @@ To run the example, switch to the experiment directory and run the NRP simulatio
 
 \code{.py}
 cd examples/opensim_control
-NRPCoreSim -c simulation_config.json -p "NRPOpenSimEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 This will start the OpenSim simulation with proper visualization.

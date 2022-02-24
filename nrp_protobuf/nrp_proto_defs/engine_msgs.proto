@@ -2,12 +2,14 @@ syntax = "proto3";
 
 import "gazebo_msgs.proto";
 import "test_msgs.proto";
+import "dump_msgs.proto";
 
 package Engine;
 
 
 /*
  * Data of a single datapack sent by server in response to the getDataPack command
+ * and received after a call of setDataPack command
  * Contains datapack metadata and data specific to the datapack type
  */
 message DataPackMessage
@@ -20,6 +22,8 @@ message DataPackMessage
         Gazebo.Camera camera = 3;
         Gazebo.Link   link   = 4;
         Gazebo.Joint  joint  = 5;
+        Dump.String   dump_string  = 6;
+        Dump.ArrayFloat   dump_float  = 7;
     }
 }
 

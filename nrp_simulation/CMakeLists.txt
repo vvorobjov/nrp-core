@@ -24,10 +24,7 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/simulation_manager.cpp
     nrp_simulation/datapack_handle/datapack_handle.cpp
     nrp_simulation/datapack_handle/tf_manager_handle.cpp
-)
-
-# List of python module build files
-set(PYTHON_MODULE_SRC_FILES
+    nrp_simulation/datapack_handle/computational_graph_handle.cpp
 )
 
 # List executable build files
@@ -52,12 +49,17 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
+if(ENABLE_ROS STREQUAL FULL)
+    find_package(catkin REQUIRED COMPONENTS roscpp)
+endif()
+
 
 ##########################################
 ## Header configuration
 
 # Default engines
-list(JOIN NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "\", \"" NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS_STR)
+set(NRP_ENGINE_LAUNCHERS_LIST "$ENV{NRP_ENGINE_LAUNCHERS}")
+list(JOIN NRP_ENGINE_LAUNCHERS_LIST "\", \"" NRP_ENGINE_LAUNCHERS_STR)
 
 # General Header defines
 configure_file("nrp_simulation/config/cmake_conf.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_conf.h" @ONLY)
@@ -74,6 +76,9 @@ target_link_libraries(${LIBRARY_NAME}
     ${NRP_PROTO_LIB_TARGET}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
+    ${NRP_ELE_LIB_TARGET}
+        ${NRP_ROS_PROXY_TARGET}
+        ${catkin_LIBRARIES}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
@@ -81,6 +86,8 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+
+        ${catkin_INCLUDE_DIRS}
 
     PRIVATE
 )
@@ -159,7 +166,7 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
     endif()
 
     # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
+    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
 endif()
 
 

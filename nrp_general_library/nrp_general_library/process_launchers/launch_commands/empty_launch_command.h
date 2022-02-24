@@ -39,19 +39,19 @@ class EmptyLaunchCommand
         ~EmptyLaunchCommand() = default;
 
         /*!
-        * \brief launchEngineProcess always returns -1
+        * \brief launchProcess always returns -1
         * \return -1
         */
-        pid_t launchEngineProcess(const nlohmann::json &, const std::vector<std::string> &, const std::vector<std::string> &, bool )
+        pid_t launchProcess(const std::string &, const std::vector<std::string> &, const std::vector<std::string> &, bool )
         {
             return -1;
         }
 
         /*!
-        * \brief stopEngineProcess always returns 0
+        * \brief stopProcess always returns 0
         * \return 0
         */
-        pid_t stopEngineProcess(unsigned int) override 
+        pid_t stopProcess(unsigned int) override 
         {
             return 0;
         }

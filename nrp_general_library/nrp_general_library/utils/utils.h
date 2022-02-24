@@ -34,12 +34,13 @@
 #include <string>
 #include <stdexcept>
 #include <unistd.h>
+#include <boost/python.hpp>
 
 
 /*!
  * \brief Searchs for an unbound port starting from startPort. Returns the first unbound port found as a uint16_t
  */
-uint16_t findUnboundPort(uint16_t startPort)
+inline uint16_t findUnboundPort(uint16_t startPort)
 {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0)
@@ -66,6 +67,18 @@ uint16_t findUnboundPort(uint16_t startPort)
         throw std::runtime_error("Failed to close socket at port " + std::to_string(startPort) + ": " + strerror(errno));
 
     return startPort++;
+}
+
+/*!
+ * \brief Appends 'path' to PYTHON_PATH env variable
+ */
+inline void appendPythonPath(const std::string &path)
+{
+    boost::python::handle pathH(boost::python::borrowed(PySys_GetObject("path")));
+    boost::python::list paths(pathH);
+    paths.append(path);
+
+    PySys_SetObject("path", paths.ptr());
 }
 
 #endif // UTILS_H

@@ -1,0 +1,13 @@
+<launch>
+
+    <env name="GAZEBO_RESOURCE_PATH" value="$(env HOME)/.gazebo"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <arg name="gui" value="true"/>
+      <arg name="verbose" value="true"/>
+      <arg name="world_name" value="models/virtual_room/virtual_room.sdf"/>
+    </include>
+
+  <node name="spawn_husky_model" pkg="gazebo_ros" type="spawn_model" args="-z 1 -file $(env HOME)/.gazebo/models/husky_model/model.sdf -model husky -sdf"/>
+
+</launch>

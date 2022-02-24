@@ -1,0 +1,104 @@
+#include <boost/python.hpp>
+
+#include "nrp_event_loop/nodes/ros/input_node.h"
+#include "nrp_event_loop/nodes/ros/output_node.h"
+
+// '#include' statements for all supported ROS msg types headers. Configured from cmake.
+@ROS_MSG_TYPES_INCLUDE@
+
+namespace bpy = boost::python;
+
+/*!
+ * \brief This class acts as a factory of InputROSEdge and OutputROSEdge for all the supported ROS msgs types.
+ *
+ * The class is used to define the python decorators creating ROS edges. It is configured from cmake with all the supported
+ * ROS msg types. These are all types for which Python bindings are created.
+ *
+ * 'msgType' in the constructor is expected to be Python class from 'nrp_core.data.nrp_ros' and it is used to infer the
+ * right ROS msg type to use for instantiating ROS nodes from this class.
+ */
+class RosEdgeFactory {
+
+public:
+    /*!
+     * \brief Constructor
+     */
+    RosEdgeFactory(const std::string& keyword, const std::string& address, const bpy::object& msgType,
+                   InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                   InputNodePolicies::MsgCachePolicy msgCachePolicy,
+                   bool isInput = true) :
+        _keyword(keyword),
+        _address(address),
+        _msgPublishPolicy(msgPublishPolicy),
+        _msgCachePolicy(msgCachePolicy),
+        _isInput(isInput)
+    {
+        _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
+        _moduleName = boost::python::extract<std::string>(msgType.attr("__module__"))();
+    }
+
+    /*!
+     * \brief Calls InputROSEdge pySetup parameterized for ROS msg type MSG_TYPE
+     */
+    template<class MSG_TYPE>
+    boost::python::object pySetupInput(const boost::python::object& obj)
+    {
+        auto rosEdge = InputROSEdge<MSG_TYPE>(_keyword, _address, _msgPublishPolicy, _msgCachePolicy);
+        return rosEdge.pySetup(obj);
+    }
+
+    /*!
+     * \brief Calls OutputROSEdge pySetup parameterized for ROS msg type MSG_TYPE
+     */
+    template<class MSG_TYPE>
+    boost::python::object pySetupOutput(const boost::python::object& obj)
+    {
+        auto rosEdge = OutputROSEdge<MSG_TYPE>(_keyword, _address);
+        return rosEdge.pySetup(obj);
+    }
+
+    /*!
+     * \brief __call__ function in the decorator
+     *
+     * Calls InputROSEdge or OutputROSEdge pySetup with 'obj' and the right ROS msg type as parameter as inferred from
+     * the 'msgType' object passed to the constructor
+     */
+    boost::python::object pySetupSelector(const boost::python::object& obj)
+    {
+        if (_moduleName.rfind("nrp_core.data.nrp_ros", 0) != 0) {
+            std::string dec_type = _isInput ? "RosSubscriber decorator \"" : "RosPublisher decorator \"";
+            throw NRPException::logCreate("Error occurred while processing "+ dec_type + _address +"\". ROS message type must be an \"nrp_core.data.nrp_ros\" class.");
+        }
+
+        std::string rosType = _moduleName.substr(_moduleName.rfind('.')+1) + "::" + _className;
+
+        // 'if' statements selecting the right ROS msg type. Configured from cmake.
+        @ROS_MSG_TYPES_CHECK@
+        {
+            std::string dec_type = _isInput ? "RosSubscriber decorator \"" : "RosPublisher decorator \"";
+            std::string error_msg = "Error occurred while processing "+ dec_type + _address +"\". Message type: \"" +
+                    _moduleName + "." + _className + "\" is not supported.";
+            throw NRPException::logCreate(error_msg);
+        }
+    }
+
+private:
+
+    std::string _keyword;
+    std::string _address;
+    std::string _className;
+    std::string _moduleName;
+    InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
+    InputNodePolicies::MsgCachePolicy _msgCachePolicy;
+    bool _isInput;
+};
+
+class RosEdgeFactoryOutput
+        : public RosEdgeFactory
+{
+public:
+
+    RosEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType) :
+            RosEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false)
+    {}
+};

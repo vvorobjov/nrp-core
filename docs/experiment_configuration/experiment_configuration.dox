@@ -1,6 +1,6 @@
 /*! \page simulation_configuration Simulation Configuration
 
-This page describes how experiments are configured in nrp-core.
+This page describes how experiments are configured in NRP-core.
 
  The details of the configuration of any given experiment are stored in a single JSON file, hereafter referred to as the “simulation configuration file”. This file (very originally named "simulation_configuration.json" in most of the examples) contains all the necessary configuration parameters to initialize and run an experiment, including details such as the engines involved in the experiment, active TransceiverFunctions, and engine timesteps. Below is an example taken from <i>examples/tf_exchange</i> experiment:
 
@@ -17,6 +17,7 @@ The sections linked hereafter first detail how JSON-schema is used for managing 
 - \subpage simulation_schema "Simulation schema"
 - \subpage engine_base_schema "Engine schema
 - \subpage transceiver_function_schema "Transceiver function schema"
+- \subpage process_launcher_schema "Process Launcher schema"
 
 
 */
