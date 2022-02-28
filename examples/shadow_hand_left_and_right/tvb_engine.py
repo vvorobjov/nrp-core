@@ -64,7 +64,9 @@ class Script(EngineScript):
         right_if = self._getDataPack("right_index_finger_joints")
 
         print(left_if["positions"])
+        print(left_if["velocities"])
         print(right_if["positions"])
+        print(right_if["velocities"])
 
         # Calculate simulation time based on requested timestep
 
