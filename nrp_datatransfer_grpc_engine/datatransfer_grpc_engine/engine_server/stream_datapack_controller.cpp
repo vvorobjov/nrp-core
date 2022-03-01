@@ -87,12 +87,12 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
         }
 #endif
 
-        // Check Engine.DataPackMessage case. Only relevant for file dump
-        if(msg == "Engine.DataPackMessage") {
+        // Check EngineGrpc.DataPackMessage case. Only relevant for file dump
+        if(msg == "EngineGrpc.DataPackMessage") {
             this->_isDataPackMessage = true;
             const auto& d = protobuf_utils::getDataFromDataPackMessage(
-                    dynamic_cast<const Engine::DataPackMessage &>(data));
-            msg = d.GetTypeName();
+                    dynamic_cast<const EngineGrpc::DataPackMessage &>(data));
+            msg = d->GetTypeName();
         }
 
         // Check message type case. Only relevant for file dump
@@ -135,8 +135,11 @@ void StreamDataPackController::streamToFile(const google::protobuf::Message &dat
 {
     std::string data_str;
     if(this->_isDataPackMessage)
-        data_str = (this->*fmtCallback)(protobuf_utils::getDataFromDataPackMessage(
-                dynamic_cast<const Engine::DataPackMessage &>(data)));
+    {
+        const auto& d =protobuf_utils::getDataFromDataPackMessage(
+                dynamic_cast<const EngineGrpc::DataPackMessage &>(data));
+        data_str = (this->*fmtCallback)(*d);
+    }
     else
         data_str = (this->*fmtCallback)(data);
 
@@ -162,12 +165,12 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
 }
 
 std::string StreamDataPackController::fmtString(const google::protobuf::Message &data){
-    auto dump = dynamic_cast<const Dump::String &>(data);
+    const auto& dump = dynamic_cast<const Dump::String &>(data);
     return  dump.string_stream();
 }
 
 std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &data){
-    auto dump = dynamic_cast<const Dump::ArrayFloat &>(data);
+    const auto& dump = dynamic_cast<const Dump::ArrayFloat &>(data);
     std::string msg;
     if (dump.dims_size() == 0){
         msg = "0";

@@ -97,20 +97,20 @@ class EngineGrpcClient
             return _channel->GetState(false);
         }
 
-        void sendInitCommand(const nlohmann::json & data)
+        void sendInitializeCommand(const nlohmann::json & data)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             sleep(1);
-            EngineGrpc::InitRequest  request;
-            EngineGrpc::InitReply    reply;
-            grpc::ClientContext      context;
+            EngineGrpc::InitializeRequest request;
+            EngineGrpc::InitializeReply   reply;
+            grpc::ClientContext           context;
 
             prepareRpcContext(&context);
 
             request.set_json(data.dump());
 
             NRPLogger::debug("Sending init command to server [ {} ]", this->engineName());
-            grpc::Status status = _stub->init(&context, request, &reply);
+            grpc::Status status = _stub->initialize(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -129,7 +129,7 @@ class EngineGrpcClient
             prepareRpcContext(&context);
 
             NRPLogger::debug("Sending reset command to server [ {} ]", this->engineName());
-            grpc::Status status = _stub->resetHandle(&context, request, &reply);
+            grpc::Status status = _stub->reset(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -207,23 +207,23 @@ class EngineGrpcClient
     {
         NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-        EngineGrpc::GetDataPackRequest request;
-        EngineGrpc::GetDataPackReply   reply;
-        grpc::ClientContext          context;
+        EngineGrpc::GetDataPacksRequest request;
+        EngineGrpc::GetDataPacksReply   reply;
+        grpc::ClientContext             context;
 
         for(const auto &devID : datapackIdentifiers)
         {
             if(this->engineName().compare(devID.EngineName) == 0)
             {
-                auto r = request.add_datapackid();
+                auto dataPackId = request.add_datapackids();
 
-                r->set_datapackname(devID.Name);
-                r->set_datapacktype(devID.Type);
-                r->set_enginename(devID.EngineName);
+                dataPackId->set_datapackname(devID.Name);
+                dataPackId->set_datapacktype(devID.Type);
+                dataPackId->set_enginename(devID.EngineName);
             }
         }
 
-        grpc::Status status = _stub->getDataPack(&context, request, &reply);
+        grpc::Status status = _stub->getDataPacks(&context, request, &reply);
 
         if(!status.ok())
         {
@@ -232,8 +232,8 @@ class EngineGrpcClient
         }
 
         typename EngineClientInterface::datapacks_set_t interfaces;
-        for(int i = 0; i < reply.reply_size(); i++) {
-            auto datapackData = reply.mutable_reply(i);
+        for(int i = 0; i < reply.datapacks_size(); i++) {
+            auto datapackData = reply.datapacks(i);
             DataPackInterfaceConstSharedPtr datapack;
 
             if constexpr(sizeof...(MSG_TYPES) > 0)
@@ -241,14 +241,7 @@ class EngineGrpcClient
             else
                 datapack = protobuf_utils::getDataPackInterfaceFromMessage(this->engineName(), datapackData);
 
-            if(datapack)
-                interfaces.insert(datapack);
-            else {
-                const google::protobuf::OneofDescriptor *fieldOne = datapackData->GetDescriptor()->FindOneofByName("data");
-                const google::protobuf::FieldDescriptor *field = datapackData->GetReflection()->GetOneofFieldDescriptor(*datapackData,fieldOne);
-                throw NRPException::logCreate("Data type: \"" + field->name() + "\" is not supported by engine" +
-                                              this->engineName());
-            }
+            interfaces.insert(datapack);
         }
 
         return interfaces;
@@ -258,9 +251,9 @@ class EngineGrpcClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::SetDataPackRequest request;
-            EngineGrpc::SetDataPackReply   reply;
-            grpc::ClientContext          context;
+            EngineGrpc::SetDataPacksRequest request;
+            EngineGrpc::SetDataPacksReply   reply;
+            grpc::ClientContext             context;
 
             prepareRpcContext(&context);
 
@@ -271,18 +264,12 @@ class EngineGrpcClient
                     if(datapack->isEmpty())
                         throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
                     else {
-                        auto r = request.add_request();
+                        auto protoDataPack = request.add_datapacks();
 
                         if constexpr(sizeof...(MSG_TYPES) > 0)
-                            protobuf_utils::setDataPackMessageFromInterfaceSubset<MSG_TYPES...>(r, datapack);
+                            protobuf_utils::setDataPackMessageFromInterfaceSubset<MSG_TYPES...>(*datapack, protoDataPack);
                         else
-                            protobuf_utils::setDataPackMessageFromInterface(r, datapack);
-
-                        const google::protobuf::OneofDescriptor *fieldOne = r->GetDescriptor()->FindOneofByName("data");
-                        const google::protobuf::FieldDescriptor *field = r->GetReflection()->GetOneofFieldDescriptor(*r,fieldOne);
-                        if(!field)
-                            throw NRPException::logCreate("DataPack " + datapack->name() + " is not supported by engine" +
-                                                          this->engineName());
+                            protobuf_utils::setDataPackMessageFromInterface(*datapack, protoDataPack);
                     }
                 }
                 else
@@ -290,7 +277,7 @@ class EngineGrpcClient
                     "\" to Engine \"" + this->engineName() + "\". It won't be sent.");
             }
 
-            grpc::Status status = _stub->setDataPack(&context, request, &reply);
+            grpc::Status status = _stub->setDataPacks(&context, request, &reply);
 
             if(!status.ok())
             {

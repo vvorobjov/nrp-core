@@ -225,7 +225,6 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
     generate_proto_cpp("${PROTO_FILE}" PROTO_SRC_FILES)
 endforeach()
 
-generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_msgs.proto" PROTO_SRC_FILES)
 generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
@@ -235,26 +234,46 @@ generate_grpc_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.prot
 
 # Protobuf utils
 set(DATAPACK_MSG_TYPES "")
-file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_msgs.proto" DATAPACK_MSG_FILE)
+set(DATAPACK_HEADERS "")
 
-# Find msg definitions and add python bindings for them
-foreach(LINE IN LISTS DATAPACK_MSG_FILE)
-    if(LINE MATCHES "}")
-        set(DO_PROCESS FALSE)
-    endif()
-    if(DO_PROCESS AND NOT LINE MATCHES "{")
-        # string(FIND  " "  REVERSE)
-        string(STRIP "${LINE}" LINE)
-        string(FIND "${LINE}" " " end)
-        string(SUBSTRING "${LINE}" 0 "${end}" msg_name)
-        string(REPLACE "." "::" msg_name "${msg_name}")
-        string(APPEND DATAPACK_MSG_TYPES "${msg_name},")
-    endif()
-    if(LINE MATCHES "oneof data")
-        set(DO_PROCESS TRUE)
-    endif()
+# Find all protobuf messages defined by users
+foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
+    file(STRINGS ${PROTO_FILE} PROTO_FILE_LINES)
+    foreach(LINE IN LISTS PROTO_FILE_LINES)
+
+        # Find the package name
+        if(LINE MATCHES "package")
+            string(STRIP "${LINE}" LINE)
+            string(FIND "${LINE}" " " start)
+            string(SUBSTRING "${LINE}" ${start} -1 package_name)
+            string(REPLACE ";" "::" package_name "${package_name}")
+        endif()
+
+        # Find message names
+        if(LINE MATCHES "message")
+            string(STRIP "${LINE}" LINE)
+            string(FIND "${LINE}" " " end)
+            string(SUBSTRING "${LINE}" ${end} -1 message_name)
+            string(STRIP "${message_name}" message_name)
+
+            # Append full message name (package name + message name) to the list
+            string(APPEND DATAPACK_MSG_TYPES "${package_name}")
+            string(APPEND DATAPACK_MSG_TYPES "${message_name}")
+        endif()
+
+    endforeach()
 endforeach()
-string(REGEX REPLACE ",$" "" DATAPACK_MSG_TYPES "${DATAPACK_MSG_TYPES}")
+
+string(STRIP ${DATAPACK_MSG_TYPES} DATAPACK_MSG_TYPES)
+string(REPLACE " " "," DATAPACK_MSG_TYPES ${DATAPACK_MSG_TYPES})
+
+# Create include clauses for protobuf_utils.h
+foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
+    get_filename_component(proto_basename ${PROTO_FILE} NAME_WLE)
+    string(APPEND proto_basename ".pb.h\"\n")
+    string(PREPEND proto_basename "\#include \"nrp_protobuf/")
+    string(APPEND DATAPACK_HEADERS ${proto_basename})
+endforeach()
 
 # Forces the generation of proto and grpc python code
 add_custom_target(
