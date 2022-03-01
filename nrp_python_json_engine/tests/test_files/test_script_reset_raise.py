@@ -1,4 +1,3 @@
-
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -19,8 +18,21 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-"""Init File. Imports nest and sets up a poisson generator, neuron, and voltmeter"""
 
-fdsafff
+from nrp_core.engines.python_json.engine_script import EngineScript
 
+class Script(EngineScript):
 
+    def initialize(self):
+        pass
+
+    def shutdown(self):
+        pass
+
+    def runLoop(self, timestep):
+        pass
+
+    def reset(self):
+        raise Exception("Reset failed")
+
+# EOF

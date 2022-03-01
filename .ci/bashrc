@@ -2,7 +2,7 @@
 
 export PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
 export LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:$NRP_INSTALL_DIR/bin
+export PATH=$PATH:$NRP_INSTALL_DIR/bin:$HOME/.local/bin
 
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
