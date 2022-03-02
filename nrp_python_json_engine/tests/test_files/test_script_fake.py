@@ -18,4 +18,8 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from .@PYTHON_MODULE_NAME@ import *
+
+class Script():
+    pass
+
+# EOF

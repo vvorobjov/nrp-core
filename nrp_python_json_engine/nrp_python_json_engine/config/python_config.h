@@ -45,6 +45,16 @@ struct PythonConfigConst
      * \brief If the init file could not be parsed, the python error message will be stored under this JSON property name
      */
     static constexpr std::string_view ErrorMsg = "Message";
+
+    /*!
+     * \brief Ratio used by SimulationTime
+     *
+     * The ratio should be passed to the server on initialization.
+     * In that way we can communicate to the server what time units are used in the simulation.
+     * This will impact the time step passed with runLoop command, as well as the simulation
+     * time returned.
+     */
+    static constexpr std::string_view SimulationTimeRatio = "TimeRatio";
 };
 
 #endif // PYTHON_CONFIG_H

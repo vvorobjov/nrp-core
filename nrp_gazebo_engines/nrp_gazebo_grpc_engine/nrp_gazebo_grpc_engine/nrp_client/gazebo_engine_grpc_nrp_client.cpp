@@ -47,7 +47,7 @@ void GazeboEngineGrpcNRPClient::initialize()
     // Wait for Gazebo to load world
     try
     {
-        this->sendInitCommand(this->engineConfig());
+        this->sendInitializeCommand(this->engineConfig());
     }
     catch(std::exception& e)
     {

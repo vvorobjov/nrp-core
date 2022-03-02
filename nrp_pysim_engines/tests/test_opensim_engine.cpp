@@ -141,4 +141,5 @@ TEST(TestPySimEngine, TestLibFunc)
     ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
     ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
     ASSERT_NO_THROW(engine->reset());
+    ASSERT_NO_THROW(engine->shutdown());
 }

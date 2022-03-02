@@ -27,6 +27,7 @@
 #include <gazebo/physics/Joint.hh>
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/gazebo_msgs.pb.h"
 
 namespace gazebo
 {

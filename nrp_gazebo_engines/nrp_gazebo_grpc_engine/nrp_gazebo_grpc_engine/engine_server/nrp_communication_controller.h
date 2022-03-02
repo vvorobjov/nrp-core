@@ -27,6 +27,8 @@
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/engine_server/gazebo_step_controller.h"
 
+#include "nrp_protobuf/gazebo_msgs.pb.h"
+
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
 

@@ -25,7 +25,7 @@
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "nrp_protobuf/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/gazebo_msgs.pb.h"
 
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 

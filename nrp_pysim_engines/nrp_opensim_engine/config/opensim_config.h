@@ -30,8 +30,6 @@ struct OpenSimConfigConst
 {
     static constexpr char EngineType[] = "opensim";
     static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/opensim";
-
-    static constexpr std::string_view InitFileExecStatus = "InitExecStatus";
 };
 
 #endif // PYSIM_CONFIG_H

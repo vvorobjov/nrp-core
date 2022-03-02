@@ -67,7 +67,13 @@ class PythonEngineJSONNRPClientBase
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            nlohmann::json resp = this->sendInitCommand(this->engineConfig());
+            // Pass the ratio used by SimulationTime to the server
+            // Based on the ratio, the server should be able to assert that it's using correct time units
+
+            nlohmann::json config = this->engineConfig();
+            config[PythonConfigConst::SimulationTimeRatio.data()] = { SimulationTime::period::num, SimulationTime::period::den };
+
+            nlohmann::json resp = this->sendInitCommand(config);
             if(!resp.at(PythonConfigConst::InitFileExecStatus.data()).get<bool>())
             {
                 // Write the error message

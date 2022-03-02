@@ -25,6 +25,7 @@
 
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
+#include "nrp_protobuf/test_msgs.pb.h"
 
 class ${engine_name}GrpcServer
     : public EngineGrpcServer
