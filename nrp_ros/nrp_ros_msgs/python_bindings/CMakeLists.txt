@@ -1,5 +1,16 @@
 set(PROJECT_NAME "nrp_ros_python_bindings")
+set(HEADER_DIRECTORY "python_bindings")
+
+set(NAMESPACE_NAME "${PROJECT_NAME}")
+
+set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "nrp_ros")
+set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
+set(TEST_NAME "${PROJECT_NAME}Tests")
+
+set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
+set(LIB_CONFIG_NAME "${LIBRARY_NAME}Config")
+set(LIB_VERSION_NAME "${LIB_CONFIG_NAME}Version")
 
 set(GEN_PYTHON_ROOT ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_MODULE_NAME})
 
@@ -8,6 +19,11 @@ project("${PROJECT_NAME}" VERSION ${NRP_VERSION})
 
 include(GNUInstallDirs)
 
+
+# List testing build files
+set(TEST_SRC_FILES
+        tests/rosmsg_converter.cpp
+        )
 ##########################################
 ## Dependencies
 find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
@@ -116,3 +132,74 @@ endforeach()
 ## Install python modules
 install(DIRECTORY ${GEN_PYTHON_ROOT}
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/data")
+
+
+
+## Header configuration
+
+configure_file("python_bindings/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
+#configure_file("python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+
+
+
+
+##########################################
+## Tests
+if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+    # Create testing executable
+    enable_testing()
+    add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
+    target_link_libraries(${TEST_NAME}
+            PUBLIC
+            #${PYTHON_MODULE_NAME}
+            #${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_GEN_LIB_TARGET}
+            ${catkin_LIBRARIES}
+            GTest::GTest
+            GTest::Main)
+
+    gtest_discover_tests(${TEST_NAME}
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+            EXTRA_ARGS -VV)
+
+    target_include_directories(${TEST_NAME} BEFORE
+            PUBLIC
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+
+            PRIVATE
+            )
+endif()
+
+
+
+
+##########################################
+## Installation
+
+set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+# create cmake version and config files
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+        INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+        )
+
+# Install cmake version and config files
+install(
+        FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_CONFIG_NAME}.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIB_VERSION_NAME}.cmake"
+        DESTINATION ${INSTALL_CONFIGDIR}
+)
+
