@@ -25,7 +25,7 @@ class OpensimInterface(object):
 
 	maxforces = []
 	curforces = []
-	
+
 	def __init__(self, model_name, start_visualizer, time_step):
 		super(OpensimInterface, self).__init__()
 		self.step_size = time_step
@@ -64,12 +64,11 @@ class OpensimInterface(object):
 
 	def reset(self):
 		self.state = self.model.initializeState()
-		#self.state = self.model.initSystem()
 		self.state.setTime(0)
 		self.n_step = 0
 
 		self.reset_manager()
-		
+
 	# Set the value of controller
 	def actuate(self, action):
 		brain = osim.PrescribedController.safeDownCast(
@@ -92,7 +91,6 @@ class OpensimInterface(object):
 		nameList = []
 		return [tSet.get(i).getName() for i in range(tSet.getSize())]
 
-
 	# Obtain the value of one datapack by the datapack name
 	def get_model_property(self, p_name, p_type):
 		if p_type == "Joint":
@@ -104,7 +102,9 @@ class OpensimInterface(object):
 			tProperty = tSet.get(p_name).get_appliesForce()
 			if tProperty:
 				self.model.realizeDynamics(self.state)
-				return tSet.get(p_name).getRecordValues(self.state)
+				tArray = tSet.get(p_name).getRecordValues(self.state).getAsVec3()
+				tList = [tArray[0],tArray[1],tArray[2]]
+				return tList
 			else:
 				print("Force type is not applied")
 				return []
@@ -112,7 +112,7 @@ class OpensimInterface(object):
 			print("p_type is error")
 			print("In this function, it only supports Joint and Force")
 			return []
-		
+
 	def get_sim_time(self):
 		return self.state.getTime()
 
@@ -120,5 +120,3 @@ class OpensimInterface(object):
 		self.manager = osim.Manager(self.model)
 		self.manager.setIntegratorAccuracy(self.integrator_accuracy)
 		self.manager.initialize(self.state)
-
-

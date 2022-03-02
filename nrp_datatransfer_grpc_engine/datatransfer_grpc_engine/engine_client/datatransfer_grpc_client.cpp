@@ -31,7 +31,7 @@ DataTransferEngineGrpcClient::DataTransferEngineGrpcClient(nlohmann::json &confi
 
 void DataTransferEngineGrpcClient::initialize()
 {
-    this->sendInitCommand(this->engineConfig());
+    this->sendInitializeCommand(this->engineConfig());
 }
 
 void DataTransferEngineGrpcClient::shutdown()

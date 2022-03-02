@@ -1,10 +1,8 @@
 from nrp_core.engines.opensim import OpenSimEngineScript
-from nrp_core.engines.python_json import RegisterEngine
 
 # The API of Opensim is shown in the following link:
 # https://simtk.org/api_docs/opensim/api_docs
 
-@RegisterEngine()
 class Script(OpenSimEngineScript):
     def initialize(self):
         """Initialize datapack1 with time"""

@@ -24,116 +24,138 @@
 
 #include "google/protobuf/message.h"
 
-#include "nrp_protobuf/engine_msgs.pb.h"
+#include "nrp_protobuf/engine_grpc.pb.h"
+@DATAPACK_HEADERS@
 #include "nrp_general_library/datapack_interface/datapack.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 namespace gpb = google::protobuf;
 
-
+// TODO It feels like these functions should be symmetric...
 namespace protobuf_utils {
 
     template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, Engine::DataPackMessage *datapackData)
+    // TODO use engine name from 'from' after https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340 is resolved
+    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, const EngineGrpc::DataPackMessage & from)
     {
-        const google::protobuf::OneofDescriptor *fieldOne = datapackData->GetDescriptor()->FindOneofByName("data");
-        const google::protobuf::FieldDescriptor *field = datapackData->GetReflection()->GetOneofFieldDescriptor(*datapackData,fieldOne);
+        const auto & dataPackId = from.datapackid();
 
-        if(!field) {
-            // There's no data set in the message, so create an empty datapack with datapack ID only
-            // NOTE: datapackData->datapackid().datapacktype() becomes useless, it should always be set internally in DataPack
-            //  constructor
-            return DataPackInterfaceConstSharedPtr(new DataPackInterface(datapackData->datapackid().datapackname(),
-                                                                        engineName, datapackData->datapackid().datapacktype()));
-        }
-        else if(std::strstr(typeid(MSG_TYPE).name(), field->message_type()->name().data())) {
-            auto data = dynamic_cast<MSG_TYPE *>(datapackData->GetReflection()->ReleaseMessage(datapackData, field));
+        if(!from.has_data())
+            return DataPackInterfaceConstSharedPtr(new DataPackInterface(dataPackId.datapackname(),
+                                                                         engineName, dataPackId.datapacktype()));
+        else if(from.data().Is<MSG_TYPE>())
+        {
+            MSG_TYPE * data = new MSG_TYPE();
+            from.data().UnpackTo(data);
+
             return DataPackInterfaceConstSharedPtr(
-                    new DataPack<MSG_TYPE>(datapackData->datapackid().datapackname(), engineName, data));
+                    new DataPack<MSG_TYPE>(dataPackId.datapackname(), engineName, data));
         }
 
-
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, datapackData);
+            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, from);
         else
-            return DataPackInterfaceConstSharedPtr();
+            throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" + dataPackId.datapackname() + "\" in engine \"" + engineName + "\"");
     }
 
 
     template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-    void setDataPackMessageFromInterfaceSubset(Engine::DataPackMessage *datapackData, DataPackInterface* datapack)
+    void setDataPackMessageFromInterfaceSubset(const DataPackInterface & from, EngineGrpc::DataPackMessage * to)
     {
-        if(dynamic_cast< DataPack<MSG_TYPE> *>(datapack)) {
-            datapackData->mutable_datapackid()->set_datapackname(datapack->name());
-            MSG_TYPE* d = dynamic_cast< DataPack<MSG_TYPE> *>(datapack)->releaseData();
-            auto n = datapackData->GetDescriptor()->field_count();
-            auto datapack_type = d->GetDescriptor()->full_name();
-            for(int i=0;i<n;++i) {
-                auto field_type = datapackData->GetDescriptor()->field(i)->message_type()->full_name();
-                if (datapack_type == field_type) {
-                    datapackData->GetReflection()->SetAllocatedMessage(datapackData, d,
-                                                                       datapackData->GetDescriptor()->field(i));
-                    return;
-                }
-            }
+        try
+        {
+            const auto& message = dynamic_cast<const DataPack<MSG_TYPE> &>(from);
+            to->mutable_datapackid()->set_datapackname(message.name());
+            to->mutable_datapackid()->set_datapacktype(message.type());
+            to->mutable_datapackid()->set_enginename(message.engineName());
+            to->mutable_data()->PackFrom(message.getData());
 
-            throw NRPException::logCreate("DataPackMessage data field cannot be set to data type \"" + d->GetDescriptor()->name());
+            return;
+        }
+        catch(const std::bad_cast& e)
+        {
+            // Do not process the exception.
+            // Bad casts aren't 'bad' in this case, they simply mean that
+            // we haven't found the right message type yet.
         }
 
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-            return setDataPackMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(datapackData, datapack);
+            return setDataPackMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(from, to);
+        else
+            throw NRPException::logCreate("DataPack \"" + from.name() + "\" is not supported by engine '" + from.engineName() + "'");
     }
 
 
-    inline DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessage(const std::string &engineName, Engine::DataPackMessage *datapackData)
-    { return getDataPackInterfaceFromMessageSubset<@DATAPACK_MSG_TYPES@>(engineName, datapackData); }
+    inline DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessage(const std::string &engineName, const EngineGrpc::DataPackMessage &from)
+    { return getDataPackInterfaceFromMessageSubset<@DATAPACK_MSG_TYPES@>(engineName, from); }
 
 
-    inline void setDataPackMessageFromInterface(Engine::DataPackMessage *datapackData, DataPackInterface* datapack)
-    { setDataPackMessageFromInterfaceSubset<@DATAPACK_MSG_TYPES@>(datapackData, datapack); }
-
-
-    inline const gpb::Message& getDataFromDataPackMessage(const Engine::DataPackMessage& datapackData)
-    {
-        const gpb::OneofDescriptor *fieldOne = datapackData.GetDescriptor()->FindOneofByName("data");
-        const gpb::FieldDescriptor *field = datapackData.GetReflection()->GetOneofFieldDescriptor(datapackData,fieldOne);
-
-        if(!field) {
-            const auto errorMessage = "DataPackMessage " + datapackData.datapackid().datapackname() + " data is not set";
-            throw std::invalid_argument(errorMessage);
-        }
-
-        return datapackData.GetReflection()->GetMessage(datapackData,field);
-    }
+    inline void setDataPackMessageFromInterface(const DataPackInterface & from, EngineGrpc::DataPackMessage * to)
+    { setDataPackMessageFromInterfaceSubset<@DATAPACK_MSG_TYPES@>(from, to); }
 
 
     template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-    void setDataPackMessageDataSubset(google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
+    std::unique_ptr<gpb::Message> getDataFromDataPackMessageSubset(const EngineGrpc::DataPackMessage & from)
     {
-        if(dynamic_cast< MSG_TYPE *>(dev_data)) {
-            auto d = dynamic_cast< MSG_TYPE *>(dev_data);
-            auto n = m->GetDescriptor()->field_count();
-            auto datapack_type = d->GetDescriptor()->full_name();
-
-            for(int i=0;i<n;++i) {
-                auto field_type = m->GetDescriptor()->field(i)->message_type()->full_name();
-                if (datapack_type == field_type) {
-                    m->GetReflection()->SetAllocatedMessage(m, d, m->GetDescriptor()->field(i));
-                    return;
-                }
-            }
+        if(from.data().Is<MSG_TYPE>())
+        {
+            MSG_TYPE * dataPack = new MSG_TYPE();
+            from.data().UnpackTo(dataPack);
+            return std::unique_ptr<gpb::Message>(dataPack);
         }
 
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-            return setDataPackMessageDataSubset<REMAINING_MSG_TYPES...>(dev_data, m);
-        else {
-            const auto errorMessage = "DataPackMessage data field cannot be set to data type \"" + dev_data->GetDescriptor()->name();
+            return getDataFromDataPackMessageSubset<REMAINING_MSG_TYPES...>(from);
+        else
+        {
+            const auto errorMessage = "Unable to unpack data from DataPack '" +
+                                      from.datapackid().datapackname() +
+                                      "' in engine '"
+                                      + from.datapackid().enginename() + "'";
+
             throw std::invalid_argument(errorMessage);
         }
     }
 
-    inline void setDataPackMessageData(google::protobuf::Message *dev_data, Engine::DataPackMessage *m)
-    { setDataPackMessageDataSubset<@DATAPACK_MSG_TYPES@>(dev_data, m); }
+
+    inline std::unique_ptr<gpb::Message> getDataFromDataPackMessage(const EngineGrpc::DataPackMessage& from)
+    {
+        return getDataFromDataPackMessageSubset<@DATAPACK_MSG_TYPES@>(from);
+    }
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setDataPackMessageDataSubset(const google::protobuf::Message & from, EngineGrpc::DataPackMessage * to)
+    {
+        // TODO datapackname and enginename are set outside of this function, should we do it here?
+        //  To be considered as part of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340
+        try
+        {
+            const auto& message = dynamic_cast<const MSG_TYPE &>(from);
+            to->mutable_data()->PackFrom(message);
+            return;
+        }
+        catch(const std::bad_cast& e)
+        {
+            // Do not process the exception.
+            // Bad casts aren't 'bad' in this case, they simply mean that
+            // we haven't found the right message type yet.
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setDataPackMessageDataSubset<REMAINING_MSG_TYPES...>(from, to);
+        else
+        {
+            const auto errorMessage = "Unable to pack data into DataPack '" +
+                                      to->datapackid().datapackname() +
+                                      "' in engine '" +
+                                      to->datapackid().enginename() + "'";
+
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+
+    inline void setDataPackMessageData(const google::protobuf::Message &from, EngineGrpc::DataPackMessage *to)
+    { setDataPackMessageDataSubset<@DATAPACK_MSG_TYPES@>(from, to); }
 }
 
 #endif // PROTO_UTILS_H

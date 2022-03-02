@@ -1,7 +1,5 @@
 from nrp_core.engines.opensim import OpenSimEngineScript
-from nrp_core.engines.python_json import RegisterEngine
 
-@RegisterEngine()
 class Script(OpenSimEngineScript):
     def initialize(self):
         print("Server Engine is initializing")

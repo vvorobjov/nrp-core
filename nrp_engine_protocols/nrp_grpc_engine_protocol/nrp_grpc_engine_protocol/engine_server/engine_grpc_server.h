@@ -258,7 +258,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status init(grpc::ServerContext * /*context*/, const EngineGrpc::InitRequest * request, EngineGrpc::InitReply * /*reply*/) override
+        grpc::Status initialize(      grpc::ServerContext           * /*context*/,
+                                const EngineGrpc::InitializeRequest * request,
+                                      EngineGrpc::InitializeReply   * /*reply*/) override
         {
             try
             {
@@ -267,6 +269,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
                 // Run engine-specific initialization function
+
                 this->initialize(requestJson, lock);
             }
             catch(const std::exception &e)
@@ -291,13 +294,15 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status resetHandle(grpc::ServerContext * /*context*/, const EngineGrpc::ResetRequest * /*request*/, EngineGrpc::ResetReply * /*reply*/) override
+        grpc::Status reset(      grpc::ServerContext      * /*context*/,
+                           const EngineGrpc::ResetRequest * /*request*/,
+                                 EngineGrpc::ResetReply   * /*reply*/) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             try
             {
                 EngineGrpcServer::lock_t lock(this->_datapackLock);
-                
+
                 // Run engine-specific reset function
                 this->reset();
             }
@@ -323,7 +328,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status shutdown(grpc::ServerContext * /*context*/, const EngineGrpc::ShutdownRequest * request, EngineGrpc::ShutdownReply * /*reply*/) override
+        grpc::Status shutdown(      grpc::ServerContext         * /*context*/,
+                              const EngineGrpc::ShutdownRequest * request,
+                                    EngineGrpc::ShutdownReply   * /*reply*/) override
         {
             try
             {
@@ -357,7 +364,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status runLoopStep(grpc::ServerContext * /*context*/, const EngineGrpc::RunLoopStepRequest * request, EngineGrpc::RunLoopStepReply * reply) override
+        grpc::Status runLoopStep(      grpc::ServerContext            * /*context*/,
+                                 const EngineGrpc::RunLoopStepRequest * request,
+                                       EngineGrpc::RunLoopStepReply   * reply) override
         {
             try
             {
@@ -388,11 +397,13 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status setDataPack(grpc::ServerContext * /*context*/, const EngineGrpc::SetDataPackRequest * request, EngineGrpc::SetDataPackReply * /*reply*/) override
+        grpc::Status setDataPacks(      grpc::ServerContext             * /*context*/,
+                                  const EngineGrpc::SetDataPacksRequest * request,
+                                        EngineGrpc::SetDataPacksReply   * /*reply*/) override
         {
             try
             {
-                this->setDataPackData(*request);
+                this->setDataPacksData(*request);
             }
             catch(const std::exception &e)
             {
@@ -415,11 +426,13 @@ class EngineGrpcServer : public EngineGrpcService::Service
          *
          * \return gRPC request status
          */
-        grpc::Status getDataPack(grpc::ServerContext * /*context*/, const EngineGrpc::GetDataPackRequest * request, EngineGrpc::GetDataPackReply * reply) override
+        grpc::Status getDataPacks(      grpc::ServerContext             * /*context*/,
+                                  const EngineGrpc::GetDataPacksRequest * request,
+                                        EngineGrpc::GetDataPacksReply   * reply) override
         {
             try
             {
-                this->getDataPackData(*request, reply);
+                this->getDataPacksData(*request, reply);
             }
             catch(const std::exception &e)
             {
@@ -429,52 +442,59 @@ class EngineGrpcServer : public EngineGrpcService::Service
             return grpc::Status::OK;
         }
 
-        virtual void setDataPackData(const EngineGrpc::SetDataPackRequest & data)
+        virtual void setDataPacksData(const EngineGrpc::SetDataPacksRequest & data)
         {
             EngineGrpcServer::lock_t lock(this->_datapackLock);
 
-            const auto numDataPacks = data.request_size();
+            const auto numDataPacks = data.datapacks_size();
 
             for(int i = 0; i < numDataPacks; i++)
             {
-                const auto &r = data.request(i);
-                const auto &devInterface = this->_datapacksControllers.find(r.datapackid().datapackname());
+                const auto &dataPack = data.datapacks(i);
+                const auto &devInterface = this->_datapacksControllers.find(dataPack.datapackid().datapackname());
 
-                if(devInterface != _datapacksControllers.end()) {
+                if(devInterface != _datapacksControllers.end())
+                {
                     if(_handleDataPackMessage)
-                        devInterface->second->handleDataPackData(r);
+                        devInterface->second->handleDataPackData(dataPack);
                     else
-                        devInterface->second->handleDataPackData(
-                                protobuf_utils::getDataFromDataPackMessage(r));
+                    {
+                        const auto data = protobuf_utils::getDataFromDataPackMessage(dataPack);
+                        devInterface->second->handleDataPackData(*data);
+                    }
                 }
                 else
                 {
-                    const auto errorMessage = "DataPack " + r.datapackid().datapackname() + " is not registered in engine " + this->_engineName;
+                    const auto errorMessage = "DataPack " + dataPack.datapackid().datapackname() + " is not registered in engine " + this->_engineName;
                     throw std::invalid_argument(errorMessage);
                 }
             }
         }
-        virtual void getDataPackData(const EngineGrpc::GetDataPackRequest & request, EngineGrpc::GetDataPackReply * reply)
+
+        virtual void getDataPacksData(const EngineGrpc::GetDataPacksRequest & request, EngineGrpc::GetDataPacksReply * reply)
         {
             EngineGrpcServer::lock_t lock(this->_datapackLock);
 
-            const auto numDataPacks = request.datapackid_size();
+            const auto numDataPacks = request.datapackids_size();
 
             for(int i = 0; i < numDataPacks; i++)
             {
-                const auto &devInterface = this->_datapacksControllers.find(request.datapackid(i).datapackname());
+                const auto &devInterface = this->_datapacksControllers.find(request.datapackids(i).datapackname());
                 if(devInterface != _datapacksControllers.end())
                 {
-                    auto r = reply->add_reply();
-                    r->mutable_datapackid()->set_datapackname(request.datapackid(i).datapackname());
+                    auto * protoDataPack = reply->add_datapacks();
+
+                    protoDataPack->mutable_datapackid()->set_datapackname(request.datapackids(i).datapackname());
+                    protoDataPack->mutable_datapackid()->set_enginename(this->_engineName);
+
                     // ask controller to fetch datapack data. nullptr means there is no new data available
                     auto d = devInterface->second->getDataPackInformation();
                     if(d != nullptr)
-                        protobuf_utils::setDataPackMessageData(d, r);
+                        protobuf_utils::setDataPackMessageData(*d, protoDataPack);
                 }
                 else
                 {
-                    const auto errorMessage = "DataPack " + request.datapackid(i).datapackname() + " is not registered in engine " + this->_engineName;
+                    const auto errorMessage = "DataPack " + request.datapackids(i).datapackname() + " is not registered in engine " + this->_engineName;
                     throw std::invalid_argument(errorMessage);
                 }
             }

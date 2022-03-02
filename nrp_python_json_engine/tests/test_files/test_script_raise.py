@@ -1,4 +1,3 @@
-
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -19,13 +18,21 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-"""Init File. Imports numpy"""
 
-import nest
-import numpy
+from nrp_core.engines.python_json.engine_script import EngineScript
 
-numpy.random.rand()
-numpy.random.RandomState(4)
+class Script(EngineScript):
 
-pyrngs = [numpy.random.RandomState(s) for s in range(3, 5)]
+    def initialize(self):
+        raise Exception("Initialization failed")
 
+    def shutdown(self):
+        raise Exception("Shutdown failed")
+
+    def runLoop(self, timestep):
+        raise Exception("RunLoop failed")
+
+    def reset(self):
+        raise Exception("Reset failed")
+
+# EOF

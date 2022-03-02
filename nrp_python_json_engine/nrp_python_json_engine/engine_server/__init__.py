@@ -1,4 +1,3 @@
-
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -19,18 +18,7 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-"""Simple python script file"""
 
-from nrp_core.engines.python_json import EngineScript,RegisterEngine
+from .engine_script import *
 
-@RegisterEngine()
-class Script(EngineScript):
-    def initialize(self):
-        self._registerDataPack("datapack1")
-
-    """Simple script function"""
-    def runLoop(self, timestep):
-        self._setDataPack("datapack1", { "time" : self._time.count() })
-        dev = self._getDataPack("datapack1")
-        print("Engine 1 at time " + str(self._time.count()))
-        print("DataPack 1 data is " + str(dev))
+# EOF
