@@ -7,11 +7,11 @@ class Script(EngineScript):
         """Initialize datapack3 with time"""
         print("Engine 3 is initializing. Registering datapack...")
         self._registerDataPack("datapack3")
-        self._setDataPack("datapack3", { "time" : self._time, "timestep": 0 })
+        self._setDataPack("datapack3", { "time" : self._time_ns, "timestep": 0 })
 
-    def runLoop(self, timestep):
+    def runLoop(self, timestep_ns):
         """Update datapack3 at every timestep"""
-        self._setDataPack("datapack3", { "time" : self._time, "timestep": timestep })
+        self._setDataPack("datapack3", { "time" : self._time_ns, "timestep": timestep_ns })
 
     def shutdown(self):
         print("Engine 3 is shutting down")

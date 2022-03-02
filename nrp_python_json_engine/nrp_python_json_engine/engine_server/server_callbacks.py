@@ -32,20 +32,30 @@ script = None
 
 def _import_python_script(filename: str) -> ModuleType:
     """Imports a module with given name and returns a handle to it"""
-    script_dirname = os.path.dirname(filename)
-    script_basename = os.path.basename(filename)
+    script_dirname, script_basename = os.path.split(filename)
 
     # Append path of the script to sys.path. This is needed for the import to work
     sys.path.append(script_dirname)
 
-    return import_module(script_basename[:len(script_basename) - 3])
+    return import_module(os.path.splitext(script_basename)[0])
 
 
 def initialize(request_json: dict) -> dict:
     """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
 
+
     try:
+        # Retrieve the time units ratio used by the client and make sure that
+        # the server is using correct time units.
+        # Currently only nanoseconds are supported
+
+        (num, den) = request_json["TimeRatio"]
+
+        if num != 1 or den != 1000000000:
+            raise Exception(f"NRP-Core was compiled with SimulationTime units different from nanoseconds (i.e. ratio "
+                            f"{num} / {den}), but PythonJSONEngine only support nanoseconds.")
+
         # Load the python script module and check if the Script class inherits from EngineScript
 
         script_module = _import_python_script(request_json["PythonFileName"])
@@ -56,6 +66,7 @@ def initialize(request_json: dict) -> dict:
 
         script = script_module.Script()
         script._name = request_json["EngineName"]
+        script._config = request_json
         script.initialize()
 
     except Exception as e:
@@ -71,7 +82,7 @@ def run_loop(request_json: dict) -> dict:
     script._advanceTime(request_json["time_step"])
     script.runLoop(request_json["time_step"])
 
-    return {"time": script._time}
+    return {"time": script._time_ns}
 
 
 def set_datapack(request_json: dict) -> None:
@@ -82,25 +93,22 @@ def set_datapack(request_json: dict) -> None:
     if not request_json:
         return
 
-    for datapack_name in request_json.keys():
+    for datapack_name in request_json:
+        datapack = request_json[datapack_name]
 
-        # Check if all expected keys are in the datapack
+        # Check if any of the expected keys are not in the datapack
 
-        if expected_keys > request_json[datapack_name].keys():
-            raise Exception("Malformed DataPack. Expected keys: " +
-                            str(expected_keys) +
-                            "; actual keys: " +
-                            str(request_json[datapack_name].keys()))
+        if not expected_keys.issubset(datapack.keys()):
+            raise Exception(f"Malformed DataPack. Expected keys: {str(expected_keys)}"
+                            f"; actual keys: {str(datapack.keys())}")
 
         # Check if DataPack type is correct and save the data
 
-        if(request_json[datapack_name]["type"] == JsonDataPack.getType()):
-            script._setDataPack(datapack_name, request_json[datapack_name]["data"])
+        if datapack["type"] == JsonDataPack.getType():
+            script._setDataPack(datapack_name, datapack["data"])
         else:
-            raise Exception("Unable to set datapacks of type \"" +
-                            request_json[datapack_name]["type"] +
-                            "\" (DataPack named \"" +
-                            request_json[datapack_name]["name"] + "\")")
+            raise Exception(f"Unable to set datapacks of type '{datapack['type']}'"
+                            f" (DataPack named '{datapack['name']}'")
 
 
 def get_datapack(request_json: dict) -> dict:
@@ -112,21 +120,21 @@ def get_datapack(request_json: dict) -> dict:
 
     return_data = {}
 
-    for datapack_name in request_json.keys():
+    for datapack_name in request_json:
+        engine_name = request_json[datapack_name]["engine_name"]
 
         # Check if engine name in the request matches the actual name
-        if(request_json[datapack_name]["engine_name"] != script._name):
-            raise Exception("Requesting DataPack '" + datapack_name +
-                            "' from incorrect engine (engine name in the request '" +
-                            request_json[datapack_name]["engine_name"] +
-                            "', engine that received the request '" + script._name + "'")
+        if engine_name != script._name:
+            raise Exception(f"Requesting DataPack '{datapack_name}'"
+                            f" from incorrect engine (engine name in the request '{engine_name}'"
+                            f", engine that received the request '{script._name}'")
 
         # TODO: "type" in the request is currently empty, so we can't validate it...
 
         data = script._getDataPack(datapack_name)
 
         return_data[datapack_name] = {}
-        return_data[datapack_name]["engine_name"] = script._name
+        return_data[datapack_name]["engine_name"] = engine_name
         return_data[datapack_name]["type"] = JsonDataPack.getType()
         return_data[datapack_name]["data"] = data
 
@@ -137,8 +145,11 @@ def reset(request_json: dict) -> dict:
     """Calls the reset() method of the Script object"""
     global script
 
-    script.reset()
-
+    try:
+        script.reset()
+        script._time_ns = 0
+    except Exception as e:
+        pass
 
 
 

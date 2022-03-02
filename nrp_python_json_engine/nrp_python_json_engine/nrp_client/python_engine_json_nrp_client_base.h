@@ -67,7 +67,25 @@ class PythonEngineJSONNRPClientBase
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            this->sendInitCommand(this->engineConfig());
+            // Pass the ratio used by SimulationTime to the server
+            // Based on the ratio, the server should be able to assert that it's using correct time units
+
+            nlohmann::json config = this->engineConfig();
+            config[PythonConfigConst::SimulationTimeRatio.data()] = { SimulationTime::period::num, SimulationTime::period::den };
+
+            try
+            {
+                nlohmann::json resp = this->sendInitCommand(config);
+            }
+            catch(std::exception &e)
+            {
+                // Write the error message
+                this->_initErrMsg = e.what();
+                NRPLogger::error(this->_initErrMsg);
+
+                throw NRPException::logCreate("Initialization failed: " + this->_initErrMsg);
+            }
+
 
             NRPLogger::debug("PythonEngineJSONNRPClientBase::initialize(...) completed with no errors.");
         }
@@ -76,7 +94,19 @@ class PythonEngineJSONNRPClientBase
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            this->sendResetCommand(nlohmann::json("reset"));
+            try
+            {
+                nlohmann::json resp = this->sendResetCommand(nlohmann::json("reset"));
+                NRPLogger::debug("NestEngineJSONNRPClient:reset()::resp [ {} ]", resp.dump());
+            }
+            catch(std::exception &e)
+            {
+                // Write the error message
+                std::string msg = e.what();
+                NRPLogger::error(msg);
+
+                throw NRPException::logCreate("Reset failed: " + msg);
+            }
 
             this->resetEngineTime();
         }

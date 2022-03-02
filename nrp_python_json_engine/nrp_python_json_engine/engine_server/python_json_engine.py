@@ -30,6 +30,12 @@ import urllib.parse
 import socket
 from contextlib import closing
 
+# Disable debug printouts
+
+import logging
+log = logging.getLogger("werkzeug")
+log.setLevel(logging.ERROR)
+
 # Make sure that we are running flask version 2.x.x
 
 assert flask.__version__.startswith("2"), "Required flask version 2.x.x, found " + flask.__version__

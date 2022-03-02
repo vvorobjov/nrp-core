@@ -8,13 +8,8 @@ The process is very simple and consists only of two steps:
 2. Place the new *.proto* file in the folder *nrp_protobuf/engine_proto_defs*. In this way your message defitinions will be automatically compiled during the NRP-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
 
 
-Optionally, those new message definitions which will be used to exchange data with gRPC Engines must be manually added to the *Engine.DataPackMessage* message oneof *data* field definition.
-*Engine.DataPackMessage* is the message type used by gRPC Engine servers to send data to gRPC Engine clients. It contains a DataPack Id and the data itself, stored in a oneof *data* field. *Oneof* is a kind of XOR type of field (please refer to the guide listed above for more information). So, in the end, only those message types listed in the oneof *data* field can be sent by gRPC Engine servers.
+After completing the aforementioned steps, the new message definitions will be also available to exchange data with gRPC Engines through the *Engine.DataPackMessage* message type.
+This is the message type used by gRPC Engine servers to send data to gRPC Engine clients. It contains a DataPack Id and the data itself, stored in a *data* field of type *Any*. *Any* is a type of field (please refer to the guide listed above for more information) which can store any type of message. Those message types compiled with NRP-Core from the folder *nrp_protobuf/engine_proto_defs* can be sent to gRPC Engine servers wrapped in *Engine.DataPackMessage*.
 
-The *Engine.DataPackMessage* can be found in the folder *nrp_protobuf/nrp_proto_defs*. As shipped with NRP-core, it contains only a message definition used for testing and those messages used by the GazeboGrpcEngine.
-
-\dontinclude engine_msgs.proto
-\skip message DataPackMessage
-\until }
-\until }
+The *Engine.DataPackMessage* can be found in the folder *nrp_protobuf/nrp_proto_defs*.
 */

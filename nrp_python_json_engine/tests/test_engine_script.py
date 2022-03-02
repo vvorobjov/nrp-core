@@ -96,12 +96,18 @@ class TestServer(unittest.TestCase):
     def test_time(self):
         """Try to advance the simulation time."""
         script = Script()
-        self.assertEqual(script._time, 0)
+        self.assertEqual(script._time_ns, 0)
         timestep = 1000000
         script._advanceTime(timestep)
-        self.assertEqual(script._time, timestep)
+        self.assertEqual(script._time_ns, timestep)
         script._advanceTime(timestep)
-        self.assertEqual(script._time, 2 * timestep)
+        self.assertEqual(script._time_ns, 2 * timestep)
+
+
+    def test_reset_not_implemented(self):
+        script = Script()
+        with self.assertRaisesRegex(NotImplementedError, "The reset method of EngineScript is not implemented"):
+            script.reset()
 
 
 if __name__ == '__main__':

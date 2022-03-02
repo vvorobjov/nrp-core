@@ -28,26 +28,42 @@ class TestServer(unittest.TestCase):
 
     engine_name = "test_engine"
     time_step = 20000000
+    ratio = [1, 1000000000]
 
-    # Dictrionary used for run_loop() requests
+    # Dictionary used for run_loop() requests
     run_loop_json = {"time_step": time_step}
 
-    # Dictrionary used for initialize() requests
+    # Dictionary used for initialize() requests
     # Contains a path to valid EngineScript class
     init_json = {"PythonFileName": "test_files/test_script.py",
-                "EngineName": engine_name}
+                 "TimeRatio": ratio,
+                 "EngineName": engine_name}
 
-    # Dictrionary used for initialize() requests.
+    # Dictionary used for initialize() requests
+    # Contains unsupported time ratio
+    init_json_unsupported_ratio = {"PythonFileName": "test_files/test_script.py",
+                                   "TimeRatio": [1, 1000000],
+                                   "EngineName": engine_name}
+
+    # Dictionary used for initialize() requests.
     # Methods of the EngineScript class included in PythonFileName raise exceptions
     init_json_raise = {"PythonFileName": "test_files/test_script_raise.py",
+                       "TimeRatio": ratio,
                        "EngineName": engine_name}
 
-    # Dictrionary used for initialize() requests.
+    # Dictionary used for initialize() requests.
+    # The reset() method of EngineScript class included in PythonFileName raises an exception
+    init_json_reset_raise = {"PythonFileName": "test_files/test_script_reset_raise.py",
+                             "TimeRatio": ratio,
+                             "EngineName": engine_name}
+
+    # Dictionary used for initialize() requests.
     # The Script class doesn't inherit from EngineScript
     init_json_fake = {"PythonFileName": "test_files/test_script_fake.py",
-                       "EngineName": engine_name}
+                      "TimeRatio": ratio,
+                      "EngineName": engine_name}
 
-    # Dictrionary used for set_datapack() requests
+    # Dictionary used for set_datapack() requests
     set_datapack_json = {}
     set_datapack_json["test_datapack"] = {"engine_name": engine_name,
                                           "type": JsonDataPack.getType(),
@@ -63,7 +79,8 @@ class TestServer(unittest.TestCase):
         and the callback should return True.
         """
         server_callbacks.initialize(self.init_json)
-        #self.assertTrue(result["InitExecStatus"])
+        self.assertEqual(server_callbacks.script._name, self.init_json["EngineName"])
+        self.assertEqual(server_callbacks.script._config, self.init_json)
 
 
     def test_initialize_script_inheritance(self):
@@ -85,6 +102,15 @@ class TestServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_raise)
         self.assertRaisesRegex(Exception, "Initialization failed")
+
+    def test_initialize_unsupported_ratio(self):
+        """
+        Initialize the Script class using proper callback.
+        The initialize() callback should raise an exception (because of unsupported time units)
+        and return False and an error message.
+        """
+        server_callbacks.initialize(self.init_json_unsupported_ratio)
+        self.assertRaisesRegex(Exception, "PythonJSONEngine only support nanoseconds")
 
 
     def test_shutdown(self):
@@ -112,12 +138,15 @@ class TestServer(unittest.TestCase):
     def test_reset(self):
         """
         Reset the Script class using proper callback.
-        The reset() method of EngineScript class should succeed
-        and the callback should return True.
+        The reset() method of EngineScript class should succeed,
+        the time should be set to 0 and the callback should return True.
         """
         server_callbacks.initialize(self.init_json)
+        server_callbacks.run_loop(self.run_loop_json)
+        self.assertEqual(server_callbacks.script._time_ns, self.time_step)
+
         server_callbacks.reset({})
-        #self.assertTrue(result["ResetExecStatus"])
+        self.assertEqual(server_callbacks.script._time_ns, 0)
 
 
     def test_reset_failure(self):
@@ -125,9 +154,15 @@ class TestServer(unittest.TestCase):
         Reset the Script class using proper callback.
         The reset() method of EngineScript class should raise an exception
         and the callback should return False and an error message.
+        The simulation time should not be reset!
         """
-        server_callbacks.reset({})
+        server_callbacks.initialize(self.init_json_reset_raise)
+        server_callbacks.run_loop(self.run_loop_json)
+        self.assertEqual(server_callbacks.script._time_ns, self.time_step)
+
+        result = server_callbacks.reset({})
         self.assertRaisesRegex(Exception, "Reset failed")
+        self.assertEqual(server_callbacks.script._time_ns, self.time_step)
 
 
     def test_run_loop(self):
