@@ -8,6 +8,7 @@
 pipeline {
     environment {
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
+        BITBUCKET_DOC_REPO = "${env.BRANCH_NAME == "master" ? "hbpneurorobotics" : "nrp-core-dev-docs"}"
     }
     agent {
         dockerfile {
@@ -34,6 +35,21 @@ pipeline {
 
                 // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                 sh 'bash .ci/20-build.sh'
+            }
+        }
+       
+        stage('Build Docs') {
+            steps {
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building documentation')
+
+                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                sh 'bash .ci/25-build_docs.sh'
+                script{
+                    if (fileExists('build/pages_with_subsections_and_subpages.txt')) {
+                        unstable(message: "${STAGE_NAME} some doc pages are corrupted")
+                        archiveArtifacts artifacts: 'build/pages_with_subsections_and_subpages.txt', fingerprint: true
+                    }
+                }
             }
         }
        
@@ -64,81 +80,72 @@ pipeline {
                 publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
             }
         }
-       
-        
-        stage('Publishing dev docs') {
 
-            // updates dev documentation
+        stage('Publishing Doxygen docs') {
             when {
-                expression { env.BRANCH_NAME == "development" }
+                expression { (env.TOPIC_BRANCH == "development") || (env.TOPIC_BRANCH == "master") }
             }
             steps {
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating dev documentation')
-
-                sh 'cd build && make nrp_doxygen'
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
 
                 sshagent(['vorobev_key']) {
-                    sh('''
+                    sh("""
                         #!/usr/bin/env bash
                         set +x
 
-                        git config --global user.name "nrp-jenkins"
-                        git config --global user.email "neurorobotics@ebrains.eu"
+                        git config --global user.name 'nrp-jenkins'
+                        git config --global user.email 'neurorobotics@ebrains.eu'
 
-                        export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
+                        export GIT_SSH_COMMAND='ssh -oStrictHostKeyChecking=no'
 
-                        git clone git@bitbucket.org:nrp-core-dev-docs/nrp-core-dev-docs.bitbucket.io.git
+                        git clone git@bitbucket.org:${BITBUCKET_DOC_REPO}/${BITBUCKET_DOC_REPO}.bitbucket.io.git
 
-                        cp -rf build/doxygen/html/* nrp-core-dev-docs.bitbucket.io/
-                        cd nrp-core-dev-docs.bitbucket.io
-                        if [ -z $(git status --porcelain) ];
-                        then
-                            echo "Nothing to commit!"
+                        cp -rf build/doxygen/html/* ${BITBUCKET_DOC_REPO}.bitbucket.io/
+                        cd ${BITBUCKET_DOC_REPO}.bitbucket.io
+                        if [[ -z \$(git status --porcelain) ]]; then
+                            echo 'Nothing to commit!'
                         else
                             git add -A
-                            git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
+                            git commit -m '[NRRPLT-0000] Jenkins automatic doc-pages update'
                             git push
                         fi
-                    ''')
+                    """)
                 }
             }
-
         }
 
-        stage('Publishing docs') {
-            // when master branch, update main documentation
-            when {
-                expression { env.BRANCH_NAME == "master" }
-            }
+        stage('Publishing Sphinx docs') {
             steps {
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating main documentation')
+                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
 
-                sh 'cd build && make doxygen'
+                // This step requires nexusArtifactUploader plugin
+                // The artifact will be uploaded to 
+                // <protocol>://nexusUrl/repository/<repository>/<groupId>/<artifactId>/<version>/<artifactId>-<version>-<classifier>.<type>
+                nexusArtifactUploader(
+                    nexusVersion: 'nexus3',
+                    protocol: 'https',
+                    nexusUrl: "${env.NEXUS_REGISTRY_IP}",
+                    groupId: 'nrp-core',
+                    version: "${TOPIC_BRANCH}",
+                    repository: 'nrp-storage',
+                    credentialsId: 'nexusadmin',
+                    artifacts: [
+                        [artifactId: "nrp-core-docs",
+                        classifier: 'docs',
+                        file: 'build/nrp-core-rst.zip',
+                        type: 'zip']
+                    ]
+                )
 
-                sshagent(['vorobev_key']) {
-                    sh('''
-                        #!/usr/bin/env bash
-                        set +x
-
-                        git config --global user.name "nrp-jenkins"
-                        git config --global user.email "neurorobotics@ebrains.eu"
-
-                        export GIT_SSH_COMMAND="ssh -oStrictHostKeyChecking=no"
-
-                        git clone git@bitbucket.org:hbpneurorobotics/hbpneurorobotics.bitbucket.io.git
-
-                        cp -rf build/doxygen/html/* hbpneurorobotics.bitbucket.io/
-                        cd hbpneurorobotics.bitbucket.io
-                        if [ -z $(git status --porcelain) ];
-                        then
-                            echo "Nothing to commit!"
-                        else
-                            git add -A
-                            git commit -m "[NRRPLT-0000] Jenkins automatic doc-pages update"
-                            git push
-                        fi
-                    ''')
-                }
+                // Start Jenkins pipeline to publish docs to neurorobotics.net
+                build job: '/Deploy_nrp_core_docs', parameters: [
+                    string(name: 'BRANCH_NAME', value:"${env.TOPIC_BRANCH}"), 
+                    string(name: 'BASE_BRANCH_NAME', value:"development"), 
+                    string(name: 'ADMIN_SCRIPT_BRANCH', value:"nrp-core"), 
+                    string(name: 'DOCUMENTATION_REF', value:"nrp-core"), 
+                    booleanParam(name: 'DEPLOY', value: true), 
+                    booleanParam(name: 'RELEASE', value: false), 
+                    booleanParam(name: 'LATEST', value: false)], wait: false
             }
         }
     }

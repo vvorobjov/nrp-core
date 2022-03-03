@@ -1,6 +1,6 @@
 /*! \page installation Installation Instructions
 
-The instructions required to install NRP-core from source (the only option currently available) are listed below.
+The instructions required to install NRP-core from the source (the only option currently available) are listed below.
 
 \section installation_requirements Requirements
 
@@ -25,18 +25,18 @@ In any case, be aware that NEST 2.x is incompatible with NRP-core.
 \dontinclude README.md
 
 \section installation_dependencies Dependency Installation
-\skip Pistache
-\until sed
+\skip Start of dependencies installation
+\until End of dependencies installation
 
 \section installation_procedure Installation
-\skip git clone
-\until make doxygen
+\skip Start of installation
+\until End of installation
 
-\section installation_environment Setting the enviroment
+\section installation_environment Setting the environment
 
 In order to properly set the environment to run experiments with NRP-core, please make sure to add the lines below to your ~/.bashrc file
-\skip export
-\until . /usr/share
+\skip Start of setting environment
+\until End of setting environment
 
 \section installation_opensim Special steps for installing OpenSim
 

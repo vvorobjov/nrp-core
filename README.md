@@ -10,7 +10,8 @@ export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
 
 ## Dependency Installation
 
-```
+```bash
+# Start of dependencies installation
 # Pistache REST Server
 sudo add-apt-repository ppa:pistache+team/unstable
     
@@ -61,11 +62,14 @@ git checkout v1.2.0 \
 cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
 cmake --build build/ --target install \
 sudo ldconfig && cd ..
+
+# End of dependencies installation
 ```
 
 ## Installation
 
-```
+```bash
+# Start of installation
 git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
 cd nrp-core
 mkdir build
@@ -79,23 +83,29 @@ make
 make install
 # just in case of wanting to build the documentation. Documentation can then be found in a new doxygen folder
 make nrp_doxygen
+
+# End of installation
 ```
 
 ## Running an experiment
 
  * Set environment:
  
- ```
-export NRP_INSTALL_DIR="/home/${USER}/.local/nrp" # The installation directory, which was given before
-export PYTHONPATH="${NRP_INSTALL_DIR}"/lib/python3.8/site-packages:$PYTHONPATH
-export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}"/lib:$LD_LIBRARY_PATH
-export PATH=$PATH:"${NRP_INSTALL_DIR}"/bin
-export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
-. /usr/share/gazebo-11/setup.sh
-. /opt/ros/noetic/setup.bash
-. ${CATKIN_WS}/devel/setup.bash
+ ```bash
+ # Start of setting environment
+ export NRP_INSTALL_DIR="/home/${USER}/.local/nrp" # The installation directory, which was given before
+ export PYTHONPATH="${NRP_INSTALL_DIR}"/lib/python3.8/site-packages:$PYTHONPATH
+ export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}"/lib:$LD_LIBRARY_PATH
+ export PATH=$PATH:"${NRP_INSTALL_DIR}"/bin
+ export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
+ . /usr/share/gazebo-11/setup.sh
+ . /opt/ros/noetic/setup.bash
+ . ${CATKIN_WS}/devel/setup.bash
 
-```
+ # End of setting environment
+ ```
+
+
  * Start the simulation:
 	`NRPCoreSim -c <SIMULATION_CONFIG_FILE>`
 

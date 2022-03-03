@@ -325,6 +325,14 @@ set(DOXYGEN_GENERATE_TREEVIEW YES)
 set(DOXYGEN_DISABLE_INDEX YES)
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
 set(DOXYGEN_IMAGE_PATH "docs/images")
+if(BUILD_RST STREQUAL ON)
+    set(DOXYGEN_GENERATE_XML YES)
+    set(DOXYGEN_XML_OUTPUT xml)
+    set(DOXYGEN_XML_PROGRAMLISTING NO)
+    set(DOXYGEN_CASE_SENSE_NAMES NO)
+    set(DOXYGEN_HIDE_UNDOC_RELATIONS YES)
+    set(DOXYGEN_EXTRACT_ALL YES)
+endif()
 set(DOXYGEN_EXAMPLE_PATH
         ${DOXYGEN_EXAMPLE_PATH}
         "docs/example_engine"
@@ -400,3 +408,61 @@ doxygen_add_docs(nrp_doxygen
         "docs/event_loop/computational_graph_integration.dox"
 
         COMMENT "Generating documentation")
+
+
+if(BUILD_RST STREQUAL ON)
+    if("${DOXYREST_DIR}" STREQUAL "")
+        set(DOXYREST_DIR "${CMAKE_CURRENT_BINARY_DIR}/doxyrest" CACHE INTERNAL "Doxyrest build dir")
+    endif()
+
+    set(NRP_DOXYREST_INSTALL_PREFIX ${DOXYREST_DIR}/build-bin)
+    if(NOT TARGET doxyrest)
+    ExternalProject_Add(doxyrest
+            GIT_REPOSITORY https://github.com/vovkos/doxyrest_b.git
+            GIT_PROGRESS true
+
+            PREFIX "${DOXYREST_DIR}"
+            INSTALL_DIR ${NRP_DOXYREST_INSTALL_PREFIX}
+
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DOXYREST_INSTALL_PREFIX}
+
+            UPDATE_COMMAND ""
+            )
+    endif()
+
+    set(DOXYREST_OUTPUT_DIR "${DOXYREST_DIR}/output")
+    set(DOXYREST_RST_DIR "${DOXYREST_DIR}/rst-output")
+    set(DOXYREST_SHARE_DIR "${NRP_DOXYREST_INSTALL_PREFIX}/share/doxyrest")
+
+    # Variables to be set: DOXYREST_RST_DIR, DOXYREST_SHARE_DIR
+    configure_file("docs/sphinx/doxyrest-config.lua.in" "${DOXYREST_DIR}/doxyrest-config.lua" @ONLY)
+
+    add_custom_target(
+        nrp_doxygen_rst
+        COMMAND "${NRP_DOXYREST_INSTALL_PREFIX}/bin/doxyrest"
+        WORKING_DIRECTORY "${DOXYREST_DIR}"
+        DEPENDS nrp_doxygen doxyrest
+    )
+
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/${DOXYGEN_IMAGE_PATH}" "${DOXYREST_RST_DIR}"
+    )
+
+    # format bash-style snippets in rST
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND sed -i 's@ref-code-block:: cpp@ref-code-block:: bash@' "${DOXYREST_RST_DIR}/page_installation.rst"
+    )
+
+    # format pictures
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/docs/sphinx/format-pictures-check-toc.py" "${DOXYREST_RST_DIR}"
+    )
+
+    # zip rst files
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E tar "cfv" "${CMAKE_CURRENT_BINARY_DIR}/nrp-core-rst.zip" --format=zip "*"            
+        WORKING_DIRECTORY "${DOXYREST_RST_DIR}"
+    )
+else()
+    message(STATUS "Skipping generating rST documentation output")
+endif()

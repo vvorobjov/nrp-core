@@ -26,6 +26,6 @@ python3 -m pip install --user flask==2.0
 
 # Run cmake
 
-cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" -DCOVERAGE:BOOL=ON
+cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" -DCOVERAGE:BOOL=ON -DBUILD_RST=ON
 
 # EOF
