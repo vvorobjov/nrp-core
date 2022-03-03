@@ -410,6 +410,8 @@ class Script(EngineScript):
         self.right_pos_buffer = []
         self.right_vel_buffer = []
         self.init = True
+        # Total scaling factor = amplitude_scaling * tvb_EngineTimestep / gazebo_EngineTimestep * 1 / integrator.dt
+        self.amplitude_scaling = 10
 
         # Joint movement range
 
@@ -474,8 +476,8 @@ class Script(EngineScript):
         left  = left_if ["positions"][2]
         right = right_if["positions"][2]
 
-        left_position  = self.convert_to_tvb_range(left)
-        right_position = self.convert_to_tvb_range(right)
+        left_position  = self.convert_to_tvb_range(left)  * self.amplitude_scaling
+        right_position = self.convert_to_tvb_range(right) * self.amplitude_scaling
 
         # TODO Try to put the initial conditions in the world/model files
     
@@ -484,11 +486,11 @@ class Script(EngineScript):
             init_position_right = self.simulator.initial_conditions[-1, 0, self.iF[1], 0]
                         
             if abs(left_position - init_position_left) > 0.01 or abs(right_position - init_position_right) > 0.01:
-                self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_left),  0.0] })
-                self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_right), 0.0] })
+                self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_left  / self.amplitude_scaling), 0.0] })
+                self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_right / self.amplitude_scaling), 0.0] })
 
                 self.iteration += 1
-                print(self.iteration)
+                print("Init: ", self.iteration)
                 return
             else:
                 self.init = False
@@ -549,8 +551,8 @@ class Script(EngineScript):
 
         # Set new targets for the fingers
 
-        self.left_target  = self.convert_to_joint_range(commands[1][-1][0][0][0])
-        self.right_target = self.convert_to_joint_range(commands[1][-1][0][1][0])
+        self.left_target  = self.convert_to_joint_range(commands[1][-1][0][0][0] / self.amplitude_scaling)
+        self.right_target = self.convert_to_joint_range(commands[1][-1][0][1][0] / self.amplitude_scaling)
 
         self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.left_target,  0.0] })
         self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.right_target, 0.0] })
@@ -614,15 +616,15 @@ class Script(EngineScript):
         axes[1].plot(t[:tp:], source_ts[:tp, 0, iX[0]].data.squeeze()[:tp], 'b')
         axes[1].plot(t[:tp:], source_ts[:tp:, 0, iX[1]].data.squeeze()[:tp], 'g')
 
-        axes[1].plot(t[:tp:], source_ts[:tp, 0, self.iM[0]].data.squeeze()[:tp], 'b*')
-        axes[1].plot(t[:tp:], source_ts[:tp:, 0, self.iM[1]].data.squeeze()[:tp], 'g*')
+        axes[1].plot(t[:tp:], source_ts[:tp, 0, self.iM[0]].data.squeeze()[:tp], 'b.')
+        axes[1].plot(t[:tp:], source_ts[:tp:, 0, self.iM[1]].data.squeeze()[:tp], 'g.')
 
         axes[1].set_title('mean(|x1-x2|/(|x1|+|x2|)/2)) = %g' % np.mean(DX[:tp]/SX[:tp]))
         axes[2].plot(t[-tp:], source_ts[-tp:, 0, iX[0]].data.squeeze()[-tp:], 'b')
         axes[2].plot(t[-tp:], source_ts[-tp:, 0, iX[1]].data.squeeze()[-tp:], 'g')
 
-        axes[2].plot(t[-tp:], source_ts[-tp:, 0, self.iM[0]].data.squeeze()[-tp:], 'b*')
-        axes[2].plot(t[-tp:], source_ts[-tp:, 0, self.iM[1]].data.squeeze()[-tp:], 'g*')
+        axes[2].plot(t[-tp:], source_ts[-tp:, 0, self.iM[0]].data.squeeze()[-tp:], 'b.')
+        axes[2].plot(t[-tp:], source_ts[-tp:, 0, self.iM[1]].data.squeeze()[-tp:], 'g.')
 
         axes[2].set_title('mean(|x1-x2|/(|x1|+|x2|)/2)) = %g' % np.mean(DX[-tp:]/SX[-tp:]))
         fig.tight_layout()
