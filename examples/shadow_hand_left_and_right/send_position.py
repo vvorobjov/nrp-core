@@ -5,29 +5,16 @@ from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 import ranges
 
 
-shadow_hand_inital_joint_values={
+shadow_hand_joints = {
     "shadow_hand_right" : ["rh_FFJ0", "rh_FFJ1", "rh_FFJ2", "rh_FFJ3"],
-                           #{"rh_FFJ0":0,"rh_FFJ1":0,"rh_FFJ2":0,"rh_FFJ3":0,
-                           #"rh_MFJ0":1.5707,"rh_MFJ1":1.5707,"rh_MFJ2":1.5707,"rh_MFJ3":0,
-                           #"rh_RFJ0":1.5707,"rh_RFJ1":1.5707,"rh_RFJ2":1.5707,"rh_RFJ3":0,
-                           #"rh_LFJ0":1.5707,"rh_LFJ1":1.5707,"rh_LFJ2":1.5707,"rh_LFJ3":0,"rh_LFJ4":0,
-                           #"rh_THJ0":-1.5707,"rh_THJ1":-0.7,"rh_THJ2":0,"rh_THJ3":0,"rh_THJ4":-0.0053,
-                           #"rh_WRJ0":0,"rh_WRJ1":0 },
-
-    "shadow_hand_left" : ["lh_FFJ0", "lh_FFJ1", "lh_FFJ2", "lh_FFJ3"]
-                           #{"lh_FFJ0":0,"lh_FFJ1":0,"lh_FFJ2":0,"lh_FFJ3":0,
-                           #"lh_MFJ0":1.5707,"lh_MFJ1":1.5707,"lh_MFJ2":1.5707,"lh_MFJ3":0,
-                           #"lh_RFJ0":1.5707,"lh_RFJ1":1.5707,"lh_RFJ2":1.5707,"lh_RFJ3":0,
-                           #"lh_LFJ0":1.5707,"lh_LFJ1":1.5707,"lh_LFJ2":1.5707,"lh_LFJ3":0,"lh_LFJ4":0,
-                           #"lh_THJ0":1.5707,"lh_THJ1":0.7,"lh_THJ2":0,"lh_THJ3":0,"lh_THJ4":-0.0053,
-                           #"lh_WRJ0":0,"lh_WRJ1":0 }
+    "shadow_hand_left"  : ["lh_FFJ0", "lh_FFJ1", "lh_FFJ2", "lh_FFJ3"]
 }
 
 
 def prepare_joint_datapacks(tvb_datapack, hand_model: str) -> List:
     joint_datapacks = []
 
-    joints = shadow_hand_inital_joint_values[hand_model]
+    joints = shadow_hand_joints[hand_model]
 
     for i in range(len(joints)):
         joint_datapack = GazeboJointDataPack(hand_model + "::" + joints[i], "gazebo")

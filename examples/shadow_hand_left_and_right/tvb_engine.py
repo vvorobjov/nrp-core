@@ -407,9 +407,24 @@ class Script(EngineScript):
         self.left_vel_buffer = []
         self.right_pos_buffer = []
         self.right_vel_buffer = []
-        self.init = True
-        # Total scaling factor = amplitude_scaling * tvb_EngineTimestep / gazebo_EngineTimestep * 1 / integrator.dt
+        self.hand_position_init = True
+        # Amplitude scaling is explained in runLoop method
         self.amplitude_scaling = 10
+
+
+    def initialize_hand_position(self, left_position, right_position):
+        init_position_left  = self.simulator.initial_conditions[-1, 0, self.iF[0], 0]
+        init_position_right = self.simulator.initial_conditions[-1, 0, self.iF[1], 0]
+
+        if abs(left_position - init_position_left) > 0.01 or abs(right_position - init_position_right) > 0.01:
+            self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, init_position_left  / self.amplitude_scaling, 0.0] })
+            self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, init_position_right / self.amplitude_scaling, 0.0] })
+
+            self.iteration += 1
+            print(self.iteration, " (init)")
+            return True
+        else:
+            return False
 
 
     def simulate_fun(self, simulator, left_position, right_position, left_velocity, right_velocity):
@@ -420,15 +435,18 @@ class Script(EngineScript):
 
         input = deepcopy(simulator.last_fingers_data)
 
+        # Inject fingers' positions and velocities into the brain
+
         input[1][0, 0, 0, 0] = left_position
         input[1][0, 0, 1, 0] = right_position
 
         input[1][0, 1, 0, 0] = left_velocity
         input[1][0, 1, 1, 0] = right_velocity
 
-        input[0][0] = input[0][0] - simulator.integrator.dt
+        input[0][0] -= simulator.integrator.dt
 
-        # 2. Simulate the TVB brain by giving as input the current finger's position and velocity data
+        # Simulate the brain
+
         dtres = list(simulator(cosim_updates=input))[0]
 
         sim_res = list(dtres)
@@ -462,7 +480,7 @@ class Script(EngineScript):
             left_velocity = self.simulator.initial_conditions[-1, 1, self.iF[0], 0]
             self.prev_left_position = left_position
         else:
-            left_velocity  = (left_position  - self.prev_left_position)  / self.simulator.integrator.dt
+            left_velocity = (left_position - self.prev_left_position) / self.simulator.integrator.dt
 
         # Cache the position
 
@@ -494,7 +512,24 @@ class Script(EngineScript):
 
 
     def runLoop(self, timestep_ns):
-        # Positions should be in TVB units
+        """
+        Note about the time base used by both simulators:
+        The time step is defined by the TVB engine. A single iteration of the TVB
+        engine is ALWAYS 0.1 ms. This is problematic for gazebo joint controllers,
+        because they aren't able to control properly at that speed.
+
+        Two 'tricks' are used to move the gazebo time step into ~0.1s:
+        - scaling of the outgoing target values and incoming positions
+        - multiple steps of gazebo simulation per single step of TVB
+        To roughly calculate the "true" gazebo time step, the following formula can be used:
+
+        gazebo_timestep = amplitude_scaling * (tvb_EngineTimestep / gazebo_EngineTimestep) * (gazebo_EngineTimestep / 0.1)
+
+        where:
+        - amplitude_scaling - self.amplitude_scaling
+        - tvb_EngineTimestep - EngineTimestep defined in simulation_config.json
+        - gazebo_EngineTimestep - EngineTimestep defined in simulation_config.json
+        """
 
         # Get positions of left and right index finger's joints from previous iteration
 
@@ -504,27 +539,23 @@ class Script(EngineScript):
         left_position  *= self.amplitude_scaling
         right_position *= self.amplitude_scaling
 
+        # Move the hands to initial positions
         # TODO Try to put the initial conditions in the world/model files
 
-        if self.init:
-            init_position_left  = self.simulator.initial_conditions[-1, 0, self.iF[0], 0]
-            init_position_right = self.simulator.initial_conditions[-1, 0, self.iF[1], 0]
+        if self.hand_position_init:
+            self.hand_position_init = self.initialize_hand_position(left_position, right_position)
 
-            if abs(left_position - init_position_left) > 0.01 or abs(right_position - init_position_right) > 0.01:
-                self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, init_position_left  / self.amplitude_scaling, 0.0] })
-                self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, init_position_right / self.amplitude_scaling, 0.0] })
+            # Early return if still not in the initial position
 
-                self.iteration += 1
-                print("Init: ", self.iteration)
+            if self.hand_position_init:
                 return
-            else:
-                self.init = False
 
         # Choose the frequency based on simulation time
 
         self.select_frequency()
 
         # Calculate velocities
+        # We don't use velocities coming from the hands, because the time bases of simulators are different
 
         left_velocity  = self.calculate_left_velocity(left_position)
         right_velocity = self.calculate_right_velocity(right_position)
@@ -538,6 +569,7 @@ class Script(EngineScript):
         self.right_vel_buffer.append(right_velocity)
 
         # Run the brain simulation
+        # Data in tempres variable is sampled at a lower frequency, so it can't be used for setting targets
 
         commands, tempres = self.simulate_fun(self.simulator, left_position, right_position, left_velocity, right_velocity)
 
