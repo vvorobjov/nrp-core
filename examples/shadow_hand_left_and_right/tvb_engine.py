@@ -7,11 +7,10 @@ import numpy as np
 from tvb.basic.profile import TvbProfile
 TvbProfile.set_profile(TvbProfile.LIBRARY_PROFILE)
 
-from tvb.simulator.plot.config import FiguresConfig, CONFIGURED
+from tvb.simulator.plot.config import FiguresConfig
 import tvb_data
 
 from nrp_core.engines.python_json import EngineScript,RegisterEngine
-from tvb.contrib.tests.cosimulation.parallel.function_tvb import TvbSim
 
 TVB_DATA_PATH = os.path.dirname(inspect.getabsfile(tvb_data))
 DEFAULT_SUBJECT_PATH = os.path.join(TVB_DATA_PATH, "berlinSubjects", "QL_20120814")
@@ -252,7 +251,6 @@ class Script(EngineScript):
             plotter.plot_tvb_connectivity(connMS)
 
         if "Fingers" in MODEL:
-            print("Fingers")
             # Augment connectivity with the two fingers
             connectivity.region_labels = np.concatenate([connectivity.region_labels,
                                                         np.array(["Finger_L", "Finger_R"])])
@@ -434,7 +432,7 @@ class Script(EngineScript):
         return (((value_joint  - self.joint_min_position) * self.tvb_displacement_range) / self.joint_position_range) + self.min_displacement_tvb
 
 
-    def simulate_fun(self, simulator, sim_length, left_position, right_position, left_velocity, right_velocity):
+    def simulate_fun(self, simulator, left_position, right_position, left_velocity, right_velocity):
         from copy import deepcopy
 
         motor_commands_data = deepcopy(simulator.loop_cosim_monitor_output()[0])
@@ -480,11 +478,11 @@ class Script(EngineScript):
         right_position = self.convert_to_tvb_range(right) * self.amplitude_scaling
 
         # TODO Try to put the initial conditions in the world/model files
-    
+
         if self.init:
             init_position_left  = self.simulator.initial_conditions[-1, 0, self.iF[0], 0]
             init_position_right = self.simulator.initial_conditions[-1, 0, self.iF[1], 0]
-                        
+
             if abs(left_position - init_position_left) > 0.01 or abs(right_position - init_position_right) > 0.01:
                 self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_left  / self.amplitude_scaling), 0.0] })
                 self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_right / self.amplitude_scaling), 0.0] })
@@ -539,7 +537,7 @@ class Script(EngineScript):
 
         # Run the brain simulation
 
-        commands, tempres = self.simulate_fun(self.simulator, 0.1, left_position, right_position, left_velocity, right_velocity)
+        commands, tempres = self.simulate_fun(self.simulator, left_position, right_position, left_velocity, right_velocity)
 
         # Save the results for plotting
 
