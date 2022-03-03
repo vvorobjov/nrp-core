@@ -2,6 +2,8 @@ from typing import List
 from nrp_core import *
 from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 
+import ranges
+
 
 shadow_hand_inital_joint_values={
     "shadow_hand_right" : ["rh_FFJ0", "rh_FFJ1", "rh_FFJ2", "rh_FFJ3"],
@@ -29,7 +31,7 @@ def prepare_joint_datapacks(tvb_datapack, hand_model: str) -> List:
 
     for i in range(len(joints)):
         joint_datapack = GazeboJointDataPack(hand_model + "::" + joints[i], "gazebo")
-        joint_datapack.data.position = tvb_datapack.data["positions"][i]
+        joint_datapack.data.position = ranges.convert_to_joint_range(tvb_datapack.data["positions"][i])
         joint_datapacks.append(joint_datapack)
 
     return joint_datapacks

@@ -411,26 +411,6 @@ class Script(EngineScript):
         # Total scaling factor = amplitude_scaling * tvb_EngineTimestep / gazebo_EngineTimestep * 1 / integrator.dt
         self.amplitude_scaling = 10
 
-        # Joint movement range
-
-        self.joint_min_position = -0.261799
-        self.joint_max_position = 1.5708
-        self.joint_position_range = self.joint_max_position - self.joint_min_position
-
-        # TVB displacement range
-
-        self.max_displacement_tvb = 1.6
-        self.min_displacement_tvb = -1.6
-        self.tvb_displacement_range = self.max_displacement_tvb - self.min_displacement_tvb
-
-
-    def convert_to_joint_range(self, value_tvb):
-        return (((value_tvb  - self.min_displacement_tvb) * self.joint_position_range) / self.tvb_displacement_range) + self.joint_min_position
-
-
-    def convert_to_tvb_range(self, value_joint):
-        return (((value_joint  - self.joint_min_position) * self.tvb_displacement_range) / self.joint_position_range) + self.min_displacement_tvb
-
 
     def simulate_fun(self, simulator, left_position, right_position, left_velocity, right_velocity):
         from copy import deepcopy
@@ -518,16 +498,11 @@ class Script(EngineScript):
 
         # Get positions of left and right index finger's joints from previous iteration
 
-        left_if  = self._getDataPack("left_index_finger_joints")
-        right_if = self._getDataPack("right_index_finger_joints")
+        left_position  = self._getDataPack("left_index_finger_joints") ["positions"][2]
+        right_position = self._getDataPack("right_index_finger_joints")["positions"][2]
 
-        # Convert position from joint units into TVB units
-
-        left  = left_if ["positions"][2]
-        right = right_if["positions"][2]
-
-        left_position  = self.convert_to_tvb_range(left)  * self.amplitude_scaling
-        right_position = self.convert_to_tvb_range(right) * self.amplitude_scaling
+        left_position  *= self.amplitude_scaling
+        right_position *= self.amplitude_scaling
 
         # TODO Try to put the initial conditions in the world/model files
 
@@ -536,8 +511,8 @@ class Script(EngineScript):
             init_position_right = self.simulator.initial_conditions[-1, 0, self.iF[1], 0]
 
             if abs(left_position - init_position_left) > 0.01 or abs(right_position - init_position_right) > 0.01:
-                self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_left  / self.amplitude_scaling), 0.0] })
-                self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.convert_to_joint_range(init_position_right / self.amplitude_scaling), 0.0] })
+                self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, init_position_left  / self.amplitude_scaling, 0.0] })
+                self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, init_position_right / self.amplitude_scaling, 0.0] })
 
                 self.iteration += 1
                 print("Init: ", self.iteration)
@@ -572,11 +547,11 @@ class Script(EngineScript):
 
         # Set new targets for the fingers
 
-        self.left_target  = self.convert_to_joint_range(commands[1][-1][0][0][0] / self.amplitude_scaling)
-        self.right_target = self.convert_to_joint_range(commands[1][-1][0][1][0] / self.amplitude_scaling)
+        left_target  = commands[1][-1, 0, 0, 0] / self.amplitude_scaling
+        right_target = commands[1][-1, 0, 1, 0] / self.amplitude_scaling
 
-        self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, self.left_target,  0.0] })
-        self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, self.right_target, 0.0] })
+        self._setDataPack("left_index_finger_target",  { "positions" : [0.0, 0.0, left_target,  0.0] })
+        self._setDataPack("right_index_finger_target", { "positions" : [0.0, 0.0, right_target, 0.0] })
 
         # Increment iteration and time variables
 
