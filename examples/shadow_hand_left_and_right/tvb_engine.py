@@ -461,6 +461,58 @@ class Script(EngineScript):
         return motor_commands_data, sim_res
 
 
+    def select_frequency(self):
+        prev_time_ms = self.time_ms - self.simulator.integrator.dt
+        if self.time_ms == 0:
+            self.simulator.model.f = np.array([FREQ[0]])
+            self.simulator.model.omega = np.array([0.0])
+            self.simulator.model.update_derived_parameters()
+        elif prev_time_ms < SIMULATION_LENGTH and self.time_ms >= SIMULATION_LENGTH:
+            self.simulator.model.f = np.array([FREQ[1]])
+            self.simulator.model.omega = np.array([0.0])
+            self.simulator.model.update_derived_parameters()
+        elif self.time_ms >= 2 * SIMULATION_LENGTH:
+            self.simulator.model.f = np.array([FREQ[2]])
+            self.simulator.model.omega = np.array([0.0])
+            self.simulator.model.update_derived_parameters()
+
+
+    def calculate_left_velocity(self, left_position):
+        if self.prev_left_position is None:
+            left_velocity = self.simulator.initial_conditions[-1, 1, self.iF[0], 0]
+            self.prev_left_position = left_position
+        else:
+            left_velocity  = (left_position  - self.prev_left_position)  / self.simulator.integrator.dt
+
+        # Cache the position
+
+        self.prev_left_position = left_position
+
+        return left_velocity
+
+
+    def calculate_right_velocity(self, right_position):
+        if self.prev_right_position is None:
+            right_velocity = self.simulator.initial_conditions[-1, 1, self.iF[1], 0]
+            self.prev_right_position = right_position
+        else:
+            right_velocity = (right_position - self.prev_right_position) / self.simulator.integrator.dt
+
+        # Cache the position
+
+        self.prev_right_position = right_position
+
+        return right_velocity
+
+
+    def save_results(self, tempres):
+        if self.time_ms == 0:
+            self.results = list(tempres)
+        else:
+            self.results[0][0] = np.concatenate([self.results[0][0], tempres[0][0]])
+            self.results[0][1] = np.concatenate([self.results[0][1], tempres[0][1]])
+
+
     def runLoop(self, timestep_ns):
         # Positions should be in TVB units
 
@@ -493,39 +545,14 @@ class Script(EngineScript):
             else:
                 self.init = False
 
-        # Choose the frequency based on the simulation time
+        # Choose the frequency based on simulation time
 
-        if self.time_ms < SIMULATION_LENGTH:
-            self.simulator.model.f = np.array([FREQ[0]])
-            self.simulator.model.omega = np.array([0.0])
-            self.simulator.model.update_derived_parameters()
-        elif self.time_ms >= SIMULATION_LENGTH and self.time_ms < 2 * SIMULATION_LENGTH:
-            self.simulator.model.f = np.array([FREQ[1]])
-            self.simulator.model.omega = np.array([0.0])
-            self.simulator.model.update_derived_parameters()
-        else:
-            self.simulator.model.f = np.array([FREQ[2]])
-            self.simulator.model.omega = np.array([0.0])
-            self.simulator.model.update_derived_parameters()
+        self.select_frequency()
 
-        # Calculate velocity
+        # Calculate velocities
 
-        if self.prev_left_position is None:
-            left_velocity = self.simulator.initial_conditions[-1, 1, self.iF[0], 0]
-            self.prev_left_position = left_position
-        else:
-            left_velocity  = (left_position  - self.prev_left_position)  / self.simulator.integrator.dt
-
-        if self.prev_right_position is None:
-            right_velocity = self.simulator.initial_conditions[-1, 1, self.iF[1], 0]
-            self.prev_right_position = right_position
-        else:
-            right_velocity = (right_position - self.prev_right_position) / self.simulator.integrator.dt
-
-        # Cache the positions
-
-        self.prev_left_position = left_position
-        self.prev_right_position = right_position
+        left_velocity  = self.calculate_left_velocity(left_position)
+        right_velocity = self.calculate_right_velocity(right_position)
 
         # Save positions and velocities for plotting
 
@@ -541,11 +568,7 @@ class Script(EngineScript):
 
         # Save the results for plotting
 
-        if self.time_ms == 0:
-            self.results = list(tempres)
-        else:
-            self.results[0][0] = np.concatenate([self.results[0][0], tempres[0][0]])
-            self.results[0][1] = np.concatenate([self.results[0][1], tempres[0][1]])
+        self.save_results(tempres)
 
         # Set new targets for the fingers
 
