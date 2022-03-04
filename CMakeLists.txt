@@ -387,6 +387,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/nest/nest_server.dox"
         "docs/engines/python_json_engine.dox"
         "docs/engines/opensim/opensim_engine.dox"
+        "docs/engines/datatransfer/datatransfer_engine.dox"
 
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"

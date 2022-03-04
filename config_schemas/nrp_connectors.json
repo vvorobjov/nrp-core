@@ -1,0 +1,35 @@
+{
+    "MQTTClient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MQTT Client",
+      "description": "MQTT Client configuration properties",
+      "$id": "#MQTTClient",
+      "type": "object",
+      "properties" : {
+        "MQTTBroker" : {
+          "type" : "string",
+          "description": "MQTT Broker address",
+          "default" : "localhost:1883"
+        },
+        "ClientName" : {
+          "type" : "string",
+          "description": "MQTT client name",
+          "default" : "NRP-core-client"
+        }
+      }
+    },
+    "ROSNode": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ROS Node",
+      "description": "ROS Node configuration parameter",
+      "$id": "#ROSNode",
+      "type": "object",
+      "properties" : {
+        "NodeName" : {
+          "type" : "string",
+          "description": "Name of the ROS node",
+          "default" : "nrp_core"
+        }
+      }
+    }
+  }
