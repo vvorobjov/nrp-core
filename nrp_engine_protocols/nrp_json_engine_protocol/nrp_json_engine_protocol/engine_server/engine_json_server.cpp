@@ -308,8 +308,7 @@ void EngineJSONServer::setDataPackProcessorr(const Pistache::Rest::Request &req,
     try
     {
         this->setDataPackData(jrequest);
-        res.send(Pistache::Http::Code::Ok, "3");
-        //res.send(Pistache::Http::Code::Ok, this->getDataPackData(jrequest).dump());
+        res.send(Pistache::Http::Code::Ok, "{}");
     }
     catch(std::exception &e)
     {
