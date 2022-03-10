@@ -59,21 +59,24 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
 
     bool mqttConnected = false;
 #ifdef MQTT_ON
-    NRPLogger::info("Connecting to MQTT broker.");
-
-    _mqttClient = std::make_shared<mqtt::async_client>(std::string(data.at("MQTTBroker")), "NRP-core-client");
-
-    try{
-        _mqttClient->connect()->wait();
-        mqtt::topic top(*_mqttClient, "nrp/welcome", 1);
-        top.publish("NRP-core is connected!");
-        mqttConnected = true;
-        NRPLogger::info("Connection to MQTT broker is established.");
-        NRPLogger::debug("MQTT broker address: {}", _mqttClient->get_server_uri());
+    nlohmann::json mqtt_config;
+    // If client doesn't exist yet, then create one
+    if (!_mqttClient){
+        mqtt_config["MQTTBroker"] = data.at("MQTTBroker");
+        mqtt_config["ClientName"] = _engineName;
+        _mqttClient = std::make_shared<NRPMQTTClient>(mqtt_config);
     }
-    catch(std::exception &e)
+    else
     {
-        NRPLogger::warn("Connection to MQTT broker is failing! Network data streaming will be disabled.");
+        NRPLogger::info(EXISTENT_NRP_MQTT_CLIENT_MESSAGE);
+    }
+    mqttConnected = _mqttClient->isConnected();
+    if(!mqttConnected)
+    {
+        NRPLogger::warn(NO_MQTT_BROKER_WARNING_MESSAGE);
+    }
+    else {      
+        _mqttClient->publish(MQTT_WELCOME, "NRP-core is connected!");  
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -115,10 +118,9 @@ void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
 
 #ifdef MQTT_ON
     try{
-        if (_mqttClient->is_connected()){
-            mqtt::topic top(*_mqttClient, "nrp/welcome", 1);
-            top.publish("Bye! NRP-core is shutting down!");
-            _mqttClient->disconnect()->wait();
+        if (_mqttClient->isConnected()){
+            _mqttClient->publish("nrp/welcome", "Bye! NRP-core is disconnecting!");
+            _mqttClient->disconnect();
         }
     }
     catch(std::exception &e)
@@ -133,6 +135,13 @@ void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
 void DataTransferGrpcServer::reset()
 {
     NRPLogger::debug("Resetting simulation");
+}
+
+bool DataTransferGrpcServer::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > client)
+{
+    _mqttClient = client;
+
+    return _mqttClient->isConnected();
 }
 
 // EOF

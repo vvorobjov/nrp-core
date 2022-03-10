@@ -20,10 +20,11 @@ def transceiver_function(actors_dump, joint_dump):
     float_datapack2d.data.float_stream.extend(rand_data)
     float_datapack2d.data.dims.extend([3, 2])
 
-    # Streamingthe same array as 1D
+    # Streaming the same array as 1D
     float_datapack1d = DumpArrayFloatDataPack("test_datapack3", "datatransfer_engine")
     float_datapack1d.data.float_stream.extend(rand_data)
 
+    # Stream husky::back_left_joint datapack
     joint_dump.engine_name = "datatransfer_engine"
 
     return [float_datapack1d, float_datapack2d, string_datapack, joint_dump]

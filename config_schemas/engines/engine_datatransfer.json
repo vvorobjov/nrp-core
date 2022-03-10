@@ -41,7 +41,7 @@
           },
           "streamDataPackMessage" : {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "if true the engine will stream DataPackMessages, if false it will stream their contained data"
           },
           "dumps": {

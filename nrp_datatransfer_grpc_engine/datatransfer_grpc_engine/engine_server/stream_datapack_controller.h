@@ -30,7 +30,7 @@
 #include "nrp_general_library/utils/nrp_logger.h"
 
 #ifdef MQTT_ON
-#include "mqtt/async_client.h"
+#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
 #endif
 
 /*!
@@ -64,7 +64,7 @@ class StreamDataPackController
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
                                  const std::string &baseDir,
-                                 std::shared_ptr<mqtt::async_client> mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
 
         /*!
          * \brief StreamDataPackController constructor for streaming to network
@@ -75,7 +75,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
-                                 std::shared_ptr<mqtt::async_client> mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
 #endif
 
         /*!
@@ -165,12 +165,14 @@ class StreamDataPackController
         /*!
          * \brief mpqtt topic for publishing message contents
          */
-        mqtt::topic* _mqttDataTopic;
+        std::string _mqttDataTopic;
 
         /*!
          * \brief mpqtt topic for publishing message type
          */
-        mqtt::topic* _mqttTypeTopic;
+        std::string _mqttTypeTopic;
+
+        std::shared_ptr< NRPMQTTClient > _mqttClient;
 #endif
 
         /*!

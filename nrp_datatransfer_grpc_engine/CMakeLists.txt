@@ -23,6 +23,7 @@ include(ExternalProject)
 set(LIB_SRC_FILES
     datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.cpp
     datatransfer_grpc_engine/engine_server/stream_datapack_controller.cpp
+    datatransfer_grpc_engine/engine_server/nrp_mqtt_client.cpp
     datatransfer_grpc_engine/engine_client/datatransfer_grpc_client.cpp
 )
 
@@ -37,6 +38,8 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
+    tests/test_datatransfer_grpc_engine.cpp
+    tests/nrp_mqtt_client_mock.cpp
 )
 
 
@@ -140,8 +143,9 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
-        GTest::gtest
-        GTest::gtest_main)
+        GTest::GTest
+        GTest::Main
+        gmock_main)
 
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

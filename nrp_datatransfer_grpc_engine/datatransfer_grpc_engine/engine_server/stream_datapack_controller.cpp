@@ -54,23 +54,25 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
 #ifdef MQTT_ON
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
-                                                    std::shared_ptr<mqtt::async_client> mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
     : StreamDataPackController(datapackName, engineName)
 {
     _netDump = true;
-    _mqttDataTopic = new mqtt::topic(*mqttClient, "nrp/data/" + datapackName);
-    _mqttTypeTopic = new mqtt::topic(*mqttClient, "nrp/data/" + datapackName + "/type", 1, true);
+    _mqttClient = mqttClient;
+    _mqttDataTopic = std::string("nrp/data/" + datapackName);
+    _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
                                                     const std::string &baseDir,
-                                                    std::shared_ptr<mqtt::async_client> mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
     : StreamDataPackController(datapackName, engineName, baseDir)
 {
     _netDump = true;
-    _mqttDataTopic = new mqtt::topic(*mqttClient, "nrp/data/" + datapackName);
-    _mqttTypeTopic = new mqtt::topic(*mqttClient, "nrp/data/" + datapackName + "/type", 1, true);
+    _mqttClient = mqttClient;
+    _mqttDataTopic = std::string("nrp/data/" + datapackName);
+    _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
 }
 #endif
 
@@ -83,7 +85,7 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
 #ifdef MQTT_ON
         // Stream msg type
         if (_netDump){
-            this->_mqttTypeTopic->publish(msg);
+            _mqttClient->publish(_mqttTypeTopic, msg);
         }
 #endif
 
@@ -116,7 +118,7 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
 #ifdef MQTT_ON
     if (_netDump){
         data.SerializeToString(&msg);
-        _mqttDataTopic->publish(msg);
+        _mqttClient->publish(_mqttDataTopic, msg);
     }
 #endif
 
@@ -172,7 +174,7 @@ std::string StreamDataPackController::fmtString(const google::protobuf::Message 
 std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &data){
     const auto& dump = dynamic_cast<const Dump::ArrayFloat &>(data);
     std::string msg;
-    if (dump.dims_size() == 0){
+    if (dump.dims_size() != 2){
         msg = "0";
         for (int i = 0; i < dump.float_stream_size(); i++)
         {
@@ -182,9 +184,10 @@ std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &
     else if (dump.dims_size() == 2){
         uint ny = dump.dims(0);
         uint nx = dump.dims(1);
+        int i = 0;
         for (uint iy = 0; iy < ny; iy++){
             msg = msg + std::string("\n") + std::to_string(iy);
-            for (uint ix = 0; ix < nx; ix++){
+            for (uint ix = 0; (ix < nx) && (i < dump.float_stream_size()); ix++, i++){
                 msg = msg + "," + std::to_string(dump.float_stream(ix + iy*nx));
             }
         }

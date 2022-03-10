@@ -29,8 +29,12 @@
 #include "nrp_protobuf/dump_msgs.pb.h"
 
 #ifdef MQTT_ON
-#include "mqtt/async_client.h"
+#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
 #endif
+
+#define NO_MQTT_BROKER_WARNING_MESSAGE "NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration"
+#define MQTT_WELCOME "nrp/welcome"
+#define EXISTENT_NRP_MQTT_CLIENT_MESSAGE "Using preset MQTT client connection"
 
 class DataTransferGrpcServer
     : public EngineGrpcServer
@@ -122,7 +126,13 @@ class DataTransferGrpcServer
         /*!
          * \brief MQTT client
          */
-        std::shared_ptr< mqtt::async_client> _mqttClient;
+        std::shared_ptr< NRPMQTTClient > _mqttClient;
+
+public:
+        /*!
+         * \brief Set predefined NRPMQTTClient (for testing purposes)
+         */
+        bool setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > client);
 #endif
 };
 

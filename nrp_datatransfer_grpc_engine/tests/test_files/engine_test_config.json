@@ -1,0 +1,9 @@
+{
+    "EngineType": "datatransfer_grpc_engine",
+    "EngineName": "datatransfer_engine",
+    "ServerAddress": "localhost:9006",
+    "MQTTBroker": "localhost:13874",
+    "dumps":[
+        {"name": "datapack1", "network": true, "file": true}
+    ]
+}
