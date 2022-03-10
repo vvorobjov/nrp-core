@@ -63,6 +63,12 @@ class TestServer(unittest.TestCase):
                       "TimeRatio": ratio,
                       "EngineName": engine_name}
 
+    # Dictionary used for initialize() requests.
+    # The initialize() method of EngineScript class included in PythonFileName is the only method that does not raises an exception
+    init_json_srr_raise = {"PythonFileName": "test_files/test_script_srr_raise.py",
+                      "TimeRatio": ratio,
+                      "EngineName": engine_name}
+
     # Dictionary used for set_datapack() requests
     set_datapack_json = {}
     set_datapack_json["test_datapack"] = {"engine_name": engine_name,
@@ -131,8 +137,7 @@ class TestServer(unittest.TestCase):
         Shutdown the Script class using proper callback.
         The shutdown() method of EngineScript class should raise an exception.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
+        server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Shutdown failed"):
             server_callbacks.shutdown({})
 
@@ -195,8 +200,7 @@ class TestServer(unittest.TestCase):
         Run loop step of the Script class using proper callback.
         The runLoop() method of EngineScript class should raise an exception.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
+        server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "RunLoop failed"):
             server_callbacks.run_loop(self.run_loop_json)
 
@@ -236,9 +240,7 @@ class TestServer(unittest.TestCase):
         The _setDataPack method of EngineScript class should raise an exception
         because of unregistered datapack name.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
-
+        server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
             server_callbacks.set_datapack(self.set_datapack_json)
 
@@ -249,8 +251,7 @@ class TestServer(unittest.TestCase):
         The _setDataPack method of EngineScript class should raise an exception
         because of datapack type missing in the request.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
+        server_callbacks.initialize(self.init_json_srr_raise)
         request_json = {}
         request_json["test_datapack"] = {"engine_name": self.engine_name,
                                          "data": {"test_int": 1}}
@@ -265,9 +266,7 @@ class TestServer(unittest.TestCase):
         The _getDataPack method of EngineScript class should raise an exception
         because of unregistered datapack name.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
-
+        server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
             server_callbacks.get_datapack(self.get_datapack_json)
 
@@ -278,9 +277,7 @@ class TestServer(unittest.TestCase):
         The _getDataPack method of EngineScript class should raise an exception
         because of engine name in the request not matching the actual engine name.
         """
-        with self.assertRaisesRegex(Exception, "Initialization failed"):
-            server_callbacks.initialize(self.init_json_raise)
-
+        server_callbacks.initialize(self.init_json_srr_raise)
         request_json = {}
         request_json["test_datapack"] = {"engine_name": "other_engine_name",
                                          "type": JsonDataPack.getType()}
