@@ -30,7 +30,7 @@
 #include "nrp_general_library/utils/nrp_logger.h"
 
 #ifdef MQTT_ON
-#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
+#include "nrp_mqtt_proxy/nrp_mqtt_client.h"
 #endif
 
 /*!

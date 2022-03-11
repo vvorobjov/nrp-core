@@ -34,7 +34,18 @@
 const int  QOS = 1;
 const auto TIMEOUT = std::chrono::seconds(10);
 
-class NRPMQTTProxy;
+class NRPMQTTClient;
+
+// TODO: mqtt callbacks can also take care of handling disconnections with server, failed sending or receiving, etc.
+//  As a future extension these possibilities can be explored further and added here.
+class MQTTCallback : public virtual mqtt::callback {
+    void message_arrived(mqtt::const_message_ptr msg) override;
+
+public:
+
+    MQTTCallback(NRPMQTTClient* proxy);
+    NRPMQTTClient* _proxy;
+};
 
 class NRPMQTTClient {
 
@@ -44,7 +55,7 @@ public:
      */
     NRPMQTTClient(nlohmann::json clientParams);
 
-    NRPMQTTClient() {};
+    NRPMQTTClient();
 
     virtual ~NRPMQTTClient() = default;
 
@@ -85,7 +96,12 @@ private:
      */
     std::map<std::string, const std::function<void (const std::string&)>&> _subscribers;
 
-    friend NRPMQTTProxy;
+    /*!
+     * \brief Object containing callbacks to process events in the mqtt client
+     */
+    MQTTCallback _callback;
+
+    friend MQTTCallback;
 };
 
 #endif //MQTT_CLIENT_H

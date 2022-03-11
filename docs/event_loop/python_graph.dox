@@ -208,6 +208,65 @@ The decorator has two arguments:
 
 In the aforementioned experiment located at `examples/event_loop_examples/husky_braitenberg_spinnaker` can be seen how to use `@ToSpiNNaker` decorator to control the rate of a SpikeSourcePoisson.
 
+\section mqtt_subscriber_decorator @MQTTSubscriber
+
+This decorator creates an InputMQTTNode and connects it to one of the decorated Functional Node inputs.
+It creates, then, a node and an edge in the Computational Graph.
+
+The code below subscribes to an MQTT topic 'test_topic' and connects incoming msgs to 'my_function' 'mqtt_in' argument. 
+These messages are printed out inside of the function and a new message published to 'test_topic' from the function return value.
+In this way, in the created Computational Graph, the node 'mqtt_str' prints out its own published message in a loop.
+
+\code{.py}
+@MQTTSubscriber(keyword='mqtt_in', address="test_topic", type=str)
+@MQTTPublisher(keyword="mqtt_out", address="test_topic", type=str)
+@FunctionalNode(name="mqtt_str", outputs=["mqtt_out"], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(mqtt_in):
+    if mqtt_in is not None:
+        print('Message from mqtt str: {}'.format(mqtt_in))
+
+    return ["Hi there!"]   
+\endcode
+
+The decorator has five arguments: 
+- `keyword`: as in other decorators, specifies the name of the Functional Node input port that the decorator connects.
+- `address`: tells the MQTT topic to subscribe to.
+- `type`: the data type incoming MQTT messages will be converted to (see \ref mqtt_nodes "here").
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+- `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
+
+There are three possible values for the `type` argument of the decorator. These are:
+- 'str': incoming messages payload is passed to the connected function as a string
+- 'nrp_core.data.nrp_json.NlohmannJson': payloads are passed as \ref datapacks_json "JSON objects"
+- One of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+
+'str' is always safe to use, but in case of using any of the other two types a runtime error will occur if incoming MQTT message can't be converted to that type.
+
+\section mqtt_publisher_decorator @MQTTPublisher
+
+This decorator creates an OutputMQTTNode and connects it to one of the decorated Functional Node outputs.
+It adds a node and an edge to the Computational Graph.
+
+The code below replicates the one above but using 'NlohmannJson' data type.
+
+\code{.py}
+from nrp_core.data.nrp_json import NlohmannJson
+
+@MQTTSubscriber(keyword='mqtt_in', address="test_topic_json", type=NlohmannJson)
+@MQTTPublisher(keyword="mqtt_out", address="test_topic_json", type=NlohmannJson)
+@FunctionalNode(name="mqtt_json", outputs=["mqtt_out"], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(mqtt_in):
+    if mqtt_in is not None:
+        print('Message from mqtt json: {}'.format(mqtt_in))
+
+    out = NlohmannJson()
+    out['hi'] = 'there'
+
+    return [out]
+\endcode
+
+The decorator arguments are analogous to those in `@MQTTSubscriber`, but in this case arringing messages will be published to the topic given by the decorator 'address' parameter.
+
 \section python_graph_example Putting the Examples Together
 
 To conclude the overview of the available Computational Graph decorators lets put together the different examples shown in the sections above:

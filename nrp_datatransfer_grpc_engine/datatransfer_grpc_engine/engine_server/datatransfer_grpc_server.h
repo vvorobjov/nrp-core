@@ -29,7 +29,7 @@
 #include "nrp_protobuf/dump_msgs.pb.h"
 
 #ifdef MQTT_ON
-#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
+#include "nrp_mqtt_proxy/nrp_mqtt_client.h"
 #endif
 
 #define NO_MQTT_BROKER_WARNING_MESSAGE "NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration"

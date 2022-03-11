@@ -4,6 +4,6 @@
   "SimulationTimeout": 90,
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",
-  "StartROSNode": true,
+  "ConnectROS": {},
   "ComputationalGraph": ["braitenberg.py", "cam_tf.py", "mot_tf.py"]
 }

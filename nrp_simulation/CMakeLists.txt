@@ -49,7 +49,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
-if(ENABLE_ROS STREQUAL FULL)
+if(NOT ENABLE_ROS STREQUAL OFF)
     find_package(catkin REQUIRED COMPONENTS roscpp)
 endif()
 
@@ -78,6 +78,7 @@ target_link_libraries(${LIBRARY_NAME}
     ${GRPC_LIBRARIES}
     ${NRP_ELE_LIB_TARGET}
         ${NRP_ROS_PROXY_TARGET}
+        ${NRP_MQTT_PROXY_TARGET}
         ${catkin_LIBRARIES}
 )
 

@@ -1,0 +1,44 @@
+/*! \page nrp_connectors_schema NRP Connectors Schema
+
+This schema is a collection of sub-schemas defining configuration parameters for the possible connections to external middlewares that can be established by NRPCoreSim.
+
+When one of these sub-schemas is present in the \ref simulation_schema "Simulation Schema", NRPCore will attempt to connect to the corresponding middleware using the given parameters.
+For each of these sub-schemas there is a corresponding parameter in the Simulation Schema, check \ref simulation_schema "there" for more details.
+
+Supported middlewares are ROS and MQTT:
+
+\section ros_connector_schema_parameters ROSNode Parameters
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>NodeName<td>Name of the ROS node<td>string<td>nrp_core<td><td>
+</table>
+
+\section mqtt_connector_schema_parameters MQTTClient Parameters
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>MQTTBroker<td>MQTT Broker address<td>string<td>localhost:1883<td><td>
+<tr><td>ClientName<td>MQTT client name<td>string<td>NRP-core-client<td><td>
+</table>
+
+\section nrp_connectors_schema_example Example
+
+Below is listed an example experiment configuration connecting to both ROS and MQTT.
+
+\code{.py}
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Just connecting to ROS and MQTT",
+	"SimulationTimeout": 1,
+	"ConnectMQTT": {"ClientName": "myMQTTclient"},
+	"ConnectROS": {"NodeName": "myROSnode"}
+	]
+}
+\endcode
+
+\section nrp_connectors_schema_schema Schema
+
+\include nrp_connectors.json
+
+*/

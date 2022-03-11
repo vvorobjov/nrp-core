@@ -54,6 +54,11 @@ set(ROS_SRC_FILES
         nrp_event_loop/nodes/ros/output_node.cpp
         )
 
+set(MQTT_SRC_FILES
+        nrp_event_loop/nodes/mqtt/input_node.cpp
+        nrp_event_loop/nodes/mqtt/output_node.cpp
+        )
+
 set(SPINNAKER_SRC_FILES
         nrp_event_loop/nodes/spinnaker/input_node.cpp
         nrp_event_loop/nodes/spinnaker/output_node.cpp
@@ -87,7 +92,7 @@ set(ROS_TEST_SRC_FILES
 ##########################################
 ## Dependencies
 
-if(ENABLE_ROS STREQUAL FULL)
+if(NOT ENABLE_ROS STREQUAL OFF)
     find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
 endif()
 
@@ -102,7 +107,7 @@ find_package(Boost COMPONENTS
 configure_file("nrp_event_loop/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Configures ros_edge_factory.h
-if(ENABLE_ROS STREQUAL FULL)
+if(NOT ENABLE_ROS STREQUAL OFF)
     file(READ "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" NRP_ROS_MSG_HEADERS)
     set(ROS_MSG_TYPES_INCLUDE "")
     foreach(MSG ${NRP_ROS_MSG_HEADERS})
@@ -116,6 +121,19 @@ if(ENABLE_ROS STREQUAL FULL)
     endforeach()
 
     configure_file("nrp_event_loop/nodes/ros/ros_edge_factory.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nodes/ros/ros_edge_factory.h" @ONLY)
+endif()
+
+# Configures mqtt_edge_factory.h
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" PROTO_MSG_TYPES_INCLUDE)
+    file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" NRP_PROTO_MSG_TYPES)
+    set(PROTO_MSG_TYPES_CHECK "")
+    foreach(MSG ${NRP_PROTO_MSG_TYPES})
+        string(REPLACE "::" "" PYTHON_MSG "${MSG}")
+        string(APPEND PROTO_MSG_TYPES_CHECK "if (_className == \"${PYTHON_MSG}\")\n        {\n            if(_isInput)\n                return pySetupInput<${MSG}>(obj);\n            else\n                return pySetupOutput<${MSG}>(obj);\n        }\n        else ")
+    endforeach()
+
+    configure_file("nrp_event_loop/nodes/mqtt/mqtt_edge_factory.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/nodes/mqtt/mqtt_edge_factory.h" @ONLY)
 endif()
 
 # Python Module defines
@@ -155,7 +173,7 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 )
 
 # ROS nodes target
-if(ENABLE_ROS STREQUAL FULL)
+if(NOT ENABLE_ROS STREQUAL OFF)
     set(ROS_LIBRARY_NAME "${LIBRARY_NAME}ROSNodes")
     add_library(${ROS_LIBRARY_NAME} SHARED ${ROS_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${ROS_LIBRARY_NAME} ALIAS ${ROS_LIBRARY_NAME})
@@ -181,8 +199,30 @@ if(ENABLE_ROS STREQUAL FULL)
             )
 endif()
 
+# MQTT nodes target
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    set(MQTT_LIBRARY_NAME "${LIBRARY_NAME}MQTTNodes")
+    add_library(${MQTT_LIBRARY_NAME} SHARED ${MQTT_SRC_FILES})
+    add_library(${NAMESPACE_NAME}::${MQTT_LIBRARY_NAME} ALIAS ${MQTT_LIBRARY_NAME})
+    target_compile_options(${MQTT_LIBRARY_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+
+    target_include_directories(${MQTT_LIBRARY_NAME} BEFORE
+            PUBLIC
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+            )
+
+    target_link_libraries(${MQTT_LIBRARY_NAME}
+            PUBLIC
+            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_GEN_LIB_TARGET}
+            ${NRP_MQTT_PROXY_TARGET}
+            )
+endif()
+
 # SPINNAKER nodes target
-if(ENABLE_SPINNAKER STREQUAL FULL)
+if(NOT ENABLE_SPINNAKER STREQUAL OFF)
     set(SPINNAKER_LIBRARY_NAME "${LIBRARY_NAME}SPINNAKERNodes")
     add_library(${SPINNAKER_LIBRARY_NAME} STATIC ${SPINNAKER_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME} ALIAS ${SPINNAKER_LIBRARY_NAME})
@@ -236,16 +276,24 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
     target_link_libraries(${PYTHON_MODULE_NAME}
         PUBLIC
             ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_PROTO_LIB_TARGET}
     )
 
-    if(ENABLE_ROS STREQUAL FULL)
+    if(NOT ENABLE_ROS STREQUAL OFF)
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${ROS_LIBRARY_NAME}
                 )
     endif()
 
-    if(ENABLE_SPINNAKER STREQUAL FULL)
+    if(NOT ENABLE_MQTT STREQUAL OFF)
+        target_link_libraries(${PYTHON_MODULE_NAME}
+                PUBLIC
+                ${NAMESPACE_NAME}::${MQTT_LIBRARY_NAME}
+                )
+    endif()
+
+    if(NOT ENABLE_SPINNAKER STREQUAL OFF)
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME}
@@ -284,7 +332,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
         EXTRA_ARGS -VV)
 
-    if(ENABLE_ROS STREQUAL FULL AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
+    if(NOT ENABLE_ROS STREQUAL OFF AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
         set(ROS_TEST_NAME "${TEST_NAME}ROS")
         add_executable(${ROS_TEST_NAME} ${ROS_TEST_SRC_FILES})
@@ -342,10 +390,24 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
     install(TARGETS ${PYTHON_MODULE_NAME}
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
+            DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
 
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
+            DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
+endif()
+
+if(NOT ENABLE_ROS STREQUAL OFF)
+    if(TARGET ${ROS_LIBRARY_NAME})
+        install(TARGETS ${ROS_LIBRARY_NAME}
+                DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
+    endif()
+endif()
+
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    if(TARGET ${MQTT_LIBRARY_NAME})
+        install(TARGETS ${MQTT_LIBRARY_NAME}
+                DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
+    endif()
 endif()
 
 # Install executable files

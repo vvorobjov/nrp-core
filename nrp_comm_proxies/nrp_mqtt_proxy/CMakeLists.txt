@@ -1,10 +1,10 @@
-set(PROJECT_NAME "NRPRosProxy")
-set(HEADER_DIRECTORY "nrp_ros_proxy")
+set(PROJECT_NAME "NRPMQTTProxy")
+set(HEADER_DIRECTORY "nrp_mqtt_proxy")
 
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "nrp_ros_proxy")
+set(PYTHON_MODULE_NAME "nrp_mqtt_proxy")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Exec")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -20,7 +20,8 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-    nrp_ros_proxy/nrp_ros_proxy.cpp
+    nrp_mqtt_proxy/nrp_mqtt_proxy.cpp
+    nrp_mqtt_proxy/nrp_mqtt_client.cpp
 )
 
 # List of python module build files
@@ -35,16 +36,20 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-
+    tests/test_mqtt_client.cpp
+    tests/nrp_mqtt_client_mock.cpp
 )
 
 
 ##########################################
 ## Dependencies
 
-find_package(catkin REQUIRED COMPONENTS
-        roscpp
-        )
+find_package(eclipse-paho-mqtt-c 1.3.8 REQUIRED)
+find_package(PahoMqttCpp 1.2.0 REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PROTOBUF REQUIRED protobuf)
+message(STATUS "Using protobuf ${PROTOBUF_VERSION}")
 
 find_package(Boost COMPONENTS
         system
@@ -58,11 +63,11 @@ find_package(Boost COMPONENTS
 
 ##########################################
 # Library
-add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES} ${PROTO_SRC_FILES})
+add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
-set(NRP_ROS_PROXY_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP ROS Proxy target")
+set(NRP_MQTT_PROXY_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP MQTT Proxy target")
 
 target_include_directories(${LIBRARY_NAME} BEFORE
         PUBLIC
@@ -70,7 +75,6 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-        ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
 
         PRIVATE
@@ -79,7 +83,8 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 target_link_libraries(${LIBRARY_NAME}
         PUBLIC
         ${NRP_GEN_LIB_TARGET}
-        ${catkin_LIBRARIES}
+        PahoMqttCpp::paho-mqttpp3
+        ${PROTOBUF_LIBRARIES}
         ${Boost_LIBRARIES}
 
         PRIVATE
@@ -128,7 +133,9 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
         GTest::GTest
-        GTest::Main)
+        GTest::Main
+        gmock_main
+        gmock)
 
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

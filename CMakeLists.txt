@@ -62,6 +62,8 @@ if(${ENABLE_TESTING})
 
             add_library(GTest::GTest ALIAS gtest)
             add_library(GTest::Main  ALIAS gtest_main)
+            add_library(gmock_main)
+            add_library(gmock)
         endif()
     endif()
 endif()
@@ -148,8 +150,8 @@ endif()
 if(NOT ENABLE_ROS STREQUAL OFF)
     message(STATUS "Building ROS msgs Python bindings")
     add_definitions(-DROS_ON)
-    add_subdirectory(nrp_ros/nrp_ros_msgs)
-    add_subdirectory(nrp_ros/nrp_ros_proxy)
+    add_subdirectory(nrp_ros)
+    add_subdirectory(nrp_comm_proxies/nrp_ros_proxy)
 else()
     message(STATUS "Ros msgs python bindings will not be built")
 endif()
@@ -179,6 +181,7 @@ endif()
 
 if(NOT ENABLE_MQTT STREQUAL OFF)
     message(STATUS "Building with MQTT support")
+    add_subdirectory(nrp_comm_proxies/nrp_mqtt_proxy)
     add_definitions(-DMQTT_ON)
 endif()
 
@@ -376,6 +379,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/experiment_configuration/simulation_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
         "docs/experiment_configuration/process_launcher_schema.dox"
+        "docs/experiment_configuration/nrp_connectors.dox"
 
         "docs/engines/nrp_engines.dox"
         "docs/engines/engine_comm.dox"

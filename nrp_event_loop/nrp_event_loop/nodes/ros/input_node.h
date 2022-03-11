@@ -56,6 +56,9 @@ public:
         NRPROSProxy* rosProxy = &(NRPROSProxy::getInstance());
         if(rosProxy)
             rosProxy->subscribe(this->id(), callback);
+        else
+            NRPLogger::warn("From InputROSNode \"" + this->id() +
+            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Check your experiment configuration");
 
         // reserves memory space for storing incoming msgs
         _msgTemp.reserve(InputNode<MSG_TYPE>::_queueSize);

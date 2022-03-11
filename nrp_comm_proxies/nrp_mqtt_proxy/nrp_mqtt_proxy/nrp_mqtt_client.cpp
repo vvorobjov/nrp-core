@@ -19,7 +19,7 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
+#include "nrp_mqtt_proxy/nrp_mqtt_client.h"
 
 #include "nrp_general_library/utils/json_schema_utils.h"
 
@@ -57,7 +57,8 @@ void NRPMQTTClient::subscribe(const std::string& address, const std::function<vo
     }
 }
 
-NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams)
+NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
+        _callback(this)
 {
     json_utils::validate_json(clientParams, "https://neurorobotics.net/nrp_connectors.json#/MQTTClient");
     _mqttClient = std::make_shared<mqtt::async_client>(clientParams.at("MQTTBroker"),
@@ -70,6 +71,7 @@ NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams)
         mqtt::connect_options connOpts;
         connOpts.set_clean_session(false);
 
+        _mqttClient->set_callback(_callback);
         _mqttClient->connect(connOpts)->wait();
 
         NRPLogger::info("Connection to MQTT broker is established.");
@@ -82,6 +84,10 @@ NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams)
     }
 }
 
+NRPMQTTClient::NRPMQTTClient() :
+        _callback(this)
+{}
+
 void NRPMQTTClient::disconnect()
 {
     try{
@@ -93,4 +99,16 @@ void NRPMQTTClient::disconnect()
     {
         NRPLogger::error("Couldn't gracefully disconnect from MQTT broker.");
     }
+}
+
+////////////////
+
+MQTTCallback::MQTTCallback(NRPMQTTClient* proxy) :
+        _proxy(proxy)
+{ }
+
+void MQTTCallback::message_arrived(mqtt::const_message_ptr msg)
+{
+    if(_proxy->_subscribers.count(msg->get_topic()))
+        _proxy->_subscribers.at(msg->get_topic())(msg->to_string());
 }

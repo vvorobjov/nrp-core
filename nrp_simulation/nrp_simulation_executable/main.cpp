@@ -25,6 +25,10 @@
 #include "nrp_ros_proxy/nrp_ros_proxy.h"
 #endif
 
+#ifdef MQTT_ON
+#include "nrp_mqtt_proxy/nrp_mqtt_proxy.h"
+#endif
+
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
@@ -277,15 +281,26 @@ int main(int argc, char *argv[])
         extProcs.push_back(std::move(procLaunch));
     }
 
-    // Start ROS node
+    // Connect to ROS
 #ifdef ROS_ON
-    if(simConfig->at("StartROSNode")) {
-        ros::init(std::map<std::string, std::string>(), "nrp_core");
+    if(simConfig->contains("ConnectROS")) {
+        nlohmann::json nodeProperties = simConfig->at("ConnectROS");
+        ros::init(std::map<std::string, std::string>(), nodeProperties.at("NodeName"));
         NRPROSProxy::resetInstance();
     }
 #else
-    if(simConfig->at("StartROSNode"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
+    if(simConfig->contains("ConnectROS"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ConnectROS' will be ignored.");
+#endif
+
+    // Connect to MQTT
+#ifdef MQTT_ON
+    if(simConfig->contains("ConnectMQTT")) {
+        NRPMQTTProxy::resetInstance(simConfig->at("ConnectMQTT"));
+    }
+#else
+    if(simConfig->contains("ConnectMQTT"))
+        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'ConnectMQTT' will be ignored.");
 #endif
 
     // Setup Python
@@ -315,7 +330,7 @@ int main(int argc, char *argv[])
             eTout = std::chrono::milliseconds(1000 * simConfig->at("SimulationTimeout").get<int>());
 
         eLoop.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(eTstep),
-                                  false, simConfig->at("StartROSNode")));
+                                  false, simConfig->contains("ConnectROS")));
 
     }
 
@@ -349,6 +364,12 @@ int main(int argc, char *argv[])
         NRPLogger::error("Unknown operational mode '" + mode + "'");
         return 1;
     }
+
+#ifdef MQTT_ON
+    NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
+    if(mqttProxy)
+        mqttProxy->disconnect();
+#endif
 
     NRPLogger::info("Exiting Simulation Manager");
     return 0;

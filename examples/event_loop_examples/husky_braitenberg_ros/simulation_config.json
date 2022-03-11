@@ -4,7 +4,7 @@
 	"SimulationTimeout": 10,
 	"DataPackProcessor": "cg",
 	"SimulationLoop": "EventLoop",
-	"StartROSNode": true,
+	"ConnectROS": {},
 	"EngineConfigs": [
 		{
 			"EngineType": "nest_json",

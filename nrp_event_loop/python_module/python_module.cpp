@@ -18,6 +18,10 @@
 #include "nrp_event_loop/nodes/ros/ros_edge_factory.h"
 #endif
 
+#ifdef MQTT_ON
+#include "nrp_event_loop/nodes/mqtt/mqtt_edge_factory.h"
+#endif
+
 #include "nrp_event_loop/config/cmake_constants.h"
 
 class node_policies_ns{
@@ -106,6 +110,18 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
 
     bpy::class_< RosEdgeFactoryOutput >("RosPublisher", bpy::init<const std::string &, const std::string &, const bpy::object &>((bpy::arg("keyword"), bpy::arg("address"), bpy::arg("type")) ))
             .def("__call__", &RosEdgeFactoryOutput::pySetupSelector);
+#endif
+
+#ifdef MQTT_ON
+    bpy::class_< MqttEdgeFactory >("MQTTSubscriber", bpy::init<const std::string &, const std::string &,
+            const bpy::object &, InputNodePolicies::MsgPublishPolicy, InputNodePolicies::MsgCachePolicy>(
+            (bpy::arg("keyword"), bpy::arg("address"), bpy::arg("type"),
+                    bpy::arg("publish_policy") =  InputNodePolicies::LAST,
+                    bpy::arg("cache_policy") =  InputNodePolicies::KEEP_CACHE) ))
+            .def("__call__", &MqttEdgeFactory::pySetupSelector);
+
+    bpy::class_< MqttEdgeFactoryOutput >("MQTTPublisher", bpy::init<const std::string &, const std::string &, const bpy::object &>((bpy::arg("keyword"), bpy::arg("address"), bpy::arg("type")) ))
+            .def("__call__", &MqttEdgeFactoryOutput::pySetupSelector);
 #endif
 
 #ifdef SPINNAKER_ON
