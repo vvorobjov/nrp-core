@@ -372,6 +372,8 @@ doxygen_add_docs(nrp_doxygen
         "docs/architecture_overview/transceiver_function.dox"
         "docs/architecture_overview/preprocessing_function.dox"
         "docs/architecture_overview/lifecycle_components.dox"
+        "docs/architecture_overview/experiment_lifecycle.dox"
+        "docs/architecture_overview/main_elements.dox"
 
         "docs/experiment_configuration/experiment_configuration.dox"
         "docs/experiment_configuration/engine_schema.dox"
@@ -384,6 +386,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/nrp_engines.dox"
         "docs/engines/engine_comm.dox"
         "docs/engines/gazebo/gazebo_engine.dox"
+        "docs/engines/gazebo/gazebo_configuration.dox"
         "docs/engines/gazebo/gazebo_datapacks.dox"
         "docs/engines/gazebo/gazebo_plugins.dox"
         "docs/engines/nest/nest_engine.dox"
