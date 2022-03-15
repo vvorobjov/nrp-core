@@ -30,6 +30,6 @@ Since the output of PFs is stored in the local cache and does not need to proces
 
 There is a DataPack type particularly convenient to use as PF output: <b>JsonDataPack</b>. This type of datapack stores a JSON object, and thus any type of data can be attached to it. Below is an example taking a camera image from \ref gazebo_engine "Gazebo" and returning the processed data as a JsonDataPack object.
 
-\include husky_braitenberg_with_preprocessing/grayscale.py
+\include husky_braitenberg/cam_pf.py
 
 */

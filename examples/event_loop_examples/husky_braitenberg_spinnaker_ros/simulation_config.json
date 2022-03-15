@@ -5,5 +5,8 @@
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",
   "ConnectROS": {},
-  "ComputationalGraph": ["braitenberg.py", "cam_tf.py", "mot_tf.py"]
+  "ComputationalGraph": ["braitenberg.py", "cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
+  "ExternalProcesses" : [
+    {"ProcCmd": "roslaunch husky_world.launch"}
+  ]
 }

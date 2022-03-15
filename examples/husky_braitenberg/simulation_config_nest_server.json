@@ -1,6 +1,6 @@
 {
-	"SimulationName": "test_sim",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimulationName": "husky_simulation_nest_server",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the nest_server engine.",
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
@@ -12,18 +12,22 @@
 		{
 			"EngineType": "nest_server",
 			"EngineName": "nest",
-			"NestInitFileName": "braitenberg.py",
+			"NestInitFileName": "braitenberg_nest_server.py",
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
 	"DataPackProcessingFunctions": [
 		{
-			"Name": "cam_tf",
-			"FileName": "cam_tf.py"
+			"Name": "cam_pf",
+			"FileName": "cam_pf.py"
 		},
 		{
 			"Name": "mot_tf",
 			"FileName": "mot_tf.py"
+		},
+		{
+			"Name": "brain_stimulation_tf",
+			"FileName": "brain_stimulation_tf.py"
 		}
 	]
 }

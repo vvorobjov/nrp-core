@@ -167,7 +167,7 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
     endif()
 
     # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
+    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
 endif()
 
 

@@ -1,12 +1,13 @@
 from nrp_core import *
 
-@TransceiverFunction("python_3")
+
+@TransceiverFunction("nest")
 def transceiver_function():
     """Updates iteration counter for this transceiver function"""
     global num_iterations
 
-    num_iterations[3] = num_iterations[3] + 1
+    num_iterations[2] += 1
 
-    return [  ]
+    return []
 
 # EOF

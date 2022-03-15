@@ -1,9 +1,8 @@
 {
-	"SimulationName": "test_sim",
-	"SimDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between the simulators. The CG is executed by the EventLoop. The experiment exhibits the same behavior as the original.",
-	"SimulationTimeout": 5,
+	"SimulationName": "husky_braitenberg_cg",
+	"SimDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between Engines.",
+	"SimulationTimeout": 20,
 	"DataPackProcessor": "cg",
-	"SimulationLoop": "EventLoop",
 	"EngineConfigs": [
 		{
 			"EngineType": "gazebo_grpc",
@@ -18,5 +17,5 @@
 			"EngineEnvParams": ["PYNEST_QUIET=1"]
 		}
 	],
-	"ComputationalGraph": ["cam_tf.py", "mot_tf.py"]
+	"ComputationalGraph": ["cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"]
 }

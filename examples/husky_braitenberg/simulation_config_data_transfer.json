@@ -1,7 +1,7 @@
 {
-	"SimulationName": "test_sim",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
-	"SimulationTimeout": 2,
+	"SimulationName": "husky_simulation_data",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses a datatransfer_grpc_engine to log and stream datapacks.",
+	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
 			"EngineType": "gazebo_grpc",
@@ -32,16 +32,20 @@
 	],
 	"DataPackProcessingFunctions": [
 		{
-			"Name": "cam_tf",
-			"FileName": "cam_tf.py"
+			"Name": "cam_pf",
+			"FileName": "cam_pf.py"
 		},
 		{
 			"Name": "mot_tf",
 			"FileName": "mot_tf.py"
 		},
 		{
-			"Name": "tf_1",
-			"FileName": "tf_1.py"
+			"Name": "brain_stimulation_tf",
+			"FileName": "brain_stimulation_tf.py"
+		},
+		{
+			"Name": "data_transfer_tf",
+			"FileName": "data_transfer_tf.py"
 		}
 	]
 }
