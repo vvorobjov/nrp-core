@@ -119,6 +119,13 @@ class StreamDataPackController
         void streamToFile(const google::protobuf::Message &data, std::string (StreamDataPackController::*fmtCallback) (const google::protobuf::Message &));
 
         /*!
+         * \brief Function for initialization of the file logger
+         *
+         * \param[in] baseDir output data files location
+         */
+        void initFileLogger(const std::string &baseDir);
+
+        /*!
          * \brief Function for formatting Dump::String protobuf to string
          *
          * \param[in] data protobuf message to be formatted
