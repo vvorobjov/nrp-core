@@ -62,8 +62,6 @@ if(${ENABLE_TESTING})
 
             add_library(GTest::GTest ALIAS gtest)
             add_library(GTest::Main  ALIAS gtest_main)
-            add_library(gmock_main)
-            add_library(gmock)
         endif()
     endif()
 endif()

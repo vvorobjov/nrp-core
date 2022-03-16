@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <future>
 #include <filesystem>
 
@@ -51,10 +52,12 @@ cxxopts::Options SimulationParams::createStartParamParser()
              cxxopts::value<SimulationParams::ParamFileLogLevelT>()->default_value("off"))
             (SimulationParams::ParamLogDirLong.data(), SimulationParams::ParamLogDirDesc.data(),
              cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"))
-        (SimulationParams::ParamModeLong.data(), SimulationParams::ParamModeDesc.data(),
+            (SimulationParams::ParamModeLong.data(), SimulationParams::ParamModeDesc.data(),
              cxxopts::value<SimulationParams::ParamModeT>()->default_value("standalone"))
             (SimulationParams::ParamServerAddressLong.data(), SimulationParams::ParamServerAddressDesc.data(),
-             cxxopts::value<SimulationParams::ParamServerAddressT>()->default_value(""));
+             cxxopts::value<SimulationParams::ParamServerAddressT>()->default_value(""))
+            (SimulationParams::ParamSimParamLong.data(), SimulationParams::ParamSimParamDesc.data(),
+             cxxopts::value<SimulationParams::ParamSimParamT>());
 
     return opts;
 }
@@ -100,6 +103,75 @@ NRPLogger::level_t SimulationParams::parseLogLevel(const std::string &strLogLeve
     return level;
 }
 
+void SimulationParams::parseCLISimParams(const ParamSimParamT &parseResults, nlohmann::json &simulationConfig)
+{
+    // key=value delimiter
+    std::string delimiter = "=";
+
+    for (size_t i = 0; i < parseResults.size(); i++)
+    {
+        auto param = parseResults[i];
+        try
+        {
+            std::string key = param.substr(0, param.find(delimiter));
+            std::string value = param.substr(param.find(delimiter) + delimiter.length());
+            setCLISimParams(key, value, simulationConfig);
+        }
+        catch (NRPException &e)
+        {
+            throw NRPException::logCreate(e, "Couldn't override configuration file parameters with " + param);
+        }
+    }
+}
+
+void SimulationParams::setCLISimParams(const std::string &fullKey, const std::string &value, nlohmann::json &simulationConfig)
+{
+    // Nested.Key.Name delimiter
+    std::string delimiter = ".";
+
+    // Get the head key Name (before the first delimiter)
+    std::string key = fullKey.substr(0, fullKey.find(delimiter));
+
+    // The element for override
+    nlohmann::json *element;
+
+    // Treat differently JSON lists and dictionaries
+    if (simulationConfig.is_array()){
+        int idx = std::stoi(key);
+        if ((size_t)idx < simulationConfig.size()){
+            element = &simulationConfig.at(idx);
+        }
+        else {
+            throw std::out_of_range("The list element ID to override is greater than the list size");
+        }
+    }
+    else if (simulationConfig.contains(key))
+    {
+        element = &simulationConfig.at(key);
+    }
+    else
+    {
+        throw std::invalid_argument("The override parameter " + key + " is absent in the simulation config");
+    }
+    
+    // If the head key coincides with initial key Name (there is no nested keys)
+    if (fullKey.compare(key) == 0)
+    {
+        NRPLogger::info("Overriding config parameter \"{}\" with value \"{}\"", key, value);
+        if (!element->is_string())
+            *element = nlohmann::json::parse(value);
+        else
+            *element = value;
+    }
+    else
+    {
+        // Get the nested keys (after the first delimiter)
+        std::string nestedKey = fullKey.substr(fullKey.find(delimiter) + delimiter.length());
+        NRPLogger::debug("Overriding config parameter \"{}\" with nested key \"{}\"", key, nestedKey);
+        // Make recursion to the nested key
+        setCLISimParams(nestedKey, value, *element);
+    }
+}
 
 SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     : _simConfig(simulationConfig)

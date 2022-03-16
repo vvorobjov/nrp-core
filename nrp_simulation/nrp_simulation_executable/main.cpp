@@ -217,7 +217,6 @@ int main(int argc, char *argv[])
 
     // Setup working directory and get config based on start pars
     jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
-    json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
 
     // Create default logger for the launcher
     auto logger = NRPLogger
@@ -234,6 +233,14 @@ int main(int argc, char *argv[])
     );
 
     NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+
+    // Get the list of override simulation parameters
+    if (startParams.count(SimulationParams::ParamSimParam.data()))
+    {
+        SimulationParams::parseCLISimParams(startParams[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig);
+    }
+    // Validate the resulting config
+    json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
 
     // Create Process launchers
     MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
