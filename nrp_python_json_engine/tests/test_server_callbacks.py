@@ -99,7 +99,6 @@ class TestServer(unittest.TestCase):
             server_callbacks.initialize(self.init_json_fake)
 
 
-
     def test_initialize_failure(self):
         """
         Initialize the Script class using proper callback.
@@ -109,6 +108,7 @@ class TestServer(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "Initialization failed"):
             server_callbacks.initialize(self.init_json_raise)
 
+
     def test_initialize_unsupported_ratio(self):
         """
         Initialize the Script class using proper callback.
@@ -117,7 +117,6 @@ class TestServer(unittest.TestCase):
         """
         with self.assertRaisesRegex(Exception, "PythonJSONEngine only support nanoseconds"):
             server_callbacks.initialize(self.init_json_unsupported_ratio)
-
 
 
     def test_shutdown(self):

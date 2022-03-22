@@ -44,8 +44,6 @@ def initialize(request_json: dict) -> dict:
     """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
 
-
-
     # Retrieve the time units ratio used by the client and make sure that
     # the server is using correct time units.
     # Currently only nanoseconds are supported
@@ -68,10 +66,6 @@ def initialize(request_json: dict) -> dict:
     script._name = request_json["EngineName"]
     script._config = request_json
     script.initialize()
-
-
-
-
 
 
 def run_loop(request_json: dict) -> dict:
@@ -144,10 +138,8 @@ def reset(request_json: dict) -> dict:
     """Calls the reset() method of the Script object"""
     global script
 
-
     script.reset()
     script._time_ns = 0
-
 
 
 def shutdown(request_json: dict) -> None:
