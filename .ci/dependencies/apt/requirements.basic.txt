@@ -4,3 +4,4 @@ gnupg2
 software-properties-common
 git
 curl
+libgmock-dev

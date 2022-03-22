@@ -14,10 +14,11 @@ The simulation schema contains all the necessary information to initialize and r
 <tr><td>DataPackProcessor<td>Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg)<td>enum<td>"tf"<td><td><td>"tf", "cg"
 <tr><td>DataPackProcessingFunctions<td>Transceiver and Preprocessing functions that will be used in the experiment<td>\ref transceiver_function_schema "TransceiverFunction"<td><td><td>X<td>
 <tr><td>ComputationalGraph<td>List of filenames defining the ComputationalGraph that will be used in the experiment<td>string<td><td><td>X<td>
-<tr><td>StartROSNode<td>If true a ROS node is started by NRPCoreSim<td>boolean<td>false<td><td><td>
 <tr><td>EventLoopTimeout<td>Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead<td>integer<td>0<td><td><td>
 <tr><td>EventLoopTimestep<td>Time in seconds the event loop advances in each loop. If not specified 'SimulationTimestep' is used instead<td>number<td>0.01<td><td><td>
 <tr><td>ExternalProcesses<td>Additional processes that will be started in the experiment<td>\ref process_launcher_schema "ProcessLauncher"<td><td><td>X<td>
+<tr><td>ConnectROS<td>If this parameter is present a ROS node is started by NRPCoreSim<td>\ref ros_connector_schema_parameters "ROSNode"<td><td><td><td>
+<tr><td>ConnectMQTT<td>If this parameter is present an MQTT client is instantiated and connected<td>\ref mqtt_connector_schema_parameters "MQTTClient"<td><td><td><td>
 </table>
 
 \section simulation_schema_example Example

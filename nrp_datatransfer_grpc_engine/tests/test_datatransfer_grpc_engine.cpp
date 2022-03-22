@@ -34,8 +34,6 @@
 
 #include "tests/test_env_cmake.h"
 
-nlohmann::json datatransfer_engine_deconfig;
-
 
 TEST(TestDatatransferGrpcEngine, Launcher)
 {
@@ -85,37 +83,6 @@ TEST(TestDatatransferGrpcEngine, LauncherLog)
 }
 
 
-
-TEST(TestDatatransferGrpcEngine, MQTTClient)
-{
-    // MQTT client config
-    nlohmann::json mqtt_config;
-    mqtt_config["MQTTBroker"] = "localhost:1883";
-    mqtt_config["ClientName"] = "datatransfer_engine";
-
-    // Real client should be unable to connect
-    NRPMQTTClient nrpMQTTClient(mqtt_config);
-    EXPECT_FALSE(nrpMQTTClient.isConnected());
-
-    // Mock client should be unable to connect with real client methods
-    NRPMQTTClientMock nrpMQTTClientMock1(mqtt_config);
-    EXPECT_FALSE(nrpMQTTClientMock1.isConnected());
-
-    // Mock client should be able to connect with fake methods
-    NRPMQTTClientMock nrpMQTTClientMock2(true);
-    nrpMQTTClientMock2.DelegateToFake();
-    EXPECT_TRUE(nrpMQTTClientMock2.isConnected());
-    nrpMQTTClientMock2.disconnect();
-    EXPECT_FALSE(nrpMQTTClientMock2.isConnected());
-
-    // Mock client should be disconnected with fake methods if specified so
-    NRPMQTTClientMock nrpMQTTClientMock3(false);
-    nrpMQTTClientMock3.DelegateToFake();
-    EXPECT_FALSE(nrpMQTTClientMock3.isConnected());
-}
-
-
-
 TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 {
     // Engine config
@@ -138,13 +105,19 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 
     // The expected calls
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
-        .Times(testing::AtLeast(3));
+            .Times(testing::AtLeast(3));
     EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!"))
-        .Times(1);
+            .Times(1);
     EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!"))
-        .Times(1);
+            .Times(1);
+    // data topics announcements from the DataPack Controller
+    for (size_t i = 0; i < engine_config["dumps"].size(); i++){
+        nlohmann::json dump = engine_config["dumps"].at(i);
+        EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data", "nrp/data/" + dump["name"].get<std::string>()))
+                .Times(1);
+    }
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
-        .Times(1);
+            .Times(1);
 
     // The expected calls (above) are in these operations
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
@@ -154,7 +127,6 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // TODO: The datapack controller is not destroyed and shared ptr survives
     testing::Mock::AllowLeak(nrpMQTTClientMock.get());
 }
-
 
 
 TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
@@ -179,11 +151,11 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
 
     // The expected calls (we do not expect anything to be published)
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
-        .Times(testing::AtLeast(2));
+            .Times(testing::AtLeast(2));
     EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
-        .Times(0);
+            .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
-        .Times(0);
+            .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
     ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
@@ -211,11 +183,11 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
 
     // The expected calls as for disconnected client
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
-        .Times(testing::AtLeast(2));
+            .Times(testing::AtLeast(2));
     EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
-        .Times(0);
+            .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
-        .Times(0);
+            .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
     ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
@@ -228,17 +200,23 @@ TEST(TestDatatransferGrpcEngine, StreamDataPackController)
     // Mock NRPMQTTClient with connected status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(true);
 
+    std::string dataPackName = "datapack1";
+    
+    // Expected to announce the topic data address in StreamDataPackController constructor
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data", "nrp/data/" + dataPackName))
+        .Times(1);
+
     // Launch StreamDataPackController
-    StreamDataPackController controller("datapack1", "datatransfer_engine", nrpMQTTClientMock);
+    StreamDataPackController controller(dataPackName, "datatransfer_engine", nrpMQTTClientMock);
 
     // Create a simple DataPack load
     Dump::String data;
     data.set_string_stream("test");
 
     // The expected behavior is to send message and type to corresponding topics
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data/datapack1", testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data/" + dataPackName, testing::_))
         .Times(1);
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data/datapack1/type", "Dump.String"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/data/" + dataPackName + "/type", "Dump.String"))
         .Times(1);
 
     ASSERT_NO_THROW(controller.handleDataPackData(data));

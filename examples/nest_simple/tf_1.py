@@ -3,8 +3,10 @@ from nrp_core.data.nrp_json import *
 
 from math import sin, cos
 
-sin_x = [abs(1000*sin(x)) for x in range(100)]
-cos_x = [abs(1000*cos(x)) for x in range(100)]
+range_max = 100
+sin_x = [abs(1000 * sin(x)) for x in range(range_max)]
+cos_x = [abs(1000 * cos(x)) for x in range(range_max)]
+
 n = 0
 print(sin_x)
 
@@ -17,10 +19,10 @@ def transceiver_function(voltage):
 
     # Set rate
     global n
-    n = n+1 if n < 99 else 0
+    n = (n + 1) % range_max
 
     noise_datapack = JsonDataPack("noise", "nest")
     noise_datapack.data.append({"rate": sin_x[n]})
     noise_datapack.data.append({"rate": cos_x[n]})
 
-    return [ noise_datapack ]
+    return [noise_datapack]

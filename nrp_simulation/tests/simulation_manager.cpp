@@ -145,6 +145,124 @@ TEST(SimulationManagerTest, SetupExperimentConfig)
     }
 }
 
+
+TEST(SimulationManagerTest, OverrideExperimentConfig)
+{
+    auto optParser(SimulationParams::createStartParamParser());
+
+    // Test invalid simulation argument
+    std::vector<std::string> startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "SomeInvalidParameter=SomeInvalidValue"};
+    std::vector<const char*> startParams = createStartParamPtr(startParamDat);
+
+    int argc = static_cast<int>(startParams.size());
+    char **argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::invalid_argument);
+    }
+
+    // Test valid simulation argument
+    startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "SimulationName=NewName"};
+    startParams = createStartParamPtr(startParamDat);
+
+    argc = static_cast<int>(startParams.size());
+    argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_NO_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+        ASSERT_EQ(simConfig->at("SimulationName").get<std::string>(), "NewName");
+    }
+
+    // Test valid nested simulation argument and comma separation
+    startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0.EngineName=NewName,EngineConfigs.0.EngineType=NewType"};
+    startParams = createStartParamPtr(startParamDat);
+
+    argc = static_cast<int>(startParams.size());
+    argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_NO_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+        ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineName").get<std::string>(), "NewName");
+        ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineType").get<std::string>(), "NewType");
+    }
+
+    // Test invalid nested simulation argument
+    startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.EngineName=NewName"};
+    startParams = createStartParamPtr(startParamDat);
+
+    argc = static_cast<int>(startParams.size());
+    argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::logic_error);
+    }
+
+    // Test valid list element override with empty dictionary 
+    startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0={}"};
+    startParams = createStartParamPtr(startParamDat);
+
+    argc = static_cast<int>(startParams.size());
+    argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_NO_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+        ASSERT_TRUE(simConfig->at("EngineConfigs").at(0).empty());
+    }
+
+    // Test invalid nested simulation argument list id
+    startParamDat = {"nrp_server",
+                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.10.EngineName=NewName"};
+    startParams = createStartParamPtr(startParamDat);
+
+    argc = static_cast<int>(startParams.size());
+    argv = const_cast<char**>(startParams.data());
+
+    {
+        auto startParamVals(optParser.parse(argc, argv));
+
+        jsonSharedPtr simConfig = SimulationManager::configFromParams(startParamVals);
+
+        EXPECT_NO_THROW(json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        ASSERT_THROW(SimulationParams::parseCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::out_of_range);
+    }
+}
+
 TEST(SimulationManagerTest, SetupExperimentDirectory)
 {
     auto optParser(SimulationParams::createStartParamParser());

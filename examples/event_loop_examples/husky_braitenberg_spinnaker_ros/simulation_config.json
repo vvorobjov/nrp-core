@@ -4,6 +4,9 @@
   "SimulationTimeout": 90,
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",
-  "StartROSNode": true,
-  "ComputationalGraph": ["braitenberg.py", "cam_tf.py", "mot_tf.py"]
+  "ConnectROS": {},
+  "ComputationalGraph": ["braitenberg.py", "cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
+  "ExternalProcesses" : [
+    {"ProcCmd": "roslaunch husky_world.launch"}
+  ]
 }

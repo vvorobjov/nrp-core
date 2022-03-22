@@ -46,9 +46,7 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
     : StreamDataPackController(datapackName, engineName)
 {
     _fileDump = true;
-    _fileLogger = spdlog::rotating_logger_mt(datapackName, baseDir + "/" + datapackName + ".data", 1048576 * 5, 3);
-    _fileLogger->set_pattern("%T.%e,%v");
-    _fileLogger->flush_on(spdlog::level::info);
+    this->initFileLogger(baseDir);
 }
 
 #ifdef MQTT_ON
@@ -61,20 +59,27 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
     _mqttClient = mqttClient;
     _mqttDataTopic = std::string("nrp/data/" + datapackName);
     _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
+    // announce topic
+    _mqttClient->publish("nrp/data", _mqttDataTopic);
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
                                                     const std::string &baseDir,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient)
-    : StreamDataPackController(datapackName, engineName, baseDir)
+    : StreamDataPackController(datapackName, engineName, mqttClient)
 {
-    _netDump = true;
-    _mqttClient = mqttClient;
-    _mqttDataTopic = std::string("nrp/data/" + datapackName);
-    _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
+    _fileDump = true;
+    this->initFileLogger(baseDir);
 }
 #endif
+
+void StreamDataPackController::initFileLogger(const std::string &baseDir)
+{
+    _fileLogger = spdlog::rotating_logger_mt(_datapackName, baseDir + "/" + _datapackName + ".data", 1048576 * 5, 3);
+    _fileLogger->set_pattern("%T.%e,%v");
+    _fileLogger->flush_on(spdlog::level::info);
+}
 
 void StreamDataPackController::handleDataPackData(const google::protobuf::Message &data)
 {

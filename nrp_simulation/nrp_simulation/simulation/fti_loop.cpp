@@ -35,7 +35,7 @@
 static DataPackProcessor* makeHandleFromConfig(jsonSharedPtr config)
 {
     std::string dev_p = config->at("DataPackProcessor").get<std::string>();
-    bool spinROS = config->at("StartROSNode");
+    bool spinROS = config->contains("ConnectROS");
     bool slaveMode = config->at("SimulationLoop") == "EventLoop";
     if(dev_p == "cg" || slaveMode)
         return new ComputationalGraphHandle(slaveMode, spinROS);

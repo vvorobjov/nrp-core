@@ -31,10 +31,10 @@ def transceiver_function(left_voltage_msg, right_voltage_msg):
     front_right_j.data.velocity = (forward_vel + rot_vel) * 10
 
     # print("------------------")
-    # print("Left voltage:  " + str(left_voltage))
-    # print("Right voltage: " + str(right_voltage))
-    # print("Forward velocity: " + str(forward_vel))
-    # print("Rotational vel:   " + str(rot_vel))
+    # print(f"Left voltage:  {left_voltage}")
+    # print(f"Right voltage: {right_voltage}")
+    # print(f"Forward velocity: {forward_vel}")
+    # print(f"Rotational vel:   {rot_vel}")
 
     return [ back_left_j, back_right_j, front_left_j, front_right_j ]
 

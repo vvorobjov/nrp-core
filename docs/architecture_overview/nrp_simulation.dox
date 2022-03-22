@@ -1,9 +1,10 @@
 /*! \page nrp_simulation NRPCoreSim
 This is the main NRP-core executable. It can be used to run an experiment locally. With it, a simulation is configured, a Simulation Loop is initialized, and a simulation is run. The process is divided into the following steps:
 - Parse input parameters:
-  - If a '-h' or '--help' is added to the simulation, only print the help text, then exit
-  - '-c': configuration file name, it is expected to be in the same folder NRPCoreSim is executed from
-  - '-p': Engine plugins to load. The expected value is a list of \ref plugin_system "engine plugin" .so libraries separated by commas without spaces and between quotation marks. If not present all the engine plugins compiled with nrp-core are loaded
+  - If a `-h` or `--help` is added to the simulation, only print the help text, then exit
+  - `-c`: configuration file name, it is expected to be in the same folder NRPCoreSim is executed from
+  - `-o` or `--param`: *Parameter=Value* pair, which \ref cli_override_simulation_parameters "overrides the corresponding parameter" from the configuration file
+  - `-p`: Engine plugins to load. The expected value is a list of \ref plugin_system "engine plugin" .so libraries separated by commas without spaces and between quotation marks. If not present all the engine plugins compiled with nrp-core are loaded
 - Initialize the Python interpreter for TransceiverFunctions
 - Setup the process launchers
 - Load engine launchers:
@@ -19,5 +20,68 @@ To launch an experiment with NRPCoreSim, the user must specify the simulation co
 NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngine.so,NRPNestServerEngine.so"
 \endcode
 
+\section cli_override_simulation_parameters CLI for overriding configuration file
+
+Parameters in the simulation configuration file can be overridden from NRPCoreSim using the input parameter `-o` followed by the pair `ParameterName=NewValue`. 
+Multiple `-o` paramaters can be passed to NRPCoreSim. Similarly, several pairs separated by comma `,` can be passed after the input parameter `-o`. Consequently, neither `ParameterName` nor `NewValue` can contain commas.
+
+Nested parameters are supported as well, you can separate nesting levels with dots, e.g. `ParentParameter.ChildParameter=NewValue`.
+As many levels of nesting as required can be specified.
+Two cases are supported:
+- `ParentParameter` is a dictionary: in this case `ChildParameter` is expected to be a key in the dictionary
+- `ParentParameter` is an array: `ChildParameter` is an integer indicating the index of the array to be overridden.
+
+As an example, if the configuration to override parameters from looks like:
+
+\code{.sh}
+{
+  "SimpleParameter": "OldValue1",
+  "ListName" : [
+    {
+      "NestedParameter1": "value1",
+      "NestedParameter2": ["A", "B", "C"]
+    },
+    {
+      "NestedParameter1": "value3"
+    }
+  ],
+  "DictName" :
+  {
+    "ImportantParameter": "value1",
+    "NonImportantParameter": "value2"
+  }
+}
+\endcode
+
+then the following command
+
+\code{.sh}
+NRPCoreSim -c simulation_config.json -o SimpleParameter=NewValue,DictName.ImportantParameter=VAL -o ListName.1.NestedParameter1=value0 -o ListName.0.NestedParameter2.2=D
+\endcode
+
+will override the simulation configuration as 
+
+\code{.sh}
+{
+  "SimpleParameter": "NewValue",
+  "ListName" : [
+    {
+      "NestedParameter1": "value1",
+      "NestedParameter2": ["A", "B", "D"]
+    },
+    {
+      "NestedParameter1": "value0"
+    }
+  ],
+  "DictName" :
+  {
+    "ImportantParameter": "VAL",
+    "NonImportantParameter": "value2"
+  }
+}
+\endcode
+
+Finally, please note that only parameters explicitly present in the simulation configuration file can be overridden.
+\ref default_parameters "Default parameters" in the simulation configuration schema can't be overridden. 
 
  */

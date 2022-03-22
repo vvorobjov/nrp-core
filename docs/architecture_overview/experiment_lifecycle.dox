@@ -1,0 +1,15 @@
+/*! \page experiment_lifecycle Experiment Lifecycle
+
+The lifecycle of an experiment consists of a series of states in which the different components in the architecture interact to initialize, run and shutdown the simulation. These components can be grouped in different sections depending on the role they play in the architecture:
+
+- Simulation Management: initializes and manages the Simulation Loop
+- TransceiverFunction Management: initializes and manage the execution of TransceiverFunctions
+- \ref engines "Engine": Engine processes and clients
+- \ref process_launcher "Process Management": those components in charge of launching, monitor and shutdown engine processes.
+- Engine Launching: orchestrates the launching of engines. Dynamically loads engine \ref plugin_system "plugins", receive process launchers from the ProcessLauncherManager and configure them to launch the engine processes.
+
+In the diagram below is depicted the structure of an experiment lifecycle. In this other \subpage lifecycle_components "diagram", the actions performed by each of the architecture components in each of the lifecycle transitions (Start, Initialize, RunLoop, Shutdown, Cleanup) are is described in detail.
+
+\image html lifecycle_state_machine.png "Experiment Lifecycle"
+
+ */

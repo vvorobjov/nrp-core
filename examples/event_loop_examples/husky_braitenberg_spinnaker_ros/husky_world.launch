@@ -3,7 +3,7 @@
     <env name="GAZEBO_RESOURCE_PATH" value="$(env HOME)/.gazebo"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-      <arg name="gui" value="true"/>
+      <arg name="gui" value="false"/>
       <arg name="verbose" value="true"/>
       <arg name="world_name" value="models/virtual_room/virtual_room.sdf"/>
     </include>

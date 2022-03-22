@@ -9,7 +9,7 @@ from nrp_core.engines.nest_json import RegisterDataPack, CreateDataPack
 
 SENSORPARAMS = {'E_L': -60.5,
                 'C_m': 25.0,
-                'g_L': 25.0/10.,
+                'g_L': 25.0 / 10.,
                 't_ref': 10.0,
                 'tau_syn_ex': 2.5,
                 'tau_syn_in': 2.5,
@@ -21,7 +21,7 @@ SENSORPARAMS = {'E_L': -60.5,
 
 GO_ON_PARAMS = {'E_L': -60.5,
                 'C_m': 25.0,
-                'g_L': 25.0/10.,
+                'g_L': 25.0 / 10.,
                 'E_ex': 0.0,
                 'E_in': -75.0,
                 'V_reset': -61.6,
@@ -32,15 +32,15 @@ GO_ON_PARAMS = {'E_L': -60.5,
                 'V_m': -60.5}
 
 LEAKY_PARAMS = {
-        'V_th': 1e10,
-        'C_m': 1000.0,
-        'tau_m': 10.0,
-        'tau_syn_ex': 2.,
-        'tau_syn_in': 2.,
-        'E_L': 0.0,
-        'V_reset': 0.0,
-        't_ref': 0.1,
-        'I_e': 0.0
+    'V_th': 1e10,
+    'C_m': 1000.0,
+    'tau_m': 10.0,
+    'tau_syn_ex': 2.,
+    'tau_syn_in': 2.,
+    'E_L': 0.0,
+    'V_reset': 0.0,
+    't_ref': 0.1,
+    'I_e': 0.0
 }
 
 nest.set_verbosity("M_WARNING")
@@ -132,4 +132,3 @@ RegisterDataPack('actors', leaky_cells)
 # plt.plot(x,v3, 'b')
 # plt.plot(x,v4, 'r')
 # plt.show()
-

@@ -7,7 +7,7 @@ Experiments are run using the provided application \ref nrp_simulation. It takes
 
 \section getting_started_experiment_husky Husky braitenberg
 
-This experiment replicates the omnipresent <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="https://neurorobotics.net/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
+This experiment replicates the <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="https://neurorobotics.net/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
 
 The experiment engages two simulators, <a href="http://gazebosim.org/">Gazebo</a> as robot simulator, and <a href="https://www.nest-simulator.org/">NEST</a> as neural network simulator.
 
@@ -15,55 +15,32 @@ Both Gazebo and NEST are wrapped into so-called \ref engines "engines", which al
 
 The Gazebo engine starts Gazebo server (gzserver), so you should be able to peek into the simulation by connecting with Gazebo client (`gzclient`) from a separate terminal.
 
-To run the example, if you haven't done it yet, you have to install first some additional Gazebo models. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
+To run the example, if you haven't done it yet, <b>you have to install first some additional Gazebo models</b>. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
 
 \code{.sh}
 cd examples/husky_braitenberg
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 <em>Please note that the NRPCoreSim must be executed from the example directory!</em>
 
-Here is a short description of all files that are located in the example directory:
-- braitenberg.py - contains the setup of the neuronal network running the experiment. Used by NEST.
-- cam_tf.py - transceiver function which converts images acquired by the robot into input usable by NEST.
-- husky_world.sdf - simulation world file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by Gazebo.
-- mot_tf.py - transceiver function that converts output from NEST into movement commands.
+Here is a short description of the files participating in the experiment after running the command above:
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here".
+- braitenberg.py - contains the setup of the neuronal network running the experiment. Used by the \ref nest_engine "NEST engine".
+- husky_world.sdf - simulation world file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by the \ref gazebo_engine "Gazebo engine".
+- cam_pf.py - preprocessing function which takes images acquired by the robot and detect levels of red. 
+The result is stored in a \ref datapacks_json JsonDataPack which can be accessed by other transceiver functions in the experiment.
+- brain_stimulation_tf.py - takes the JsonDataPack produced by the preprocessing function described above and estimulates the NEST neural network in function of the detected red values.
+- mot_tf.py - transceiver function that converts output from NEST into movement commands.
 
+\subsection husky_variants Experiment Variants
 
-\section getting_started_experiment_husky_pf Husky braitenberg with preprocessing function
+In the same experiment folder *husky_braitenberg* are provided two other configuration files which runs slightly different versions of the same experiment but exemplifying other engines:
+- simulation_config_nest_server.json - replaces the \ref nest_json "NEST JSON Engine" used in the original experiment with \ref nest_server "NEST server". In this variant the neural network used in the experiment is defined in the file *braitenberg_nest_server.py*.
+- simulation_config_data_transfer.json - in this configuration file a [TODO: add reference after DataTransferEngine is documented] DataTransferEngine is added to the experiment. This engine is used by an additional trasceiver function defined in *data_transfer_tf.py* for logging and streaming several datapacks.
 
-This experiment is a modification of the previous one and shows how to use one of the tools provided by the NRP - the \ref preprocessing_function "preprocessing function".
-Preprocessing functions are called before transceiver functions.
-The use of preprocessing functions is intended to increase computational efficiency when several transceiver functions would otherwise carry out multiple times the same operations on the same data.
+Each of these variants can be run as the original one but changing *simulation_config.json* with one of the configuration files listed above.
 
-The preprocessing function used in the example converts RGB images received from Gazebo into grayscale images. The processed images are passed to one of the transceiver functions (`cam_tf.py`) and can be displayed after changing `False` to `True` in the following piece of code:
-
-\dontinclude husky_braitenberg_with_preprocessing/cam_tf.py
-\skip # Set to True
-\until time.sleep
-
-The code of the preprocessing function is located in `grayscale.py` file.
-
-To run the example, switch to the proper directory and run the NRP simulation executable:
-
-\code{.sh}
-cd examples/husky_braitenberg_with_preprocessing
-NRPCoreSim -c simulation_config.json
-\endcode
-
-
-\section getting_started_experiment_husky_nest_server Husky braitenberg with NEST server
-
-This example is again a modification of the husky braitenberg experiment, in this case using a client-only engine that connects to an instance of <a href="https://pypi.org/project/nest-server/">NEST server</a>. To load the engine, its library must be specified on the command line when launching the NRP executable:
-
-\code{.sh}
-cd examples/husky_braitenberg_nest_server
-NRPCoreSim -c simulation_config.json
-\endcode
-
-This will also start nest-server in a separate process.
 
 \section getting_started_experiment_tf_exchange DataPack Exchange using the Python JSON Engine
 

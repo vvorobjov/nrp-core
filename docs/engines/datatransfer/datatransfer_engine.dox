@@ -66,7 +66,7 @@ In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples ex
 Finally, about where datapacks are logged and streamed:
 - datapacks will always be logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter.
 - dataPacks are published to an *nrp/data/<datapack_name>* MQTT topic as serialized protobuf objects.
-The type of the streamed protobuf message is published once to the topic *nrp/data/<_data_name>/type*.
+The type of the streamed protobuf message is published once to the topic *nrp/data/<_data_name>/type*. The data topic address (i.e. *nrp/data/<_data_name>*) is also published once to the topic *nrp/data*.
 
 
 \section engine_datatransfer_config_section Engine Configuration Parameters

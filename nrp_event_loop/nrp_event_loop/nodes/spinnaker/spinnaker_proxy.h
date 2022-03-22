@@ -204,6 +204,12 @@ public:
             n_send_warnings++;
             return;
         }
+
+        if(n_send_warnings > 0) {
+            NRPLogger::warn("SpiNNaker is running, sending enabled");
+            n_send_warnings = 0;
+        }
+
         std::vector<int> spikes;
         if (data->contains("neuron_ids")) {
             nlohmann::json neuron_ids = data->at("neuron_ids");

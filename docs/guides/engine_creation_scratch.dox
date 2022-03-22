@@ -56,10 +56,53 @@ example_engine/
 - python - Python module with Python wrappers for datapack classes
 
 
+
 \section tutorial_engine_creation_cmake Setting up CMake
 
 We use CMake to manage project compilation. 
-In this \subpage tutorial_engine_creation_engine_cmake_example_explanation "page", it is explained the basic structure used in an Engine cmake configuration file in order to create all libraries and executables necessary for the new engine. 
+Below is described the basic structure used in an Engine cmake configuration file in order to create all libraries and executables necessary for the new engine. The code samples are taken from docs/example_engine/CMakeLists.txt, which can be used as a template.
+
+\dontinclude example_engine/CMakeLists.txt
+
+Create basic variable definitions. These will be used in the code later on
+
+\until LIB_VERSION_NAME
+
+List Cpp compile files. LIB_SRC_FILES should contain files required by the new EngineClient and Engine Server, PYTHON_MODULE_SRC_FILES should contain files required for integrating datapacks into TransceiverFunctions,
+and EXEC_SRC_FILES should contain files required by the forked Engine Server process, in particular the source file containing the main() function.
+
+\skip # List library
+\until TEST_SRC_FILES
+\until )
+
+Create configuration files. These files use CMake variables to insert compile-time information into the source code, mainly things such as the install location, library names, ...
+
+\skip Header configuration
+\until python
+
+Add a library target. This instructs CMake to create a library object containing the source files defined in LIB_SRC_FILES. In addition, it links the new library to ${NRP_GEN_LIB_TARGET}, which is NRPGeneralLibrary.so, the base NRP library.
+
+\skip ## NRPExampleEngineLibrary
+\until target_include_directories
+\until PRIVATE
+\until )
+
+Add a Python module target. With this, a new library will be created which can be used as a Python module. The proceeding install code will install the new module at the correct location, so that it can be accessed by \ref TransceiverFunction "TransceiverFunctions".
+
+\skip ## example_engine
+\until endif
+
+Add an executable target. This will compile a new executable which can be executed in a forked process to run an Engine Server along with a simulation.
+
+\skip ## NRPExampleServerExecutable
+\until endif
+
+Add installation instructions. After compilation, this will instruct CMake on the correct location to install header files as well as all newly generated libraries, executables, and Python modules.
+
+\skip ## Installation
+\until DESTINATION ${INSTALL_CONFIGDIR}
+\until )
+
 
 
 \section tutorial_engine_creation_engine_config Creating an Engine configuration schema
@@ -196,54 +239,5 @@ Generally, the server must be able to handle requests from the following client 
 - sendDataPacksToEngine - retrieve data for the next simulation step from the client
 
 The Engine Server must also define a main() function to execute. Path to the executable should be specified in \ref engine_proc_command "EngineProcCmd" config parameter.
-
-*/
-
-
-/**********************************************************************************************************************************************************************************************************/
-/*! \page tutorial_engine_creation_engine_cmake_example_explanation Explanation of Engine CMakeLists.txt
-
-\dontinclude example_engine/CMakeLists.txt
-
-Below is described the basic structure expected in an Engine cmake configuration file. The code samples are taken from *docs/example_engine/CMakeLists.txt*, which can be used as a template.
-
-Create basic variable definitions. These will be used in the code later on
-
-\until LIB_VERSION_NAME
-
-List Cpp compile files. LIB_SRC_FILES should contain files required by the new EngineClient and Engine Server, PYTHON_MODULE_SRC_FILES should contain files required for integrating datapacks into TransceiverFunctions,
-and EXEC_SRC_FILES should contain files required by the forked Engine Server process, in particular the source file containing the main() function.
-
-\skip # List library
-\until TEST_SRC_FILES
-\until )
-
-Create configuration files. These files use CMake variables to insert compile-time information into the source code, mainly things such as the install location, library names, ...
-
-\skip Header configuration
-\until python
-
-Add a library target. This instructs CMake to create a library object containing the source files defined in LIB_SRC_FILES. In addition, it links the new library to ${NRP_GEN_LIB_TARGET}, which is NRPGeneralLibrary.so, the base NRP library.
-
-\skip ## NRPExampleEngineLibrary
-\until target_include_directories
-\until PRIVATE
-\until )
-
-Add a Python module target. With this, a new library will be created which can be used as a Python module. The proceeding install code will install the new module at the correct location, so that it can be accessed by \ref TransceiverFunction "TransceiverFunctions".
-
-\skip ## example_engine
-\until endif
-
-Add an executable target. This will compile a new executable which can be executed in a forked process to run an Engine Server along with a simulation.
-
-\skip ## NRPExampleServerExecutable
-\until endif
-
-Add installation instructions. After compilation, this will instruct CMake on the correct location to install header files as well as all newly generated libraries, executables, and Python modules.
-
-\skip ## Installation
-\until DESTINATION ${INSTALL_CONFIGDIR}
-\until )
 
 */

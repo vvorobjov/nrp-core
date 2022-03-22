@@ -63,11 +63,11 @@ struct SimulationParams
     
     // Log paramters
     static constexpr std::string_view ParamConsoleLogLevelLong = "cloglevel";
-    static constexpr std::string_view ParamConsoleLogLevelDesc = "Console minimum level of log severity (info by default)";
+    static constexpr std::string_view ParamConsoleLogLevelDesc = "Console minimum level of log severity";
     using ParamConsoleLogLevelT = std::string;
 
     static constexpr std::string_view ParamFileLogLevelLong = "floglevel";
-    static constexpr std::string_view ParamFileLogLevelDesc = "File minimum level of log severity (off by default)";
+    static constexpr std::string_view ParamFileLogLevelDesc = "File minimum level of log severity";
     using ParamFileLogLevelT = std::string;
 
     static constexpr std::string_view ParamLogDirLong = "logdir";
@@ -78,6 +78,11 @@ struct SimulationParams
     static constexpr std::string_view ParamModeLong = "m,mode";
     static constexpr std::string_view ParamModeDesc = "Operational mode, standalone or server";
     using ParamModeT = std::string;
+
+    static constexpr std::string_view ParamSimParam = "o";
+    static constexpr std::string_view ParamSimParamLong = "o,param";
+    static constexpr std::string_view ParamSimParamDesc = "Simulation config parameter, specified as param=value, overriding configuration file parameters";
+    using ParamSimParamT = std::vector<std::string>;
 
     static constexpr std::string_view ParamServerAddressLong = "server_address";
     static constexpr std::string_view ParamServerAddressDesc = "Desired address of the server in server operational mode";
@@ -95,6 +100,10 @@ struct SimulationParams
      * \return Returns parsed JSON
      */
     static nlohmann::json parseJSONFile(const std::string &fileName);
+
+    static void parseCLISimParams(const ParamSimParamT& parseResults, nlohmann::json &simulationConfig);
+
+    static void setCLISimParams(const std::string& fullKey, const std::string& value, nlohmann::json &simulationConfig);
 
     /*!
      * \brief parsing input parameter string log level into enum type

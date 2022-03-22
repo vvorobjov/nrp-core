@@ -30,7 +30,7 @@
 #include "nrp_general_library/utils/nrp_logger.h"
 
 #ifdef MQTT_ON
-#include "datatransfer_grpc_engine/engine_server/nrp_mqtt_client.h"
+#include "nrp_mqtt_proxy/nrp_mqtt_client.h"
 #endif
 
 /*!
@@ -117,6 +117,13 @@ class StreamDataPackController
          * \param[in] fmtCallback callback function for the formatting protobuf into string
          */
         void streamToFile(const google::protobuf::Message &data, std::string (StreamDataPackController::*fmtCallback) (const google::protobuf::Message &));
+
+        /*!
+         * \brief Function for initialization of the file logger
+         *
+         * \param[in] baseDir output data files location
+         */
+        void initFileLogger(const std::string &baseDir);
 
         /*!
          * \brief Function for formatting Dump::String protobuf to string

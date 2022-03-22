@@ -66,7 +66,7 @@ message(STATUS "Using gRPC cpp plugin ${GRPC_CPP_PLUGIN}")
 # Parse a .proto file PROTO_FILE_PATH and adds code for generating python bindings for each message definition found
 # The code is divided into include statements (appended to var PROTO_PYTHON_INCLUDE) and body statements (appended to
 # var PROTO_PYTHON_BODY)
-function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTHON_BODY)
+function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTHON_BODY PROTO_TYPES_FILE)
 
     set(PROTO_BINDING_DEFS "")
 
@@ -93,6 +93,7 @@ function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTH
             string(SUBSTRING "${LINE}" "${msg_pos}" -1 msg_name)
             string(APPEND PROTO_BINDING_DEFS "    proto_python_bindings<${package_name}::${msg_name}>::create();\n")
             string(APPEND PROTO_BINDING_DEFS "    DataPack<${package_name}::${msg_name}>::create_python(\"${package_name}${msg_name}DataPack\");\n\n")
+            file(APPEND "${PROTO_TYPES_FILE}" "${package_name}::${msg_name};")
         endif()
     endforeach()
 
@@ -212,10 +213,13 @@ file(GLOB ENGINE_PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs/*.pr
 # Python bindings
 set(PROTO_PYTHON_INCLUDE_STR "")
 set(PROTO_PYTHON_BODY_STR "")
+file(WRITE "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" "")
 
 foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
-    generate_proto_bindings("${PROTO_FILE}" PROTO_PYTHON_INCLUDE_STR PROTO_PYTHON_BODY_STR)
+    generate_proto_bindings("${PROTO_FILE}" PROTO_PYTHON_INCLUDE_STR PROTO_PYTHON_BODY_STR "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt")
 endforeach()
+
+file(WRITE "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" "${PROTO_PYTHON_INCLUDE_STR}")
 
 # Proto generation
 set(PROTO_SRC_FILES "")
