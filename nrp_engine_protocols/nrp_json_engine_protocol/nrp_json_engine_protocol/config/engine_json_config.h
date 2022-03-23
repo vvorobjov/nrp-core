@@ -49,12 +49,12 @@ struct EngineJSONConfigConst
         /*!
          * \brief REST Server Route from which to get datapack information
          */
-        static constexpr std::string_view EngineServerGetDataPacksRoute = "/get_datapack_information";
+        static constexpr std::string_view EngineServerGetDataPacksRoute = "/get_datapacks";
 
         /*!
          * \brief REST Server Route to which to send datapack changes
          */
-        static constexpr std::string_view EngineServerSetDataPacksRoute = "/set_datapack";
+        static constexpr std::string_view EngineServerSetDataPacksRoute = "/set_datapacks";
 
         /*!
          * \brief REST Server Route to execute a single loop
@@ -67,7 +67,7 @@ struct EngineJSONConfigConst
         static constexpr std::string_view EngineServerInitializeRoute = "/initialize";
 
         /*!
-         * \brief REST Server Route for engine initialization
+         * \brief REST Server Route for engine reset
          */
         static constexpr std::string_view EngineServerResetRoute = "/reset";
 

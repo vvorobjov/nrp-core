@@ -44,38 +44,28 @@ def initialize(request_json: dict) -> dict:
     """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
 
-    init_exec_status = True
-    init_error_message = ""
+    # Retrieve the time units ratio used by the client and make sure that
+    # the server is using correct time units.
+    # Currently only nanoseconds are supported
 
-    try:
-        # Retrieve the time units ratio used by the client and make sure that
-        # the server is using correct time units.
-        # Currently only nanoseconds are supported
+    (num, den) = request_json["TimeRatio"]
 
-        (num, den) = request_json["TimeRatio"]
-
-        if num != 1 or den != 1000000000:
-            raise Exception(f"NRP-Core was compiled with SimulationTime units different from nanoseconds (i.e. ratio "
+    if num != 1 or den != 1000000000:
+        raise Exception(f"NRP-Core was compiled with SimulationTime units different from nanoseconds (i.e. ratio "
                             f"{num} / {den}), but PythonJSONEngine only support nanoseconds.")
 
-        # Load the python script module and check if the Script class inherits from EngineScript
+    # Load the python script module and check if the Script class inherits from EngineScript
 
-        script_module = _import_python_script(request_json["PythonFileName"])
-        if not issubclass(script_module.Script, EngineScript):
-            raise Exception("Script class must inherit from EngineScript class")
+    script_module = _import_python_script(request_json["PythonFileName"])
+    if not issubclass(script_module.Script, EngineScript):
+        raise Exception("Script class must inherit from EngineScript class")
 
-        # Instantiate the Script class and run its intialize() method
+    # Instantiate the Script class and run its initialize() method
 
-        script = script_module.Script()
-        script._name = request_json["EngineName"]
-        script._config = request_json
-        script.initialize()
-
-    except Exception as e:
-        init_exec_status = False
-        init_error_message = str(e)
-
-    return {"InitExecStatus": init_exec_status, "Message": init_error_message}
+    script = script_module.Script()
+    script._name = request_json["EngineName"]
+    script._config = request_json
+    script.initialize()
 
 
 def run_loop(request_json: dict) -> dict:
@@ -148,17 +138,8 @@ def reset(request_json: dict) -> dict:
     """Calls the reset() method of the Script object"""
     global script
 
-    reset_exec_status = True
-    reset_error_message = ""
-
-    try:
-        script.reset()
-        script._time_ns = 0
-    except Exception as e:
-        reset_exec_status = False
-        reset_error_message = str(e)
-
-    return {"ResetExecStatus": reset_exec_status, "Message": reset_error_message}
+    script.reset()
+    script._time_ns = 0
 
 
 def shutdown(request_json: dict) -> None:

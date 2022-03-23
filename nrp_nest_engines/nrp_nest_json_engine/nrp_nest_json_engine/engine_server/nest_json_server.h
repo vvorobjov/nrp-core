@@ -125,7 +125,7 @@ class NestJSONServer
 
         nlohmann::json getDataPackData(const nlohmann::json &reqData) override;
 
-        nlohmann::json setDataPackData(const nlohmann::json &reqData) override;
+        void setDataPackData(const nlohmann::json &reqData) override;
 
         nlohmann::json _initData;
 };
