@@ -160,9 +160,6 @@ if(ENABLE_GAZEBO STREQUAL FULL)
         gtest_discover_tests(${TEST_NAME}
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
             EXTRA_ARGS -VV)
-
-        # Add tests based on running example experiments
-        add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
     endif()
 
 endif()

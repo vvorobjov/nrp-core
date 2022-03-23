@@ -45,6 +45,7 @@ if(${ENABLE_TESTING})
     enable_testing()
 
     include(GoogleTest)
+    include(CTest)
 
     find_package(GTest 1.10 QUIET)
     if(NOT ${GTest_FOUND})

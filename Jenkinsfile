@@ -76,7 +76,26 @@ pipeline {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
 
-                junit 'build/xml/**/*.xml'
+                    xunit (
+                    thresholds: [
+                        skipped(failureThreshold: '3'),
+                        failed(failureThreshold: '0')
+                        ],
+                    tools: [CTest(
+                        pattern: 'build/Testing/**/*.xml',
+                        deleteOutputFiles: true,
+                        failIfNotNew: false,
+                        skipNoTestFiles: false,
+                        stopProcessingIfError: true
+                        ),
+                        JUnit(
+                        pattern: 'build/xml/*.xml',
+                        deleteOutputFiles: true,
+                        failIfNotNew: false,
+                        skipNoTestFiles: false,
+                        stopProcessingIfError: true
+                        )]
+                    )
                 publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
             }
         }

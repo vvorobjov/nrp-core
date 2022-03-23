@@ -94,4 +94,16 @@ RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
 
+# Install Gazebo Models. TODO/WARNING: extra building time and container size!!!
+
+RUN mkdir ${HOME}/nrp \
+    && cd ${HOME}/nrp \
+    && git clone https://@bitbucket.org/hbpneurorobotics/models.git \
+    && git clone https://@bitbucket.org/hbpneurorobotics/gzweb.git \
+    && export HBP=/home/${USER}/.local/nrp \
+    && mkdir -p ${HBP}/gzweb/http/client/assets \
+    && mkdir -p ${HOME}/.gazebo/models \
+    && cd models \
+    && ./create-symlinks.sh
+
 # EOF

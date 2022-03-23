@@ -168,6 +168,10 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
 
     # Add tests based on running example experiments
     add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+    add_test(
+        NAME HuskyBraitenbergJsonExample 
+        COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=1
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
 endif()
 
 
