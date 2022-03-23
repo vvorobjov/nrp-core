@@ -68,12 +68,12 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
     }
     else
     {
-        NRPLogger::info(EXISTENT_NRP_MQTT_CLIENT_MESSAGE);
+        NRPLogger::info("Using preset MQTT client connection");
     }
     mqttConnected = _mqttClient->isConnected();
     if(!mqttConnected)
     {
-        NRPLogger::warn(NO_MQTT_BROKER_WARNING_MESSAGE);
+        NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");
     }
     else {      
         _mqttClient->publish(MQTT_WELCOME, "NRP-core is connected!");  
@@ -137,11 +137,13 @@ void DataTransferGrpcServer::reset()
     NRPLogger::debug("Resetting simulation");
 }
 
+#ifdef MQTT_ON
 bool DataTransferGrpcServer::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > client)
 {
     _mqttClient = client;
 
     return _mqttClient->isConnected();
 }
+#endif
 
 // EOF

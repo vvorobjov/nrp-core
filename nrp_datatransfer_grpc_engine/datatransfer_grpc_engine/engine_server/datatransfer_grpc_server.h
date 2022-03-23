@@ -30,11 +30,8 @@
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
-#endif
-
-#define NO_MQTT_BROKER_WARNING_MESSAGE "NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration"
 #define MQTT_WELCOME "nrp/welcome"
-#define EXISTENT_NRP_MQTT_CLIENT_MESSAGE "Using preset MQTT client connection"
+#endif /*MQTT_ON*/
 
 class DataTransferGrpcServer
     : public EngineGrpcServer

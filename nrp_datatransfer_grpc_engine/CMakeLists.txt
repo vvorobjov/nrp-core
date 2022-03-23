@@ -38,10 +38,6 @@ set(EXEC_SRC_FILES
 # List testing build files
 set(TEST_SRC_FILES
     tests/test_datatransfer_grpc_engine.cpp
-    # TODO: duplicated from nrp_mqtt_proxy.
-    #  How to make it accessible for testing here without including it in mqtt proxy target,
-    #  a target only for this mock?
-    tests/nrp_mqtt_client_mock.cpp
 )
 
 
@@ -77,6 +73,10 @@ target_link_libraries(${LIBRARY_NAME}
 )
 
 if(NOT ENABLE_MQTT STREQUAL OFF)
+    list(
+        APPEND TEST_SRC_FILES
+        tests/test_stream_datapack_controller.cpp
+        tests/test_mqtt_datatransfer_grpc_engine.cpp)
     target_link_libraries(${LIBRARY_NAME}
         PUBLIC
             ${NRP_MQTT_PROXY_TARGET}
@@ -136,6 +136,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
+    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
