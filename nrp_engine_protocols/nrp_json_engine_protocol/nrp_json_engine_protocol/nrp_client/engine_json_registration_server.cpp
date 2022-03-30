@@ -145,7 +145,10 @@ std::string EngineJSONRegistrationServer::requestEngine(const engine_name_t &eng
 {
     {
         std::scoped_lock lock(this->_lock);
-        this->_registeredAddresses.emplace(engineName, "");
+        if(!this->_registeredAddresses.count(engineName))
+            this->_registeredAddresses.emplace(engineName, "");
+        else
+            throw NRPException::logCreate("A JSON Engine with name \"" + engineName + "\" has been already registered.");
     }
 
     return this->retrieveEngineAddress(engineName);
@@ -154,7 +157,10 @@ std::string EngineJSONRegistrationServer::requestEngine(const engine_name_t &eng
 void EngineJSONRegistrationServer::registerEngineAddress(const engine_name_t &engineName, const std::string &address)
 {
     std::scoped_lock lock(this->_lock);
-    this->_registeredAddresses[engineName] = address;
+    if(this->_registeredAddresses.count(engineName))
+        this->_registeredAddresses[engineName] = address;
+    else
+        throw NRPException::logCreate("Attempt to register unknown JSON Engine with name: " + engineName);
 }
 
 bool EngineJSONRegistrationServer::sendClientEngineRequest(const std::string &address, const EngineJSONRegistrationServer::engine_name_t &engineName, const std::string &engineAddress, const unsigned int numTries, const unsigned int waitTime)

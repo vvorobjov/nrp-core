@@ -399,11 +399,20 @@ FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedP
 
     DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");
+    std::set<std::string> engineNames;
 
     // Create all engines required by simConfig
     engines.reserve(engineConfigs.size());
     for(auto &engineConfig : engineConfigs)
     {
+        // Check that name is not repeated
+        auto engineName = engineConfig.at("EngineName").get<std::string>();
+        if(! engineNames.count(engineName))
+            engineNames.insert(engineName);
+        else
+            throw NRPException::logCreate("Error while processing experiment configuration. The experiment contains two engines with the same name: "
+            + engineName);
+
         // Get engine launcher associated with type
         const std::string engineType = engineConfig.at("EngineType");
         auto engineLauncher = engineManager->findLauncher(engineType);
