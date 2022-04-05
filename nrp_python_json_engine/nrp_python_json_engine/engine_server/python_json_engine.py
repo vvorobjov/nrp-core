@@ -23,7 +23,7 @@
 
 from argparse import Namespace, ArgumentParser
 import flask
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 import urllib.parse
@@ -35,10 +35,6 @@ from contextlib import closing
 import logging
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
-
-# Make sure that we are running flask version 2.x.x
-
-assert flask.__version__.startswith("2"), "Required flask version 2.x.x, found " + flask.__version__
 
 app = Flask(__name__)
 
