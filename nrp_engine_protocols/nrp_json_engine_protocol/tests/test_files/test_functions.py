@@ -161,14 +161,6 @@ def test_numpy_conversion_failure_unsupported_nd():
     return test_datapack
 
 
-def test_unsupported_json_type_failure(input_datapack):
-
-    # Try to access unsupported data type
-    # Should throw. The exception should be caught by C++ part of the test
-
-    data = input_datapack.data["testBinary"]
-
-
 def test_str_method(input_datapack):
 
     # Create a test case object, so that we can use unittest assertions
@@ -181,7 +173,6 @@ def test_str_method(input_datapack):
     data = input_datapack.data
 
     expected_string = ('{"testArray":[1,0,2],'
-                       '"testBinary":{"bytes":[202,254,186,190],"subtype":null},'
                        '"testBoolFalse":false,'
                        '"testBoolTrue":true,'
                        '"testDouble":56.56,'

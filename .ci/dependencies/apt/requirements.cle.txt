@@ -1,7 +1,6 @@
 doxygen
 cmake
 libpistache-dev
-g++-10
 libboost-python-dev
 libboost-filesystem-dev
 libcurl4-openssl-dev

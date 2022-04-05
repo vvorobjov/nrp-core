@@ -125,20 +125,7 @@ find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 # nlohmann_json: JSON library
-find_package(nlohmann_json 3.9.0 QUIET)
-if(NOT ${nlohmann_json_FOUND})
-    message("Please wait. Downloading a newer version of nlohmann_json...")
-    FetchContent_Declare(json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.9.0)
-
-    FetchContent_GetProperties(json)
-    if(NOT json_POPULATED)
-        FetchContent_Populate(json)
-        set(JSON_BuildTests OFF)
-        add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif()
-endif()
+find_package(nlohmann_json REQUIRED)
 
 # nlohmann_json schema validator
 find_package(nlohmann_json_schema_validator 2.1.0 QUIET)

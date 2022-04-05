@@ -20,7 +20,7 @@ sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `ls
 wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
 sudo apt update
-sudo apt install git cmake libpistache-dev g++-10 libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip libgmock-dev
+sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip libgmock-dev
 
 # required by gazebo engine
 sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
@@ -74,7 +74,6 @@ git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
 cd nrp-core
 mkdir build
 cd build
-export CC=/usr/bin/gcc-10; export CXX=/usr/bin/g++-10
 cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"
 mkdir -p "${NRP_INSTALL_DIR}"
 # the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well

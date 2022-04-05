@@ -141,8 +141,6 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
-        GTest::GTest
-        GTest::Main
         gmock_main
         gmock)
 
