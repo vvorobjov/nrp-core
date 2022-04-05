@@ -47,6 +47,10 @@ COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies ${HOME}/.dependencies
 
 RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.basic.txt  | tr "\n" " ")
 
+# Install dependencies for testing
+
+RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.tests.txt  | tr "\n" " ")
+
 # Pistache REST Server
 
 RUN add-apt-repository ppa:pistache+team/unstable
@@ -64,6 +68,9 @@ RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt
 # Install CLE dependencies
 
 RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
+
+# If this image will be used for TVB integration, then flask==1.1.4 is needed
+RUN pip install grpcio-tools pytest flask
 
 # Install Documentation dependencies
 

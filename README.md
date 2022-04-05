@@ -26,10 +26,18 @@ sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesyst
 sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
 
 # required by nest-server (which is built and installed along with nrp-core)
-sudo apt install python3-flask python3-flask-cors python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
+sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
 
-# required by nrp-server, which uses gRPC python bindings and mpi
-pip install grpcio-tools pytest docopt mpi4py
+# required by nrp-server, which uses gRPC python bindings
+pip install grpcio-tools pytest
+
+# Remove flask if it was installed to ensure it is installed from pip
+sudo apt remove python3-flask python3-flask-cors
+# required by Python engine
+# If you are planning to use The Virtual Brain framework, you will most likely have to use flask version 1.1.4.
+# You can install that version with 
+# pip install flask==1.1.4
+pip install flask
    
 # ROS
 Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
