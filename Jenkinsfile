@@ -17,6 +17,10 @@ pipeline {
             args '-u nrpuser:nrpgroup --privileged --net=host'
         }
     }
+    options {
+        // Abort a build on timeout
+        timeout(time: 3, unit: 'HOURS') 
+    }
 
     stages {
        
@@ -57,9 +61,12 @@ pipeline {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
 
-                // Determine explicitly the shell as bash (needed for proper user-scripts operation)
-                sh 'bash .ci/30-run-tests.sh'
-                cobertura coberturaReportFile: 'build/gcovr.xml'
+                // run simultaneously just one set of tests
+                lock("${NODE_NAME}-nrp-core-unit-tests") {
+                    // Determine explicitly the shell as bash (needed for proper user-scripts operation)
+                    sh 'bash .ci/30-run-tests.sh'
+                    cobertura coberturaReportFile: 'build/gcovr.xml'
+                }
             }
         }
        
