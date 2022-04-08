@@ -35,9 +35,10 @@ pip install grpcio-tools pytest
 sudo apt remove python3-flask python3-flask-cors
 # required by Python engine
 # If you are planning to use The Virtual Brain framework, you will most likely have to use flask version 1.1.4.
+# By installing flask version 1.1.4 markupsafe library (included with flask) has to be downgraded to version 2.0.1 to run properly with gunicorn
 # You can install that version with 
-# pip install flask==1.1.4
-pip install flask
+# pip install flask==1.1.4 gunicorn markupsafe==2.0.1
+pip install flask gunicorn
    
 # ROS
 Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.

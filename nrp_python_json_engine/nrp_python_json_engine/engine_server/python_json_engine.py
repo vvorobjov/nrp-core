@@ -29,6 +29,7 @@ import nrp_core.engines.python_json.server_callbacks as server_callbacks
 import urllib.parse
 import socket
 from contextlib import closing
+import gunicorn.app.base
 
 # Disable debug printouts
 
@@ -36,7 +37,24 @@ import logging
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
+
 app = Flask(__name__)
+
+class StandaloneApplication(gunicorn.app.base.BaseApplication):
+
+    def __init__(self, app, options=None):
+        self.options = options or {}
+        self.application = app
+        super().__init__()
+
+    def load_config(self):
+        config = {key: value for key, value in self.options.items()
+                  if key in self.cfg.settings and value is not None}
+        for key, value in config.items():
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
 
 
 @app.errorhandler(500)
@@ -127,6 +145,10 @@ if __name__ == '__main__':
     hostname, port = extract_hostname_port_from_url(args.serverurl)
     register_in_regserver(args.regservurl, args.engine, hostname, port)
 
-    app.run(host=hostname, port=port)
+    options = {
+        'bind': '%s:%s' % (hostname, port),
+        'workers': 1,
+    }
+    StandaloneApplication(app, options).run()
 
 # EOF

@@ -240,5 +240,6 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
         NRP_LOG_TIME("start");
     }
 
+
     this->_simTime = loopStopTime;
 }
