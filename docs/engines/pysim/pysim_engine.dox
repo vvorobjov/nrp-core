@@ -1,0 +1,92 @@
+/*! \page pysim_engine PySim Engine
+
+This engine is based on the \ref python_json_engine and exploits python APIs for different simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) to interface simulations with NRP-core. It runs a simulator model specified the engine configuration and manages the synchronization and data exchange with other engines participating in the same experiment.
+
+
+The engine is used in a manner very similar to the Python JSON Engine (please refer to this \ref python_engine_guide "guide" for details on how to use it).
+Additionally, there are example experiments in the folder *examples/pysim_examples* that can be used as a reference for implementing experiments including this engine.
+
+Similarly to the Python JSON Engine, the engine behavior in each experiment is implemented by subclassing a Python class *PySimEngineScript* and overriding the hook methods:
+- `initialize()`: executed when the engine is initialized
+- `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `shutdown()`: executed when the engine is requested to shutdown
+- `reset()`: executed when the engine is requested to reset.
+
+The interaction with the wrapped simulator is performed by an instance of the SimulatorManager class, which is stored in PySimEngineScript in the attribute self.sim_manager. This attribute must be "manually" called from the PySimEngineScript subclass in order to advance, modify or get information from the different simulators. As an example of this use, the script implementing PySimEngineScript in experiment *examples/pysim_examples/opensim_control* is listed below:
+
+\include pysim_examples/opensim_control/server.py
+
+\section simulator_manager SimulatorManager
+
+The SimulatorManager is a python class that acts as a bridge to connect NRP-core and any of the simulators supported by the Pysim Engine (OpenSim, Mujoco, OpenAI) through the Python API of the former. 
+
+It processes requests for simulation initialization, reset, shutdown, run step, and data retrival. 
+
+When instantiated, it loads the simulation model specified in the engine configuration. Additionally, a controller is attached to actuators for the model in simulator.
+
+The following functions are provided by SimulatorManager to interact with the simulator:
+
+- `run_step(action)`: advances the simulation by the engine timestep as specified in the engine configuration. Takes as input an array of floats. The length of the array must be equal to the number of controlled elements ( such as muscles in Opensim) in the model. 
+- `reset()`: resets the simulation
+- `shutdown()`: shutdowns the simulation
+- `get_model_properties(p_type)`: returns a list with the names of model's elements of the type specified by *p_type*. The latter can take multiple possible values.
+  - OpenAI: "Property" (the names of the observed elements)
+  - Mujoco: "body", "joint", "geom", "site", "light", "camera", "actuator", "sensor", "tendon", and "mesh"
+  - Opensim: "Joint" (the elements in the model `JointSet`) and "Force" (the elements in the model `ForceSet`)
+- `get_model_all_properties(p_type)`: returns a dictionary with the value of elements of the type specified by *p_type*. The latter can take multiple possible values.
+  - OpenAI: the same with `p_type` in `get_model_properties`
+  - Mujoco: supports all `get_<p_type>` in <a href="https://gym.openai.com/docs#">Mujoco Python API </a>
+  - Opensim: the same with `p_type` in `get_model_properties`
+- `get_model_property(p_name, p_type)`: returns the observed value for `p_name`, and the `p_type` is the same with `p_type` in `get_model_all_properties`
+- `get_sim_time()`: returns the simulation time in seconds
+
+\section opensim_json_datapacks DataPacks
+
+Similarly to the Python JSON engine, the PySim engine supports a unique datapack type: *JsonDataPack*. Refer to this \ref python_json_datapacks "section" for more details.
+
+\section engine_opensim_config_section Engine Configuration Parameters
+
+The parameters for this engine are defined in the PySimEngine schema (listed \ref engine_opensim_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineJSON" schemas, and thus inherits all parameters from them.
+
+To use the Python Simulator engine in an experiment, set `EngineType` to <b>"py_sim"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from \ref engine_json "EngineJSON" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>EngineJSONServer address. Should this address already be in use, the server will continue trying ports higher up<td>string<td>localhost:9002<td><td>
+<tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>PythonFileName<td>Path to the Python script containing the engine definition<td>string<td><td>X<td>
+<tr><td>WorldFileName<td>Path to the file of simulation world<td>string<td><td>X<td>
+<tr><td>Visualiser<td>To show the simulation in visualizer or not<td>bool<td>false<td><td>
+<tr><td>Simulator<td>To call the python AlPI for a special simulator<td>string<td><td><td></table>
+
+
+\section engine_opensim_schema Schema
+
+As explained above, the schema used by the PySim engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineJSON" schemas. A complete schema for the configuration of this engine is given below: 
+
+\include engines/engine_python.json
+ 
+
+*/

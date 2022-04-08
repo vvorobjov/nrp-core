@@ -1,13 +1,16 @@
-from nrp_core.engines.opensim import OpenSimEngineScript
-
+"""
+A Py_Sim Engine for simulation
+--> obtain information from simulation and send them to controller engine
+--> receive controller command to run the simulation
+"""
+from nrp_core.engines.py_sim import PySimEngineScript
 
 # The API of Opensim is shown in the following link:
 # https://simtk.org/api_docs/opensim/api_docs
 
-class Script(OpenSimEngineScript):
-
+class Script(PySimEngineScript):
     def initialize(self):
-        """Initialize datapack1 with time"""
+        # Initialize datapack of sensors with default value
         print("Server Engine is initializing")
         print("Registering datapack --> for sensors")
         self._registerDataPack("joints")
@@ -44,7 +47,7 @@ class Script(OpenSimEngineScript):
             self._setDataPack("joints", {"shoulder": s_val, "elbow": e_val})
             self._setDataPack("infos", {"time": self.sim_manager.get_sim_time()})
         # Set muscles' force to change joints
-        self.sim_manager.run_step(self.action)
+        self.sim_manager.run_step(self.action, timestep)
         # To show components in the model changed by action
         # 1: To show components in a list
         # ctrl_list = self.sim_manager.theWorld.model.getControlsTable()
@@ -60,4 +63,5 @@ class Script(OpenSimEngineScript):
         self.sim_manager.reset()
 
     def shutdown(self):
-        print("Engine 1 is shutting down")
+        self.sim_manager.shutdown()
+        print("Simulation engine is shutting down")

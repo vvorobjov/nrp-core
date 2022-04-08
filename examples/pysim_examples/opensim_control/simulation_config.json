@@ -1,12 +1,13 @@
 {
-	"SimulationName": "tf_exchange",
-	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationName": "test_opensim",
+	"SimulationDescription": "Launch a py_sim engine to run Opensim simulation and a python engine to control the simulation",
 	"SimulationTimeout": 10,
 	"EngineConfigs": 
 	[
 		{
-			"EngineType": "opensim",
+			"EngineType": "py_sim",
 			"EngineName": "server",
+			"Simulator":"Opensim",
 			"PythonFileName": "server.py",
 			"WorldFileName":"arm26/arm26_ground_offset.osim",
 			"Visualizer":true

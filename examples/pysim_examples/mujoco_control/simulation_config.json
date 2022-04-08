@@ -1,0 +1,33 @@
+{
+	"SimulationName": "test_mujoco",
+	"SimulationDescription": "Launch a py_sim engine to run Mujoco simulation and a python engine to control the simulation",
+	"SimulationTimeout": 2,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "py_sim",
+			"EngineName": "simple_mujoco",
+			"PythonFileName": "simple_mujoco.py",
+			"WorldFileName":"model/simple_example.xml",
+			"Simulator":"Mujoco",
+			"EngineTimestep":0.002,
+			"Visualizer":true
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "controller",
+			"PythonFileName": "controller.py"
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "rec_pos",
+			"FileName": "rec_pos.py"
+		},
+		{
+			"Name": "send_cmd",
+			"FileName": "send_cmd.py"
+		}
+	]
+}

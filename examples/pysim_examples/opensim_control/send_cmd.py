@@ -1,7 +1,6 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-
 @EngineDataPack(keyword='action', id=DataPackIdentifier('action', 'client'))
 @TransceiverFunction("server")
 def transceiver_function(action):

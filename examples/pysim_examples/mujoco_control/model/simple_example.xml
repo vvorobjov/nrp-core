@@ -1,0 +1,4 @@
+<mujoco>
+	<include file="basic.xml" />
+	<include file="worldbody.xml"/>
+</mujoco>

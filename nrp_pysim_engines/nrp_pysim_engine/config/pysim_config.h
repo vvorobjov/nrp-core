@@ -26,10 +26,10 @@
 
 #include "nrp_general_library/utils/fixed_string.h"
 
-struct OpenSimConfigConst
+struct PySimConfigConst
 {
-    static constexpr char EngineType[] = "opensim";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/opensim";
+    static constexpr char EngineType[] = "py_sim";
+    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/py_sim";
 };
 
 #endif // PYSIM_CONFIG_H

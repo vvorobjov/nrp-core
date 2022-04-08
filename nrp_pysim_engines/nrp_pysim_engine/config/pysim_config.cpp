@@ -21,4 +21,4 @@
 //
 
 
-#include "nrp_opensim_engine/config/opensim_config.h"
+#include "nrp_pysim_engine/config/pysim_config.h"

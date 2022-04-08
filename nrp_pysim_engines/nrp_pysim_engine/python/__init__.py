@@ -20,9 +20,8 @@
 
 from nrp_core.engines.python_json import EngineScript
 from .SimManager import *
-from .OpensimLib import *
 
-class OpenSimEngineScript(EngineScript):
+class PySimEngineScript(EngineScript):
 
     @property
     def sim_manager(self):

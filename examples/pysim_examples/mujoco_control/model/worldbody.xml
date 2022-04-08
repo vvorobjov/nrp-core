@@ -1,0 +1,34 @@
+<mujoco>
+	<worldbody>
+		<light directional="false" diffuse=".6 .6 .6" pos="0 0 1" dir="0 0 -1"/>
+		<!-- Define the plane of the simulation environment -->
+		<geom type="plane" size="0 0 0.03" material="matplane"/>
+		<!-- Define the position of main body box -->
+		<body pos="0 0 0.1">
+			<!-- Define the main box to connect other components -->
+			<!-- Real box and visualization -->
+			<geom name="square_box" mass=".1" type="box" size=".01 .02 .02"
+				rgba="0 .5 .5 1"/>
+
+			<!-- Define the position of the leg body -->
+			<body name ="pole" pos="0.0145 -0.0055 -0.0085">
+				<!-- Define the joint of hip joint -->	
+				<joint name="pole_joint" pos="0 0 0" type="hinge" axis="1 0 0" damping="0.1" armature="0.00065" limited="true" range="-180 180" ref="90"/>
+				<!-- Define the phyics model of thigh body -->
+				<geom name="thigh" mass="0.001" type="capsule" fromto="0 0 0 0 0.05 0"
+					size="0.0036" rgba=".5 .5 .8 1"/>
+				<site name="p_end" pos="0 .0525 0" size="0.002" rgba="1 .5 .1 1"/>
+			</body>
+		</body>
+	</worldbody>
+
+	<sensor>
+        <jointpos name="pole_joint" joint="pole_joint"/>
+    </sensor>
+
+    <actuator>
+        <position name="pole_joint" gear="1" ctrllimited="true" ctrlrange="-3.00 3.00"  forcelimited="true" forcerange="-.8 .8" joint="pole_joint" kp="500"/>
+    </actuator>
+
+
+</mujoco>

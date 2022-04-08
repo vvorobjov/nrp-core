@@ -33,16 +33,18 @@
   "py_sim" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Python Simulation Engine",
-    "description": "Python Simulation Engine Configuration",
+    "description": "Configure the Simulation Engine with python API of simulators",
     "$id": "#PySim",
     "allOf": [
       { "$ref": "#/python_base" },
       {
         "properties": {
+          "EngineType": {
+            "enum": ["py_sim"]
+          },
           "Simulator": {
-            "type": "string",
-            "default": "Opensim",
-            "description": "The simulator will be used"
+            "enum": ["Opensim","OpenAI","Mujoco"],
+            "description": "The simulators that are supported"
           },
           "WorldFileName": {
             "type": "string",
@@ -54,22 +56,7 @@
             "description": "To show the simulation in visualizer or not"
           }
         },
-        "required": ["WorldFileName"]
-      }
-    ]
-  },
-  "opensim" : {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Opensim Simulation Engine",
-    "description": "Opensim Simulation Engine Configuration",
-    "$id": "#OpenSimEngine",
-    "allOf": [
-      { "$ref": "#/py_sim" },
-      {
-        "properties": {
-          "EngineType": { "enum": ["opensim"] },
-          "Simulator": { "enum": ["Opensim"] }
-        }
+        "required": ["Simulator", "WorldFileName"]
       }
     ]
   }

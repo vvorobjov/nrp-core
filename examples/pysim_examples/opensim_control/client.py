@@ -1,37 +1,24 @@
-"""Python Engine 2. Will get time from Engine 1 and print it"""
-
+"""
+A Python Engine for controller
+--> obtain information from OpenSim simulator
+--> feedback control command to OpenSim simulator
+"""
 from nrp_core.engines.python_json import EngineScript
 
 class Script(EngineScript):
-
-    def __init__(self):
-        self.e_i = 0
-        self.e_old = 0
-
-        self.kp = 0.39
-        self.ki = 0.001
-        self.kd = 0.99
-
-        self.count = 0
-        self.reset_count = 0
-
-        self.u = 0
-
-        self.action = []
-
     def initialize(self):
-        """Initialize datapack1 with empty time"""
+        self.para_init()
+        self.reset_count = 0
+        self.action = []
+        # Initialize datapack of sensors and controller
         print("Client Engine is initializing. Registering datapack...")
         self._registerDataPack("reset_flag")
         self._registerDataPack("joint_data")
-        # self._setDataPack("joint_data", { "shoulder" : 0, "elbow": 0})
 
         self.action = [0.0, 0.0, 0.0,
                        0.5, 0.0, 0.0]  # arm 26
         self._registerDataPack("action")
         self._setDataPack("action", {"act_list": self.action, "reset": 0})
-
-        self.para_init()
 
     def para_init(self):
         self.e_i = 0
@@ -44,10 +31,9 @@ class Script(EngineScript):
         self.kd = 0.99
 
     def runLoop(self, timestep):
-        """Receive datapack1 at every timestep"""
+        # Receive necessary joint data at every timestep
         joints = self._getDataPack("joint_data")
         elbow_joint = joints.get("elbow")
-        # print(elbow_joint)
         # Simple state machine
         '''
         if elbow_joint > 2.0:
@@ -78,7 +64,7 @@ class Script(EngineScript):
                                      "reset": 1 if reset_c == 0 else 0})
 
     def shutdown(self):
-        print("Engine 2 is shutting down")
+        print("Controller engine is shutting down")
 
     def pid_ctrl(self, error):
         self.e_i += error

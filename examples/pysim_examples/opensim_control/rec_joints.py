@@ -1,7 +1,6 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-
 @EngineDataPack(keyword='joints', id=DataPackIdentifier('joints', 'server'))
 @EngineDataPack(keyword='infos', id=DataPackIdentifier('infos', 'server'))
 @TransceiverFunction("client")

@@ -25,13 +25,14 @@
 #include "nrp_general_library/plugin_system/plugin.h"
 #include "nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.h"
 
-#include <nrp_opensim_engine/config/opensim_config.h>
+#include <nrp_pysim_engine/config/pysim_config.h>
 
-class OpenSimNRPClient: public PythonEngineJSONNRPClientBase<OpenSimNRPClient, OpenSimConfigConst::EngineSchema>
+class PySimNRPClient: public PythonEngineJSONNRPClientBase<PySimNRPClient,
+    PySimConfigConst::EngineSchema>
 {
 public:
 
-    OpenSimNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
+    PySimNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : PythonEngineJSONNRPClientBase(config, std::move(launcher))
     {
         NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -40,9 +41,9 @@ public:
     }
 };
 
-using OpenSimJSONLauncher = OpenSimNRPClient::EngineLauncher<OpenSimConfigConst::EngineType>;
+using PySimJSONLauncher = PySimNRPClient::EngineLauncher<PySimConfigConst::EngineType>;
 
-CREATE_NRP_ENGINE_LAUNCHER(OpenSimJSONLauncher);
+CREATE_NRP_ENGINE_LAUNCHER(PySimJSONLauncher);
 
 
 #endif // PYSIM_NRP_CLIENT_H
