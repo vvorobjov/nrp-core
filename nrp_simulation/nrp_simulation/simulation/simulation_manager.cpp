@@ -22,418 +22,164 @@
 
 #include "nrp_simulation/simulation/simulation_manager.h"
 
-#include "nrp_general_library/utils/file_finder.h"
-#include "nrp_general_library/utils/nrp_exceptions.h"
-#include "nrp_simulation/config/cmake_conf.h"
 #include "nrp_general_library/utils/nrp_logger.h"
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <future>
-#include <filesystem>
-
-
-cxxopts::Options SimulationParams::createStartParamParser()
+void SimulationManager::validateConfig(jsonSharedPtr &config)
 {
-    cxxopts::Options opts(SimulationParams::NRPProgramName.data(), SimulationParams::ProgramDescription.data());
-    opts.add_options()
-            (SimulationParams::ParamHelpLong.data(), SimulationParams::ParamHelpDesc.data(),
-             cxxopts::value<SimulationParams::ParamHelpT>()->default_value("0"))
-            (SimulationParams::ParamSimCfgFileLong.data(), SimulationParams::ParamSimCfgFileDesc.data(),
-             cxxopts::value<SimulationParams::ParamSimCfgFileT>())
-            (SimulationParams::ParamPluginsLong.data(), SimulationParams::ParamPluginsDesc.data(),
-             cxxopts::value<SimulationParams::ParamPluginsT>()->default_value({}))
-            (SimulationParams::ParamExpDirLong.data(), SimulationParams::ParamExpDirDesc.data(),
-             cxxopts::value<SimulationParams::ParamExpDirT>())
-            (SimulationParams::ParamConsoleLogLevelLong.data(), SimulationParams::ParamConsoleLogLevelDesc.data(),
-             cxxopts::value<SimulationParams::ParamConsoleLogLevelT>()->default_value("info"))
-            (SimulationParams::ParamFileLogLevelLong.data(), SimulationParams::ParamFileLogLevelDesc.data(),
-             cxxopts::value<SimulationParams::ParamFileLogLevelT>()->default_value("off"))
-            (SimulationParams::ParamLogDirLong.data(), SimulationParams::ParamLogDirDesc.data(),
-             cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"))
-            (SimulationParams::ParamModeLong.data(), SimulationParams::ParamModeDesc.data(),
-             cxxopts::value<SimulationParams::ParamModeT>()->default_value("standalone"))
-            (SimulationParams::ParamServerAddressLong.data(), SimulationParams::ParamServerAddressDesc.data(),
-             cxxopts::value<SimulationParams::ParamServerAddressT>()->default_value(""))
-            (SimulationParams::ParamSimParamLong.data(), SimulationParams::ParamSimParamDesc.data(),
-             cxxopts::value<SimulationParams::ParamSimParamT>());
+    json_utils::validateJson(*config, "https://neurorobotics.net/simulation.json#Simulation");
 
-    return opts;
-}
-
-nlohmann::json SimulationParams::parseJSONFile(const std::string &fileName)
-{
-    // Try to open file
-    std::ifstream cfgFile(fileName);
-    if(!cfgFile.is_open())
-    {
-        throw std::invalid_argument("Error: Could not open config file " + fileName);
-    }
-
-    // Parse JSON from file
-    nlohmann::json cfgJSON;
-    try
-    {
-        cfgFile >> cfgJSON;
-    }
-    catch(std::exception &e)
-    {
-        throw std::invalid_argument("Error: Could not parse config file " + fileName + "\n" + e.what());
-    }
-
-    return cfgJSON;
-}
-
-NRPLogger::level_t SimulationParams::parseLogLevel(const std::string &strLogLevel)
-{
-    // try to parse log level taken from paramters
-    NRPLogger::level_t level = NRPLogger::level_from_string(strLogLevel);
-
-    // if the log level does not exist, the NRPLogger::level_from_string returns "off", what is a valid log level
-    // in this case we check if the parameters are trying to turn off the log indeed
-    if (level == NRPLogger::level_t::off && strLogLevel.compare(NRPLogger::level_to_string(NRPLogger::level_t::off).data()) != 0)
-    {
-        // if the input parameter is different from "off", then we apply default log level
-        level = _defaultLogLevel;
-        NRPLogger::warn(
-            "Couldn't set the desired log level, using default [{}]. You specified: {}", 
-            NRPLogger::level_to_string(level), strLogLevel);
-    }
-    return level;
-}
-
-void SimulationParams::parseCLISimParams(const ParamSimParamT &parseResults, nlohmann::json &simulationConfig)
-{
-    // key=value delimiter
-    std::string delimiter = "=";
-
-    for (size_t i = 0; i < parseResults.size(); i++)
-    {
-        auto param = parseResults[i];
-        try
-        {
-            std::string key = param.substr(0, param.find(delimiter));
-            std::string value = param.substr(param.find(delimiter) + delimiter.length());
-            setCLISimParams(key, value, simulationConfig);
-        }
-        catch (NRPException &e)
-        {
-            throw NRPException::logCreate(e, "Couldn't override configuration file parameters with " + param);
-        }
-    }
-}
-
-void SimulationParams::setCLISimParams(const std::string &fullKey, const std::string &value, nlohmann::json &simulationConfig)
-{
-    // Nested.Key.Name delimiter
-    std::string delimiter = ".";
-
-    // Get the head key Name (before the first delimiter)
-    std::string key = fullKey.substr(0, fullKey.find(delimiter));
-
-    // The element for override
-    nlohmann::json *element;
-
-    // Treat differently JSON lists and dictionaries
-    if (simulationConfig.is_array()){
-        int idx = std::stoi(key);
-        if ((size_t)idx < simulationConfig.size()){
-            element = &simulationConfig.at(idx);
-        }
-        else {
-            throw std::out_of_range("The list element ID to override is greater than the list size");
-        }
-    }
-    else if (simulationConfig.contains(key))
-    {
-        element = &simulationConfig.at(key);
-    }
-    else
-    {
-        throw std::invalid_argument("The override parameter " + key + " is absent in the simulation config");
-    }
-    
-    // If the head key coincides with initial key Name (there is no nested keys)
-    if (fullKey.compare(key) == 0)
-    {
-        NRPLogger::info("Overriding config parameter \"{}\" with value \"{}\"", key, value);
-        if (!element->is_string())
-            *element = nlohmann::json::parse(value);
-        else
-            *element = value;
-    }
-    else
-    {
-        // Get the nested keys (after the first delimiter)
-        std::string nestedKey = fullKey.substr(fullKey.find(delimiter) + delimiter.length());
-        NRPLogger::debug("Overriding config parameter \"{}\" with nested key \"{}\"", key, nestedKey);
-        // Make recursion to the nested key
-        setCLISimParams(nestedKey, value, *element);
-    }
+    // Set default values
+    json_utils::setDefault<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());
+    json_utils::setDefault<std::vector<nlohmann::json>>(*config, "ExternalProcesses", std::vector<nlohmann::json>());
+    json_utils::setDefault<std::vector<nlohmann::json>>(*config, "DataPackProcessingFunctions", std::vector<nlohmann::json>());
+    json_utils::setDefault<std::vector<std::string>>(*config, "ComputationalGraph", std::vector<std::string>());
 }
 
 SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
-    : _simConfig(simulationConfig)
-{}
+    : _simConfig(simulationConfig),
+    _simState(SimState::Created)
+{
+    validateConfig(_simConfig);
+}
 
-SimulationManager::~SimulationManager()
+SimulationManager::RequestResult SimulationManager::initializeSimulation()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    this->shutdownLoop();
+    return processRequest([&]() {
+                              this->initializeCB();
+                              changeState(SimState::Initialized);
+                          },
+                          {SimState::Created},
+                          "Initializing",
+                          "initialized");
 }
 
-
-jsonSharedPtr SimulationManager::configFromParams(const cxxopts::ParseResult &args)
+SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    jsonSharedPtr simConfig = nullptr;
-
-    // Get file names from start params
-    std::string simCfgFileName;
-
-    bool directoryIsSet = false;
-
-    // Get and check experiment directory from start params
-    try
-    {
-        std::string simDirName = args[SimulationParams::ParamExpDir.data()].as<SimulationParams::ParamExpDirT>();
-        NRPLogger::debug("Got working directory from parameters: {}", simDirName);
-        if (std::filesystem::is_directory(simDirName)){
-            NRPLogger::debug("Setting working directory from command line [ {} ]", simDirName);
-            std::filesystem::current_path(simDirName);
-            // Mark that the WD is set with parameter
-            directoryIsSet = true;
-        }
-        else {
-            throw std::invalid_argument("The provided experiment directory path [ " + simDirName + " ] is not a directory.");
-        }
-    }
-    catch(std::domain_error&)
-    {
-    }
-
-    try
-    {
-        // Get config file name from the parameters
-        simCfgFileName = args[SimulationParams::ParamSimCfgFile.data()].as<SimulationParams::ParamSimCfgFileT>();
-        NRPLogger::debug("Got configuration file from parameters [ {} ]", simCfgFileName);
-
-        // Change working directory and config path if needed
-        auto simCfgFileDir = std::filesystem::path(simCfgFileName).parent_path();
-        if (!directoryIsSet && std::filesystem::is_directory(simCfgFileDir)){
-            NRPLogger::debug("Setting working directory from config file name [ {} ]", simCfgFileDir.c_str());
-            // If the WD wasn't set with parameter, set it as parent path of the config
-            std::filesystem::current_path(simCfgFileDir);
-            // Remove directory name from config file name
-            simCfgFileName = std::filesystem::path(simCfgFileName).filename().c_str();
-            NRPLogger::debug("Using the relative path to the simulation config [ {} ]", simCfgFileName.c_str());
-        }
-
-        if (!std::filesystem::is_regular_file(simCfgFileName)){
-            throw std::invalid_argument("The provided configuration file [ " + simCfgFileName + " ] is invalid");
-        }
-    }
-    catch(std::domain_error&)
-    {
-        // If no simulation file name is present, return empty config
-        NRPLogger::debug("Couldn't get configuration file from parameters, returning empty config");
-        return simConfig;
-    }
-
-    simConfig.reset(new nlohmann::json(SimulationParams::parseJSONFile(simCfgFileName)));
-
-    return simConfig;
+    return processRequest([&]() {
+                              changeState(SimState::Running);
+                              if(!this->runCB(numIterations))
+                                  NRPLogger::debug("Simulation has been stopped before running the specified number of iterations");
+                              changeState(SimState::Stopped);
+                          },
+                          {SimState::Initialized, SimState::Stopped},
+                          "Running",
+                          "run");
 }
 
-
-SimulationManager SimulationManager::createFromConfig(jsonSharedPtr &config)
-{
-    json_utils::validate_json(*config, "https://neurorobotics.net/simulation.json#Simulation");
-
-    // Set default values
-
-    json_utils::set_default<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());
-    json_utils::set_default<std::vector<nlohmann::json>>(*config, "ExternalProcesses", std::vector<nlohmann::json>());
-    json_utils::set_default<std::vector<nlohmann::json>>(*config, "DataPackProcessingFunctions", std::vector<nlohmann::json>());
-    json_utils::set_default<std::vector<std::string>>(*config, "ComputationalGraph", std::vector<std::string>());
-
-    return SimulationManager(config);
-}
-
-FTILoopConstSharedPtr SimulationManager::simulationLoop() const
-{
-    return this->_loop;
-}
-
-jsonSharedPtr SimulationManager::simulationConfig()
-{
-    return this->_simConfig;
-}
-
-jsonConstSharedPtr SimulationManager::simulationConfig() const
-{
-    return this->_simConfig;
-}
-
-void SimulationManager::initFTILoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
-                                           const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
+SimulationManager::RequestResult SimulationManager::runSimulationUntilTimeout()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    // Create and initialize loop
-    NRPLogger::info("Initializing simulation loop");
-
-    if(this->_loop == nullptr)
-    {
-        this->_loop.reset(new FTILoop(this->createSimLoop(engineLauncherManager, processLauncherManager)));
-    }
-    else
-    {
-        throw NRPException::logCreate("Simulation already initialized");
-    }
-
-    this->_loop->initLoop();
+    return processRequest([&]() {
+                              changeState(SimState::Running);
+                              if(!this->runUntilTimeOutCB())
+                                  NRPLogger::debug("Simulation has been stopped before reaching timeout");
+                              changeState(SimState::Stopped);
+                          },
+                          {SimState::Initialized, SimState::Stopped},
+                          "Running",
+                          "run");
 }
 
-bool SimulationManager::runSimulationUntilTimeout(int frac)
+SimulationManager::RequestResult SimulationManager::resetSimulation()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    if(this->_loop == nullptr)
-        return false;
-
-    bool hasTimedOut = false;
-
-    while(1)
-    {
-        hasTimedOut = hasSimTimedOut(this->_loop->getSimTime(), toSimulationTime<unsigned, std::ratio<1>>(frac * int(this->_simConfig->at("SimulationTimeout"))));
-
-        if(hasTimedOut)
-            break;
-
-        this->runSimulationOnce();
-    }
-
-    return hasTimedOut;
+    return processRequest([&]() {
+                              if(this->resetCB())
+                                  changeState(SimState::Initialized);
+                          },
+                          {SimState::Initialized, SimState::Stopped},
+                          "Resetting",
+                          "reset");
 }
 
-bool SimulationManager::resetSimulation()
+SimulationManager::RequestResult SimulationManager::stopSimulation()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    NRPLogger::info("SimulationManager: resetting simulation...");
-
-/*  if (this->isRunning()){
-        NRPLogger::error("Cannot reset the running simulation");
-        return false;
-    }
-    if(simLock.owns_lock())
-        simLock.unlock();*/
-
-    //sim_lock_t internalLock(this->_internalLock);
-
-    try{
-        if(this->_loop != nullptr) {
-            //simLock.lock();
-
-            this->_loop->resetLoop();
-
-            //simLock.unlock();
-            //std::this_thread::yield();
-        }
-        else{
-            throw NRPException::logCreate("SimulationManager: cannot reset the loop, the loop doesn't exist");
-        }
-    }
-    catch(NRPException &e) {
-        throw NRPException::logCreate(e, "SimulationManager: Loop reset has FAILED");
-    }
-
-    NRPLogger::info("SimulationManager: simulation is reset.");
-    return true;
+    return processRequest([&]() {
+                              this->stopCB();
+                          },
+                          {SimState::Initialized, SimState::Stopped, SimState::Running},
+                          "Stopping",
+                          "stopped",
+                          false);
 }
 
-void SimulationManager::runSimulationOnce()
-{
-    if(this->_loop != nullptr)
-        this->_loop->runLoop(this->_timeStep);
-    else
-        throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
-}
-
-void SimulationManager::runSimulation(unsigned numIterations)
+SimulationManager::RequestResult SimulationManager::shutdownSimulation()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    unsigned iteration = 0;
-
-    while(iteration++ < numIterations)
-        runSimulationOnce();
+    return processRequest([&]() {
+                       this->shutdownCB();
+                       changeState(SimState::Created);
+        },
+                   {SimState::Initialized, SimState::Stopped, SimState::Running, SimState::Failed},
+                   "Shutting down",
+                   "shutdown");
 }
 
-void SimulationManager::shutdownLoop()
+SimulationManager::RequestResult SimulationManager::processRequest(
+        std::function<void ()> action, std::vector<SimState> validSourceStates,
+        std::string actionMsg1, std::string actionMsg2, bool lockMutex)
 {
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRPLogger::info(actionMsg1 + " Simulation");
+    checkTransitionConstraints(std::move(validSourceStates), actionMsg2);
+
+    if(lockMutex)
+        _reqMutex.lock();
+
+    RequestResult res;
 
     try {
-        if(this->_loop != nullptr) {
-            this->_loop->shutdownLoop();
-
-            this->_loop = nullptr;
-        }
+        action();
     }
-    catch(NRPException &e) {
-        throw NRPException::logCreate(e, "SimulationManager: Loop shutdown has FAILED");
+    catch (const std::exception &e) {
+        changeState(SimState::Failed);
+        NRPLogger::warn(actionMsg1 + " Simulation Failed:\n" + e.what());
+        res.errorMessage = e.what();
     }
 
+    res.currentState = _simState;
+
+    if(lockMutex)
+        _reqMutex.unlock();
+
+    return res;
 }
 
-FTILoop SimulationManager::createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager)
+std::string SimulationManager::printSimState(const SimulationManager::SimState& simState)
 {
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-   this-> _timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
-
-    DataPackProcessor::engine_interfaces_t engines;
-    auto &engineConfigs = this->_simConfig->at("EngineConfigs");
-    std::set<std::string> engineNames;
-
-    // Create all engines required by simConfig
-    engines.reserve(engineConfigs.size());
-    for(auto &engineConfig : engineConfigs)
-    {
-        // Check that name is not repeated
-        auto engineName = engineConfig.at("EngineName").get<std::string>();
-        if(! engineNames.count(engineName))
-            engineNames.insert(engineName);
-        else
-            throw NRPException::logCreate("Error while processing experiment configuration. The experiment contains two engines with the same name: "
-            + engineName);
-
-        // Get engine launcher associated with type
-        const std::string engineType = engineConfig.at("EngineType");
-        auto engineLauncher = engineManager->findLauncher(engineType);
-        if(engineLauncher == nullptr)
-        {
-            const auto errMsg = "Failed to find engine interface \"" + engineType + "\"";
-            NRPLogger::error(errMsg);
-
-            throw std::invalid_argument(errMsg);
-        }
-
-        // Create and launch engine
-        try
-        {
-            engines.push_back(engineLauncher->launchEngine(engineConfig, processLauncherManager->createProcessLauncher(this->_simConfig->at("ProcessLauncherType"))));
-        }
-        catch(std::exception &e)
-        {
-            throw NRPException::logCreate(e, "Failed to launch engine interface \"" + engineLauncher->engineType() + "\"");
-        }
+    switch (simState) {
+        case SimState::Created:
+            return "Created";
+        case SimState::Initialized:
+            return "Initialized";
+        case SimState::Running:
+            return "Running";
+        case SimState::Stopped:
+            return "Stopped";
+        case SimState::Failed:
+            return "Failed";
+        default:
+            return "";
     }
+}
 
-    return FTILoop(this->_simConfig, engines);
+SimulationManager::SimState SimulationManager::currentState()
+{
+    return _simState;
+}
+
+void SimulationManager::checkTransitionConstraints(std::vector<SimState> validSourceStates, std::string actionStr)
+{
+    // Check FSM constraints
+    if(std::find(validSourceStates.begin(), validSourceStates.end(), _simState) == validSourceStates.end()) {
+        std::string msg = "Simulation can't be " + actionStr + " from state \"" + printSimState(_simState) + "\"";
+        throw std::logic_error(msg);
+    }
+}
+
+void SimulationManager::changeState(SimState newState)
+{
+    _simState = newState;
 }

@@ -307,7 +307,7 @@ class EngineClient
               engineConfig_(engineConfig)
         {
             // validate engine config
-            json_utils::validate_json(this->engineConfig(), this->engineSchema());
+            json_utils::validateJson(this->engineConfig(), this->engineSchema());
 
             // setting process start and env params to an empty vector since this can't be done from json schema
             setDefaultProperty<std::vector<std::string>>("EngineProcStartParams", std::vector<std::string>());
@@ -423,7 +423,7 @@ class EngineClient
         template<class T>
         void setDefaultProperty(std::string key, T value)
         {
-            json_utils::set_default<T>(this->engineConfig(), key, value);
+            json_utils::setDefault<T>(this->engineConfig(), key, value);
         }
 
         /*!

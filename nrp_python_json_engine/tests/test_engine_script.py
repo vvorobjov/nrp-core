@@ -104,12 +104,6 @@ class TestServer(unittest.TestCase):
         self.assertEqual(script._time_ns, 2 * timestep)
 
 
-    def test_reset_not_implemented(self):
-        script = Script()
-        with self.assertRaisesRegex(NotImplementedError, "The reset method of EngineScript is not implemented"):
-            script.reset()
-
-
 if __name__ == '__main__':
     unittest.main()
 

@@ -34,24 +34,13 @@ EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::millisecon
     _timestep(timestep),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
-{ this->initialize(); }
+{
+    this->initialize();
+}
 
 EventLoop::~EventLoop()
-{ this->shutdown(); }
-
-void EventLoop::runLoop(std::chrono::milliseconds timeout)
 {
-    NRPLogger::debug("in loop");
-
-    _doRun = true;
-    bool useTimeout = timeout != std::chrono::milliseconds(0);
-
-    auto start = std::chrono::steady_clock::now();
-
-    while(_doRun && (!useTimeout || std::chrono::steady_clock::now() - start < timeout))
-        runLoopOnce();
-
-    NRPLogger::debug("out loop");
+    this->shutdown();
 }
 
 void EventLoop::runLoopOnce()
@@ -75,6 +64,21 @@ void EventLoop::runLoopOnce()
     std::this_thread::sleep_until(now + _timestep);
 }
 
+void EventLoop::runLoop(std::chrono::milliseconds timeout)
+{
+    NRPLogger::debug("in loop");
+
+    _doRun = true;
+    bool useTimeout = timeout != std::chrono::milliseconds(0);
+
+    auto start = std::chrono::steady_clock::now();
+
+    while(_doRun && (!useTimeout || std::chrono::steady_clock::now() - start < timeout))
+        runLoopOnce();
+
+    NRPLogger::debug("out loop");
+}
+
 void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)
 {
     if(!this->isRunning()) {
@@ -85,17 +89,8 @@ void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)
         NRPLogger::info("EventLoop is already running. You must shut it down before running it again");
 }
 
-void EventLoop::stopLoop()
-{
-    NRPLogger::debug("Stopping EventLoop");
-    _doRun = false;
-    this->waitForLoopEnd();
-    NRPLogger::debug("EventLoop stopped");
-}
-
 void EventLoop::initialize()
 {
-
     if(!_ownGIL)
         _pyGILState = PyGILState_Ensure();
 
@@ -112,6 +107,14 @@ void EventLoop::shutdown()
     this->stopLoop();
     ComputationalGraphManager::getInstance().clear();
     NRPLogger::debug("EventLoop was shut down");
+}
+
+void EventLoop::stopLoop()
+{
+    NRPLogger::debug("Stopping EventLoop");
+    _doRun = false;
+    this->waitForLoopEnd();
+    NRPLogger::debug("EventLoop stopped");
 }
 
 void EventLoop::waitForLoopEnd()

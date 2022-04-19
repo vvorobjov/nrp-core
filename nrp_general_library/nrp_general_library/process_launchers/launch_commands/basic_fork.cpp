@@ -42,7 +42,8 @@ BasicFork::~BasicFork()
 }
 
 pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
-                                     const std::vector<std::string> &startParams, bool appendParentEnv)
+                                     const std::vector<std::string> &startParams, bool appendParentEnv,
+                                     int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -105,9 +106,25 @@ pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std
         // Parameter end
         startParamPtrs.push_back(nullptr);
 
+        // Replace the child's stdout and stderr handles with the log file handle
+        if(logFD >= 0)
+        {
+            if (dup2(logFD, STDOUT_FILENO) < 0) {
+                std::perror("dup2 (stdout)");
+                std::exit(1);
+            }
+            if (dup2(logFD, STDERR_FILENO) < 0) {
+                std::perror("dup2 (stderr)");
+                std::exit(1);
+            }
+        }
+
         // Run command, stop current execution
         NRPLogger::debug("Launching process with cmd: {}",  startParamStr.c_str());
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
+
+        if(logFD >= 0)
+            close(logFD);
 
         // Don't use the logger here, as this is a separate process
         std::cerr << "Couldn't start Process with cmd \"" << procCmd.data() << "\"\n Error code: " << res << std::endl;

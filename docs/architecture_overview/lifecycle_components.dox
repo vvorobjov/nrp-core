@@ -1,10 +1,20 @@
-/*! \page lifecycle_components Lifecycle Component Diagram
+/*! \page fti_lifecycle_components FTILoop Experiment Lifecycle Transitions by Component
 
-This page contains a diagram describing the actions performed by the main components in the architecture during a simulation experiment lifecycle transitions: Start, Initialize, RunLoop, Shutdown, Cleanup.
+This page describes the actions performed by the main components in the architecture during each of the lifecycle transitions in an NRP-Core experiment running an FTILoop: Start, Initialize, RunLoop, Shutdown, Cleanup.
+These components can be grouped in different sections depending on the role they play in the architecture:
 
-Each of the boxes in the diagram correspond to an actual class in the architecture. The boxes are grouped by the role they play in the architecture: Simulation Management, TransceiverFunction Management, Engine Launching, Process Manager and Engine.
+- Simulation Management: initializes and manages the Simulation Loop
+- TransceiverFunction Management: initializes and manage the execution of TransceiverFunctions
+- \ref engines "Engine": Engine processes and clients
+- \ref process_launcher "Process Management": those components in charge of launching, monitor and shutdown engine processes.
+- Engine Launching: orchestrates the launching of engines. Dynamically loads engine \ref plugin_system "plugins", receive process launchers from the ProcessLauncherManager and configure them to launch the engine processes.
 
-the diagram contains a significant amount of information and in consequence is quite large. Unfortunately doxygen don't offer any advance tools for zooming and panning, which makes navigating such a large diagram not an easy task. To alleviate this situation, below is added a simplified version of the diagram containing just the aforementioned sections in which components are grouped and the relationships between them. This diagram maintains the same color code and spatial distribution of the sections as the large diagram.
+In the big diagram at the bottom of the page the actions performed by each architecture component during each of the lifecycle transitions is described.
+Each of the boxes in the diagram correspond to an actual class in the architecture. 
+The boxes are grouped by the role they play in the architecture: Simulation Management, TransceiverFunction Management, Engine Launching, Process Manager and Engine.
+The diagram contains a significant amount of information and in consequence is quite large. 
+Below is given a simplified version of the diagram containing only the different groups of components and the relationships between them. 
+This diagram maintains the same color code and spatial distribution of the groups as the large diagram at the bottom.
 
 \image html lifecycle_components_simple.png "Simplified lifecycle components diagram"
 

@@ -3,14 +3,15 @@ from nrp_core.client import NrpCore
 import sys
 import os
 import unittest
+from threading import Thread
+
 
 class TestNrpServer(unittest.TestCase):
 
     def setUp(self) -> None:
         """Test fixture setup method, spawns an instance of NRP Core client."""
         address = "localhost:50051"
-        args = ["-c", "simulation_config.json",
-                "-p", "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"]
+        args = "-c simulation_config.json -p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
 
         self.nrp_core = NrpCore(address, args)
 
@@ -23,19 +24,51 @@ class TestNrpServer(unittest.TestCase):
 
     def test_basic(self):
         """Tests normal simulation execution."""
-        self.nrp_core.initialize()
-        self.nrp_core.runLoop(5)
-        self.nrp_core.runLoop(3)
+        self.assertEqual(self.nrp_core.current_state(), 'Created')
+        self.assertEqual(self.nrp_core.initialize(), True)
+        self.assertEqual(self.nrp_core.current_state(), 'Initialized')
+        self.assertEqual(self.nrp_core.run_loop(5), True)
+        self.assertEqual(self.nrp_core.current_state(), 'Stopped')
+        self.assertEqual(self.nrp_core.reset(), True)
+        self.assertEqual(self.nrp_core.current_state(), 'Initialized')
+        self.assertEqual(self.nrp_core.run_until_timeout(), True)
+        self.assertEqual(self.nrp_core.current_state(), 'Stopped')
         self.nrp_core.shutdown()
+        self.assertEqual(self.nrp_core.current_state(), 'Created')
+
+    def test_async(self):
+        """Tests normal async execution."""
+        # run simulation for high number of iterations
+        self.nrp_core.initialize()
+        t = self.nrp_core.run_loop(int(1e7), True)
+        self.assertEqual(type(t), Thread)
+        self.assertEqual(t.is_alive(), True)
+        # stop simulation
+        self.nrp_core.stop()
+        # give some time for the simulation to stop but not as much as it would take to complete 1e7 iterations
+        t.join(10)
+        self.assertEqual(t.is_alive(), False)
+
+    def test_constructor_errors(self):
+        self.nrp_core.shutdown()
+        address = "localhost:50051"
+        args = "-c simulation_config.json -p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
+
+        # Pass an incorrect address so the client can't connect
+        old_timeout = NrpCore.TIMEOUT_SEC
+        NrpCore.TIMEOUT_SEC = 3
+        self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args)
+        # Pass wrong cmd line params
+        self.assertRaises(ChildProcessError, NrpCore, address, "wrong_args")
+        NrpCore.TIMEOUT_SEC = old_timeout
 
     def test_runloop_no_init(self):
         """
         Tests calling runLoop() before initialize().
         It should not be possible to call runLoop() before initialize().
         """
-        self.assertRaises(Exception, self.nrp_core.runLoop, 5)
+        self.assertEqual(self.nrp_core.run_loop(5), False)
 
-    @unittest.skip("FIXME: this test is failing randomly and has been disabled")
     def test_shutdown_no_init(self):
         """
         Tests calling shutdown() before initialize().
@@ -49,10 +82,10 @@ class TestNrpServer(unittest.TestCase):
         The second call to initialize() should raise an exception.
         """
         self.nrp_core.initialize()
-        self.assertRaises(Exception, self.nrp_core.initialize)
+        self.assertEqual(self.nrp_core.initialize(), False)
+
 
 # Change directory to the experiment's directory
-
 os.chdir(sys.argv[4])
 
 if __name__ == '__main__':

@@ -56,10 +56,12 @@ class LaunchCommandInterface
          * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
          * \param startParams Additional Start parameters
          * \param appendParentEnv Should parent env variables be appended to child process
+         * \param logFD File descriptor to route stdout and stderror outputs in child process
          * \return Returns PID of child process on success
          */
         virtual pid_t launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
-                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
+                                          const std::vector<std::string> &startParams,
+                                          bool appendParentEnv = true, int logFD = -1) = 0;
 
 
         /*!

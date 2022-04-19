@@ -37,3 +37,6 @@ std::tuple<std::string, std::string> ProcessLauncherInterface::splitEnvVar(const
 
     return std::tuple<std::string, std::string>(envVar.substr(0, eqLocation), envVar.substr(eqLocation+1, envVar.length()));
 }
+
+void ProcessLauncherInterface::setFileDescriptor(int logFD)
+{ _logFD = logFD; }

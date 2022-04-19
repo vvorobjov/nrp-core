@@ -40,6 +40,7 @@ set(LIB_SRC_FILES
     nrp_general_library/utils/file_finder.cpp
     nrp_general_library/utils/fixed_string.cpp
     nrp_general_library/utils/json_converter.cpp
+    nrp_general_library/utils/json_schema_utils.cpp
     nrp_general_library/utils/nrp_exceptions.cpp
     nrp_general_library/utils/nrp_logger.cpp
     nrp_general_library/utils/ptr_templates.cpp

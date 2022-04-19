@@ -60,7 +60,7 @@ void NRPMQTTClient::subscribe(const std::string& address, const std::function<vo
 NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
         _callback(this)
 {
-    json_utils::validate_json(clientParams, "https://neurorobotics.net/nrp_connectors.json#/MQTTClient");
+    json_utils::validateJson(clientParams, "https://neurorobotics.net/nrp_connectors.json#/MQTTClient");
     _mqttClient = std::make_shared<mqtt::async_client>(clientParams.at("MQTTBroker"),
                                                        clientParams.at("ClientName"));
 

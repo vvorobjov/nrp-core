@@ -9,4 +9,4 @@ def transceiver_function(datapack_python):
     for k in datapack_python.data.keys():
         rec_datapack1.data[k] = datapack_python.data[k]
 
-    return [ rec_datapack1 ]
+    return [rec_datapack1]

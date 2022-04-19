@@ -11,7 +11,7 @@
       "description": "Type of simulation loop used in the experiment"
     },
     "SimulationTimeout" : {
-      "type" : "integer",
+      "type" : "number",
       "default": 0,
       "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
@@ -52,7 +52,7 @@
       "description": "List of filenames defining the ComputationalGraph that will be used in the experiment"
     },
     "EventLoopTimeout" : {
-      "type" : "integer",
+      "type" : "number",
       "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
     },
     "EventLoopTimestep" : {

@@ -99,6 +99,6 @@ class EngineScript:
         This function should be overwritten by the derived class and
         should contain all steps necessary to reset the simulation.
         """
-        raise NotImplementedError("The reset method of EngineScript is not implemented.")
+        pass
 
 # EOF

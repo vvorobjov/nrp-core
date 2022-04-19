@@ -22,6 +22,9 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/nrp_core_server.cpp
     nrp_simulation/simulation/fti_loop.cpp
     nrp_simulation/simulation/simulation_manager.cpp
+    nrp_simulation/simulation/simulation_manager_fti.cpp
+    nrp_simulation/simulation/simulation_manager_event_loop.cpp
+    nrp_simulation/simulation/simulation_parameters.cpp
     nrp_simulation/datapack_handle/datapack_handle.cpp
     nrp_simulation/datapack_handle/tf_manager_handle.cpp
     nrp_simulation/datapack_handle/computational_graph_handle.cpp
@@ -35,7 +38,9 @@ set(EXEC_SRC_FILES
 # List testing build files
 set(TEST_SRC_FILES
     tests/fti_loop.cpp
+    tests/simulation_parameters.cpp
     tests/simulation_manager.cpp
+    tests/fti_simulation_manager.cpp
 )
 
 
@@ -151,8 +156,8 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
         NRPNestJSONEngine::NRPNestJSONEngine
         NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
-        GTest::GTest
-        GTest::Main)
+        gmock_main
+        gmock)
 
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

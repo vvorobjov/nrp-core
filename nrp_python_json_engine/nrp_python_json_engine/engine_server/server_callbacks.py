@@ -40,6 +40,12 @@ def _import_python_script(filename: str) -> ModuleType:
     return import_module(os.path.splitext(script_basename)[0])
 
 
+def _flush_std():
+    """Flush stdout and stderr, when they are redirected externally they need to be flushed manually"""
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
 def initialize(request_json: dict) -> dict:
     """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
@@ -66,6 +72,7 @@ def initialize(request_json: dict) -> dict:
     script._name = request_json["EngineName"]
     script._config = request_json
     script.initialize()
+    _flush_std()
 
 
 def run_loop(request_json: dict) -> dict:
@@ -139,6 +146,7 @@ def reset(request_json: dict) -> dict:
     global script
 
     script.reset()
+    _flush_std()
     script._time_ns = 0
 
 
@@ -147,5 +155,6 @@ def shutdown(request_json: dict) -> None:
     global script
 
     script.shutdown()
+    _flush_std()
 
 # EOF

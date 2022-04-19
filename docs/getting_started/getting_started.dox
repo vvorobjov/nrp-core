@@ -4,6 +4,8 @@ In order to start working with NRP-core, the latter must be first compiled and i
 
 We provide a number of example experiments within the NRP-core repository. They are located in the `examples` subdirectory. They give a good overview of the capabilities of the NRP and should be relatively easy to adapt to user-specific needs. More details about running these experiments can be found on the page: \subpage running_example_exp "Running the example experiments".
 
+This \subpage python_client "page" describes how to run NRP-Core experiments from Python.
+
 Please take note that some of the examples may require additional models or dependencies, which may be not included in the NRP-core repository. More information can be found in our \ref tutorial_helpful_info "guide".
 
 

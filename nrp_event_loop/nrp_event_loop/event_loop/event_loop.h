@@ -39,9 +39,6 @@
  */
 class EventLoop
 {
-
-    // TODO: implement runasync and runonce
-
     public:
 
         virtual ~EventLoop();
@@ -57,6 +54,11 @@ class EventLoop
          * \brief Run a single loop
          */
         void runLoopOnce();
+
+        /*!
+         * \brief Run loop
+        */
+        void runLoop(std::chrono::milliseconds timeout);
 
         /*!
          * \brief Run loop in a thread
@@ -89,13 +91,6 @@ class EventLoop
          * \brief Initialize loop
          */
         void initialize();
-
-        /*!
-         * \brief Run loop
-         *
-         * This method is kept private. 'runLoopAsync' should be used instead.
-         */
-        void runLoop(std::chrono::milliseconds timeout);
 
         /*! \brief future state of the event loop thread run async  */
         std::future<void> _runFuture;

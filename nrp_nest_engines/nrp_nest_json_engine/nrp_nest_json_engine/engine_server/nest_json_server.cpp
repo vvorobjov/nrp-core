@@ -132,6 +132,7 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 
         this->_pyGlobals["nest"] = nestModule;
         this->_pyGlobals[NRP_NEST_PYTHON_MODULE_STR] = nrpNestModule;
+        this->_pyGlobals["sys"] = python::import("sys");
         NRPLogger::debug("NestJSONServer: importing nest module is finished");
     }
     catch(python::error_already_set &)
@@ -230,6 +231,9 @@ nlohmann::json NestJSONServer::initialize(const nlohmann::json &data, EngineJSON
 
     NRPLogger::debug("NestJSONServer::initialize(...) completed with no errors.");
 
+    // Flush stdout and stderr, when they are redirected externally they need to be flushed manually
+    python::exec("sys.stdout.flush(); sys.stderr.flush()", this->_pyGlobals, this->_pyGlobals);
+
     // Return success and parsed devmap
     return nlohmann::json({{NestConfigConst::InitFileExecStatus, true}, {NestConfigConst::InitFileParseDevMap, jsonDevMap}});
 }
@@ -285,6 +289,9 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
     // Remove datapack controllers
     this->clearRegisteredDataPacks();
     this->_datapackControllerPtrs.clear();
+
+    // Flush stdout and stderr, when they are redirected externally they need to be flushed manually
+    python::exec("sys.stdout.flush(); sys.stderr.flush()", this->_pyGlobals, this->_pyGlobals);
 
     return nlohmann::json();
 }

@@ -398,6 +398,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"
         "docs/getting_started/running_example_exp.dox"
+        "docs/getting_started/python_client.dox"
 
         "docs/guides/guides.dox"
         "docs/guides/general_developer_guide.dox"

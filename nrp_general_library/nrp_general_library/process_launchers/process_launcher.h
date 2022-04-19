@@ -49,9 +49,10 @@ class ProcessLauncherInterface
         virtual std::string launcherName() const = 0;
 
         /*!
-         * \brief Create a new proces launcher
+         * \brief Create a new process launcher
+         * \param logFD File descriptor to route stdout and stderror outputs in launched process
          */
-        virtual ProcessLauncherInterface::unique_ptr createLauncher() = 0;
+        virtual ProcessLauncherInterface::unique_ptr createLauncher(int logFD = -1) = 0;
 
         /*!
          * \brief Fork a new process. Will read environment variables and start params from procConfig
@@ -81,6 +82,12 @@ class ProcessLauncherInterface
          */
         LaunchCommandInterface *launchCommand() const;
 
+        /*!
+         * \brief Sets the file descriptor that will be used by the launched process to write stdout and stderror
+         * \param logFD File descriptor to route stdout and stderror outputs in launched process
+         */
+        void setFileDescriptor(int logFD);
+
     protected:
         /*!
          * \brief Checks given Environment variable for correctness (Should contain an '=' character)
@@ -100,6 +107,11 @@ class ProcessLauncherInterface
          * \brief Launch Command
          */
         LaunchCommandInterface::unique_ptr _launchCmd = nullptr;
+
+        /*!
+         * \brief File descriptor to route stdout and stderror outputs in launched process
+         */
+         int _logFD = -1;
 };
 
 
@@ -122,15 +134,19 @@ class ProcessLauncher
 
         ~ProcessLauncher() override = default;
 
-        ProcessLauncherInterface::unique_ptr createLauncher() override
-        {   return ProcessLauncherInterface::unique_ptr(new PROCESS_LAUNCHER());    }
+        ProcessLauncherInterface::unique_ptr createLauncher(int logFD = -1) override
+        {
+            ProcessLauncherInterface::unique_ptr launcher(new PROCESS_LAUNCHER());
+            launcher->setFileDescriptor(logFD);
+            return launcher;
+        }
 
         std::string launcherName() const override final
         {   return std::string(LauncherType);   }
 
         pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) override final
         {
-            json_utils::validate_json(procConfig, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+            json_utils::validateJson(procConfig, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
 
             if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
             {   throw noLauncherFound(procConfig.at("LaunchCommand"));  }
@@ -139,7 +155,8 @@ class ProcessLauncher
             return this->_launchCmd->launchProcess(procConfig.at("ProcCmd"),
                                                    procConfig.contains("ProcEnvParams") ? procConfig.at("ProcEnvParams").get<std::vector<std::string>>() : std::vector<std::string>(),
                                                    procConfig.contains("ProcStartParams") ? procConfig.at("ProcStartParams").get<std::vector<std::string>>() : std::vector<std::string>(),
-                                                           appendParentEnv);
+                                                           appendParentEnv,
+                                                           _logFD);
         }
 
         pid_t stopProcess(unsigned int killWait) override final

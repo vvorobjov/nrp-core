@@ -1,0 +1,48 @@
+/*! \page python_client Running NRP-Core experiments from Python
+
+NRP-Core experiments can be run from the provided application, \ref nrp_simulation.
+In this way, the experiment is loaded from a specified configuration file and run until the specified timeout.
+Additionally, we provide a Python module, *nrp_core.client*, which can be used to start experiments from Python and which enable more control over the experiment execution.
+
+The main class used to launch and control NRP-Core experiment is *nrp_core.client.NrpCore*.
+When instantiated, it internally launches an NRPCoreSim process in \ref server_mode "server mode" and forwards requests made through its methods to the NRPCoreSim GRPC server.
+
+nrp_core.client.NrpCore provides methods which match the available services in NRPCoreSim server: initialize(), run_loop(int number_of_iterations), run_until_timeout(), stop(), reset() and shutdown().
+Each of these methods calls the corresponding GRPC service as described \ref server_mode "here".
+
+Below there is an example on how to use **NrpCore** for loading the \ref getting_started_experiment_tf_exchange "tf_exchange" experiment and running it:
+
+\code{.py}
+# Import NrpCore
+from nrp_core.client import NrpCore
+# Start NRPCoreSim server with tf_exchange experiment and connects to it
+n = NrpCore('localhost:5345',"-c simulation_config.json -d nrp-core/examples/tf_exchange", True)
+# Initialize the experiment
+n.initialize()
+# Run the simulation loop for 10 iterations
+n.run_loop(10)
+# Check the current state of the experiment
+n.current_state()
+# Resets the experiment
+n.reset()
+# Run the experiment until timeout
+n.run_until_timeout()
+# Shut down the experiment
+n.shutdown()
+\endcode
+
+NrpCore takes as arguments:
+- address (str): the address that will be used by NRPCoreSim server
+- args (str): command line arguments to start NRPCoreSim with (as described here: \ref nrp_simulation)
+- log_output (bool): if true, console output from NRPCoreSim process is hidden and logged into a file .console_output.log in the experiment folder. It is true by default.
+
+Each of the methods provided to control the experiment returns a boolean value which is True if the request was processed correctly and False otherwise.
+They can return False either because the request was not possible from the current state of the experiment (see \ref experiment_lifecycle "here" for more information on the experiment lifecycle FSM) or because there was an error while executing the request.
+In the latter case the experiment is transitioned to `Failed` state and only `shutdown()` is possible.
+
+Finally, all the request methods are blocking, i.e. the return only after the request has been processed and the corresponding GRPC service returns. 
+With the exception of *run_loop()* and *run_until_timeout()*, which accepts a parameter *run_async (bool)* which allows to execute the request in a separate thread, and therefore non-blockingly.
+When called with *run_async=True* they return a *Thread* object which can be used to monitor the state of the request.
+In combination with the *stop()* request and the \ref datatransfer_engine "datatransfer" engine, this option could be used to monitor the simulation and stop it after some condition fulfills or visualize or process experiment data in realtime.
+
+*/

@@ -38,7 +38,7 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // Engine config
     auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
     nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
-    json_utils::validate_json(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
+    json_utils::validateJson(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // MQTT client config
     nlohmann::json mqtt_config;
@@ -84,7 +84,7 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     // Engine config
     auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
     nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
-    json_utils::validate_json(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
+    json_utils::validateJson(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // MQTT client config
     nlohmann::json mqtt_config;
@@ -117,7 +117,7 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     // Engine config
     auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
     nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
-    json_utils::validate_json(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
+    json_utils::validateJson(engine_config, "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // MQTT client config
     nlohmann::json mqtt_config;

@@ -36,7 +36,7 @@ Regardless of the chosen engine type, there is a set of parameters common to eve
 
 \subsection engine_proc_command EngineProcCmd
 
-This parameter sets the command that will be used to launch the engine. As mentioned in the \ref json_schema section, default values are allowed to be set either in the schema or in-code, by using the \ref nrp_general_library/utils/json_schema_utils.h "json_utils::set_default" function. In the later case, the parameter should be set as not required and should not have a default parameter. This is the case of `EngineProcCmd`.
+This parameter sets the command that will be used to launch the engine. As mentioned in the \ref json_schema section, default values are allowed to be set either in the schema or in-code, by using the \ref nrp_general_library/utils/json_schema_utils.h "json_utils::setDefault" function. In the later case, the parameter should be set as not required and should not have a default parameter. This is the case of `EngineProcCmd`.
 
 In order to allow for flexibility in the setting of `EngineProcCmd`, its default value is set in-code for every engine type. This means that <b>every new engine implementation should set a default value for `EngineProcCmd` in-code</b>. For example, in the case of the \ref nest_json, `EngineProcCmd` is set to `NRP_NEST_EXECUTABLE_PATH`, which is an environment variable pointing to nest-simulator executable.
 

@@ -57,8 +57,8 @@ static void runLoopStepAsyncGet(EngineClientInterfaceSharedPtr engine)
     }
     catch(std::exception &e)
     {
-        throw NRPException::logCreate(e, "Engine \"" + engine->engineName() +"\" loop exceeded timeout of " +
-                                        std::to_string(timeout.count()));
+        throw NRPException::logCreate(e, "Error while executing runLoopStep in engine \"" + engine->engineName()
+        + "\". The Engine didn't respond before timeout. Check the engine logs for errors.");
     }
 }
 

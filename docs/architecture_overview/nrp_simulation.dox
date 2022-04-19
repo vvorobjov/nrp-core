@@ -2,7 +2,8 @@
 This is the main NRP-core executable. It can be used to run an experiment locally. With it, a simulation is configured, a Simulation Loop is initialized, and a simulation is run. The process is divided into the following steps:
 - Parse input parameters:
   - If a `-h` or `--help` is added to the simulation, only print the help text, then exit
-  - `-c`: configuration file name, it is expected to be in the same folder NRPCoreSim is executed from
+  - `-d`: the experiment folder location
+  - `-c`: configuration file name, relative to `-d` or the folder NRPCoreSim is executed from
   - `-o` or `--param`: *Parameter=Value* pair, which \ref cli_override_simulation_parameters "overrides the corresponding parameter" from the configuration file
   - `-p`: Engine plugins to load. The expected value is a list of \ref plugin_system "engine plugin" .so libraries separated by commas without spaces and between quotation marks. If not present all the engine plugins compiled with nrp-core are loaded
 - Initialize the Python interpreter for TransceiverFunctions
@@ -12,7 +13,11 @@ This is the main NRP-core executable. It can be used to run an experiment locall
   - Load engine plugins
   - Store all engines launchers contained in the loaded plugins in an EngineLauncherManager
 - Use input parameters to generate a new instance of SimulationManager. This will also launch all engine processes defined in the SimulationConfig passed to NRPCoreSim
-- If a SimulationConfig file was given as an input parameter, initialize a Simulation Loop and run until timeout
+- Initialize the Simulation Loop and run until timeout
+
+The steps described above correspond to the so called `standalone` mode, in which an experiment is loaded, run until timeout and shutdown.
+NRPCoreSim can be started as well in `server` mode.
+See \ref server_mode "below" for more details.
 
 To launch an experiment with NRPCoreSim, the user must specify the simulation configuration file and optionally a list of engine plugins to be loaded. Eg:
 
@@ -83,5 +88,47 @@ will override the simulation configuration as
 
 Finally, please note that only parameters explicitly present in the simulation configuration file can be overridden.
 \ref default_parameters "Default parameters" in the simulation configuration schema can't be overridden. 
+
+\section server_mode Server Mode
+
+NRPCoreSim can be launched in server mode by using the `-m` command line parameter.
+It can take two values, `standalone`, which launched an experiment as described at the top of the page, or `server`.
+In server mode NRPCoreSim opens a GRPC server which allows to control the experiment remotely.
+
+In this case, a SimulationManager is created from the experiment configuration passed to NRPCoreSim.
+GRPC services are created which enable requests for transitions in  the \ref experiment_lifecycle.
+The available services in the GRPC server, are:
+- initialize(): initializes the simulation. Transitions to state `Initialized`.
+- runLoop(int number_of_iterations): run the simulation loop for the specified number of iterations. Transitions to state `Stopped`.
+- runUntilTimeout(): run the simulation loop until reaching timeout, as specified in the \ref simulation_schema "configuration file".
+Transitions to state `Stopped`.
+- stop(): requests to stop a running simulation.
+- reset(): resets an initialized simulation.
+- shutdown(): shutdown the simulation. Transitions to state `Created`.
+
+Each of these services are blocking, i.e. they only return after the request has been fully processed and the experiment has transitioned to the corresponding end state.
+With one exception, *stop()* can be called and processed in parallel with other service calls.
+This is because *stop()* is implemented as a signal for SimulationManager to request to stop a running simulation.
+By itself *stop()* doesn't cause any transition in the experiment lifecycle, but it triggers a signal which will be caught by SimulationManager which will stop the simulation if it was running.
+
+Other services which deserve some explanation are *runLoop()* and *runUntilTimeout()*.
+These have a slightly different behavior depending on whether SimulationManager is managing an FTILoop or an EventLoop.
+In the former case, *runLoop()* will effectively advance the simulation time by the specified number of iterations multiplied by the simulation timestep.
+runUntilTimeout() will run the simulation until it reaches timeout, starting from the simulation time when the service was called.
+Therefore calling *runLoop()* before calling *runUntilTimeout()* will reduce the total amount of (simulation) time the experiment is run for when the latter service is called.
+Also calling *runUntilTimeout()* after timeout has been reached will have no effect.
+runLoop() doesn't takes timeout into consideration and therefore will run the simulation loop for the specified number of iterations even after timeout is reached.
+The experiment simulation time is reset to 0 after calling *reset()*.
+
+When running an EventLoop, since in this case there is no concept of simulation time, *runUntilTimeout()* will always run the experiment for the specified number of iterations multiplied by the event loop timestep, independently of whether *runLoop()* or *runUntilTimeout()* were called before.
+reset() is not available when running an EventLoop experiment.
+
+Finally, it is worth to remark that from each state of the \ref experiment_lifecycle "experiment lifecycle", only a subset of the aforementioned requests can be processed and executed.
+These can be seen in the the diagram in the experiment lifecycle page just referred before.
+After starting NRPCoreSim the experiment is in state `Created`.
+If an error occurs while processing a request, the experiment is transition to state `Failed`, from which only `shutdown` is possible.
+
+Though the NRPCoreSim server can be brought up and used independently, it is more conveniently used along with the provided Python client.
+See this \ref python_client "page" for more information on how to do this.
 
  */

@@ -26,10 +26,10 @@ sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesyst
 sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
 
 # required by nest-server (which is built and installed along with nrp-core)
-sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
+sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3 flask_cors mpi4py docopt
 
 # required by nrp-server, which uses gRPC python bindings
-pip install grpcio-tools pytest
+pip install grpcio-tools pytest psutil
 
 # Remove flask if it was installed to ensure it is installed from pip
 sudo apt remove python3-flask python3-flask-cors

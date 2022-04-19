@@ -12,7 +12,7 @@ This ECP uses an HTTP REST Server as the base for the engine server. The client 
 
 The server side of the engine is implemented in EngineJSONServer and the client in EngineJSONNRPClient. Final engine implementations can inherit from these two classes. In order to handle datapack I/O operations in the engine server, concrete datapack controllers can be based on the DataPackController class.
 
-To help create servers, EngineJSONOptsParser can be used to parse start parameters and extract relevant information. Additionally, the SimulationManager will launch an instance of EngineJSONRegistrationServer which can be used by EngineJSONServers to communicate its address to clients.
+To help create servers, EngineJSONOptsParser can be used to parse start parameters and extract relevant information. Additionally, NRPCoreSim will launch an instance of EngineJSONRegistrationServer which can be used by EngineJSONServers to communicate its address to clients.
 
 \subsection engine_json_config_section Engine Configuration Parameters
 
