@@ -56,9 +56,9 @@ set(TEST_SRC_FILES
 
 # General Nest Header defines
 set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_json_engine/config/cmake_constants.h.in")
-set(NRP_NEST_CMAKE_INSTALL_BINDIR "${NRP_NEST_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
+set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
 set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_CMAKE_INSTALL_PREFIX}/lib/python3.6/site-packages")
+set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies

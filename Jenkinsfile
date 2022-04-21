@@ -103,7 +103,7 @@ pipeline {
                         stopProcessingIfError: true
                         )]
                     )
-                publishCppcheck pattern:'build/cppcheck/cppcheck_results.xml'
+                recordIssues tool: cppCheck(pattern:'build/cppcheck/cppcheck_results.xml'), ignoreQualityGate: true, ignoreFailedBuilds: true
             }
         }
 
@@ -177,9 +177,6 @@ pipeline {
     }
 
     post {
-        always {
-            cleanWs()
-        }
         aborted {
             bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build aborted!')
         }

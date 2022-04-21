@@ -35,7 +35,7 @@
 
 BasicFork::~BasicFork()
 {
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called (PID {})", __FUNCTION__, this->_PID);
 
     // Stop process if it's still running
     this->stopProcess(60);
@@ -139,6 +139,7 @@ pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std
     {
         // Parent process, return child PID
         this->_PID = pid;
+        NRPLogger::debug("BasicFork::launchProcess(...): The process with PID {} was forked", this->_PID);
         return pid;
     }
     else
@@ -151,6 +152,8 @@ pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std
 pid_t BasicFork::stopProcess(unsigned int killWait)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    NRPLogger::debug("BasicFork::stopProcess(...): The process with PID {} is to be killed", this->_PID);
 
     if(this->_PID > 0)
     {

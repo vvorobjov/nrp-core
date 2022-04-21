@@ -34,9 +34,9 @@
 #define NRP_PYNEST_PATH "@NEST_CMAKE_INSTALL_PYNEST@"
 
 /*!
- * \brief Path to NRP Nest Executable
+ * \brief Path to Nest Server Executable
  */
-#define NRP_NEST_BIN_PATH "@NRP_NEST_CMAKE_INSTALL_BINDIR@"
+#define NRP_NEST_BIN_PATH "@NEST_CMAKE_INSTALL_BINDIR@"
 
 /*!
  * \brief Name of python module

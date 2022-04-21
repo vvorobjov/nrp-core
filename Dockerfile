@@ -12,7 +12,7 @@ ARG HOME_PARENT_FOLDER=/home
 
 ENV HOME ${HOME_PARENT_FOLDER}/${NRP_USER}
 ENV HOME_PARENT_FOLDER ${HOME_PARENT_FOLDER}
-ENV NRP_INSTALL_DIR ${HOME}/.local
+ENV NRP_INSTALL_DIR ${HOME}/.local/nrp
 
 # Disable Prompt During Packages Installation
 
@@ -82,7 +82,7 @@ USER ${NRP_USER}
 ENV USER ${NRP_USER}
 WORKDIR ${HOME}
 
-# MQTT
+# Install MQTT (to NRP_INSTALL_DIR)
 RUN git clone https://github.com/eclipse/paho.mqtt.c.git \
     && cd paho.mqtt.c \
     && git checkout v1.3.8 \
@@ -97,8 +97,17 @@ RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
 
-# Install Gazebo Models. TODO/WARNING: extra building time and container size!!!
+# Install nest-simulator (to NRP_INSTALL_DIR)
+RUN git clone https://github.com/nest/nest-simulator.git \
+    && cd nest-simulator \
+    && git checkout v3.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_INSTALL_PREFIX:PATH=${NRP_INSTALL_DIR} -Dwith-mpi=ON -Dwith-python=ON .. \
+    && make && make install \
+    && cd .. && rm -rf nest-simulator
+ENV NEST_INSTALL_DIR ${NRP_INSTALL_DIR}
 
+# Install Gazebo Models. TODO/WARNING: extra building time and container size!!!
 RUN mkdir ${HOME}/nrp \
     && cd ${HOME}/nrp \
     && git clone https://@bitbucket.org/hbpneurorobotics/models.git \

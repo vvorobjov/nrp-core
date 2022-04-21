@@ -48,8 +48,8 @@ set(TEST_SRC_FILES
 
 # General Nest Header defines
 set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_server_engine/config/cmake_constants.h.in")
-set(NRP_NEST_CMAKE_INSTALL_BINDIR "${NRP_NEST_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_CMAKE_INSTALL_PREFIX}/lib/python3.6/site-packages")
+set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
+set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
@@ -171,9 +171,9 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
         PATTERN "*.hpp"
 )
 
-# Fix nest-server to use package manager's uwsgi plugin system
+# Patch nest-server to use package manager's uwsgi plugin system
 install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
-    WORKING_DIRECTORY '${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}')")
+    WORKING_DIRECTORY '${NEST_CMAKE_INSTALL_BINDIR}')")
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})
