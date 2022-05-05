@@ -49,7 +49,6 @@ Tell nrp-core where your catkin workspace is located: export a variable CATKIN_W
 Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
 Ensure that if using a virtualenv, this is active when running any SpiNNaker scripts.
 
-
 # MQTT Paho library, required by datatransfer engine for streaming data over network
 # More information on the project web site https://github.com/eclipse/paho.mqtt.cpp
 # If you do not want to add network data streaming feature, you can skip this step.

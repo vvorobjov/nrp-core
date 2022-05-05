@@ -394,6 +394,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/nest/nest_server.dox"
         "docs/engines/python_json_engine.dox"
         "docs/engines/pysim/pysim_engine.dox"
+        "docs/engines/tvb/tvb_engine.dox"
         "docs/engines/datatransfer/datatransfer_engine.dox"
 
         "docs/getting_started/getting_started.dox"

@@ -39,14 +39,46 @@ In order to properly set the environment to run experiments with NRP-core, pleas
 \until End of setting environment
 
 \section installation_sim Steps for installing additional simulators
+This section includes installation steps for simulators that may be used with \ref python_json_engine and \ref pysim_engine.
 The \ref pysim_engine "PySim engine" allows to connect a set of simulators with Python interfaces with NRP-Core, these include OpenAI Gym, Mujoco, and OpenSim. 
-Below are described the steps to install the aforemention simulators so they can be used with the PySim engine.
+
+\subsection installation_sim_tvb Installation of The Virtual Brain
+
+The instructions below install TVB root and data directly from git repositiories.
+It is also possible to install them via pip, but then certain features and data sets may not be accessible.
+Complete instructions can be found at <a href="https://github.com/the-virtual-brain/tvb-root">tvb-root</a> and <a href="https://github.com/the-virtual-brain/tvb-data">tvb-data</a>
+repository pages.
+
+\code{.sh}
+# Install a tool that aliases python3 as python. Needed for TVB installation
+sudo apt install python-is-python3
+
+# TVB data
+mkdir $HOME/tvb
+cd $HOME/tvb
+git clone https://github.com/the-virtual-brain/tvb-data.git
+cd tvb-data
+sudo python3 setup.py develop
+
+# TVB root
+cd $HOME/tvb
+git clone https://github.com/the-virtual-brain/tvb-root.git
+cd tvb-root/tvb_build
+./install_full_tvb.sh
+
+# You may need to adjust your numpy version for TVB to work:
+pip install numpy==1.21
+\endcode
+
+\subsection installation_sim_openai OpenAI installation
 
 For OpenAI installation (complete instructions at <a href="https://gym.openai.com/docs">https://gym.openai.com/docs</a>):
 
 \code{.sh}
 pip install gym pygame
 \endcode
+
+\subsection installation_sim_mujoco Mujoco installation
 
 For Mujoco installation (complete instructions at <a href="https://mujoco.org">https://mujoco.org</a>):
 
@@ -73,6 +105,8 @@ rm -r $WORKING_DIR
 pip3 install mujoco_py
 python3 -c "import mujoco_py"
 \endcode
+
+\subsection installation_sim_opensim OpenSim installation
 
 For OpenSim installation (complete instructions at <a href="https://github.com/opensim-org/opensim-core">https://github.com/opensim-org/opensim-core</a>):
 
