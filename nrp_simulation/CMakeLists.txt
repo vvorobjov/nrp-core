@@ -156,7 +156,8 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
         NRPNestJSONEngine::NRPNestJSONEngine
         NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
-        gmock_main
+        GTest::Main
+        GTest::GTest
         gmock)
 
     gtest_discover_tests(${TEST_NAME}

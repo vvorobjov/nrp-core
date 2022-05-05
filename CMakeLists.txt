@@ -60,11 +60,12 @@ if(${ENABLE_TESTING})
 
             set(INSTALL_GTEST OFF)
             add_subdirectory(${gtest_SOURCE_DIR} ${gtest_BINARY_DIR})
-
-            add_library(GTest::GTest ALIAS gtest)
-            add_library(GTest::Main  ALIAS gtest_main)
         endif()
     endif()
+
+    # Add cmake file that allows to find gmock libraries
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    find_package(GMock REQUIRED)
 endif()
 
 

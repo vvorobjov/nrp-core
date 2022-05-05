@@ -125,7 +125,6 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
@@ -134,7 +133,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
-        gmock_main
+        GTest::Main
+        GTest::GTest
         gmock)
 
     gtest_discover_tests(${TEST_NAME}
