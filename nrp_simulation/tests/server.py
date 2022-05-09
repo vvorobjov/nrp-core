@@ -58,9 +58,9 @@ class TestNrpServer(unittest.TestCase):
         old_timeout = NrpCore.TIMEOUT_SEC
         NrpCore.TIMEOUT_SEC = 3
         self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args)
+        NrpCore.TIMEOUT_SEC = old_timeout
         # Pass wrong cmd line params
         self.assertRaises(ChildProcessError, NrpCore, address, "wrong_args")
-        NrpCore.TIMEOUT_SEC = old_timeout
 
     def test_runloop_no_init(self):
         """
