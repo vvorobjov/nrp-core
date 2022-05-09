@@ -240,6 +240,12 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
         NRP_LOG_TIME("start");
     }
 
+    // Wait for all engines to finish their last loop step
+
+    for(const auto &engine : this->_engineQueue)
+    {
+        runLoopStepAsyncGet(engine.second);
+    }
 
     this->_simTime = loopStopTime;
 }

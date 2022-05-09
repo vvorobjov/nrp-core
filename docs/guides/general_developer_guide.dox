@@ -67,6 +67,58 @@ nrp_general_library/NRPGeneralLibraryTests --gtest_filter=InterpreterTest.TestTr
 \endcode
 
 
+\section tutorial_developer_guide_core_dumps Generating and examining core dumps
+
+Core dumps are files that contain the memory of a process at the moment of unusual termination (usually a segmentation fault).
+They can be really helpful whenever NRPCoreSim or engine crashes.
+Core dumps allow you to analyse the stacks of all threads of the process at the moment of the crash,
+which may give you some clues about the problem's origins.
+Core dumps can also be generated manually, which may be useful whenever your process is hanging.
+
+In order to have full stack information after the crash you should compile the project in debug mode:
+
+\code{.sh}
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/home/nrp/.local/nrp/
+\endcode
+
+Bear in mind that this will disable optimizations and the code will be much slower.
+
+By default, core dumps for non-package executables will not be generated on Ubuntu.
+To enable core dump generation in the working directory of the experiment:
+
+\code{.sh}
+ulimit -c unlimited
+sudo sysctl -w kernel.core_pattern=core.%u.%p.%t
+\endcode
+
+More information about core dump generation can be found under <a href=https://askubuntu.com/questions/966407/where-do-i-find-the-core-dump-in-ubuntu-16-04lts>this link</a>
+
+To inspect a core dump:
+
+\code{.sh}
+gdb <executable_name> <core_file>
+\endcode
+
+Where `executable_name` will be `NRPCoreSim` or one of the server executables (like `NRPNestJSONExecutable` or `gzserver`)
+and `core_file` is the name of the core dump that you want to inspect.
+
+To see the stack (backtrace) of the offending thread type this while inside gdb:
+\code
+(gdb) bt
+\endcode
+
+In some cases it may be useful to see stacks of all threads:
+\code
+(gdb) thread apply all bt
+\endcode
+
+To generate core dump manually (for example when a process is hanging):
+
+\code
+kill -ABRT <process_pid>
+\endcode
+
+
 \section tutorial_developer_guide_loggingg Logger usage
 
 For logging we use the own wrapper for the fast thread-safe logger SpdLog.

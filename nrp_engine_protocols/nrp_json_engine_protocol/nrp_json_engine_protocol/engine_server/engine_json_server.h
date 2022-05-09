@@ -154,6 +154,12 @@ class EngineJSONServer
          */
         virtual nlohmann::json shutdown(const nlohmann::json &data) = 0;
 
+        /*!
+         * \brief Has a shutdown command been received?
+         * \return Returns true if a shutdown command has been received
+         */
+        bool shutdownFlag();
+
     protected:
         /*!
          * \brief Lock access to _datapacks to make execution thread-safe
@@ -178,7 +184,6 @@ class EngineJSONServer
          * \param reqData A JSON array containing datapack names linked to the individual datapack's data
          * \return Execution result
          */
-        // TODO What is this function supposed to return?
         virtual void setDataPackData(const nlohmann::json &reqData);
 
     private:
@@ -186,6 +191,16 @@ class EngineJSONServer
          * \brief Is the server running?
          */
         bool _serverRunning = false;
+
+        /*!
+         * \brief Shutdown Flag. Set to true once the shutdown signal has been received
+         */
+        bool _shutdownFlag = false;
+
+        /*!
+         * \brief Mutex used to access the shutdown flag in a thread-safe manner
+         */
+        std::mutex _shutdown_mutex;
 
         /*!
          *  \brief ServerURL

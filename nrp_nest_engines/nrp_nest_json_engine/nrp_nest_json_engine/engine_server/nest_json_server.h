@@ -45,12 +45,6 @@ class NestJSONServer
          */
         bool initRunFlag() const;
 
-        /*!
-         * \brief Has a shutdown command been received?
-         * \return Returns true if a shutdown command has been received
-         */
-        bool shutdownFlag() const;
-
         virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
         virtual nlohmann::json initialize(const nlohmann::json &data, EngineJSONServer::lock_t &datapackLock) override;
         virtual nlohmann::json reset(EngineJSONServer::lock_t &datapackLock) override;
@@ -61,11 +55,6 @@ class NestJSONServer
          * \brief Init Flag. Set to true once the server has executed the initialize function
          */
         bool _initRunFlag = false;
-
-        /*!
-         * \brief Shutdown Flag. Set to true once the shutdown signal has been received
-         */
-        bool _shutdownFlag = false;
 
         /*!
          * \brief NEST Preparation Flag. Set to true once nest.Prepare() was run and back to false after nest.Cleanup() was run

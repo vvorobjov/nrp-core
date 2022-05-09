@@ -248,6 +248,12 @@ void EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
 
 }
 
+bool EngineJSONServer::shutdownFlag()
+{
+    std::lock_guard<std::mutex> shutdown_lock(this->_shutdown_mutex);
+    return this->_shutdownFlag;
+}
+
 Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -419,6 +425,15 @@ void EngineJSONServer::resetHandler(const Pistache::Rest::Request &req, Pistache
 void EngineJSONServer::shutdownHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    // Guard against the main thread shutting us down before
+    // shutdown activities are finished and the response is sent back to the client
+
+    std::lock_guard<std::mutex> shutdown_lock(this->_shutdown_mutex);
+
+    // Tell the main thread that we ought to shut down
+
+    this->_shutdownFlag = true;
 
     const json jrequest = this->parseRequest(req, res);
 

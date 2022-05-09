@@ -65,7 +65,7 @@ NestJSONServer::~NestJSONServer()
         }
 
         // Shutdown any running threads
-        this->_shutdownFlag = true;
+
         this->shutdownServer();
     }
     catch(python::error_already_set &)
@@ -82,11 +82,6 @@ NestJSONServer::~NestJSONServer()
 bool NestJSONServer::initRunFlag() const
 {
     return this->_initRunFlag;
-}
-
-bool NestJSONServer::shutdownFlag() const
-{
-    return this->_shutdownFlag;
 }
 
 SimulationTime NestJSONServer::runLoopStep(SimulationTime timeStep)
@@ -252,10 +247,6 @@ nlohmann::json NestJSONServer::reset(EngineJSONServer::lock_t &simLock)
     try
     {   
         this->shutdown(_initData);
-
-        // Revert _shutdownFlag in order the surver could survive
-        this->_shutdownFlag = false;
-        
         this->initialize(_initData, simLock);
 
         return nlohmann::json({{NestConfigConst::ResetExecStatus, true}});
@@ -273,8 +264,6 @@ nlohmann::json NestJSONServer::shutdown(const nlohmann::json &)
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     
     PythonGILLock lock(this->_pyGILState, true);
-
-    this->_shutdownFlag = true;
 
     this->_pyNest["ResetKernel"]();
 
