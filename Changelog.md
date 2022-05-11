@@ -85,10 +85,10 @@
 16. Using gunicore in PythonJSONEngine
     * [Pull request #101](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/101)
     
-17. Refactoring of the intregration of Python based simulators through Pysim Engine. Added support for OpenAI and Mujoco to the exisiting OpenSim
+17. Refactoring of the integration of Python based simulators through Pysim Engine. Added support for OpenAI and Mujoco to the existing OpenSim
     * [Pull request #80](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/80)
     
-18. Refactoring of the SimulationManager to properly and symmetrically integrate FTILoop and EventLoop. Added an explicite experiment lyfecycle FSM to SimulationManager to make more transparent and logic the management of the possible states and transitions in the experiment lyfecycle. Refactoring of NRPServer and NRPCore Python client to increase robustness and clarity when processing requests from client
+18. Refactoring of the SimulationManager to properly and symmetrically integrate FTILoop and EventLoop. Added an explicit experiment lifecycle FSM to SimulationManager to make more transparent and logical the management of the possible states and transitions in the experiment lifecycle. Refactoring of NRPServer and NRPCore Python client to increase robustness and clarity when processing requests from client
     * [Pull request #99](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/99)
 
 19. Added example of how to use TVB in NRPCore experiments
