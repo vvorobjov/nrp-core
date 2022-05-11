@@ -17,6 +17,6 @@ In the diagram below is depicted the internal structure of the *Running* state i
 
 \image html lifecycle_running_fti.png "Running State for FTILoop"
 
-In this other \subpage fti_lifecycle_components "diagram", the actions performed by each of the architecture components in each of the lifecycle transitions are is described in detail, also in the FTILoop case.
+Finally, this \subpage fti_lifecycle_components "page" contains another <b>diagram describing the actions performed by each architecture component</b> in each of the lifecycle transitions. This diagram is also based on the FTILoop case.
 
  */

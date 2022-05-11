@@ -12,13 +12,14 @@ These components can be grouped in different sections depending on the role they
 In the big diagram at the bottom of the page the actions performed by each architecture component during each of the lifecycle transitions is described.
 Each of the boxes in the diagram correspond to an actual class in the architecture. 
 The boxes are grouped by the role they play in the architecture: Simulation Management, TransceiverFunction Management, Engine Launching, Process Manager and Engine.
+
 The diagram contains a significant amount of information and in consequence is quite large. 
 Below is given a simplified version of the diagram containing only the different groups of components and the relationships between them. 
-This diagram maintains the same color code and spatial distribution of the groups as the large diagram at the bottom.
+This diagram maintains the same color code and spatial distribution of the groups as in the large diagram at the bottom.
 
 \image html lifecycle_components_simple.png "Simplified lifecycle components diagram"
 
-Below is the complete diagram, it can be navigated using the scroll bars: 
+Below is the complete diagram. In order to see it in full size (right click on it and) open it in a new tab, then it can be navigated using the scroll bars. 
 
 \image html lifecycle_components.png
 
