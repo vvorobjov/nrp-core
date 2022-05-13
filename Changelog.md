@@ -29,7 +29,7 @@
     * [Pull request #60](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/60)
     
     
-## NRPCore 1.2.0 (2022-05-??)
+## NRPCore 1.2.0 (2022-05-13)
 
 1. Enable setting node policies from decorators in Python FunctionalNode (ComputationalGraph) 
     * [Pull request #67](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/67)
