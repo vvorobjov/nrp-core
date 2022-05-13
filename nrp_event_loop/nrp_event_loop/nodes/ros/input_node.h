@@ -56,6 +56,9 @@ public:
         NRPROSProxy* rosProxy = &(NRPROSProxy::getInstance());
         if(rosProxy)
             rosProxy->subscribe(this->id(), callback);
+        else
+            NRPLogger::warn("From InputROSNode \"" + this->id() +
+            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Check your experiment configuration");
 
         // reserves memory space for storing incoming msgs
         _msgTemp.reserve(InputNode<MSG_TYPE>::_queueSize);
@@ -120,8 +123,10 @@ class InputROSEdge : public SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>> {
 
 public:
 
-    InputROSEdge(const std::string& keyword, const std::string& address) :
-            SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>>(keyword, address, address)
+    InputROSEdge(const std::string& keyword, const std::string& address,
+                 InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                 InputNodePolicies::MsgCachePolicy msgCachePolicy) :
+            SimpleInputEdge<MSG_TYPE, InputROSNode<MSG_TYPE>>(keyword, address, address, msgPublishPolicy, msgCachePolicy)
     {}
 
 protected:

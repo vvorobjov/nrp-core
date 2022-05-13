@@ -26,6 +26,7 @@
 #include <functional>
 #include <tuple>
 
+#include "nrp_event_loop/computational_graph/computational_node_policies.h"
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/input_port.h"
 #include "nrp_event_loop/computational_graph/output_port.h"
@@ -67,12 +68,6 @@ protected:
 
 public:
 
-    /*! \brief Possible execution policies for this node */
-    enum ExecutionPolicy {
-        ALWAYS, /*!< the node is always executed when 'compute' is called */
-        ON_NEW_INPUT /*!< the node is executed only if at least one of its inputs have a fresh value */
-    };
-
     /*!
      * \brief Configure. Print warnings if node is not fully connected.
      */
@@ -99,7 +94,7 @@ public:
      */
     void compute() override final
     {
-        if(_execPolicy == ExecutionPolicy::ALWAYS || _hasNew) {
+        if(_execPolicy == FunctionalNodePolicies::ExecutionPolicy::ALWAYS || _hasNew) {
             _function(_params);
             sendOutputs();
         }
@@ -243,7 +238,7 @@ protected:
     /*!
      * \brief Constructor
      */
-    FunctionalNode(const std::string &id, std::function<void(params_t&)> f, ExecutionPolicy policy = ExecutionPolicy::ON_NEW_INPUT) :
+    FunctionalNode(const std::string &id, std::function<void(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
             ComputationalNode(id, ComputationalNode::Functional),
             _function(f),
             _execPolicy(policy)
@@ -268,7 +263,7 @@ protected:
     void newInputCallback(const T* value)
     {
         std::get<N>(_params) = value;
-        this->_hasNew = true;
+        this->_hasNew = this->_hasNew || value != nullptr;
     }
 
     /*!
@@ -321,7 +316,7 @@ private:
     std::tuple< std::shared_ptr< OutputPort<OUTPUT_TYPES> > ...> _outputPorts;
 
     bool _hasNew = false;
-    ExecutionPolicy _execPolicy;
+    FunctionalNodePolicies::ExecutionPolicy _execPolicy;
 };
 
 #endif //FUNCTIONAL_NODE_H

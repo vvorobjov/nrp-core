@@ -3,11 +3,11 @@
 In this section, we show how to run some of the example experiments. Different experiments utilize different
 features of the NRP, the use of which will be highlighted.
 
-Experiments are run using the provided application \ref nrp_simulation. It takes as arguments the \ref simulation_configuration "simulation configuration file" used to configure the experiment and, optionally, a list of \ref plugin_system "engine plugins" to be loaded at run time. Please notice that by default only \ref python_json_engine is loaded. Any other plugin required to execute an experiment must be explicitly added with the "-p" parameter. See examples below.
+Experiments are run using the provided application \ref nrp_simulation. It takes as argument the \ref simulation_configuration "simulation configuration file" used to configure the experiment. Optionally a list of \ref plugin_system "engine plugins" to be loaded at run time can be specified. This can be done using the "-p" parameter. If "-p" is not used, all engine plugins built with nrp-core will be loaded.
 
 \section getting_started_experiment_husky Husky braitenberg
 
-This experiment replicates the omnipresent <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="https://neurorobotics.net/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
+This experiment replicates the <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="https://neurorobotics.net/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
 
 The experiment engages two simulators, <a href="http://gazebosim.org/">Gazebo</a> as robot simulator, and <a href="https://www.nest-simulator.org/">NEST</a> as neural network simulator.
 
@@ -15,55 +15,32 @@ Both Gazebo and NEST are wrapped into so-called \ref engines "engines", which al
 
 The Gazebo engine starts Gazebo server (gzserver), so you should be able to peek into the simulation by connecting with Gazebo client (`gzclient`) from a separate terminal.
 
-To run the example, if you haven't done it yet, you have to install first some additional Gazebo models. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
+To run the example, if you haven't done it yet, <b>you have to install first some additional Gazebo models</b>. Instructions on how to do it can be found in this page: \ref tutorial_helpful_info_husky. Once this is done, switch to the proper directory and run the NRP simulation executable:
 
 \code{.sh}
 cd examples/husky_braitenberg
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngine.so"
+NRPCoreSim -c simulation_config.json
 \endcode
 
 <em>Please note that the NRPCoreSim must be executed from the example directory!</em>
 
-Here is a short description of all files that are located in the example directory:
-- braitenberg.py - contains the setup of the neuronal network running the experiment. Used by NEST.
-- cam_tf.py - transceiver function which converts images acquired by the robot into input usable by NEST.
-- husky_world.sdf - simulation world file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by Gazebo.
-- mot_tf.py - transceiver function that converts output from NEST into movement commands.
+Here is a short description of the files participating in the experiment after running the command above:
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here".
+- braitenberg.py - contains the setup of the neuronal network running the experiment. Used by the \ref nest_engine "NEST engine".
+- husky_world.sdf - simulation world file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by the \ref gazebo_engine "Gazebo engine".
+- cam_pf.py - preprocessing function which takes images acquired by the robot and detect levels of red. 
+The result is stored in a \ref datapacks_json JsonDataPack which can be accessed by other transceiver functions in the experiment.
+- brain_stimulation_tf.py - takes the JsonDataPack produced by the preprocessing function described above and estimulates the NEST neural network in function of the detected red values.
+- mot_tf.py - transceiver function that converts output from NEST into movement commands.
 
+\subsection husky_variants Experiment Variants
 
-\section getting_started_experiment_husky_pf Husky braitenberg with preprocessing function
+In the same experiment folder *husky_braitenberg* are provided two other configuration files which runs slightly different versions of the same experiment but exemplifying other engines:
+- simulation_config_nest_server.json - replaces the \ref nest_json "NEST JSON Engine" used in the original experiment with \ref nest_server "NEST server". In this variant the neural network used in the experiment is defined in the file *braitenberg_nest_server.py*.
+- simulation_config_data_transfer.json - in this configuration file a \ref datatransfer_engine "DataTransferEngine" is added to the experiment. This engine is used by an additional trasceiver function defined in *data_transfer_tf.py* for logging and streaming several datapacks.
 
-This experiment is a modification of the previous one and shows how to use one of the tools provided by the NRP - the \ref preprocessing_function "preprocessing function".
-Preprocessing functions are called before transceiver functions.
-The use of preprocessing functions is intended to increase computational efficiency when several transceiver functions would otherwise carry out multiple times the same operations on the same data.
+Each of these variants can be run as the original one but changing *simulation_config.json* with one of the configuration files listed above.
 
-The preprocessing function used in the example converts RGB images received from Gazebo into grayscale images. The processed images are passed to one of the transceiver functions (`cam_tf.py`) and can be displayed after changing `False` to `True` in the following piece of code:
-
-\dontinclude husky_braitenberg_with_preprocessing/cam_tf.py
-\skip # Set to True
-\until time.sleep
-
-The code of the preprocessing function is located in `grayscale.py` file.
-
-To run the example, switch to the proper directory and run the NRP simulation executable:
-
-\code{.sh}
-cd examples/husky_braitenberg_with_preprocessing
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngine.so"
-\endcode
-
-
-\section getting_started_experiment_husky_nest_server Husky braitenberg with NEST server
-
-This example is again a modification of the husky braitenberg experiment, in this case using a client-only engine that connects to an instance of <a href="https://pypi.org/project/nest-server/">NEST server</a>. To load the engine, its library must be specified on the command line when launching the NRP executable:
-
-\code{.sh}
-cd examples/husky_braitenberg_nest_server
-NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestServerEngine.so"
-\endcode
-
-This will also start nest-server in a separate process.
 
 \section getting_started_experiment_tf_exchange DataPack Exchange using the Python JSON Engine
 
@@ -89,28 +66,57 @@ NRPCoreSim -c simulation_config.json
 In this case, no additional plugin needs to be specified.
 
 
-\section getting_started_experiment_OpenSIm_Arm26 OpenSim with dummy controller for Arm26 model
+\section getting_started_experiment_pysim Pysim experiments
 
-This experiment implements a dummy controller for a simple OpenSim model of the human arm (arm26, see <a href="https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models">https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models</a>) in an OpenSim scene.
+These three experiments show the use of the Pysim engine.
+In the three of them a \ref pysim_engine "Pysim engine" is used to simulate the environment (in Mujoco, Opensim and OpenAI respectively) which is controlled by another Engine (either \ref nest_json "NRPNestJSONEngine" or \ref python_json_engine "NRPPythonJSONEngine") through NRP-Core.
+The communication between the simulated environment and the controller is done with the help of \ref transceiver_function "transceiver functions" and \ref datapacks "engine datapacks". 
+In short, as usual the transceiver functions allow translating the I/O data between different platforms, while the datapacks serve as generic containers for the data.
 
-This experiment uses two kinds of so-called engines (\ref python_json_engine "NRPPythonJSONEngine" and \ref opensim_engine "NRPOpenSimEngine"), and illustrates how the NRP manages execution of the OpenSim simulation and synchronization with other engines. The communication between OpenSim and the python controller is done with the help of \ref transceiver_function "transceiver functions" and \ref datapacks "engine datapacks". In short, the transceiver functions allow translating the I/O data between different platforms, while the datapacks serve as generic containers for the data.
-
-To run the example, switch to the experiment directory and run the NRP simulation executable:
+To run the experiments:
 
 \code{.py}
-cd examples/opensim_control
-NRPCoreSim -c simulation_config.json -p "NRPOpenSimEngine.so"
+cd examples/pysim_examples/<experiment_folder>
+NRPCoreSim -c simulation_config.json
 \endcode
 
-This will start the OpenSim simulation with proper visualization.
+This will start the simulation including visualization of the environment.
 
-Here is a short description of all files that are located in the example directory:
-- Folder “arm26” – include the simulation file of the OpenSim scene
+Below are described each of the experiments in more detail.
+
+\subsection pysim_openai Example for OpenAI simulation
+
+This experiment implements a NEST controller for a simple OpenAI model of a car between two mountain (MountainCar-v0, see <a href="https://gym.openai.com/envs/MountainCar-v0/">https://gym.openai.com/envs/MountainCar-v0/</a>) in an OpenAI scene.
+
+Here is a short description of all files that are located in the example directory "openAI_nest_py":
+- gym_simulator.py - contains the setup of the OpenAI simulation, including initialize, runLoop, reset, and shutdown
+- nest_controller.py - contains the setup of the NEST controller
+- from_nest.py - transceiver function that converts output from the NEST controller into simulation commands
+- from_gym.py - transceiver function which converts feedback observation data from OpenAI
+- simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
+
+\subsection pysim_mujoco Example for Mujoco simulation
+
+This experiment implements a dummy python controller for an easy Mujoco model of a swing pole.
+
+Here is a short description of all files that are located in the example directory "mujoco_control":
+- Folder “model” - include the simulation file of the Mujoco scene
+- simple_mujoco.py - contains the setup of the Mujoco simulation, including initialize, runLoop, reset, and shutdown
+- controller.py - contains the setup of the python controller
+- send_cmd.py - transceiver function that converts output from the Python controller into simulation commands
+- rec_pos.py - transceiver function which converts feedback position data from Mujoco
+- simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
+
+\subsection pysim_opensim Example for OpenSim simulation
+
+This experiment implements a dummy python controller for a simple OpenSim model of the human arm (arm26, see <a href="https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models">https://simtk-confluence.stanford.edu:8443/display/OpenSim/Musculoskeletal+Models</a>) in an OpenSim scene.
+
+Here is a short description of all files that are located in the example directory "opensim_control":
+- Folder “arm26” - include the simulation file of the OpenSim scene
 - server.py - contains the setup of the OpenSim simulation, including initialize, runLoop, reset, and shutdown
 - client.py - contains the setup of the python controller
 - send_cmd.py - transceiver function that converts output from the Python controller into simulation commands
 - rec_joints.py - transceiver function which converts feedback muscle data from OpenSim
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
-
 
 */

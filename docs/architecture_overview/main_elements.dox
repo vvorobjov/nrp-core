@@ -1,0 +1,12 @@
+/*! \page main_elements Main Elements
+
+These are the main elements in the architecture involved in the synchronization and communication between simulations:
+- \subpage datapacks "DataPack": user-defined data structures used to exchange data between engine servers and clients. They are as well the input and output of transceiver functions.
+- \subpage transceiver_function "Transceiver Function" (TF): user-defined Python functions which enable data exchange between engines.
+- \subpage preprocessing_function "Preprocessing Function" (PF): user-defined Python functions which enable to pre-process data coming from engines before injecting it into TFs.
+- \subpage engines "Engine": provides both an abstraction layer and an interface to integrate simulators in NRP-core. Each engine represents a process in which a concrete instance of a simulator is running. For each of them there is a client side component in the simulation loop process interfacing the engine process for simulation control and data exchange.
+- \subpage simulation_loop "Simulation Loop": main loop where synchronization of engines, transmission of data and execution of transceiver functions happens.
+
+\image html architecture_elements.png "Architecture overview"
+
+ */

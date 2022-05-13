@@ -11,6 +11,7 @@ set(TEST_NAME "${PROJECT_NAME}Tests")
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
 set(LIB_CONFIG_NAME "${LIBRARY_NAME}Config")
 set(LIB_VERSION_NAME "${LIB_CONFIG_NAME}Version")
+set(ENV{NRP_ENGINE_LAUNCHERS} "${LIBRARY_NAME}.so;$ENV{NRP_ENGINE_LAUNCHERS}")
 
 cmake_minimum_required(VERSION 3.16)
 project("${PROJECT_NAME}" VERSION ${NRP_VERSION})
@@ -159,9 +160,6 @@ if(ENABLE_GAZEBO STREQUAL FULL)
         gtest_discover_tests(${TEST_NAME}
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
             EXTRA_ARGS -VV)
-
-        # Add tests based on running example experiments
-        add_test(NAME HuskyBraitenbergJsonExample COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
     endif()
 
 endif()

@@ -11,7 +11,7 @@
       "description": "Type of simulation loop used in the experiment"
     },
     "SimulationTimeout" : {
-      "type" : "integer",
+      "type" : "number",
       "default": 0,
       "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
@@ -36,6 +36,11 @@
       "items": {"$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase"},
       "description": "Engines that will be started in the experiment"
     },
+    "ExternalProcesses" : {
+      "type" : "array",
+      "items": {"$ref": "https://neurorobotics.net/process_launcher.json#ProcessLauncher"},
+      "description": "Additional processes that will be started in the experiment"
+    },
     "DataPackProcessingFunctions" : {
       "type" : "array",
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
@@ -46,18 +51,21 @@
       "items": "string",
       "description": "List of filenames defining the ComputationalGraph that will be used in the experiment"
     },
-    "StartROSNode" : {
-      "type": "boolean",
-      "default": false,
-      "description": "If true a ROS node is started by NRPCoreSim"
-    },
     "EventLoopTimeout" : {
-      "type" : "integer",
+      "type" : "number",
       "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
     },
     "EventLoopTimestep" : {
       "type" : "number",
       "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
+    },
+    "ConnectROS" : {
+      "$ref": "https://neurorobotics.net/nrp_connectors.json#/ROSNode",
+      "description": "If this parameter is present a ROS node is started by NRPCoreSim"
+    },
+    "ConnectMQTT" : {
+      "$ref": "https://neurorobotics.net/nrp_connectors.json#/MQTTClient",
+      "description": "If this parameter is present an MQTT client is instantiated and connected"
     }
   },
   "required": []

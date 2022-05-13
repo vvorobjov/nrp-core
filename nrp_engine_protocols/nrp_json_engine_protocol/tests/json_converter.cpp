@@ -154,7 +154,6 @@ TEST_F(JsonConverter, TestJsonToPython)
         (*inputJson)["testBoolFalse"] = false;
         (*inputJson)["testArray"    ] = { 1, 0, 2 };
         (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
-        (*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
         JsonDataPack inputDataPack("a", "b", inputJson);
 
         // Call the test function
@@ -165,24 +164,6 @@ TEST_F(JsonConverter, TestJsonToPython)
     {
         handlePythonException();
     }
-}
-
-
-/*!
- * \brief Tests failure modes of conversion from nlohmann::json to python using JsonDataPack
- */
-TEST_F(JsonConverter, TestJsonToPythonFailures)
-{
-    // Create input datapack with JSON data
-    // Conversion from binary data is not supported and should throw an exception
-
-    nlohmann::json * inputJson = new nlohmann::json();
-    (*inputJson)["testBinary"] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
-    JsonDataPack inputDataPack("a", "b", inputJson);
-
-    // Call the test function
-
-    ASSERT_ANY_THROW((*globals)["test_unsupported_json_type_failure"](boost::ref(inputDataPack)));
 }
 
 
@@ -289,7 +270,6 @@ TEST_F(JsonConverter, TestJsonStrMethod)
         (*inputJson)["testBoolFalse"] = false;
         (*inputJson)["testArray"    ] = { 1, 0, 2 };
         (*inputJson)["testObject"   ] = { {"key1", "value"}, {"key2", 600} };
-        (*inputJson)["testBinary"   ] = nlohmann::json::binary_t({0xCA, 0xFE, 0xBA, 0xBE});
         JsonDataPack inputDataPack("a", "b", inputJson);
 
         // Call the test function

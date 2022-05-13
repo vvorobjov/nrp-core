@@ -1,11 +1,13 @@
 from nrp_core import *
+from nrp_core.data.nrp_json import JsonDataPack
+
 
 @EngineDataPack(keyword='actors', id=DataPackIdentifier('actors', 'nest'))
 @TransceiverFunction("gazebo")
-def transceiver_function(actors):
-    back_left_j   = JsonDataPack("husky::back_left_joint", "gazebo")
-    back_right_j  = JsonDataPack("husky::back_right_joint", "gazebo")
-    front_left_j  = JsonDataPack("husky::front_left_joint", "gazebo")
+def robot_control(actors):
+    back_left_j = JsonDataPack("husky::back_left_joint", "gazebo")
+    back_right_j = JsonDataPack("husky::back_right_joint", "gazebo")
+    front_left_j = JsonDataPack("husky::front_left_joint", "gazebo")
     front_right_j = JsonDataPack("husky::front_right_joint", "gazebo")
 
     left_voltage = actors.data[0]['V_m']
@@ -19,11 +21,11 @@ def transceiver_function(actors):
     front_left_j.data["velocity"] = (forward_vel - rot_vel) * 10
     front_right_j.data["velocity"] = (forward_vel + rot_vel) * 10
 
-    print("------------------")
-    print("Left voltage:  " + str(left_voltage))
-    print("Right voltage: " + str(right_voltage))
-    print("Forward velocity: " + str(forward_vel))
-    print("Rotational vel:   " + str(rot_vel))
-    # return []
+    # print("------------------")
+    # print(f"Left voltage:  {left_voltage}")
+    # print(f"Right voltage: {right_voltage}")
+    # print(f"Forward velocity: {forward_vel}")
+    # print(f"Rotational vel:   {rot_vel}")
+ 
     return [ back_left_j, back_right_j, front_left_j, front_right_j ]
 

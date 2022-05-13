@@ -1,16 +1,17 @@
-set(PROJECT_NAME "NRPOpenSimEngine")
-set(HEADER_DIRECTORY "nrp_opensim_engine")
+set(PROJECT_NAME "NRPPySimEngine")
+set(HEADER_DIRECTORY "nrp_pysim_engine")
 
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "opensim")
-set(EXECUTABLE_NAME "NRPOpenSimExecutable")
+set(PYTHON_MODULE_NAME "py_sim")
+set(EXECUTABLE_NAME "NRPPySimExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
 set(LIB_CONFIG_NAME "${LIBRARY_NAME}Config")
 set(LIB_VERSION_NAME "${LIB_CONFIG_NAME}Version")
+set(ENV{NRP_ENGINE_LAUNCHERS} "${LIBRARY_NAME}.so;$ENV{NRP_ENGINE_LAUNCHERS}")
 
 cmake_minimum_required(VERSION 3.16)
 project("${PROJECT_NAME}" VERSION ${NRP_VERSION})
@@ -20,8 +21,8 @@ include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-    nrp_opensim_engine/config/opensim_config.cpp
-    nrp_opensim_engine/nrp_client/opensim_nrp_client.cpp
+    nrp_pysim_engine/config/pysim_config.cpp
+    nrp_pysim_engine/nrp_client/pysim_nrp_client.cpp
 )
 
 # List of python module build files
@@ -159,13 +160,15 @@ if(TARGET ${PYTHON_MODULE_NAME})
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
 
-install(FILES "nrp_opensim_engine/python/__init__.py"
+install(FILES "nrp_pysim_engine/python/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-
-install(FILES "nrp_opensim_engine/python/SimManager.py"
+install(FILES "nrp_pysim_engine/python/SimManager.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-
-install(FILES "nrp_opensim_engine/python/OpensimLib.py"
+install(FILES "nrp_pysim_engine/python/OpensimLib.py"
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+install(FILES "nrp_pysim_engine/python/OpenAIGymLib.py"
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+install(FILES "nrp_pysim_engine/python/MujocoLib.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 # Install executable files

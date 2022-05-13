@@ -39,9 +39,6 @@
  */
 class EventLoop
 {
-
-    // TODO: implement runasync and runonce
-
     public:
 
         virtual ~EventLoop();
@@ -59,6 +56,11 @@ class EventLoop
         void runLoopOnce();
 
         /*!
+         * \brief Run loop
+        */
+        void runLoop(std::chrono::milliseconds timeout);
+
+        /*!
          * \brief Run loop in a thread
          */
         void runLoopAsync(std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
@@ -67,6 +69,11 @@ class EventLoop
          * \brief Stop loop
          */
         void stopLoop();
+
+        /*!
+         * \brief Shutdown loop
+         */
+        void shutdown();
 
         /*!
          * \brief Returns true if the event loop is currently running, false otherwise
@@ -81,14 +88,14 @@ class EventLoop
     private:
 
         /*!
-         * \brief Run loop
-         *
-         * This method is kept private. 'runLoopAsync' should be used instead.
+         * \brief Initialize loop
          */
-        void runLoop(std::chrono::milliseconds timeout);
+        void initialize();
 
         /*! \brief future state of the event loop thread run async  */
         std::future<void> _runFuture;
+        /*! \brief Configuration of the Computational Graph run by this EventLoop  */
+        nlohmann::json _graph_config;
         /*! \brief timestep of the event loop  */
         std::chrono::milliseconds _timestep;
         /*! \brief boolean variable used to step the event loop from parent thread */

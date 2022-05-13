@@ -1,0 +1,56 @@
+/*! \page tvb_engine The Virtual Brain Engine
+
+This page explains the steps needed to connect The Virtual Brain models with external simulators using NRPCore.
+Contrary to other simulators with Python API, like OpenSim, TVB doesn't have a dedicated engine.
+You should use \ref python_json_engine directly. To do this, you need to define a class called `Script`, which inherits from `EngineScript`.
+The base class takes care of all tasks related to simulation control and data exchange.
+In particular, it provides the following methods, in which calls to TVB API should be embedded:
+
+- `initialize()`: executed when the engine is initialized
+- `runLoop(timestep_ns)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `shutdown()`: executed when the engine is requested to shutdown
+
+A fully working example is available under `examples/opensim_tvb/`, with the code related to TVB located in `examples/opensim_tvb/tvb_engine.py`.
+
+\section tvb_engine_proxy_nodes Defining proxy nodes in the brain model
+
+Proxy nodes allow to inject external signals into the brain. The following code creates a single proxy node labeled "Arm":
+
+\dontinclude opensim_tvb/tvb_engine.py
+\skip Inject the proxy region
+\until np.array([False])])
+
+You may want to connect the newly created region into other regions:
+
+\dontinclude opensim_tvb/tvb_engine.py
+\skip Augment
+\until setattr(connectivity, attr, prop)
+
+\section tvb_engine_cosim Extending the Simulator class
+
+An extended version of the Simulator class, which is able to handle data coming from the proxy regions,
+is available in the TVB cosimulation package:
+
+\code{.py}
+from tvb.contrib.cosimulation.cosimulator import CoSimulator as Simulator
+\endcode
+
+After creating the CoSimulator object, some of its variables need to be set:
+
+- `voi`: variables of interest. These are the state variables that will be exchanged with the proxy region.
+- `proxy_inds`: indexes of the proxy nodes
+- `exclusive`: must be set to True to indicate that data from proxy regions are simulated externaly
+
+\dontinclude opensim_tvb/tvb_engine.py
+\skip Set CoSim simulator parameters
+\until simulator.exclusive = True
+
+\section tvb_engine_injecting_data Injecting data into the proxy region
+
+The following piece of code shows how to inject position of an external agent into the proxy region:
+
+\dontinclude opensim_tvb/tvb_engine.py
+\skip def simulate_fun
+\until return
+ 
+*/

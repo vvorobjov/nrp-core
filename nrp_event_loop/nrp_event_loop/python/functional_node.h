@@ -67,7 +67,7 @@ public:
     /*!
      * \brief Constructor
      */
-    PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, ExecutionPolicy policy = ExecutionPolicy::ON_NEW_INPUT) :
+    PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
         FunctionalNode(id, [] (params_t&) {}, policy)
     {
         bpy::stl_input_iterator<std::string> begin(o_ports), end;
@@ -157,8 +157,14 @@ public:
     template<typename T_IN, size_t N = 0>
     InputPort<T_IN, bpy::object>* getOrRegisterInput(const std::string& id)
     {
-        auto m_iter = std::find(_iPortIds.begin(), _iPortIds.end(), id);
-        if(m_iter == _iPortIds.end())
+        int idx = -1;
+        for(size_t n = 0; n < _iPortIds.size(); ++n)
+            if(_iPortIds[n] == id) {
+                idx = n;
+                break;
+            }
+
+        if(idx == -1)
             throw NRPException::logCreate("\"" + id + "\" does not match any of the declared input arguments in node \"" + this->id() + "\"");
 
         if constexpr (N < input_s) {
@@ -173,8 +179,10 @@ public:
                 else
                     return getOrRegisterInput<T_IN, N+1>(id);
             }
-            else
+            else {
+                _iPortIdsMap.emplace(id, N);
                 return registerInput<N, T_IN, bpy::object>(id);
+            }
         }
 
         throw NRPException::logCreate("There is no input port with name" + id + "registered to this node and no additional ports can be registered");
@@ -220,7 +228,9 @@ private:
         boost::python::dict kwargs;
 
         for(size_t i=0; i < _iPortIds.size(); ++i) {
-            auto in = *_inputs[i];
+            const bpy::object* in = nullptr;
+            if(_iPortIdsMap.find(_iPortIds[i]) != _iPortIdsMap.end())
+                in = *_inputs[_iPortIdsMap.at(_iPortIds[i])];
             kwargs[_iPortIds[i]] = in != nullptr ? *in : bpy::object();
         }
 
@@ -269,6 +279,8 @@ private:
     std::map<std::string, std::string> _f2fEdges;
     /*! \brief declared inputs in this node */
     std::vector<std::string> _iPortIds;
+    /*! \brief map _iPortIds id with its corresponding index in _inputs */
+    std::map<std::string, size_t> _iPortIdsMap;
     /*! \brief declared outputs in this node */
     std::vector<std::string> _oPortIds;
     /*! \brief python callable object wrapped in this node */

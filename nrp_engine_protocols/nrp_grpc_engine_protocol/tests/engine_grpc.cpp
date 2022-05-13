@@ -29,6 +29,8 @@
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/test_msgs.pb.h"
+
 
 
 void testSleep(unsigned sleepMs)
@@ -92,7 +94,7 @@ class TestEngineGrpcClient
 
         void initialize() override
         {
-            this->sendInitCommand("test");
+            this->sendInitializeCommand("test");
         }
 
         void reset() override
@@ -107,7 +109,7 @@ class TestEngineGrpcClient
 };
 
 class TestEngineGrpcServer
-    : public EngineGrpcServer<EngineTest::TestPayload>
+    : public EngineGrpcServer
 {
     public:
 
@@ -217,20 +219,20 @@ TEST(EngineGrpc, InitCommand)
 
     // The gRPC server isn't running, so the init command should fail
 
-    ASSERT_THROW(client.sendInitCommand(jsonMessage), std::runtime_error);
+    ASSERT_THROW(client.sendInitializeCommand(jsonMessage), std::runtime_error);
 
     // Start the server and send the init command. It should succeed
 
     server.startServer();
     // TODO Investigate why this is needed. It seems to be caused by the previous call to sendInitCommand function
     testSleep(1500);
-    client.sendInitCommand(jsonMessage);
+    client.sendInitializeCommand(jsonMessage);
 
     // Force the server to return an error from the rpc
     // Check if the client receives an error response on command handling failure
 
     jsonMessage["throw"] = true;
-    ASSERT_THROW(client.sendInitCommand(jsonMessage), std::runtime_error);
+    ASSERT_THROW(client.sendInitializeCommand(jsonMessage), std::runtime_error);
 }
 
 TEST(EngineGrpc, InitCommandTimeout)
@@ -251,7 +253,7 @@ TEST(EngineGrpc, InitCommandTimeout)
 
     server.startServer();
     server.timeoutOnNextCommand();
-    ASSERT_THROW(client.sendInitCommand(jsonMessage), std::runtime_error);
+    ASSERT_THROW(client.sendInitializeCommand(jsonMessage), std::runtime_error);
 }
 
 TEST(EngineGrpc, ShutdownCommand)
@@ -448,15 +450,11 @@ TEST(EngineGrpc, SetDataPackData)
     input_datapacks.push_back(dev1.get());
 
     // The gRPC server isn't running, so the sendDataPacksToEngine command should fail
-    ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), std::runtime_error);
+    ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
 
     // Starts the Engine
     server.startServer();
     testSleep(1500);
-
-    // After sending a datapack it becomes empty and sendDataPacksToEngine command should fail
-    ASSERT_TRUE(dev1->isEmpty());
-    ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
 
     input_datapacks.clear();
     auto d = new EngineTest::TestPayload();
@@ -476,7 +474,7 @@ TEST(EngineGrpc, SetDataPackData)
     input_datapacks.clear();
     input_datapacks.push_back(&dev2);
 
-    ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), std::runtime_error);
+    ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
 
     // TODO Add test for setData timeout
 }

@@ -6,6 +6,7 @@ repo_root=$(git rev-parse --show-toplevel)
 
 # Create a build directory in the root directory
 
+rm -rf "$repo_root"/build
 mkdir -p "$repo_root"/build
 cd "$repo_root"/build || exit 1;
 
@@ -18,13 +19,12 @@ fi
 
 source "$HOME"/.bashrc
 
-# Install required python dependencies
+# Check if NEST_INSTALL_DIR is set and the external nest-simulator can be used
 
-python3 -m pip install --user grpcio-tools
-python3 -m pip install --user pytest
+[[ -z "$NRP_INSTALL_DIR" ]] && NEST_INSTALL_OPTION="" || NEST_INSTALL_OPTION="-DNEST_INSTALL_DIR=${NEST_INSTALL_DIR}"
 
 # Run cmake
 
-cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" -DCOVERAGE:BOOL=ON
+cmake .. -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" "${NEST_INSTALL_OPTION}" -DCOVERAGE:BOOL=ON -DBUILD_RST=ON
 
 # EOF

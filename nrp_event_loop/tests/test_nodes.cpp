@@ -108,10 +108,10 @@ TEST(ComputationalNodes, DATA_PORT_HANDLE)
     ASSERT_EQ(msg_got, &msg_send_2);
     ASSERT_EQ(msg_got_list->size(), 0);
 
-    p_h.publishNull();
+    p_h.publishNullandClear();
 
     ASSERT_EQ(msg_got, nullptr);
-    ASSERT_EQ(msg_got_list->size(), 0);
+    ASSERT_EQ(msg_got_list, nullptr);
 }
 
 TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_KEEP_CACHE)
@@ -128,10 +128,10 @@ TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_KEEP_CACHE)
 
     InputPort<TestMsg, TestMsg> i_p("input_port", &n_o, f);
 
-    TestInputNode i_last("i_last", TestInputNode::MsgPublishPolicy::LAST,
-                             TestInputNode::MsgCachePolicy::KEEP_CACHE, 2);
+    TestInputNode i_last("i_last", InputNodePolicies::MsgPublishPolicy::LAST,
+                             InputNodePolicies::MsgCachePolicy::KEEP_CACHE, 2);
 
-    ASSERT_EQ(i_last.msgPublishPolicy(), TestInputNode::MsgPublishPolicy::LAST);
+    ASSERT_EQ(i_last.msgPublishPolicy(), InputNodePolicies::MsgPublishPolicy::LAST);
 
     i_last.registerOutput("output");
     auto o_p = i_last.getSinglePort("output");
@@ -161,8 +161,8 @@ TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_KEEP_CACHE)
 
     InputPort<vector_test_msg, vector_test_msg> i_p_list("input_port_list", &n_o, f_list);
 
-    TestInputNode i_all("i_all", TestInputNode::MsgPublishPolicy::ALL,
-                             TestInputNode::MsgCachePolicy::KEEP_CACHE, 2);
+    TestInputNode i_all("i_all", InputNodePolicies::MsgPublishPolicy::ALL,
+                             InputNodePolicies::MsgCachePolicy::KEEP_CACHE, 2);
 
     i_all.registerOutput("output");
     auto o_p_list = i_all.getListPort("output");
@@ -189,10 +189,10 @@ TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_CLEAR_CACHE)
     std::function<void(const TestMsg*)> f = [&](const TestMsg* a) { msg_got = a; };
     InputPort<TestMsg, TestMsg> i_p("input_port", &n_o, f);
 
-    TestInputNode i_last("i_last", TestInputNode::MsgPublishPolicy::LAST,
-                             TestInputNode::MsgCachePolicy::CLEAR_CACHE, 2);
+    TestInputNode i_last("i_last", InputNodePolicies::MsgPublishPolicy::LAST,
+                             InputNodePolicies::MsgCachePolicy::CLEAR_CACHE, 2);
 
-    ASSERT_EQ(i_last.msgCachePolicy(), TestInputNode::MsgCachePolicy::CLEAR_CACHE);
+    ASSERT_EQ(i_last.msgCachePolicy(), InputNodePolicies::MsgCachePolicy::CLEAR_CACHE);
 
     i_last.registerOutput("output");
     i_p.subscribeTo(i_last.getSinglePort("output"));
@@ -211,8 +211,8 @@ TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_CLEAR_CACHE)
     std::function<void(const vector_test_msg*)> f_list = [&](const vector_test_msg* a) { msg_got_list = a; };
     InputPort<vector_test_msg, vector_test_msg> i_p_list("input_port_list", &n_o, f_list);
 
-    TestInputNode i_all("i_all", TestInputNode::MsgPublishPolicy::ALL,
-                            TestInputNode::MsgCachePolicy::CLEAR_CACHE, 2);
+    TestInputNode i_all("i_all", InputNodePolicies::MsgPublishPolicy::ALL,
+                            InputNodePolicies::MsgCachePolicy::CLEAR_CACHE, 2);
 
     i_all.registerOutput("output");
     i_p_list.subscribeTo(i_all.getListPort("output"));
@@ -224,7 +224,7 @@ TEST(ComputationalNodes, INPUT_NODE_UPDATE_POLICY_WITH_CLEAR_CACHE)
     i_all.stopUpdating();
 
     i_all.compute();
-    ASSERT_EQ(msg_got_list->size(), 0);
+    ASSERT_EQ(msg_got_list, nullptr);
 }
 
 //// OUTPUT NODE
@@ -235,7 +235,7 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     TestMsg msg_send;
 
     //// getOrRegisterInput
-    TestOutputNode n_o("output", TestOutputNode::MsgPublishPolicy::SERIES, 1);
+    TestOutputNode n_o("output", OutputNodePolicies::MsgPublishPolicy::SERIES, 1);
     auto i_p1 = n_o.getOrRegisterInput<TestMsg>("input");
     auto i_p2 = n_o.getOrRegisterInput<TestMsg>("input");
 
@@ -267,7 +267,7 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     ASSERT_EQ(n_o.sent_msgs.at(0), &msg_send);
 
     //// compute, BATCH
-    TestOutputNode n_o2("output", TestOutputNode::MsgPublishPolicy::BATCH, 1);
+    TestOutputNode n_o2("output", OutputNodePolicies::MsgPublishPolicy::BATCH, 1);
     n_o2.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
     n_o2.configure();
 
@@ -309,7 +309,7 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
 
     // Instantiating FunctionalNode directly, only for testing, usually this is done via FunctionalNodeFactory::create
     auto f_wrap = [f1](std::tuple<const int*, int> &p) { std::apply(f1, p); };
-    FunctionalNode<std::tuple<int>, std::tuple<int>> f_n("f_node", f_wrap, FunctionalNode<std::tuple<int>, std::tuple<int>>::ON_NEW_INPUT);
+    FunctionalNode<std::tuple<int>, std::tuple<int>> f_n("f_node", f_wrap, FunctionalNodePolicies::ON_NEW_INPUT);
 
     //// Register and get input / output
     auto i_pn = f_n.registerInput<0, int, int>("input");
@@ -359,7 +359,7 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
     ASSERT_EQ(nCalledF, 1);
     ASSERT_EQ(nCalledP, 1);
 
-    f_n._execPolicy = FunctionalNode<std::tuple<int>, std::tuple<int>>::ALWAYS;
+    f_n._execPolicy = FunctionalNodePolicies::ALWAYS;
     nCalledP = 0;
     nCalledF = 0;
 

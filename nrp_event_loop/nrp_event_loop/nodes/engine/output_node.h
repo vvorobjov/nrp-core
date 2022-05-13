@@ -45,7 +45,7 @@ public:
      * Constructor
      */
     OutputEngineNode(const std::string &id, const std::string &engineName) :
-            OutputNode(id, OutputEngineNode::SERIES, 1),
+            OutputNode(id, OutputNodePolicies::SERIES, 1),
             _engineName(engineName)
     { }
 
@@ -70,7 +70,9 @@ protected:
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
-        // Datapacks are copied to preserve graph integrity and to ensure that the pointer is valid in next graph cycles
+        // OutputNode already checks for nullptr, but since we have a double pointer here an extra check is needed
+        if(!(*data))
+            return;
         if(id != (*data)->name())
             NRPLogger::info("In OutputEngineNode '" + this->_engineName + "'. Datapack with Id '" + (*data)->name() +
             "' was sent to port '" + id + "' and will not be accepted due to this mismatch. Please check your graph configuration ");
@@ -79,6 +81,7 @@ protected:
                             "' linked to Engine '" + (*data)->engineName() + "'. This node only accept datapacks linked to Engine '" +
                             this->_engineName +"'. Please check your graph configuration ");
         else
+            // Datapacks are copied to preserve graph integrity and to ensure that the pointer is valid in next graph cycles
             _dataStore[(*data)->name()] = (*data)->clone();
     }
 

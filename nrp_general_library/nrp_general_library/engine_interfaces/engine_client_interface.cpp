@@ -31,7 +31,13 @@ EngineClientInterface::~EngineClientInterface() = default;
 pid_t EngineClientInterface::launchEngine()
 {
     // Launch engine
-    return this->_process->launchEngineProcess(this->engineConfig(), this->engineProcEnvParams(), this->engineProcStartParams());
+    nlohmann::json procConf;
+    procConf["ProcCmd"] = this->engineConfig().at("EngineProcCmd");
+    procConf["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
+    procConf["ProcEnvParams"] = this->engineProcEnvParams();
+    procConf["ProcStartParams"] = this->engineProcStartParams();
+
+    return this->_process->launchProcess(procConf);
 }
 
 const EngineClientInterface::datapacks_t &EngineClientInterface::updateDataPacksFromEngine(const EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers)

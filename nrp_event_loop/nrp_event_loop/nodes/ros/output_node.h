@@ -56,6 +56,9 @@ protected:
         NRPROSProxy* rosProxy = &(NRPROSProxy::getInstance());
         if(rosProxy)
             rosProxy->publish(this->id(), *data);
+        else
+            NRPLogger::warn("From OutputROSNode \"" + this->id() +
+                            "\". NRPCoreSim is not connected to ROS and this node can't publish. Check your experiment configuration");
     }
 
     // TODO: implement this node in a way that supports ROS msg types that contains a field with an array of another type.
@@ -63,7 +66,7 @@ protected:
     //  published. Maybe a new class OutputROSArrayNode
     void sendBatchMsg(const std::string& /*id*/, const std::vector<const MSG_TYPE*>& /*data*/) override
     {
-        throw NRPException::logCreate("BATCH update policy is not supported in OutputROSEdge");
+        throw NRPException::logCreate("BATCH update policy is not supported by OutputROSNode");
     }
 
 };

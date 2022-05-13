@@ -25,23 +25,50 @@
 #include "nrp_ros_proxy/nrp_ros_proxy.h"
 #endif
 
+#ifdef MQTT_ON
+#include "nrp_mqtt_proxy/nrp_mqtt_proxy.h"
+#endif
+
 #include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
+#include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_general_library/utils/restclient_setup.h"
-#include "nrp_simulation/config/cmake_conf.h"
-#include "nrp_simulation/simulation/simulation_manager.h"
-#include "nrp_simulation/simulation/nrp_core_server.h"
 
-#include "nrp_event_loop/event_loop/event_loop.h"
+#include "nrp_simulation/config/cmake_conf.h"
+#include "nrp_simulation/simulation/simulation_parameters.h"
+#include "nrp_simulation/simulation/simulation_manager.h"
+#include "nrp_simulation/simulation/simulation_manager_fti.h"
+#include "nrp_simulation/simulation/simulation_manager_event_loop.h"
+#include "nrp_simulation/simulation/nrp_core_server.h"
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <csignal>
+#include <unistd.h>
 
+#include <cstdlib>
+extern "C" {
+#include <fcntl.h>
+#include <unistd.h>
+}
+#include <stdexcept>
+#include <iostream>
 
-static void loadPlugins(const char *libName, PluginManager &pluginManager, const EngineLauncherManagerSharedPtr &engines)
+namespace {
+    std::function<void(int)> shutdown_handler;
+    void signal_handler(int signal) {
+        shutdown_handler(signal);
+    }
+}
+
+static void loadPlugins(const char *libName,
+                        PluginManager &pluginManager,
+                        const EngineLauncherManagerSharedPtr &engines,
+                        const std::set<std::string>& engineTypes)
 {
     NRP_LOGGER_TRACE("{} called [ libName: {} ]", __FUNCTION__, libName);
 
@@ -54,136 +81,88 @@ static void loadPlugins(const char *libName, PluginManager &pluginManager, const
     NRPLogger::info("Plugin {} is loaded", libName);
 
     // Register launcher
-    engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
-    NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    if(engineTypes.count(engineLauncher->engineType())) {
+        engines->registerLauncher(EngineLauncherInterfaceSharedPtr(engineLauncher.release()));
+        NRPLogger::debug("Engine launcher ({}) is registered", libName);
+    }
 }
 
 
 static void loadEngines(PluginManager & pluginManager,
                         EngineLauncherManagerSharedPtr & engines,
-                        const cxxopts::ParseResult & startParams)
+                        std::vector<std::string> pluginsList,
+                        const std::set<std::string>& engineTypes)
 {
     // Add plugin path to LD_LIBRARY_PATH
     pluginManager.addPluginPath(NRP_PLUGIN_INSTALL_DIR);
 
-    // Iterate over default plugin libs, separated by ' '
-    const auto defaultLaunchers = NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS;
-    for(const auto &libName : defaultLaunchers)
-        loadPlugins(libName, pluginManager, engines);
+    // If user specified a list of plugins use it, otherwise load them all
+    if(pluginsList.empty())
+        pluginsList = NRP_ENGINE_LAUNCHERS;
 
-    auto pluginsParam = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
-    for(const auto &libName : pluginsParam)
-        loadPlugins(libName.c_str(), pluginManager, engines);
+    // Iterate over plugin libs, separated by ' '
+    for(const auto &libName : pluginsList)
+        if(std::strcmp(libName.c_str(), "") != 0)
+            loadPlugins(libName.c_str(), pluginManager, engines, engineTypes);
 }
 
-
-static void runServerMode(EngineLauncherManagerSharedPtr & engines,
-                          MainProcessLauncherManager::shared_ptr & processLaunchers,
-                          SimulationManager & manager,
-                          const std::string & address)
+static int processLogOutputOption(const std::string& logOutput, std::string logDir)
 {
-    NrpCoreServer server(address);
+    int enginesFD = -1;
+    if (logOutput == "silent")
+        enginesFD = open("/dev/null", O_WRONLY);
+    else if (logOutput == "engines" || logOutput == "all") {
+        std::string fileName = ".console_output.log";
 
-    bool isShutdown = false;
+        if(!logDir.empty()) {
+            if (!std::filesystem::is_directory(logDir)) {
+                NRPLogger::info(
+                        "Specified log directory does not exist, logging output to experiment directory.");
+                logDir = "";
+            } else
+                logDir = logDir + "/";
 
-    while(true)
-    {
-        server.waitForRequest();
-
-        // Check the request type and handle it accordingly
-
-        try
-        {
-            switch(server.getRequestType())
-            {
-                case NrpCoreServer::RequestType::Init:
-                    manager.initFTILoop(engines, processLaunchers);
-                    break;
-                case NrpCoreServer::RequestType::RunLoop:
-                    manager.runSimulation(server.getNumIterations());
-                    break;
-                case NrpCoreServer::RequestType::Shutdown:
-                    isShutdown = true;
-                    // manager.stopLoop() will be called on SimulationManager destruction
-                    break;
-                default:
-                    throw NRPException::logCreate("Unknown request received");
-            }
+            fileName = logDir + fileName;
         }
-        catch(std::exception &e)
-        {
-            server.markRequestAsFailed(e.what());
-        }
-
-        server.markRequestAsProcessed();
-
-        // Break out of the loop, if shutdown was requested
-
-        if(isShutdown)
-        {
-            break;
-        }
-    };
-}
-
-
-static void runStandaloneMode(EngineLauncherManagerSharedPtr & engines,
-                              MainProcessLauncherManager::shared_ptr & processLaunchers,
-                              SimulationManager & manager)
-{
-    NRPLogger::info("Config file specified, launching...\n");
-
-    manager.initFTILoop(engines, processLaunchers);
-    manager.runSimulationUntilTimeout();
-    // NRRPLT-8246: uncomment to test reset
-    // manager.resetSimulation();
-    // manager.runSimulationUntilTimeout();
-}
-
-
-static void runEventLoopMode(EngineLauncherManagerSharedPtr & engines,
-                             MainProcessLauncherManager::shared_ptr & processLaunchers,
-                             SimulationManager & manager,
-                             std::unique_ptr<EventLoop> & eLoop,
-                             std::chrono::milliseconds & timeout,
-                             bool runFTILoop)
-{
-    std::future<void> runFuture;
-    std::atomic<bool> runLoop = true;
-
-    // start FTILoop
-    if(runFTILoop) {
-        manager.initFTILoop(engines, processLaunchers);
-        std::function<void()> run_ftiloop = [&]() {
-            while (runLoop)
-                manager.runSimulationOnce();
-        };
-
-        runFuture = std::async(run_ftiloop);
+        enginesFD = open(fileName.data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    }
+    else {
+        std::cerr << "Failed to process Engines output cmd line option: " << logOutput
+                  << ". Valid options are off, display, log." << std::endl;
+        std::exit(1);
     }
 
-    // run EventLoop
-    eLoop->runLoopAsync(timeout);
-    eLoop->waitForLoopEnd();
-
-    // stop FTILoop
-    if(runFTILoop) {
-        runLoop = false;
-        runFuture.wait();
+    if (enginesFD < 0 && logOutput != "silent") {
+        std::cerr << "Failed to open log file." << std::endl;
+        std::exit(1);
     }
+    else if(enginesFD >= 0 && logOutput != "engines") {
+        if (dup2(enginesFD, STDOUT_FILENO) < 0) {
+            std::perror("dup2 (stdout)");
+            std::exit(1);
+        }
+        if (dup2(enginesFD, STDERR_FILENO) < 0) {
+            std::perror("dup2 (stderr)");
+            std::exit(1);
+        }
+        NRPLogger::info("Logging all output to file. Output printed from Python might not be logged in the right order.");
+    }
+
+    return enginesFD;
 }
 
 
 int main(int argc, char *argv[])
 {
-
-    RestClientSetup::ensureInstance();
-
-    // Parse start params
+    //// PARSE COMMAND LINE PARAMETERS
     auto optParser = SimulationParams::createStartParamParser();
     std::unique_ptr<cxxopts::ParseResult> startParamPtr;
     try
     {
+        if(argc == 1)
+        {
+            throw cxxopts::OptionParseException("No input parameters are given.\n"); 
+        }
         startParamPtr.reset(new cxxopts::ParseResult(optParser.parse(argc, argv)));
     }
     catch(cxxopts::OptionParseException &e)
@@ -203,116 +182,172 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // Setup working directory and get config based on start pars
-    jsonSharedPtr simConfig = SimulationManager::configFromParams(startParams);
-    json_utils::validate_json(*simConfig, "https://neurorobotics.net/simulation.json#Simulation");
-
-    // Start ROS node
-#ifdef ROS_ON
-    if(simConfig->at("StartROSNode")) {
-        ros::init(std::map<std::string, std::string>(), "nrp_core");
-        NRPROSProxy::resetInstance();
-    }
-#else
-    if(simConfig->at("StartROSNode"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'StartROSNode' will be ignored.");
-#endif
+    // Set working directory and get config file from params
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParams);
+    NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
     // Create default logger for the launcher
     auto logger = NRPLogger
-    (
-        SimulationParams::NRPProgramName.data(),                                                        // Logger name
-        SimulationParams::parseLogLevel(
-            startParams[SimulationParams::ParamFileLogLevelLong.data()].as<SimulationParams::ParamFileLogLevelT>()
-            ),                                                                                          // File log level
-        SimulationParams::parseLogLevel(
-            startParams[SimulationParams::ParamConsoleLogLevelLong.data()].as<SimulationParams::ParamConsoleLogLevelT>()
-            ),                                                                                          // Console log level
-        startParams[SimulationParams::ParamLogDirLong.data()].as<SimulationParams::ParamLogDirT>(),     // Log files location
-        true
-    );
+            (
+                    SimulationParams::NRPProgramName.data(),                                                        // Logger name
+                    SimulationParams::parseLogLevel(
+                            startParams[SimulationParams::ParamFileLogLevelLong.data()].as<SimulationParams::ParamFileLogLevelT>()
+                    ),                                                                                          // File log level
+                    SimulationParams::parseLogLevel(
+                            startParams[SimulationParams::ParamConsoleLogLevelLong.data()].as<SimulationParams::ParamConsoleLogLevelT>()
+                    ),                                                                                          // Console log level
+                    startParams[SimulationParams::ParamLogDirLong.data()].as<SimulationParams::ParamLogDirT>(),     // Log files location
+                    true
+            );
 
-    NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+    // Process log output option
+    int enginesFD = startParams.count(SimulationParams::ParamLogOutputLong.data()) ? processLogOutputOption(
+            startParams[SimulationParams::ParamLogOutputLong.data()].as<SimulationParams::ParamLogOutputT>(),
+                    startParams[SimulationParams::ParamLogDirLong.data()].as<SimulationParams::ParamLogDirT>()
+                            ) : -1;
 
-    // Setup Python
-    bool startELE = simConfig->at("SimulationLoop") == "EventLoop";
-    PythonInterpreterState pythonInterp(argc, argv, startELE);
-
-    // Creates and start ELE
-    std::unique_ptr<EventLoop> eLoop;
-    std::chrono::milliseconds eTout;
-    if(startELE) {
-        NRPLogger::debug("Starting simulation with Event Loop");
-
-        // Set up configuration
-        json_utils::set_default<std::vector<std::string>>(*simConfig, "ComputationalGraph", std::vector<std::string>());
-
-        // Starts event loop
-        int eTstep;
-
-        if(simConfig->contains("EventLoopTimestep"))
-            eTstep = 1000 * simConfig->at("EventLoopTimestep").get<float>();
-        else
-            eTstep = 1000 * simConfig->at("SimulationTimestep").get<float>();
-
-        if(simConfig->contains("EventLoopTimeout"))
-            eTout = std::chrono::milliseconds(1000 * simConfig->at("EventLoopTimeout").get<int>());
-        else
-            eTout = std::chrono::milliseconds(1000 * simConfig->at("SimulationTimeout").get<int>());
-
-        eLoop.reset(new EventLoop(simConfig->at("ComputationalGraph"), std::chrono::milliseconds(eTstep),
-                                  false, simConfig->at("StartROSNode")));
-
+    // Override simulation parameters from command
+    if (startParams.count(SimulationParams::ParamSimParam.data()))
+    {
+        SimulationParams::parseAndSetCLISimParams(startParams[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig);
     }
 
-    // Create Process launchers
-    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager());
+    // Validate the resulting config
+    SimulationManager::validateConfig(simConfig);
 
-    // Create engine launchers
+    // List of plugin to load
+    auto pluginsList = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
+
+    // Running mode
+    const auto mode = startParams[SimulationParams::ParamMode.data()].as<std::string>();
+
+    // Server address
+    const std::string serverAddress = startParams[SimulationParams::ParamServerAddressLong.data()].as<std::string>();
+
+    // Slave mode
+    auto isSlave = startParams[SimulationParams::ParamSlaveLong.data()].as<SimulationParams::ParamSlaveT>();
+
+    //// CREATE EXPERIMENT OBJECTS
+    // Setup Python. If EventLoop is used, allow threads
+    PythonInterpreterState pythonInterp(argc, argv, simConfig->at("SimulationLoop") == "EventLoop");
+
+    // Rest server
+    RestClientSetup::ensureInstance();
+
+    // Create Process and engine launchers
+    MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager(enginesFD));
     PluginManager pluginManager;
     EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
 
-    loadEngines(pluginManager, engines, startParams);
+    std::set<std::string> engineTypes;
+    if(simConfig->contains("EngineConfigs"))
+        for(auto &engineConfig : simConfig->at("EngineConfigs"))
+            engineTypes.insert(engineConfig.at("EngineType").get<std::string>());
 
-    // Load simulation
 
-    SimulationManager manager = SimulationManager::createFromConfig(simConfig);
+    loadEngines(pluginManager, engines, pluginsList, engineTypes);
 
-    if(manager.simulationConfig() == nullptr)
-    {
-        NRPLogger::error("Simulation configuration file not specified");
-        return 1;
+    // Start external processes
+    std::vector<std::unique_ptr<ProcessLauncherInterface>> extProcs;
+    for(auto &procConf : simConfig->at("ExternalProcesses")) {
+        auto procLaunch = processLaunchers->createProcessLauncher(simConfig->at("ProcessLauncherType"));
+
+        pid_t procPID;
+
+        try {
+            procPID = procLaunch->launchProcess(procConf);
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Error when launching process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+        }
+
+        if(procPID == 0)
+            throw NRPException::logCreate("Failed to launch process \"" + procConf.at("ProcCmd").get<std::string>() + "\"");
+
+        extProcs.push_back(std::move(procLaunch));
     }
 
-    // Run the simulation in the specified mode
-
-    const auto mode = startParams[SimulationParams::ParamMode.data()].as<std::string>();
-
-    if(eLoop) {
-        bool runFTILoop = simConfig->at("EngineConfigs").size() > 0;
-        runEventLoopMode(engines, processLaunchers, manager, eLoop, eTout, runFTILoop);
+    // Connect to ROS
+#ifdef ROS_ON
+    if(simConfig->contains("ConnectROS")) {
+        nlohmann::json nodeProperties = simConfig->at("ConnectROS");
+        ros::init(std::map<std::string, std::string>(), nodeProperties.at("NodeName"));
+        NRPROSProxy::resetInstance();
     }
-    else if(mode == "server")
-    {
-        const std::string serverAddress = startParams[SimulationParams::ParamServerAddressLong.data()].as<std::string>();
+#else
+    if(simConfig->contains("ConnectROS"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ConnectROS' will be ignored.");
+#endif
 
+    // Connect to MQTT
+#ifdef MQTT_ON
+    if(simConfig->contains("ConnectMQTT")) {
+        NRPMQTTProxy::resetInstance(simConfig->at("ConnectMQTT"));
+    }
+#else
+    if(simConfig->contains("ConnectMQTT"))
+        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'ConnectMQTT' will be ignored.");
+#endif
+
+    // Create simulation manager
+    std::shared_ptr<SimulationManager> manager;
+    if(simConfig->at("SimulationLoop") == "EventLoop")
+        manager.reset(new EventLoopSimManager(simConfig, engines, processLaunchers));
+    else
+        manager.reset(new FTILoopSimManager(simConfig, engines, processLaunchers));
+
+    //// RUN THE EXPERIMENT
+    if(mode == "server")
+    {
         if(serverAddress.empty())
         {
             NRPLogger::error("Server address not specified");
             return 1;
         }
 
-        runServerMode(engines, processLaunchers, manager, serverAddress);
+
+        NrpCoreServer server(serverAddress, std::move(manager));
+
+        // In slave mode ignore SIGINT, otherwise shut the server down nicely
+        if(isSlave)
+            signal(SIGINT, [] (int) {  });
+        else {
+            shutdown_handler = [&] (int) {
+                server.stopServerLoop();
+            };
+            signal(SIGINT, signal_handler);
+        }
+
+        server.runServerLoop();
     }
     else if(mode == "standalone")
     {
-        runStandaloneMode(engines, processLaunchers, manager);
+        auto res = manager->initializeSimulation();
+        if(res.currentState != SimulationManager::SimState::Failed)
+            manager->runSimulationUntilTimeout();
+
+        manager->shutdownSimulation();
     }
     else
     {
         NRPLogger::error("Unknown operational mode '" + mode + "'");
         return 1;
     }
+
+    //// SHUT THINGS DOWN
+    // Force flush stdout and stderr in Python, when output is redirected Python might fail to do it automatically
+    if(enginesFD >= 0)
+        boost::python::exec("import sys; sys.stdout.flush(); sys.stderr.flush()");
+
+#ifdef MQTT_ON
+    NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
+    if(mqttProxy)
+        mqttProxy->disconnect();
+#endif
+
+    if(enginesFD >= 0)
+        close(enginesFD);
 
     NRPLogger::info("Exiting Simulation Manager");
     return 0;

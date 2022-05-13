@@ -143,6 +143,37 @@ It has two methods `requestedDataPacks()` and `setDataPacks()` which allows to u
 
 OutputEngineNode implements an OuptutNode of type DataPackInterface*, and places all incoming messages in a cache which can be retrieved externally using the method `getDataPacks()`.
 
+\subsubsection spinnaker_nodes SpiNNaker Nodes
+
+SpiNNaker nodes enable interfacing with neural networks running on the SpiNNaker neuromorphic platform.
+
+InputSpiNNakerNode is an implementation of an InputNode that receives either spike or voltage input data from SpiNNaker.
+Each node is associated with a Population in the neural network from which messages are to be received.
+The contents of the message received will be converted to a JSON formatted output.
+For spikes this will be an object with a "label", representing the label of the Population; a "time" representing the simulation time step when the spikes were sent; and an array of neuron IDs which sent spikes at the time given.
+For voltages this will be an object with a "label, representing the label of the Population; and an array of objects each with an integer "neuron_id" and a float "voltage".
+All neuron IDs in the received messages are local within the Population associated with the node.
+
+OutputSpiNNakerNode is an implementation of an OutputNode that can send spikes to a SpikeInjector in a SpiNNaker neural network, or control the spike rate of a SpikeSourcePoisson within a network.
+Each node is again linked to a Population to which messages are to be sent.
+The messages sent to the node are expected as JSON formatted objects with a given structure.
+If the Population is a SpikeInjector, this will have an array of integers called "neuron_ids" which indicate the neuron IDs to send spikes to.
+If the Population is a SpikeSourcePoisson, this will have an array of objects called "rates", each with a "neuron_id" and "rate", indicating which source neuron to set the rate of, and what rate to set it to.
+
+\subsubsection mqtt_nodes MQTT Nodes
+
+MQTT nodes enable to connect the Computational Graph with MQTT topics.
+
+InputMQTTNode implements an InputNode which subscribes to an MQTT topic and makes incoming messages available through an OutputPort.
+Incoming messages can be injected into the graph in three data formats:
+- As strings containing the corresponding MQTT messages payload
+- As JSON objects, which content is set from the MQTT message payload
+- As any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core"
+
+The node is templated with the type of object incoming MQTT messages should be converted to.
+
+OutputMQTTNode implements an OutputNode which publishes incoming messages to an MQTT topic. As in the case of InputMQTTNode, it can accept either strings, JSON objects or protobuf messages, which are set as payload in an MQTT message and published.
+
 \section graph_layers Execution Order of Nodes in the Graph
 
 In each cycle of the Event Loop, all the nodes in the graph are executed in order.

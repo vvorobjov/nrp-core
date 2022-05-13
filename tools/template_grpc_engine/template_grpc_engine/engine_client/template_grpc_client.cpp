@@ -31,7 +31,7 @@ ${engine_name}EngineGrpcClient::${engine_name}EngineGrpcClient(nlohmann::json &c
 
 void ${engine_name}EngineGrpcClient::initialize()
 {
-    this->sendInitCommand(this->engineConfig());
+    this->sendInitializeCommand(this->engineConfig());
 }
 
 void ${engine_name}EngineGrpcClient::shutdown()

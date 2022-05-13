@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.1.0)
+set(NRP_VERSION 1.2.0)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -45,6 +45,7 @@ if(${ENABLE_TESTING})
     enable_testing()
 
     include(GoogleTest)
+    include(CTest)
 
     find_package(GTest 1.10 QUIET)
     if(NOT ${GTest_FOUND})
@@ -59,11 +60,12 @@ if(${ENABLE_TESTING})
 
             set(INSTALL_GTEST OFF)
             add_subdirectory(${gtest_SOURCE_DIR} ${gtest_BINARY_DIR})
-
-            add_library(GTest::GTest ALIAS gtest)
-            add_library(GTest::Main  ALIAS gtest_main)
         endif()
     endif()
+
+    # Add cmake file that allows to find gmock libraries
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    find_package(GMock REQUIRED)
 endif()
 
 
@@ -86,6 +88,8 @@ set(BOOST_PYTHON ${BOOST_PYTHON_COMPONENT})
 list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 
 set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
+
+
 
 
 ##########################################
@@ -146,10 +150,39 @@ endif()
 if(NOT ENABLE_ROS STREQUAL OFF)
     message(STATUS "Building ROS msgs Python bindings")
     add_definitions(-DROS_ON)
-    add_subdirectory(nrp_ros/nrp_ros_msgs)
-    add_subdirectory(nrp_ros/nrp_ros_proxy)
+    add_subdirectory(nrp_ros)
+    add_subdirectory(nrp_comm_proxies/nrp_ros_proxy)
 else()
     message(STATUS "Ros msgs python bindings will not be built")
+endif()
+
+# Spinnaker
+if(NOT DEFINED ENABLE_SPINNAKER)
+    message(VERBOSE "ENABLE_SPINNAKER defaults to FULL")
+    set(ENABLE_SPINNAKER FULL)
+else()
+    message(VERBOSE "ENABLE_SPINNAKER is set to ${ENABLE_SPINNAKER}")
+endif()
+
+if(ENABLE_SPINNAKER STREQUAL FULL)
+    message(STATUS "Building Spinnaker support")
+    add_definitions(-DSPINNAKER_ON)
+else()
+    message(STATUS "Spinnaker support will not be built")
+endif()
+
+#MQTT
+if(NOT DEFINED ENABLE_MQTT)
+    message(VERBOSE "ENABLE_MQTT defaults to FULL")
+    set(ENABLE_MQTT FULL)
+else()
+    message(VERBOSE "ENABLE_MQTT is set to ${ENABLE_MQTT}")
+endif()
+
+if(NOT ENABLE_MQTT STREQUAL OFF)
+    message(STATUS "Building with MQTT support")
+    add_subdirectory(nrp_comm_proxies/nrp_mqtt_proxy)
+    add_definitions(-DMQTT_ON)
 endif()
 
 ##########################################
@@ -201,6 +234,8 @@ endif()
 
 ##########################################
 ## NRP Engines
+set(ENV{NRP_ENGINE_LAUNCHERS} ""
+        CACHE STRING "Default engines which will always be available in the NRP simulation")
 
 ## Gazebo targets
 if(NOT ENABLE_GAZEBO STREQUAL OFF)
@@ -224,10 +259,11 @@ add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
 
+## Data Transfer Engine
+add_subdirectory("nrp_datatransfer_grpc_engine")
+
 ##########################################
 ## NRP Simulation
-set(NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "NRPPythonJSONEngine.so"
-    CACHE STRING "Default engines which will always be available in the NRP simulation")
 add_subdirectory(nrp_simulation)
 
 ##########################################
@@ -292,6 +328,14 @@ set(DOXYGEN_GENERATE_TREEVIEW YES)
 set(DOXYGEN_DISABLE_INDEX YES)
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
 set(DOXYGEN_IMAGE_PATH "docs/images")
+if(BUILD_RST STREQUAL ON)
+    set(DOXYGEN_GENERATE_XML YES)
+    set(DOXYGEN_XML_OUTPUT xml)
+    set(DOXYGEN_XML_PROGRAMLISTING NO)
+    set(DOXYGEN_CASE_SENSE_NAMES NO)
+    set(DOXYGEN_HIDE_UNDOC_RELATIONS YES)
+    set(DOXYGEN_EXTRACT_ALL YES)
+endif()
 set(DOXYGEN_EXAMPLE_PATH
         ${DOXYGEN_EXAMPLE_PATH}
         "docs/example_engine"
@@ -328,27 +372,35 @@ doxygen_add_docs(nrp_doxygen
         "docs/architecture_overview/transceiver_function.dox"
         "docs/architecture_overview/preprocessing_function.dox"
         "docs/architecture_overview/lifecycle_components.dox"
+        "docs/architecture_overview/experiment_lifecycle.dox"
+        "docs/architecture_overview/main_elements.dox"
 
         "docs/experiment_configuration/experiment_configuration.dox"
         "docs/experiment_configuration/engine_schema.dox"
         "docs/experiment_configuration/transceiver_function_schema.dox"
         "docs/experiment_configuration/simulation_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
+        "docs/experiment_configuration/process_launcher_schema.dox"
+        "docs/experiment_configuration/nrp_connectors.dox"
 
         "docs/engines/nrp_engines.dox"
         "docs/engines/engine_comm.dox"
         "docs/engines/gazebo/gazebo_engine.dox"
+        "docs/engines/gazebo/gazebo_configuration.dox"
         "docs/engines/gazebo/gazebo_datapacks.dox"
         "docs/engines/gazebo/gazebo_plugins.dox"
         "docs/engines/nest/nest_engine.dox"
         "docs/engines/nest/nest_json.dox"
         "docs/engines/nest/nest_server.dox"
         "docs/engines/python_json_engine.dox"
-        "docs/engines/opensim/opensim_engine.dox"
+        "docs/engines/pysim/pysim_engine.dox"
+        "docs/engines/tvb/tvb_engine.dox"
+        "docs/engines/datatransfer/datatransfer_engine.dox"
 
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"
         "docs/getting_started/running_example_exp.dox"
+        "docs/getting_started/python_client.dox"
 
         "docs/guides/guides.dox"
         "docs/guides/general_developer_guide.dox"
@@ -358,6 +410,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/engine_creation_scratch.dox"
         "docs/guides/engine_creation_template.dox"
         "docs/guides/python_engine_creation.dox"
+        "docs/guides/troubleshooting.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"
@@ -365,3 +418,61 @@ doxygen_add_docs(nrp_doxygen
         "docs/event_loop/computational_graph_integration.dox"
 
         COMMENT "Generating documentation")
+
+
+if(BUILD_RST STREQUAL ON)
+    if("${DOXYREST_DIR}" STREQUAL "")
+        set(DOXYREST_DIR "${CMAKE_CURRENT_BINARY_DIR}/doxyrest" CACHE INTERNAL "Doxyrest build dir")
+    endif()
+
+    set(NRP_DOXYREST_INSTALL_PREFIX ${DOXYREST_DIR}/build-bin)
+    if(NOT TARGET doxyrest)
+    ExternalProject_Add(doxyrest
+            GIT_REPOSITORY https://github.com/vovkos/doxyrest_b.git
+            GIT_PROGRESS true
+
+            PREFIX "${DOXYREST_DIR}"
+            INSTALL_DIR ${NRP_DOXYREST_INSTALL_PREFIX}
+
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DOXYREST_INSTALL_PREFIX}
+
+            UPDATE_COMMAND ""
+            )
+    endif()
+
+    set(DOXYREST_OUTPUT_DIR "${DOXYREST_DIR}/output")
+    set(DOXYREST_RST_DIR "${DOXYREST_DIR}/rst-output")
+    set(DOXYREST_SHARE_DIR "${NRP_DOXYREST_INSTALL_PREFIX}/share/doxyrest")
+
+    # Variables to be set: DOXYREST_RST_DIR, DOXYREST_SHARE_DIR
+    configure_file("docs/sphinx/doxyrest-config.lua.in" "${DOXYREST_DIR}/doxyrest-config.lua" @ONLY)
+
+    add_custom_target(
+        nrp_doxygen_rst
+        COMMAND "${NRP_DOXYREST_INSTALL_PREFIX}/bin/doxyrest"
+        WORKING_DIRECTORY "${DOXYREST_DIR}"
+        DEPENDS nrp_doxygen doxyrest
+    )
+
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/${DOXYGEN_IMAGE_PATH}" "${DOXYREST_RST_DIR}"
+    )
+
+    # format bash-style snippets in rST
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND sed -i 's@ref-code-block:: cpp@ref-code-block:: bash@' "${DOXYREST_RST_DIR}/page_installation.rst"
+    )
+
+    # format pictures
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/docs/sphinx/format-pictures-check-toc.py" "${DOXYREST_RST_DIR}"
+    )
+
+    # zip rst files
+    add_custom_command(TARGET nrp_doxygen_rst POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E tar "cfv" "${CMAKE_CURRENT_BINARY_DIR}/nrp-core-rst.zip" --format=zip "*"            
+        WORKING_DIRECTORY "${DOXYREST_RST_DIR}"
+    )
+else()
+    message(STATUS "Skipping generating rST documentation output")
+endif()

@@ -10,7 +10,8 @@ Below are commented the relevant configuration parameters in the experiment conf
 - EventLoopTimestep: this parameter sets the frequency at which the Event Loop is run. By default is set to 10 ms.
 - EventLoopTimeout: time in seconds the Event Loop will run before shutting down automatically. If set to 0 no timeout is used.
 - ComputationalGraph: this is an array of strings containing the filenames of the Python scripts defining the Computational Graph that will be loaded and executed by the EventLoop.
-- StartROSNode: if this boolean parameter is set to `true`, a ROS node will be started along with the experiment. This is needed when using \ref ros_nodes in the Computational Graph.
+- ConnectROS: if this parameter is present in the configuration, a ROS node will be started along with the experiment. This is needed when using \ref ros_nodes in the Computational Graph.
+- ConnectMQTT: if this parameter is present, an MQTT client will be instantiated an connected to an MQTT broker. This is needed when using \ref mqtt_nodes in the Computational Graph.
 
 \section event_loop_engine_interaction Interacting with Engines from the Event Loop
 

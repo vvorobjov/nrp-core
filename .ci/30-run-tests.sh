@@ -14,17 +14,17 @@ source "$HOME"/.bashrc
 # On headless machines we need to run with X virtual frame buffer.
 # Otherwise some gazebo tests will fail
 
-test_results_dir="${repo_root}/build/xml/"
+# test_results_dir="${repo_root}/build/xml/"
 
-mkdir -p "$test_results_dir"
-export GTEST_OUTPUT="xml:$test_results_dir"
+# mkdir -p "$test_results_dir"
+# export GTEST_OUTPUT="xml:$test_results_dir"
 
 ctest_result=0
 if [ -z "$DISPLAY" ]; then
-    xvfb-run --auto-servernum -e /dev/stdout ctest
+    xvfb-run -s "-screen 0 1280x1024x24 -ac -nolisten tcp -nolisten unix" --auto-servernum -e /dev/stdout ctest --no-compress-output --test-output-size-failed 300000 -T Test 
     ctest_result=$?
 else
-    ctest
+    ctest --no-compress-output --test-output-size-failed 300000 -T Test
     ctest_result=$?
 fi
 
@@ -36,7 +36,7 @@ if (((ctest_result & ~0x8) != 0)); then
     exit $ctest_result
 fi
 
-python3 -m pip install --user gcovr
+python3 -m pip install --user gcovr==5.0
 
 make gcovr
 

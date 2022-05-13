@@ -33,6 +33,7 @@
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
 #include "proto_python_bindings/proto_python_bindings.h"
+#include "nrp_protobuf/protobuf_utils.h"
 
 template<class ENGINE, const char* SCHEMA, class ...MSG_TYPES>
 class EngineGrpcClient
@@ -96,20 +97,20 @@ class EngineGrpcClient
             return _channel->GetState(false);
         }
 
-        void sendInitCommand(const nlohmann::json & data)
+        void sendInitializeCommand(const nlohmann::json & data)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             sleep(1);
-            EngineGrpc::InitRequest  request;
-            EngineGrpc::InitReply    reply;
-            grpc::ClientContext      context;
+            EngineGrpc::InitializeRequest request;
+            EngineGrpc::InitializeReply   reply;
+            grpc::ClientContext           context;
 
             prepareRpcContext(&context);
 
             request.set_json(data.dump());
 
             NRPLogger::debug("Sending init command to server [ {} ]", this->engineName());
-            grpc::Status status = _stub->init(&context, request, &reply);
+            grpc::Status status = _stub->initialize(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -128,7 +129,7 @@ class EngineGrpcClient
             prepareRpcContext(&context);
 
             NRPLogger::debug("Sending reset command to server [ {} ]", this->engineName());
-            grpc::Status status = _stub->resetHandle(&context, request, &reply);
+            grpc::Status status = _stub->reset(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -202,13 +203,57 @@ class EngineGrpcClient
             return engineTime;
         }
 
+    virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
+    {
+        NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+        EngineGrpc::GetDataPacksRequest request;
+        EngineGrpc::GetDataPacksReply   reply;
+        grpc::ClientContext             context;
+
+        for(const auto &devID : datapackIdentifiers)
+        {
+            if(this->engineName().compare(devID.EngineName) == 0)
+            {
+                auto dataPackId = request.add_datapackids();
+
+                dataPackId->set_datapackname(devID.Name);
+                dataPackId->set_datapacktype(devID.Type);
+                dataPackId->set_enginename(devID.EngineName);
+            }
+        }
+
+        grpc::Status status = _stub->getDataPacks(&context, request, &reply);
+
+        if(!status.ok())
+        {
+            const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+            throw std::runtime_error(errMsg);
+        }
+
+        typename EngineClientInterface::datapacks_set_t interfaces;
+        for(int i = 0; i < reply.datapacks_size(); i++) {
+            auto datapackData = reply.datapacks(i);
+            DataPackInterfaceConstSharedPtr datapack;
+
+            if constexpr(sizeof...(MSG_TYPES) > 0)
+                datapack = protobuf_utils::getDataPackInterfaceFromMessageSubset<MSG_TYPES...>(this->engineName(), datapackData);
+            else
+                datapack = protobuf_utils::getDataPackInterfaceFromMessage(this->engineName(), datapackData);
+
+            interfaces.insert(datapack);
+        }
+
+        return interfaces;
+    }
+
         virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            EngineGrpc::SetDataPackRequest request;
-            EngineGrpc::SetDataPackReply   reply;
-            grpc::ClientContext          context;
+            EngineGrpc::SetDataPacksRequest request;
+            EngineGrpc::SetDataPacksReply   reply;
+            grpc::ClientContext             context;
 
             prepareRpcContext(&context);
 
@@ -219,13 +264,20 @@ class EngineGrpcClient
                     if(datapack->isEmpty())
                         throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
                     else {
-                        auto r = request.add_request();
-                        setProtoFromDataPackInterface<MSG_TYPES...>(r, datapack);
+                        auto protoDataPack = request.add_datapacks();
+
+                        if constexpr(sizeof...(MSG_TYPES) > 0)
+                            protobuf_utils::setDataPackMessageFromInterfaceSubset<MSG_TYPES...>(*datapack, protoDataPack);
+                        else
+                            protobuf_utils::setDataPackMessageFromInterface(*datapack, protoDataPack);
                     }
                 }
+                else
+                    NRPLogger::warn("Attempting to send DataPack \"" + datapack->name() + "\" linked to engine \"" + datapack->engineName() +
+                    "\" to Engine \"" + this->engineName() + "\". It won't be sent.");
             }
 
-            grpc::Status status = _stub->setDataPack(&context, request, &reply);
+            grpc::Status status = _stub->setDataPacks(&context, request, &reply);
 
             if(!status.ok())
             {
@@ -253,95 +305,6 @@ class EngineGrpcClient
         virtual const std::vector<std::string> engineProcEnvParams() const override
         {
             return this->engineConfig().at("EngineEnvParams");
-        }
-
-        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        DataPackInterfaceConstSharedPtr getDataPackInterfaceFromProto(Engine::DataPackMessage &datapackData) const
-        {
-            const google::protobuf::OneofDescriptor *fieldOne = datapackData.GetDescriptor()->FindOneofByName("data");
-            const google::protobuf::FieldDescriptor *field = datapackData.GetReflection()->GetOneofFieldDescriptor(datapackData,fieldOne);
-            if(field && std::strstr(typeid(MSG_TYPE).name(), field->message_type()->name().data())) {
-                return DataPackInterfaceConstSharedPtr(
-                        new DataPack<MSG_TYPE>(datapackData.datapackid().datapackname(), this->engineName(),
-                                               dynamic_cast<MSG_TYPE *>(datapackData.GetReflection()->ReleaseMessage(&datapackData, field))));
-            }
-            // There's no data set in the message, so create an empty datapack with datapack ID only
-            else if(!field) {
-                // NOTE: datapackData.datapackid().datapacktype() becomes useless, it should always be set internally in DataPack
-                //  constructor
-                return DataPackInterfaceConstSharedPtr(new DataPackInterface(datapackData.datapackid().datapackname(),
-                                                     this->engineName(), datapackData.datapackid().datapacktype()));
-            }
-
-            if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-                return getDataPackInterfaceFromProto<REMAINING_MSG_TYPES...>(datapackData);
-            else
-                throw NRPException::logCreate("Data type: \"" + field->name() + "\" is not supported by engine" +
-                this->engineName());
-        }
-
-        template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-        void setProtoFromDataPackInterface(Engine::DataPackMessage *datapackData, DataPackInterface* datapack)
-        {
-            if(dynamic_cast< DataPack<MSG_TYPE> *>(datapack)) {
-                datapackData->mutable_datapackid()->set_datapackname(datapack->name());
-                MSG_TYPE* d = dynamic_cast< DataPack<MSG_TYPE> *>(datapack)->releaseData();
-                auto n = datapackData->GetDescriptor()->field_count();
-                auto datapack_type = d->GetDescriptor()->full_name();
-                for(int i=0;i<n;++i) {
-                    auto field_type = datapackData->GetDescriptor()->field(i)->message_type()->full_name();
-                    if (datapack_type == field_type) {
-                        datapackData->GetReflection()->SetAllocatedMessage(datapackData, d,
-                                                                         datapackData->GetDescriptor()->field(i));
-                        return;
-                    }
-                }
-
-                throw NRPException::logCreate("Data type \"" + d->GetDescriptor()->name() + "\" is not supported by engine" +
-                                        this->engineName());
-            }
-
-            if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-                return setProtoFromDataPackInterface<REMAINING_MSG_TYPES...>(datapackData, datapack);
-            else
-                throw NRPException::logCreate("DataPack " + datapack->name() + " is not supported by engine" +
-                                        this->engineName());
-        }
-
-
-        virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
-        {
-            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            EngineGrpc::GetDataPackRequest request;
-            EngineGrpc::GetDataPackReply   reply;
-            grpc::ClientContext          context;
-
-            for(const auto &devID : datapackIdentifiers)
-            {
-                if(this->engineName().compare(devID.EngineName) == 0)
-                {
-                    auto r = request.add_datapackid();
-
-                    r->set_datapackname(devID.Name);
-                    r->set_datapacktype(devID.Type);
-                    r->set_enginename(devID.EngineName);
-                }
-            }
-
-            grpc::Status status = _stub->getDataPack(&context, request, &reply);
-
-            if(!status.ok())
-            {
-                const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
-                throw std::runtime_error(errMsg);
-            }
-
-            typename EngineClientInterface::datapacks_set_t interfaces;
-            for(int i = 0; i < reply.reply_size(); i++)
-                interfaces.insert(this->getDataPackInterfaceFromProto<MSG_TYPES...>(*reply.mutable_reply(i)));
-
-            return interfaces;
         }
 
     protected:

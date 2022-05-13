@@ -35,7 +35,7 @@
 static DataPackProcessor* makeHandleFromConfig(jsonSharedPtr config)
 {
     std::string dev_p = config->at("DataPackProcessor").get<std::string>();
-    bool spinROS = config->at("StartROSNode");
+    bool spinROS = config->contains("ConnectROS");
     bool slaveMode = config->at("SimulationLoop") == "EventLoop";
     if(dev_p == "cg" || slaveMode)
         return new ComputationalGraphHandle(slaveMode, spinROS);
@@ -57,8 +57,8 @@ static void runLoopStepAsyncGet(EngineClientInterfaceSharedPtr engine)
     }
     catch(std::exception &e)
     {
-        throw NRPException::logCreate(e, "Engine \"" + engine->engineName() +"\" loop exceeded timeout of " +
-                                        std::to_string(timeout.count()));
+        throw NRPException::logCreate(e, "Error while executing runLoopStep in engine \"" + engine->engineName()
+        + "\". The Engine didn't respond before timeout. Check the engine logs for errors.");
     }
 }
 
@@ -238,6 +238,13 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
         }
 
         NRP_LOG_TIME("start");
+    }
+
+    // Wait for all engines to finish their last loop step
+
+    for(const auto &engine : this->_engineQueue)
+    {
+        runLoopStepAsyncGet(engine.second);
     }
 
     this->_simTime = loopStopTime;

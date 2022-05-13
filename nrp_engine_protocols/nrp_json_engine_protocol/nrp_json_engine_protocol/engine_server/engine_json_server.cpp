@@ -225,12 +225,11 @@ nlohmann::json EngineJSONServer::getDataPackData(const nlohmann::json &reqData)
     return jres;
 }
 
-nlohmann::json EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
+void EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
 {
     // Prevent other datapack reading/setting calls as well as loop execution
     EngineJSONServer::lock_t lock(this->_datapackLock);
 
-    json jres;
     for(nlohmann::json::const_iterator devDataIterator = reqData.begin(); devDataIterator != reqData.end(); ++devDataIterator)
     {
         const std::string &devName = EngineJSONServer::getIteratorKey(devDataIterator);
@@ -240,7 +239,6 @@ nlohmann::json EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
         {
             if(devInterface != this->_datapacksControllers.end())
                 devInterface->second->handleDataPackData(*devDataIterator);
-            jres[devName] = "";
         }
         catch(std::exception &e)
         {
@@ -248,7 +246,12 @@ nlohmann::json EngineJSONServer::setDataPackData(const nlohmann::json &reqData)
         }
     }
 
-    return jres;
+}
+
+bool EngineJSONServer::shutdownFlag()
+{
+    std::lock_guard<std::mutex> shutdown_lock(this->_shutdown_mutex);
+    return this->_shutdownFlag;
 }
 
 Pistache::Rest::Router EngineJSONServer::setRoutes(EngineJSONServer *server)
@@ -310,7 +313,8 @@ void EngineJSONServer::setDataPackProcessorr(const Pistache::Rest::Request &req,
 
     try
     {
-        res.send(Pistache::Http::Code::Ok, this->setDataPackData(jrequest).dump());
+        this->setDataPackData(jrequest);
+        res.send(Pistache::Http::Code::Ok, "{}");
     }
     catch(std::exception &e)
     {
@@ -421,6 +425,15 @@ void EngineJSONServer::resetHandler(const Pistache::Rest::Request &req, Pistache
 void EngineJSONServer::shutdownHandler(const Pistache::Rest::Request &req, Pistache::Http::ResponseWriter res)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    // Guard against the main thread shutting us down before
+    // shutdown activities are finished and the response is sent back to the client
+
+    std::lock_guard<std::mutex> shutdown_lock(this->_shutdown_mutex);
+
+    // Tell the main thread that we ought to shut down
+
+    this->_shutdownFlag = true;
 
     const json jrequest = this->parseRequest(req, res);
 

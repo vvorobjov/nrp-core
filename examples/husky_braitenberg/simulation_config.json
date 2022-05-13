@@ -1,6 +1,6 @@
 {
-	"SimulationName": "test_sim",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model",
+	"SimulationName": "husky_simulation",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot",
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
@@ -18,12 +18,16 @@
 	],
 	"DataPackProcessingFunctions": [
 		{
-			"Name": "cam_tf",
-			"FileName": "cam_tf.py"
+			"Name": "cam_pf",
+			"FileName": "cam_pf.py"
 		},
 		{
 			"Name": "mot_tf",
 			"FileName": "mot_tf.py"
+		},
+		{
+			"Name": "brain_stimulation_tf",
+			"FileName": "brain_stimulation_tf.py"
 		}
 	]
 }

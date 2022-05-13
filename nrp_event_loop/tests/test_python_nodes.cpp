@@ -150,7 +150,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
     //// pythonCallback
     // wrong return type from python function
     bpy::object wrong_type_f = test_module_dict["test_wrong_return_type"];
-    PythonFunctionalNode fn2("f_n2", outputs2, PythonFunctionalNode::ALWAYS);
+    PythonFunctionalNode fn2("f_n2", outputs2, FunctionalNodePolicies::ExecutionPolicy::ALWAYS);
     std::shared_ptr<PythonFunctionalNode> fn_p2 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn2.pySetup(wrong_type_f));
 
@@ -158,7 +158,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
 
     // python function returns less than declared outputs
     bpy::object less_f = test_module_dict["test_less_elements"];
-    PythonFunctionalNode fn3("f_n3", outputs2, PythonFunctionalNode::ALWAYS);
+    PythonFunctionalNode fn3("f_n3", outputs2, FunctionalNodePolicies::ExecutionPolicy::ALWAYS);
     std::shared_ptr<PythonFunctionalNode> fn_p3 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn3.pySetup(less_f));
 
@@ -166,7 +166,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
 
     // python function returns more than declared outputs
     bpy::object more_f = test_module_dict["test_more_elements"];
-    PythonFunctionalNode fn4("f_n4", outputs2, PythonFunctionalNode::ALWAYS);
+    PythonFunctionalNode fn4("f_n4", outputs2, FunctionalNodePolicies::ExecutionPolicy::ALWAYS);
     std::shared_ptr<PythonFunctionalNode> fn_p4 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn4.pySetup(more_f));
 
@@ -174,7 +174,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
 
     // error in python function
     bpy::object broken_f = test_module_dict["test_broken_function"];
-    PythonFunctionalNode fn5("f_n5", outputs2, PythonFunctionalNode::ALWAYS);
+    PythonFunctionalNode fn5("f_n5", outputs2, FunctionalNodePolicies::ExecutionPolicy::ALWAYS);
     std::shared_ptr<PythonFunctionalNode> fn_p5 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn5.pySetup(broken_f));
 
@@ -210,14 +210,8 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
 
     //// Test normal case
     // load and configure nodes
-    try {
-        bpy::import("test_decorators");
-    }
-    catch (const boost::python::error_already_set&) {
-        NRPLogger::error("Test failed when loading test_decorators.py");
-        PyErr_Print();
-        boost::python::throw_error_already_set();
-    }
+    bpy::object test_module(bpy::import("test_decorators"));
+    bpy::dict test_module_dict(test_module.attr("__dict__"));
 
     ComputationalGraphManager::getInstance().configure();
 
@@ -234,11 +228,20 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     OutputPort<int> o_p("output_port", fn_p);
     i_p_fn->subscribeTo(&o_p);
 
+    fn_p->compute();
+    ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 0);
     int msg_send = 1;
     o_p.publish(&msg_send);
-
     fn_p->compute();
+    ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 1);
     ASSERT_EQ(*msg_got, 1);
+    fn_p->compute();
+    ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 1);
+
+    // 'always' policy
+    auto fn_p_always = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode("function_always"));
+    fn_p_always->compute();
+    ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 2);
 
     // SimpleInputEdge, SimpleOutputEdge
     ComputationalGraphManager::getInstance().getNode("idummy1")->compute();
@@ -295,16 +298,31 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     input_p->setDataPacks(dpacks_sent);
 
     ComputationalGraphManager::getInstance().compute();
-
     auto dpacks_received = output_p->getDataPacks();
     ASSERT_EQ(dpacks_received.size(),1);
     ASSERT_EQ(dpacks_received[0]->name(), "my_data_pack");
     ASSERT_EQ(dpacks_received[0]->engineName(), "fake_engine");
 
+    // cache policy 'keep'
+    ComputationalGraphManager::getInstance().compute();
+    ASSERT_EQ(output_p->getDataPacks().size(),1);
+
     // datapack sent with wrong engine name
     auto output_p2 = dynamic_cast<OutputEngineNode*>(ComputationalGraphManager::getInstance().getNode("another_fake_engine_output"));
     ASSERT_EQ(output_p2->getDataPacks().size(),0);
 
+    // cache policy 'clear'
+    auto input_p_clear = dynamic_cast<InputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_input"));
+    auto output_p_clear = dynamic_cast<OutputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_output"));
+
+    EngineClientInterface::datapacks_set_t dpacks_sent_clear;
+    dpacks_sent_clear.insert(DataPackInterfaceSharedPtr(new DataPackInterface(*(input_p_clear->requestedDataPacks().begin()))));
+    input_p_clear->setDataPacks(dpacks_sent_clear);
+
+    ComputationalGraphManager::getInstance().compute();
+    ASSERT_EQ(output_p_clear->getDataPacks().size(),1);
+    ComputationalGraphManager::getInstance().compute();
+    ASSERT_EQ(output_p_clear->getDataPacks().size(),0);
 }
 
 // EOF

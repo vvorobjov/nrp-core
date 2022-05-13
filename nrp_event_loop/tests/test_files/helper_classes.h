@@ -92,7 +92,7 @@ public:
 class TestInputNode : public InputNode<TestMsg> {
 public:
 
-    TestInputNode(const std::string &id, MsgPublishPolicy msgPublishPolicy, MsgCachePolicy msgCachePolicy, size_t queue_size) :
+    TestInputNode(const std::string &id, InputNodePolicies::MsgPublishPolicy msgPublishPolicy, InputNodePolicies::MsgCachePolicy msgCachePolicy, size_t queue_size) :
             InputNode(id, msgPublishPolicy, msgCachePolicy, queue_size)
     { }
 
@@ -127,7 +127,7 @@ public:
 class TestOutputNode : public OutputNode<TestMsg> {
 public:
 
-    TestOutputNode(const std::string &id, MsgPublishPolicy msgPublishPolicy, int maxPortConnections) :
+    TestOutputNode(const std::string &id, OutputNodePolicies::MsgPublishPolicy msgPublishPolicy, int maxPortConnections) :
         OutputNode(id, msgPublishPolicy, maxPortConnections)
     { }
 

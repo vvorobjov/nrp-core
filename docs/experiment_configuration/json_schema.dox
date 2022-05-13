@@ -53,7 +53,7 @@ Those parameters which can't be left unset in the configuration file must be mar
 - Due to limitations in the  <a href="https://github.com/pboettch/json-schema-validator">library</a> we use for schema validation, default values set to an empty array (`[]`) are disregarded.
 - Sometimes the default value of a parameter cannot be set to a fixed value in the schema. This is for example the case when default values want to be set to an environment variable. Another example could be if the default value for a parameter needs some computations.
 
-To undertake these exceptions, default values can also be set in-code using the convenience method \ref nrp_general_library/utils/json_schema_utils.h "json_utils::set_default". If a default value for a certain parameter is to be set in-code using this method, it should not be set as required in the corresponding schema and a default value should not be defined for it in this schema.
+To undertake these exceptions, default values can also be set in-code using the convenience method \ref nrp_general_library/utils/json_schema_utils.h "json_utils::setDefault". If a default value for a certain parameter is to be set in-code using this method, it should not be set as required in the corresponding schema and a default value should not be defined for it in this schema.
 
 Finally, when using `allOf` to define schema hierarchies (e.g. in engine schemas), all the schemas specified within the `allOf` section will be traversed in order. An important implication of this behavior is that the first default value found for a parameter will be used. Therefore, in case of wanting to override default values in an inherited schema, the reference to the base schema should be place at the end of the `allOf` list.
 

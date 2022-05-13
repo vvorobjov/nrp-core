@@ -163,9 +163,9 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH_MANAGER)
 
     //// register edge
     // normal case
-    std::shared_ptr<ComputationalNode> n10(new TestInputNode("input_2", TestInputNode::MsgPublishPolicy::LAST,
-                                                             TestInputNode::MsgCachePolicy::KEEP_CACHE, 1));
-    std::shared_ptr<ComputationalNode> n11(new TestOutputNode("output_2", TestOutputNode::MsgPublishPolicy::SERIES, 1));
+    std::shared_ptr<ComputationalNode> n10(new TestInputNode("input_2", InputNodePolicies::MsgPublishPolicy::LAST,
+                                                             InputNodePolicies::MsgCachePolicy::KEEP_CACHE, 1));
+    std::shared_ptr<ComputationalNode> n11(new TestOutputNode("output_2", OutputNodePolicies::MsgPublishPolicy::SERIES, 1));
 
     cgm.registerNode(n10);
     cgm.registerNode(n11);

@@ -38,10 +38,11 @@ class BasicFork
     public:
         ~BasicFork() override;
 
-        pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override;
+        pid_t launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
+                                  const std::vector<std::string> &startParams, bool appendParentEnv = true,
+                                          int logFD = -1) override;
 
-        pid_t stopEngineProcess(unsigned int killWait) override;
+        pid_t stopProcess(unsigned int killWait) override;
 
         ENGINE_RUNNING_STATUS getProcessStatus() override;
 
@@ -49,7 +50,7 @@ class BasicFork
         /*!
          * \brief PID of child process running the engine
          */
-        pid_t _enginePID;
+        pid_t _PID;
 
         /*!
          * \brief Add environment variables to environ

@@ -12,7 +12,7 @@ ARG HOME_PARENT_FOLDER=/home
 
 ENV HOME ${HOME_PARENT_FOLDER}/${NRP_USER}
 ENV HOME_PARENT_FOLDER ${HOME_PARENT_FOLDER}
-ENV NRP_INSTALL_DIR ${HOME}/.local
+ENV NRP_INSTALL_DIR ${HOME}/.local/nrp
 
 # Disable Prompt During Packages Installation
 
@@ -20,7 +20,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # INSTALL sudo
 
-RUN apt update -y && apt-get install -y sudo
+RUN apt-get update -y && apt-get install -y sudo
 
 # Set NRP_USER user
 
@@ -45,8 +45,11 @@ COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies ${HOME}/.dependencies
 
 # Install basic dependencies
 
-RUN apt-get update
-RUN apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.basic.txt  | tr "\n" " ")
+RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.basic.txt  | tr "\n" " ")
+
+# Install dependencies for testing
+
+RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.tests.txt  | tr "\n" " ")
 
 # Pistache REST Server
 
@@ -64,16 +67,55 @@ RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt
 
 # Install CLE dependencies
 
-RUN apt-get update
-RUN apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
+RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
 
-# Fix deprecated type in OGRE (std::allocator<void>::const_pointer has been deprecated with glibc-10). Until the upstream libs are updated, use this workaround. It changes nothing, the types are the same
+# If this image will be used for TVB integration, then flask==1.1.4 is needed and after markupsafe (included in flask) has to be downgraded to 2.0.1
+RUN pip install grpcio-tools pytest psutil flask gunicorn flask_cors mpi4py docopt
 
-RUN sed -i "s/typename std::allocator<void>::const_pointer/const void*/g" /usr/include/OGRE/OgreMemorySTLAllocator.h
+# Install Documentation dependencies
+
+RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.docs.txt  | tr "\n" " ")
 
 # Switch to NRP user
 
 USER ${NRP_USER}
 ENV USER ${NRP_USER}
+WORKDIR ${HOME}
+
+# Install MQTT (to NRP_INSTALL_DIR)
+RUN git clone https://github.com/eclipse/paho.mqtt.c.git \
+    && cd paho.mqtt.c \
+    && git checkout v1.3.8 \
+    && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"\
+    && cmake --build build/ --target install \
+    && sudo ldconfig && cd .. && rm -rf paho.mqtt.c
+
+RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
+    && cd paho.mqtt.cpp \
+    && git checkout v1.2.0 \
+    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
+    && cmake --build build/ --target install \
+    && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
+
+# Install nest-simulator (to NRP_INSTALL_DIR)
+RUN git clone https://github.com/nest/nest-simulator.git \
+    && cd nest-simulator \
+    && git checkout v3.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_INSTALL_PREFIX:PATH=${NRP_INSTALL_DIR} -Dwith-mpi=ON -Dwith-python=ON .. \
+    && make && make install \
+    && cd .. && rm -rf nest-simulator
+ENV NEST_INSTALL_DIR ${NRP_INSTALL_DIR}
+
+# Install Gazebo Models. TODO/WARNING: extra building time and container size!!!
+RUN mkdir ${HOME}/nrp \
+    && cd ${HOME}/nrp \
+    && git clone https://@bitbucket.org/hbpneurorobotics/models.git \
+    && git clone https://@bitbucket.org/hbpneurorobotics/gzweb.git \
+    && export HBP=/home/${USER}/.local/nrp \
+    && mkdir -p ${HBP}/gzweb/http/client/assets \
+    && mkdir -p ${HOME}/.gazebo/models \
+    && cd models \
+    && ./create-symlinks.sh
 
 # EOF

@@ -24,6 +24,7 @@
 
 #include <map>
 
+#include "nrp_event_loop/computational_graph/computational_node_policies.h"
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/input_port.h"
 
@@ -37,22 +38,16 @@ template <class DATA>
 class OutputNode : public ComputationalNode {
 public:
 
-    /*! \brief Defines how this node send stored msgs */
-    enum MsgPublishPolicy {
-        SERIES, /*!< sends received msgs one by one */
-        BATCH /*!< sends all msgs received in a single batch  */
-    };
-
     /*!
      * \brief Constructor
      */
-    OutputNode(const std::string &id, MsgPublishPolicy msgPublishPolicy = MsgPublishPolicy::SERIES, int maxPortConnections = 0) :
+    OutputNode(const std::string &id, OutputNodePolicies::MsgPublishPolicy msgPublishPolicy = OutputNodePolicies::MsgPublishPolicy::SERIES, int maxPortConnections = 0) :
         ComputationalNode(id, ComputationalNode::Output),
         _msgPublishPolicy(msgPublishPolicy),
         _maxPortConnections(maxPortConnections)
     { }
 
-    void configure() override final
+    void configure() override
     {
         // Allocate space for _storedMsgs. It is assumed that no new ports are registered nor existing ones are subscribed after this call.
         // To enforce the latter ports can't be accessed or registered after the node is configured.
@@ -98,7 +93,7 @@ public:
         return port;
     }
 
-    MsgPublishPolicy msgPublishPolicy()
+    OutputNodePolicies::MsgPublishPolicy msgPublishPolicy()
     { return _msgPublishPolicy; }
 
 protected:
@@ -107,14 +102,17 @@ protected:
      * \brief Stores a new msg in _storedMsgs['id']
      */
     void storeMsg(const std::string& id,const DATA* data)
-    { _storedMsgs[id].push_back(data); }
+    {
+        if(data)
+            _storedMsgs[id].push_back(data);
+    }
 
     /*!
      * \brief Sends all msgs stored in _storedMsgs['id'] and clears the storage
      */
     void sendMsgs(const std::string& id)
     {
-        if (this->_msgPublishPolicy == MsgPublishPolicy::SERIES)
+        if (this->_msgPublishPolicy == OutputNodePolicies::MsgPublishPolicy::SERIES)
             for (auto m : _storedMsgs[id])
                 sendSingleMsg(id, m);
         else
@@ -138,7 +136,7 @@ protected:
     /*! \brief List of msgs stored in this node*/
     std::map< std::string, std::vector<const DATA*>> _storedMsgs;
     /*! \brief Send policy used by this node */
-    MsgPublishPolicy _msgPublishPolicy;
+    OutputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     /*! \brief Maximum number of subscriptions of ports in this node */
     int _maxPortConnections;
     /*! \brief true if the node has been configured, false otherwise */

@@ -18,13 +18,17 @@ The Node will then execute this function every Event Loop cycle.
 The code snippet below shows the creation of a simple Functional Node which just forward each of its two inputs to its two outputs. 
 
 \code{.py}
-@FunctionalNode(name="my_node", outputs=['output_1', 'output_2'])
+@FunctionalNode(name="my_node", outputs=['output_1', 'output_2'], exec_policy=node_policies.functional_node.exec_policy.on_new_message)
 def my_function(input_1, input_2):
     return [input_1, input_2]  
 \endcode
 
-The decorator takes two arguments: `name`, which will be used as the node `id` in the graph and must be unique; and `outputs`, a list of strings declaring the number and names of outputs of this node.
-Each of the outputs can be connected to other nodes using decorators.
+The decorator has three arguments: 
+- `name`: string used as the node `id` in the graph and must be therefore unique in the graph
+- `outputs`: a list of strings declaring the number and names of outputs of this node.
+- `policy` (optional): the \ref functional_node_policies "execution policy" of the node. Its value must be of type `node_policies.functional_node.exec_policy`, an enum with possible values: `always` and `on_new_message`. Its default value is `on_new_message`.
+
+Each of the declared outputs can be connected to other nodes using decorators.
 Each of the input arguments of the function can be connected to other nodes too.
 
 The decorated Python function must always return a list with the length equal to the number of declared outputs in the Functional Node decorator.
@@ -32,7 +36,7 @@ Otherwise a runtime error will be triggered.
 
 \section from_functional_node_decorator @FromFunctionalNode
 
-This decorator allows to connect one Functional Node input to another Functional Node output.
+This decorator allows to connect one Functional Node input port to another Functional Node output port.
 It, therefore, creates an edge in the Computational Graph between two Functional Nodes.
 
 The code below will create a Functional Node with one input, `input_1`, and one output `output_1`, and connect `input_1` to an output Port with id `output_2` from a node with id `my_node`.
@@ -44,8 +48,9 @@ def my_function_2(input_1):
     return [input_1]  
 \endcode
 
-The decorator has two arguments. The first argument is the id of the input in the decorated node which will be connected. 
-The second argument is the address of the output port to which the input will be connected.
+The decorator has two arguments: 
+- `keyword`: id of the input port in the decorated functional node which will be connected. 
+- `address`: address of the output port which will be connected.
 
 The expected syntax for the output port address is `/node_id/port_id`.
 If a node with id `node_id` doesn't exist or doesn't have an output with id `port_id`, a runtime error will occur.
@@ -68,6 +73,11 @@ If `my_engine` doesn't exist in the graph it is created.
 Then an Output Port `my_datapack` is registered with `my_engine` and datapack id `my_datapack` is added to the node requested datapacks.
 See \ref engine_nodes "here" for more details.
 
+The decorator has three arguments: 
+- `keyword`: id of the input port in the decorated functional node which will be connected. 
+- `address`: address of the output port which will be connected.
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+
 \section to_engine_decorator @ToEngine
 
 This decorator creates an OutputEngineNode and connects it to one of the decorated Functional Node outputs.
@@ -83,7 +93,9 @@ def my_function(input_1, input_2):
     return [input_1, input_2]  
 \endcode
 
-The arguments in the decorator are used in an analogous way as in the case of `@FromEngine`.
+The decorator has two arguments: 
+- `keyword`: id of the output port in the decorated functional node which will be connected. 
+- `address`: address of the input port which will be connected.
 
 It can be noted that from the example above, according to the descriptions given, two nodes with the same id, `my_engine`, would be created. Since node ids must be unique in the graph and in order to still allow using the same Engine name for both Input and Output Engine node ids, when an OutputEngineNode is created with a particular id, it internally adds the postscript `"_output"` to it. In the same way, InputEngineNodes add '"_input"' to their ids.
 In this way, from the example above three nodes will be created with ids: `my_engine_input`, `my_engine_output` and `my_node`.
@@ -104,10 +116,12 @@ def my_function(input_1, input_2):
     return [input_1, input_2]   
 \endcode
 
-The decorator has three arguments: 
-- `keyword`, which as in other decorators specifies the name of the Functional Node input that the decorator connects
-- `address`, which tells the ROS topic to subscribe to
-- `type`, the ROS message type that is received through this ROS topic
+The decorator has five arguments: 
+- `keyword`: as in other decorators, specifies the name of the Functional Node input port that the decorator connects.
+- `address`: tells the ROS topic to subscribe to.
+- `type`: the ROS message type that is received through this ROS topic.
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+- `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
 
 In this case, a new InputROSNode is created to subscribe to each different topic. 
 From each @RosSubscriber decorator a node with `id` `address` is created, and an OuputPort with id also `address` is added to it.
@@ -133,6 +147,125 @@ The decorator arguments are analogous to those in `@RosSubscriber`, but in this 
 
 It is not possible to subscribe and publish to the same topic from a graph. 
 Attempting to do this will result in having two nodes with the same id, which is not allowed.
+
+\section from_spinnaker_decorator @FromSpiNNaker
+
+This decorator creates an \ref spinnaker_nodes "InputSpiNNakerNode" and connects it to one of the decorated Functional Node inputs.
+It, therefore, creates a node and an edge in the Computational Graph.
+
+The code below connects `input_1` in `my_node` to the spiking output of a Population `pop_1` defined in SpiNNaker PyNN code.
+Note that the label of the Population is the import part, not the Python variable name.
+Also note that the Population must be activated for live output for this to be recieved by the function.
+
+\code{.py}
+import pyNN.spiNNaker as sim
+sim.setup(1.0)
+my_pop_1 = sim.Population(5, sim.IF_curr_exp(), label="pop_1")
+sim.external_devices.activate_live_output_for(my_pop_1, notify=False)
+
+@FromSpiNNaker(keyword='input_1', address='pop_1')
+@FunctionalNode(name="my_node", outputs=[])
+def my_function(input_1):
+    print(f"Spikes received from {input_1['label']} at time {input_1['time']}:"
+          f" {input_1['neuron_ids']}")
+    return []
+\endcode
+
+The decorator has four arguments:
+- `keyword`: specifies the name of the Functional Node input port that the decorator connects.
+- `address`: the SpiNNaker population to receive spikes or voltage from.
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+- `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
+
+For a complete example using Spinnaker node decorators see `examples/event_loop_examples/husky_braitenberg_spinnaker`.
+In this experiment can be seen how to use `@FromSpiNNaker` decorator to access neuron voltages from the Computational Graph.
+
+\section to_spinnaker_decorator @ToSpiNNaker
+
+This decorator creates an \ref spinnaker_nodes "OutputSpiNNakerNode" and connects it to one of the decorated Functional Node outputs.
+It, therefore, creates a node and an edge in the Computational Graph.
+
+The code below connects `output_1` in `my_node` to a SpikeInjector Population `pop_1` defined in SpiNNaker PyNN code.
+Note that the label of the Population is the import part, not the Python variable name.
+
+\code{.py}
+import pyNN.spiNNaker as sim
+sim.setup(1.0)
+my_pop_1 = sim.Population(5, sim.SpikeInjector(), label="pop_1")
+sim.external_devices.activate_live_output_for(my_pop_1, notify=False)
+
+@ToSpiNNaker(keyword='output_1', address='pop_1')
+@FunctionalNode(name="my_node", outputs=[output_1])
+def my_function():
+    out = NlohmannJson()
+    out['neuron_ids'] = list(range(5))
+    return [out]
+\endcode
+
+The decorator has two arguments:
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
+- `address`: the SpiNNaker population to send spikes to or update the rates of.
+
+In the aforementioned experiment located at `examples/event_loop_examples/husky_braitenberg_spinnaker` can be seen how to use `@ToSpiNNaker` decorator to control the rate of a SpikeSourcePoisson.
+
+\section mqtt_subscriber_decorator @MQTTSubscriber
+
+This decorator creates an InputMQTTNode and connects it to one of the decorated Functional Node inputs.
+It creates, then, a node and an edge in the Computational Graph.
+
+The code below subscribes to an MQTT topic 'test_topic' and connects incoming msgs to 'my_function' 'mqtt_in' argument. 
+These messages are printed out inside of the function and a new message published to 'test_topic' from the function return value.
+In this way, in the created Computational Graph, the node 'mqtt_str' prints out its own published message in a loop.
+
+\code{.py}
+@MQTTSubscriber(keyword='mqtt_in', address="test_topic", type=str)
+@MQTTPublisher(keyword="mqtt_out", address="test_topic", type=str)
+@FunctionalNode(name="mqtt_str", outputs=["mqtt_out"], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(mqtt_in):
+    if mqtt_in is not None:
+        print('Message from mqtt str: {}'.format(mqtt_in))
+
+    return ["Hi there!"]   
+\endcode
+
+The decorator has five arguments: 
+- `keyword`: as in other decorators, specifies the name of the Functional Node input port that the decorator connects.
+- `address`: tells the MQTT topic to subscribe to.
+- `type`: the data type incoming MQTT messages will be converted to (see \ref mqtt_nodes "here").
+- `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
+- `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
+
+There are three possible values for the `type` argument of the decorator. These are:
+- 'str': incoming messages payload is passed to the connected function as a string
+- 'nrp_core.data.nrp_json.NlohmannJson': payloads are passed as \ref datapacks_json "JSON objects"
+- One of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+
+'str' is always safe to use, but in case of using any of the other two types a runtime error will occur if incoming MQTT message can't be converted to that type.
+
+\section mqtt_publisher_decorator @MQTTPublisher
+
+This decorator creates an OutputMQTTNode and connects it to one of the decorated Functional Node outputs.
+It adds a node and an edge to the Computational Graph.
+
+The code below replicates the one above but using 'NlohmannJson' data type.
+
+\code{.py}
+from nrp_core.data.nrp_json import NlohmannJson
+
+@MQTTSubscriber(keyword='mqtt_in', address="test_topic_json", type=NlohmannJson)
+@MQTTPublisher(keyword="mqtt_out", address="test_topic_json", type=NlohmannJson)
+@FunctionalNode(name="mqtt_json", outputs=["mqtt_out"], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(mqtt_in):
+    if mqtt_in is not None:
+        print('Message from mqtt json: {}'.format(mqtt_in))
+
+    out = NlohmannJson()
+    out['hi'] = 'there'
+
+    return [out]
+\endcode
+
+The decorator arguments are analogous to those in `@MQTTSubscriber`, but in this case arringing messages will be published to the topic given by the decorator 'address' parameter.
 
 \section python_graph_example Putting the Examples Together
 

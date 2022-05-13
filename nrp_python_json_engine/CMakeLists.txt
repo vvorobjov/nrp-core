@@ -5,12 +5,13 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "python_json")
-set(EXECUTABLE_NAME "NRPPythonExecutable")
+set(EXECUTABLE_NAME "python_json_engine.py")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
 set(LIB_CONFIG_NAME "${LIBRARY_NAME}Config")
 set(LIB_VERSION_NAME "${LIB_CONFIG_NAME}Version")
+set(ENV{NRP_ENGINE_LAUNCHERS} "${LIBRARY_NAME}.so;$ENV{NRP_ENGINE_LAUNCHERS}")
 
 cmake_minimum_required(VERSION 3.16)
 project("${PROJECT_NAME}" VERSION ${NRP_VERSION})
@@ -21,30 +22,20 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
     nrp_python_json_engine/config/python_config.cpp
-    nrp_python_json_engine/engine_server/python_engine_json_datapack_controller.cpp
-    nrp_python_json_engine/engine_server/python_json_server.cpp
     nrp_python_json_engine/nrp_client/python_engine_json_nrp_client.cpp
     nrp_python_json_engine/nrp_client/python_engine_json_nrp_client_base.cpp
-    nrp_python_json_engine/python/py_engine_script.cpp
-    nrp_python_json_engine/python/py_engine_script_wrapper.cpp
 )
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-    nrp_python_json_engine/python/nrp_python_engine_module.cpp
 )
 
 # List executable build files
 set(EXEC_SRC_FILES
-    python_server_executable/main.cpp
-    python_server_executable/python_server_executable.cpp
 )
 
 # List testing build files
 set(TEST_SRC_FILES
-    python_server_executable/python_server_executable.cpp
-    tests/test_python_executable.cpp
-    tests/test_python_server.cpp
 )
 
 
@@ -72,9 +63,6 @@ set(PYTHON_CMAKE_HEADER_CONFIG_FILE "nrp_python_json_engine/config/cmake_constan
 set(NRP_PYTHON_CMAKE_INSTALL_BINDIR "${NRP_PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}")
 set(NRP_PYTHON_EXECUTABLE ${EXECUTABLE_NAME})
 configure_file(${PYTHON_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
-
-# Python module dependencies
-configure_file("nrp_python_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 
 ##########################################
@@ -136,26 +124,10 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
-    # Create testing env files
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
 
-    # Create testing executable
-    enable_testing()
-    add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
-    target_link_libraries(${TEST_NAME}
-        PUBLIC
-        ${NAMESPACE_NAME}::${LIBRARY_NAME}
-        GTest::GTest
-        GTest::Main)
-
-    gtest_discover_tests(${TEST_NAME}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
-        EXTRA_ARGS -VV)
-endif()
+# Add python tests
+add_test(NAME EngineScript COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EngineScript.xml" test_engine_script.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME ServerCallbacks COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/ServerCallbacks.xml" test_server_callbacks.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 
 ##########################################
@@ -195,19 +167,16 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 )
 
 # Install python module
-if(TARGET ${PYTHON_MODULE_NAME})
-    install(TARGETS ${PYTHON_MODULE_NAME}
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-endif()
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/__init__.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server_callbacks.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/engine_script.py"
+    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 # Install executable files
-if(TARGET ${EXECUTABLE_NAME})
-    install(TARGETS ${EXECUTABLE_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/python_json_engine.py"
+    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # create cmake version and config files
 include(CMakePackageConfigHelpers)

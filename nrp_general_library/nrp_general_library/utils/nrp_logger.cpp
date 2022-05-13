@@ -316,10 +316,9 @@ NRPLogger::~NRPLogger()
     }
     catch (...)
     {
-        debug("Couldn't unlink the shared memory object");
+        std::cerr << "Couldn't unlink the shared memory object" << std::endl;
     }
 
-    debug("Shutting down logger...");
     NRPLogger::shutdownDefault();
 }
 

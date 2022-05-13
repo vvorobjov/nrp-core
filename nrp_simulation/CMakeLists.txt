@@ -22,6 +22,9 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/nrp_core_server.cpp
     nrp_simulation/simulation/fti_loop.cpp
     nrp_simulation/simulation/simulation_manager.cpp
+    nrp_simulation/simulation/simulation_manager_fti.cpp
+    nrp_simulation/simulation/simulation_manager_event_loop.cpp
+    nrp_simulation/simulation/simulation_parameters.cpp
     nrp_simulation/datapack_handle/datapack_handle.cpp
     nrp_simulation/datapack_handle/tf_manager_handle.cpp
     nrp_simulation/datapack_handle/computational_graph_handle.cpp
@@ -35,7 +38,9 @@ set(EXEC_SRC_FILES
 # List testing build files
 set(TEST_SRC_FILES
     tests/fti_loop.cpp
+    tests/simulation_parameters.cpp
     tests/simulation_manager.cpp
+    tests/fti_simulation_manager.cpp
 )
 
 
@@ -49,7 +54,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
-if(ENABLE_ROS STREQUAL FULL)
+if(NOT ENABLE_ROS STREQUAL OFF)
     find_package(catkin REQUIRED COMPONENTS roscpp)
 endif()
 
@@ -58,7 +63,8 @@ endif()
 ## Header configuration
 
 # Default engines
-list(JOIN NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS "\", \"" NRP_SIMULATION_DEFAULT_ENGINE_LAUNCHERS_STR)
+set(NRP_ENGINE_LAUNCHERS_LIST "$ENV{NRP_ENGINE_LAUNCHERS}")
+list(JOIN NRP_ENGINE_LAUNCHERS_LIST "\", \"" NRP_ENGINE_LAUNCHERS_STR)
 
 # General Header defines
 configure_file("nrp_simulation/config/cmake_conf.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_conf.h" @ONLY)
@@ -77,6 +83,7 @@ target_link_libraries(${LIBRARY_NAME}
     ${GRPC_LIBRARIES}
     ${NRP_ELE_LIB_TARGET}
         ${NRP_ROS_PROXY_TARGET}
+        ${NRP_MQTT_PROXY_TARGET}
         ${catkin_LIBRARIES}
 )
 
@@ -149,8 +156,9 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
         NRPNestJSONEngine::NRPNestJSONEngine
         NRPGazeboGrpcEngine::NRPGazeboGrpcEngine
+        GTest::Main
         GTest::GTest
-        GTest::Main)
+        gmock)
 
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
@@ -165,7 +173,11 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
     endif()
 
     # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/loop_sync_test)
+    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+    add_test(
+        NAME HuskyBraitenbergJsonExample 
+        COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=2
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
 endif()
 
 

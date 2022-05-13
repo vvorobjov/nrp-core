@@ -35,14 +35,15 @@
 
 BasicFork::~BasicFork()
 {
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRP_LOGGER_TRACE("{} called (PID {})", __FUNCTION__, this->_PID);
 
-    // Stop engine process if it's still running
-    this->stopEngineProcess(60);
+    // Stop process if it's still running
+    this->stopProcess(60);
 }
 
-pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-                                     const std::vector<std::string> &startParams, bool appendParentEnv)
+pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
+                                     const std::vector<std::string> &startParams, bool appendParentEnv,
+                                     int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -53,7 +54,7 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
     const auto pid = fork();
     if(pid == 0)
     {
-        // Child process, setup environment, start Engine
+        // Child process, setup environment, run command
 
         // Setup signal that closes process if parent process quits
         if(const auto prSig = prctl(PR_SET_PDEATHSIG, SIGHUP) < 0)
@@ -76,14 +77,14 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
 
         // Setup environment variables in a char* vector. See definition of execvpe() for details
 
-        // Clear environment if it shouldn't be passed to engine
+        // Clear environment if it shouldn't be used in child process
         if(!appendParentEnv)
             clearenv();
 
         std::vector<const char*> startParamPtrs;
         std::string startParamStr;
 
-        // Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + engineProcCmd + --param1 + --param2 + ... + nullptr)
+        // Reserve variable space (EnvCfgCmd + ENV_VAR1=ENV_VAL1 + ENV_VAR2=ENV_VAL2 + ... + procCmd + --param1 + --param2 + ... + nullptr)
         startParamPtrs.reserve(envParams.size() + startParams.size() + 3);
 
         // Environment set command
@@ -93,10 +94,9 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         for(const auto &curParam : envParams)
             startParamPtrs.push_back(curParam.data());
 
-        // Engine Exec cmd
-        std::string engineProcCmd = engineConfig.at("EngineProcCmd");
-        startParamPtrs.push_back(engineProcCmd.data());
-        startParamStr.append(engineProcCmd.data());
+        // Proc Exec cmd
+        startParamPtrs.push_back(procCmd.data());
+        startParamStr.append(procCmd.data());
 
         for(const auto &curParam : startParams){
             startParamPtrs.push_back(curParam.data());
@@ -106,14 +106,28 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
         // Parameter end
         startParamPtrs.push_back(nullptr);
 
-        NRPLogger::info("Engine type: {}, name: {}, PID: {}", engineConfig.at("EngineType"), engineConfig.at("EngineName"), getpid());
+        // Replace the child's stdout and stderr handles with the log file handle
+        if(logFD >= 0)
+        {
+            if (dup2(logFD, STDOUT_FILENO) < 0) {
+                std::perror("dup2 (stdout)");
+                std::exit(1);
+            }
+            if (dup2(logFD, STDERR_FILENO) < 0) {
+                std::perror("dup2 (stderr)");
+                std::exit(1);
+            }
+        }
 
-        // Start engine, stop current execution
-        NRPLogger::debug("Starting engine with cmd: {}",  startParamStr.c_str());
+        // Run command, stop current execution
+        NRPLogger::debug("Launching process with cmd: {}",  startParamStr.c_str());
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
+        if(logFD >= 0)
+            close(logFD);
+
         // Don't use the logger here, as this is a separate process
-        std::cerr << "Couldn't start Engine with cmd \"" << engineProcCmd.data() << "\"\n Error code: " << res << std::endl;
+        std::cerr << "Couldn't start Process with cmd \"" << procCmd.data() << "\"\n Error code: " << res << std::endl;
         std::cerr.flush();
 
         // If the exec call fails, exit the child process without any further processing. Prevents the child process from assuming it's the main proc
@@ -124,24 +138,27 @@ pid_t BasicFork::launchEngineProcess(const nlohmann::json &engineConfig, const s
     else if(pid > 0)
     {
         // Parent process, return child PID
-        this->_enginePID = pid;
+        this->_PID = pid;
+        NRPLogger::debug("BasicFork::launchProcess(...): The process with PID {} was forked", this->_PID);
         return pid;
     }
     else
     {
         // Fork failed, throw error
-        throw NRPException::logCreate("Forking engine child process failed");
+        throw NRPException::logCreate("Forking child process failed");
     }
 }
 
-pid_t BasicFork::stopEngineProcess(unsigned int killWait)
+pid_t BasicFork::stopProcess(unsigned int killWait)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    if(this->_enginePID > 0)
+    NRPLogger::debug("BasicFork::stopProcess(...): The process with PID {} is to be killed", this->_PID);
+
+    if(this->_PID > 0)
     {
         // Send SIGTERM to gracefully stop Nest process
-        kill(this->_enginePID, SIGTERM);
+        kill(this->_PID, SIGTERM);
 
         // Set to maximum wait time if time is set to 0
         if(killWait == 0)
@@ -153,7 +170,7 @@ pid_t BasicFork::stopEngineProcess(unsigned int killWait)
         bool pKilled = false;
         do
         {
-            // Check if engine process has stopped
+            // Check if child process has stopped
             if(this->getProcessStatus() == ENGINE_RUNNING_STATUS::STOPPED)
             {
                 pKilled = true;
@@ -167,9 +184,9 @@ pid_t BasicFork::stopEngineProcess(unsigned int killWait)
 
         // Force shutdown
         if(!pKilled)
-            kill(this->_enginePID, SIGKILL);
+            kill(this->_PID, SIGKILL);
 
-        this->_enginePID = -1;
+        this->_PID = -1;
     }
 
     return 0;
@@ -179,15 +196,15 @@ LaunchCommandInterface::ENGINE_RUNNING_STATUS BasicFork::getProcessStatus()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    // Check if engine was already stopped before
-    if(this->_enginePID < 0)
+    // Check if process was already stopped before
+    if(this->_PID < 0)
         return ENGINE_RUNNING_STATUS::RUNNING;
 
     // Check if this process received a stop notification for this child PID
-    int engineStatus;
-    if(waitpid(this->_enginePID, &engineStatus, WNOHANG | WUNTRACED) == this->_enginePID)
+    int procStatus;
+    if(waitpid(this->_PID, &procStatus, WNOHANG | WUNTRACED) == this->_PID)
     {
-        this->_enginePID = -1;
+        this->_PID = -1;
         return ENGINE_RUNNING_STATUS::STOPPED;
     }
     else

@@ -37,7 +37,7 @@ struct NestConfigConst
     static constexpr std::string_view NestPythonPath = "PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH";
 
     /*!
-     * \brief Path to NRP Nest Server Executable. Automatically generated via cmake on installation
+     * \brief Path to Nest Server Executable. Automatically generated via cmake on installation
      */
     static constexpr std::string_view NestExecutablePath = "PATH=$PATH:" NRP_NEST_BIN_PATH;
 

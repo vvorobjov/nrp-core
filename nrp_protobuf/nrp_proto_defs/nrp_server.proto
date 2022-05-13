@@ -4,14 +4,23 @@ package NrpCore;
 
 service NrpCore
 {
-    rpc initialize(EmptyMessage)   returns (EmptyMessage) {}
-    rpc runLoop   (RunLoopMessage) returns (EmptyMessage) {}
-    rpc shutdown  (EmptyMessage)   returns (EmptyMessage) {}
+    rpc initialize (EmptyMessage)   returns (SimStateMessage) {}
+    rpc runLoop (RunLoopMessage) returns (SimStateMessage) {}
+    rpc runUntilTimeout (EmptyMessage) returns (SimStateMessage) {}
+    rpc stopLoop (EmptyMessage)   returns (SimStateMessage) {}
+    rpc reset (EmptyMessage)   returns (SimStateMessage) {}
+    rpc shutdown (EmptyMessage)   returns (SimStateMessage) {}
 }
 
 message EmptyMessage
 {
 
+}
+
+message SimStateMessage
+{
+    string currentState = 1;
+    string errorMsg = 2;
 }
 
 message RunLoopMessage

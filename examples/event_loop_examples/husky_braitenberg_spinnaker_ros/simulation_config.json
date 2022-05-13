@@ -1,0 +1,12 @@
+{
+  "SimulationName": "test_sim",
+  "SimDescription": "Adaptation of the example `husky_braitenberg` using gazebo/ROS and Spinnaker as brain simulator",
+  "SimulationTimeout": 90,
+  "DataPackProcessor": "cg",
+  "SimulationLoop": "EventLoop",
+  "ConnectROS": {},
+  "ComputationalGraph": ["braitenberg.py", "cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
+  "ExternalProcesses" : [
+    {"ProcCmd": "roslaunch husky_world.launch"}
+  ]
+}

@@ -22,227 +22,146 @@
 #ifndef SIMULATION_MANAGER_H
 #define SIMULATION_MANAGER_H
 
-#include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
-#include "nrp_general_library/plugin_system/plugin_manager.h"
-#include "nrp_general_library/process_launchers/process_launcher_manager.h"
-#include "nrp_simulation/simulation/fti_loop.h"
+#include "nrp_general_library/utils/json_schema_utils.h"
+#include "nrp_general_library/utils/ptr_templates.h"
 
 #include <mutex>
-#include <cxxopts.hpp>
-
-
-/*!
- * \brief NRP Simulation Startup Parameters
- */
-struct SimulationParams
-{
-    static constexpr std::string_view NRPProgramName = "NRPCoreSim";
-    static constexpr std::string_view ProgramDescription = "Brain and physics simulator";
-
-    // Simulation Executable parameters
-    static constexpr std::string_view ParamHelp = "h";
-    static constexpr std::string_view ParamHelpLong = "h,help";
-    static constexpr std::string_view ParamHelpDesc = "Print this message";
-    using ParamHelpT = bool;
-
-    static constexpr std::string_view ParamSimCfgFile = "c";
-    static constexpr std::string_view ParamSimCfgFileLong = "c,config";
-    static constexpr std::string_view ParamSimCfgFileDesc = "Simulation config file";
-    using ParamSimCfgFileT = std::string;
-
-    static constexpr std::string_view ParamPlugins = "p";
-    static constexpr std::string_view ParamPluginsLong = "p,plugins";
-    static constexpr std::string_view ParamPluginsDesc = "Additional engine plugins to load";
-    using ParamPluginsT = std::vector<std::string>;
-
-    static constexpr std::string_view ParamExpDir = "d";
-    static constexpr std::string_view ParamExpDirLong = "d,dir";
-    static constexpr std::string_view ParamExpDirDesc = "The explicit location of the experiment folder";
-    using ParamExpDirT = std::string;
-    
-    // Log paramters
-    static constexpr std::string_view ParamConsoleLogLevelLong = "cloglevel";
-    static constexpr std::string_view ParamConsoleLogLevelDesc = "Console minimum level of log severity (info by default)";
-    using ParamConsoleLogLevelT = std::string;
-
-    static constexpr std::string_view ParamFileLogLevelLong = "floglevel";
-    static constexpr std::string_view ParamFileLogLevelDesc = "File minimum level of log severity (off by default)";
-    using ParamFileLogLevelT = std::string;
-
-    static constexpr std::string_view ParamLogDirLong = "logdir";
-    static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";
-    using ParamLogDirT = std::string;
-
-    static constexpr std::string_view ParamMode = "m";
-    static constexpr std::string_view ParamModeLong = "m,mode";
-    static constexpr std::string_view ParamModeDesc = "Operational mode, standalone or server";
-    using ParamModeT = std::string;
-
-    static constexpr std::string_view ParamServerAddressLong = "server_address";
-    static constexpr std::string_view ParamServerAddressDesc = "Desired address of the server in server operational mode";
-    using ParamServerAddressT = std::string;
-
-    /*!
-     * \brief Create a parser for start parameters
-     * \return Returns parser
-     */
-    static cxxopts::Options createStartParamParser();
-
-    /*!
-     * \brief Parse a JSON File and return it's values
-     * \param fileName File Name
-     * \return Returns parsed JSON
-     */
-    static nlohmann::json parseJSONFile(const std::string &fileName);
-
-    /*!
-     * \brief parsing input parameter string log level into enum type
-     * \param logLevel The string expression of the log level
-     */
-    static NRPLogger::level_t parseLogLevel(const std::string &logLevel);
-
-    /*!
-     * \brief default log level for the acses when the parameters are specified wrongly
-     */
-    static const NRPLogger::level_t _defaultLogLevel = NRPLogger::level_t::info;
-};
-
+#include <functional>
 
 /*!
- * \brief Main NRP server class. Manages simulation execution, loads plugins, and creates server if requested.
+ * \brief Manages simulation execution
+ *
+ * Maintain the current state of the simulation and process control requests according to this state.
+ *
+ * Control request methods are processed sequentially guarded by a lock, with the exception of "stopSimulation",
+ * which can be processed in parallel.
+ *
+ * Control requests are forwarded to Implementations of this interface via a set of callbacks. Exceptions occurring
+ * in these callbacks are handled by SimulationManager by transitioning the simulation to state "Failed", from which the
+ * only possible action is to shutdown the simulation.
+ *
+ * Calling a control request from the wrong state triggers an exception
  */
 class SimulationManager
         : public PtrTemplates<SimulationManager>
 {
-    public:
-        using sim_mutex_t = std::mutex;
-        using sim_lock_t = std::unique_lock<sim_mutex_t>;
+public:
 
-        /*!
-         * \brief Constructor
-         * \param serverConfig Server configuration
-         * \param simulationConfig Simulation configuration
-         */
-        SimulationManager(const jsonSharedPtr &simulationConfig);
+    /*!
+     * \brief States the simulation can be in
+     */
+    enum class SimState { Created, Initialized, Running, Stopped, Failed, NotSet};
 
-        /*!
-         * \brief Destructor. Will stop any currently running threads
-         */
-        ~SimulationManager();
+    /*! \brief Helper structure for storing request result and error messages */
+    struct RequestResult
+    {
+        SimState currentState = SimState::NotSet;
+        std::string errorMessage = "";
+    };
 
-        /*!
-         * \brief Get the config from start parameters
-         * \param args Parsed start parameters
-         * \return Returns instance of simulation config
-         */
-        static jsonSharedPtr configFromParams(const cxxopts::ParseResult &args);
+    /*!
+     * \brief Validates config against Simulation schema
+     * \param config Pointer to a config
+     */
+    static void validateConfig(jsonSharedPtr &config);
 
-        /*!
-         * \brief Create SimulationManager from pointer to config
-         * \param config Pointer to a config
-         * \return Returns instance of SimulationManager
-         */
-        static SimulationManager createFromConfig(jsonSharedPtr &config);
+    /*!
+     * \brief Constructor
+     * \param simulationConfig Simulation configuration
+     */
+    SimulationManager(const jsonSharedPtr &simulationConfig);
 
-        /*!
-         * \brief Get simulation loop
-         * \return Returns pointer to simulation loop. If no loop is loaded, return nullptr
-         */
-        FTILoopConstSharedPtr simulationLoop() const;
+    SimulationManager() = delete;
 
-        /*!
-         * \brief Get simulation config
-         * \param simLock Pass simulation lock if already owned
-         * \return Returns pointer to simulation config as well as simulation lock. If no config is loaded, return nullptr
-         */
-        jsonSharedPtr simulationConfig();
+    virtual ~SimulationManager() = default;
 
-        /*!
-         * \brief Get simulation config
-         * \return Returns pointer to simulation config. If no config is loaded, return nullptr
-         */
-        jsonConstSharedPtr simulationConfig() const;
+    /*!
+     * \brief Initialize the simulation
+     * \return Simulation state after processing the request
+     */
+    RequestResult initializeSimulation();
 
-        /*!
-         * \brief Initialize the simulation
-         * \param engineLauncherManager Engine launchers
-         * \param processLaunchers Process launchers
-         * \param simLock Simulation lock
-         * \exception Throws an exception when the initialization fails
-         */
-        void initFTILoop(const EngineLauncherManagerConstSharedPtr &engineLauncherManager,
-                                const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
+    /*!
+     * \brief Reset the currently running simulation
+     * \return Simulation state after processing the request
+     */
+    RequestResult resetSimulation();
 
-        /*!
-         * \brief Reset the currently running simulation
-         * \param lock Simulation lock
-         */
-        bool resetSimulation();
+    /*!
+     * \brief Request to stop the simulation if it was running, if it wasn't the call has no effect.
+     *
+     * It is not blocking, i.e. it is not guaranteed that the simulation is in state "Stopped" after the call returns.
+     * The simulation will stop after the the "runSimulation" request that started it returns.
+     *
+     * \return Simulation state after processing the request
+     */
+    RequestResult stopSimulation();
 
-        /*!
-         * \brief Runs the simulation until a separate thread stops it or simTimeout (defined in SimulationConfig) is reached. If simTimeout is zero or negative, ignore it
-         * \param simLock Pass simulation lock if already owned
-         * \return Returns true if no error was encountered, false otherwise
-         */
-        bool runSimulationUntilTimeout(int frac = 1);
+    /*!
+     * \brief Runs the simulation until a separate thread stops it or simTimeout (defined in SimulationConfig) is reached. If simTimeout is zero or negative, ignore it
+     * \return Simulation state after processing the request
+     */
+    RequestResult runSimulationUntilTimeout();
 
-        /*!
-         * \brief Run the Simulation for specified amount of time
-         * \param secs Time (in seconds) to run simulation
-         * \return Returns true if no error was encountered, false otherwise
-         */
-        void runSimulation(unsigned numIterations);
+    /*!
+     * \brief Run the Simulation for specified amount of timesteps
+     * \param numIterations Number of iterations (i.e timesteps) to run simulation
+     * \return Simulation state after processing the request
+     */
+    RequestResult runSimulation(unsigned numIterations);
 
-        /*!
-         * \brief Run the Simulation for one timestep
-         * \param secs Time (in seconds) to run simulation
-         * \return Returns true if no error was encountered, false otherwise
-         */
-        void runSimulationOnce();
+    /*!
+     * \brief Shuts down the simulation.
+     * \return Simulation state after processing the request
+     */
+    RequestResult shutdownSimulation();
 
-        /*!
-         * \brief Shuts down simulation loop. Will shutdown any running engines and transceiver functions after any currently running steps are completed
-         */
-        void shutdownLoop();
+    /*!
+     * \brief returns the current state of the simulation
+     */
+    SimState currentState();
 
-    private:
+    /*!
+     * \brief returns a simulation state as a string
+     */
+    std::string printSimState(const SimState& simState);
 
-        /*!
-         * \brief Simulation Configuration
-         */
-        jsonSharedPtr _simConfig;
+protected:
 
-        /*!
-         * \brief Simulation loop
-         */
-        FTILoopSharedPtr _loop;
+    // Callback functions for the different simulation control requests.
+    /*! \brief Initialize the simulation */
+    virtual void initializeCB() = 0;
+    /*! \brief Resets the simulation, returns true if the simulation was reset false otherwise */
+    virtual bool resetCB() = 0;
+    /*! \brief Forward request to stop the simulation. */
+    virtual void stopCB() = 0;
+    /*! \brief Run the simulation. */
+    virtual bool runUntilTimeOutCB() = 0;
+    /*! \brief Run the simulation. */
+    virtual bool runCB(unsigned numIterations) = 0;
+    /*! \brief Shutdown the simulation. */
+    virtual void shutdownCB() = 0;
 
-        /*!
-         * \brief Timestep size of each simulation loop
-         */
-        SimulationTime _timeStep;
+    /*!
+     * \brief Simulation Configuration
+     */
+    jsonSharedPtr _simConfig;
 
-        /*!
-         * \brief Creates a simulation loop using the engines specified in the config file
-         * \param engineManager Manager for all available engine launchers and interfaces
-         * \return Returns simulation loop
-         */
-        FTILoop createSimLoop(const EngineLauncherManagerConstSharedPtr &engineManager, const MainProcessLauncherManager::const_shared_ptr &processLauncherManager);
+private:
 
-        /*!
-         * \brief Checks whether simulation has timed out. If simTimeout <= 0, continue running indefinitely
-         * \param simTime Simulation time (in seconds)
-         * \param simTimeout Simulation timeout (in seconds)
-         * \return Returns true if simulation has timed out, false otherwise
-         */
-        static inline bool hasSimTimedOut(const SimulationTime &simTime, const SimulationTime &simTimeout)
-        {
-            return (simTimeout >= SimulationTime::zero() && simTime >= simTimeout);
-        }
+    /*!
+     * \brief Stores the simulation state
+     */
+    SimState _simState;
+
+    std::mutex _reqMutex;
+
+    RequestResult processRequest(std::function<void ()> action, std::vector<SimState> validSourceStates,
+                            std::string actionMsg1, std::string actionMsg2, bool lockMutex = true);
+
+    void checkTransitionConstraints(std::vector<SimState> validSourceStates, std::string actionStr);
+    void changeState(SimState newState);
 };
 
-using SimulationManagerSharedPtr = SimulationManager::shared_ptr;
-using SimulationManagerConstSharedPtr = SimulationManager::const_shared_ptr;
 
 #endif

@@ -28,6 +28,7 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
+#include "nrp_event_loop/computational_graph/computational_node_policies.h"
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/output_port.h"
 
@@ -68,9 +69,11 @@ struct DataPortHandle {
     /*!
      * \brief Publish a null pointer
      */
-    void publishNull()
+    void publishNullandClear()
     {
         singlePort->publish(nullptr);
+        listPort->publish(nullptr);
+        _data.clear();
     }
 
     /*!
@@ -126,22 +129,10 @@ template <class DATA>
 class InputNode : public ComputationalNode {
 public:
 
-    /*! \brief Defines message cache behavior */
-    enum MsgCachePolicy {
-        CLEAR_CACHE, /*!< if no new msg arrives, stored msgs are replaced by nullptr in the next cycle  */
-        KEEP_CACHE /*!< if no new msg arrives, stored msgs are kept  */
-    };
-
-    /*! \brief Defines how this node publish stored msgs */
-    enum MsgPublishPolicy {
-        LAST, /*!< only sends the last msg received  */
-        ALL /*!< sends all msgs received since last 'compute' call  */
-    };
-
     /*!
      * \brief Constructor
      */
-    InputNode(const std::string &id, MsgPublishPolicy msgPublishPolicy = MsgPublishPolicy::LAST, MsgCachePolicy msgCachePolicy = MsgCachePolicy::KEEP_CACHE, size_t queue_size = 10) :
+    InputNode(const std::string &id, InputNodePolicies::MsgPublishPolicy msgPublishPolicy = InputNodePolicies::MsgPublishPolicy::LAST, InputNodePolicies::MsgCachePolicy msgCachePolicy = InputNodePolicies::MsgCachePolicy::KEEP_CACHE, size_t queue_size = 10) :
             ComputationalNode(id, ComputationalNode::Input),
             _msgPublishPolicy(msgPublishPolicy),
             _msgCachePolicy(msgCachePolicy),
@@ -156,18 +147,14 @@ public:
         for(auto& [id, port]: _portMap) {
             auto hasNewMsgs = this->updatePortData(id);
 
-            if(_msgPublishPolicy == MsgPublishPolicy::LAST) {
-                if(hasNewMsgs)
+            if(hasNewMsgs) {
+                if(_msgPublishPolicy == InputNodePolicies::MsgPublishPolicy::LAST)
                     port.publishLast();
-                else if(_msgCachePolicy == MsgCachePolicy::CLEAR_CACHE)
-                    port.publishNull();
-            }
-            else {
-                if(hasNewMsgs)
+                else
                     port.publishAll();
-                else if(_msgCachePolicy == MsgCachePolicy::CLEAR_CACHE)
-                    port.clear();
             }
+            else if(_msgCachePolicy == InputNodePolicies::MsgCachePolicy::CLEAR_CACHE)
+                    port.publishNullandClear();
         }
     }
 
@@ -197,11 +184,17 @@ public:
     OutputPort<std::vector<const DATA*>>* getListPort(const std::string& id)
     { return _portMap.count(id) ? _portMap.at(id).listPort.get() : nullptr; }
 
-    MsgPublishPolicy msgPublishPolicy()
+    InputNodePolicies::MsgPublishPolicy msgPublishPolicy()
     { return _msgPublishPolicy; }
 
-    MsgCachePolicy msgCachePolicy()
+    InputNodePolicies::MsgCachePolicy msgCachePolicy()
     { return _msgCachePolicy; }
+
+    void setMsgPublishPolicy(InputNodePolicies::MsgPublishPolicy msgPublishPolicy)
+    { _msgPublishPolicy = msgPublishPolicy; }
+
+    void setMsgCachePolicy(InputNodePolicies::MsgCachePolicy msgCachePolicy)
+    { _msgCachePolicy = msgCachePolicy; }
 
 protected:
 
@@ -217,9 +210,9 @@ protected:
     virtual bool updatePortData(const std::string& id) = 0;
 
     /*! \brief Send policy used by this node */
-    MsgPublishPolicy _msgPublishPolicy;
+    InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     /*! \brief Msg cache policy used by this node */
-    MsgCachePolicy _msgCachePolicy;
+    InputNodePolicies::MsgCachePolicy _msgCachePolicy;
     /*! \brief Map containing data to handle topics. Data is guaranteed to be unchanged between 'compute' calls  */
     std::map<std::string, DataPortHandle<DATA>> _portMap;
     /*! \brief Maximum number of msgs that the node can store per port */

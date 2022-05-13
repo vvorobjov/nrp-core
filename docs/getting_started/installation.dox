@@ -1,6 +1,6 @@
 /*! \page installation Installation Instructions
 
-The instructions required to install NRP-core from source (the only option currently available) are listed below.
+The instructions required to install NRP-core from the source (the only option currently available) are listed below.
 
 \section installation_requirements Requirements
 
@@ -25,25 +25,101 @@ In any case, be aware that NEST 2.x is incompatible with NRP-core.
 \dontinclude README.md
 
 \section installation_dependencies Dependency Installation
-\skip Pistache
-\until sed
+\skip Start of dependencies installation
+\until End of dependencies installation
 
 \section installation_procedure Installation
-\skip git clone
-\until make doxygen
+\skip Start of installation
+\until End of installation
 
-\section installation_environment Setting the enviroment
+\section installation_environment Setting the environment
 
 In order to properly set the environment to run experiments with NRP-core, please make sure to add the lines below to your ~/.bashrc file
-\skip export
-\until . /usr/share
+\skip Start of setting environment
+\until End of setting environment
 
-\section installation_opensim Special steps for installing OpenSim
+\section installation_sim Steps for installing additional simulators
+This section includes installation steps for simulators that may be used with \ref python_json_engine and \ref pysim_engine.
+The \ref pysim_engine "PySim engine" allows to connect a set of simulators with Python interfaces with NRP-Core, these include OpenAI Gym, Mujoco, and OpenSim. 
 
-Installation of the OpenSim engine requires some modification over the instructions found at <a href="https://github.com/opensim-org/opensim-core">https://github.com/opensim-org/opensim-core</a>. The procedure below should therefore be followed.
+\subsection installation_sim_tvb Installation of The Virtual Brain
+
+The instructions below install TVB root and data directly from git repositiories.
+It is also possible to install them via pip, but then certain features and data sets may not be accessible.
+Complete instructions can be found at <a href="https://github.com/the-virtual-brain/tvb-root">tvb-root</a> and <a href="https://github.com/the-virtual-brain/tvb-data">tvb-data</a>
+repository pages.
 
 \code{.sh}
-sudo apt-get update
+# Install a tool that aliases python3 as python. Needed for TVB installation
+sudo apt install python-is-python3
+
+# TVB data
+mkdir $HOME/tvb
+cd $HOME/tvb
+git clone https://github.com/the-virtual-brain/tvb-data.git
+cd tvb-data
+sudo python3 setup.py develop
+
+# TVB root
+cd $HOME/tvb
+git clone https://github.com/the-virtual-brain/tvb-root.git
+cd tvb-root/tvb_build
+./install_full_tvb.sh
+
+# You may need to adjust your numpy version for TVB to work:
+pip install numpy==1.21
+\endcode
+
+\subsection installation_sim_openai OpenAI installation
+
+For OpenAI installation (complete instructions at <a href="https://gym.openai.com/docs">https://gym.openai.com/docs</a>):
+
+\code{.sh}
+pip install gym pygame
+\endcode
+
+\subsection installation_sim_mujoco Mujoco installation
+
+For Mujoco installation (complete instructions at <a href="https://mujoco.org">https://mujoco.org</a>):
+
+\code{.sh}
+MUJOCO_PATH=$HOME/.mujoco 
+WORKING_DIR=~/Documents/Tmujoco
+sudo apt install -y libosmesa6-dev patchelf
+
+mkdir -p $WORKING_DIR
+cd $WORKING_DIR
+wget https://mujoco.org/download/mujoco210-linux-x86_64.tar.gz -O mujoco.tar.gz
+mkdir -p $MUJOCO_PATH 
+tar -xf mujoco.tar.gz -C $MUJOCO_PATH
+rm mujoco.tar.gz
+
+echo 'export LD_LIBRARY_PATH='$MUJOCO_PATH'/mujoco210/bin:$LD_LIBRARY_PATH' >> $HOME/.bashrc
+echo 'export MUJOCO_PY_MUJOCO_PATH='$MUJOCO_PATH'/mujoco210/' >> $HOME/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/lib/nvidia:$LD_LIBRARY_PATH' >> $HOME/.bashrc
+
+source $HOME/.bashrc
+
+cd $HOME
+rm -r $WORKING_DIR
+pip3 install mujoco_py
+python3 -c "import mujoco_py"
+\endcode
+
+\subsection installation_sim_opensim OpenSim installation
+
+For OpenSim installation (complete instructions at <a href="https://github.com/opensim-org/opensim-core">https://github.com/opensim-org/opensim-core</a>):
+
+\code{.sh}
+sudo apt-get update && sudo apt-get install -y
+sudo apt-get upgrade -y
+sudo apt-get install -y python3
+sudo apt-get install -y apt-utils
+sudo apt-get install -y dialog
+sudo apt-get install -y tzdata
+sudo apt-get install -y git wget pkg-config
+sudo apt-get install -y build-essential
+
 # For ipopt
 sudo apt-get install -y libblas-dev libatlas-base-dev
 sudo apt-get install -y gcc g++ gfortran patch libmetis-dev
@@ -53,19 +129,40 @@ sudo apt-get install -y libtool libtool-bin
 sudo apt-get install -y autoconf
 sudo apt-get install -y libadolc-dev
 
-sudo apt-get --yes install  cmake cmake-curses-gui \
-                           freeglut3-dev libxi-dev libxmu-dev \
-                           liblapack-dev swig python-dev \
+sudo apt-get update 
+sudo apt-get -y install  cmake cmake-curses-gui freeglut3-dev
+sudo apt-get -y install  libxi-dev libxmu-dev liblapack-dev python-dev \
                            openjdk-8-jdk
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # Install PATH
 OPENSIM_PATH=$HOME/Documents/OpenSim
-mkdir -p $OPENSIM_PATH
+mkdir -p "$OPENSIM_PATH"
 cd $OPENSIM_PATH
 
-# Build Opensim dependencies
+# Build Opensim dependencie
+sudo apt-get update
+sudo apt-get install -y libpcre2-dev
+sudo apt-get install -y libpcre3 libpcre3-dev
+sudo apt-get install -y bison byacc
+sudo git clone https://github.com/swig/swig
+
+cd swig
+sudo chmod a+x autogen.sh
+sudo /bin/bash -c "source autogen.sh"
+sudo /bin/bash -c "./configure"
+sudo make
+sudo make install
+sudo cp swig /usr/bin/swig4.0
+
+cd $OPENSIM_PATH
 git clone https://github.com/opensim-org/opensim-core.git
+git clone https://github.com/swig/swig.git
+git clone https://github.com/casadi/casadi.git
+git clone https://github.com/simbody/simbody.git
+cp -r casadi opensim-core/dependencies/
+cp -r simbody opensim-core/dependencies/
+
 mkdir opensim_dependencies_build
 cd opensim_dependencies_build
 cmake ../opensim-core/dependencies/ \
@@ -74,16 +171,18 @@ cmake ../opensim-core/dependencies/ \
 make -j4
 
 # Environments for opensim
-sudo alias python=python3
+alias python=python3
 sudo apt-get install -y python3-pip
 sudo pip3 install numpy    
 
 cd $OPENSIM_PATH
+OPENSIM_INSTALL_PATH=${OPENSIM_PATH}/opensim_install
+mkdir -p $OPENSIM_INSTALL_PATH
 mkdir opensim_build
 cd opensim_build
-JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
+export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
 cmake ../opensim-core \
-      -DCMAKE_INSTALL_PREFIX="../opensim_install" \
+      -DCMAKE_INSTALL_PREFIX=$OPENSIM_INSTALL_PATH \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DOPENSIM_DEPENDENCIES_DIR="../opensim_dependencies_install" \
       -DBUILD_PYTHON_WRAPPING=ON \
@@ -92,9 +191,8 @@ cmake ../opensim-core \
 make -j4
 make -j4 install
 
-cd $OPENSIM_PATH
-cd opensim_install/lib/python3.8/site-packages
-python3 setup.py install
+cd $OPENSIM_INSTALL_PATH/lib/python3.8/site-packages
+sudo python3 setup.py install
 
 cd $HOME
 echo 'export LD_LIBRARY_PATH='$OPENSIM_PATH'/opensim_install/lib:$LD_LIBRARY_PATH' >> $HOME/.bashrc

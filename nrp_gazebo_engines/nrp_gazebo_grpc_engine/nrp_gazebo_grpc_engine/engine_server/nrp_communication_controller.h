@@ -27,6 +27,8 @@
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/engine_server/gazebo_step_controller.h"
 
+#include "nrp_protobuf/gazebo_msgs.pb.h"
+
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
 
@@ -38,7 +40,7 @@
  * \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
  */
 class NRPCommunicationController
-        : public EngineGrpcServer<Gazebo::Camera, Gazebo::Joint, Gazebo::Link>
+        : public EngineGrpcServer
 {
     public:
 

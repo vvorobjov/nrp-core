@@ -1,0 +1,161 @@
+/* * NRP Core - Backend infrastructure to synchronize simulations
+ *
+ * Copyright 2020-2021 NRP Team
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * This project has received funding from the European Union’s Horizon 2020
+ * Framework Programme for Research and Innovation under the Specific Grant
+ * Agreement No. 945539 (Human Brain Project SGA3).
+ */
+
+#ifndef PROTO_UTILS_H
+#define PROTO_UTILS_H
+
+#include "google/protobuf/message.h"
+
+#include "nrp_protobuf/engine_grpc.pb.h"
+@DATAPACK_HEADERS@
+#include "nrp_general_library/datapack_interface/datapack.h"
+#include "nrp_general_library/utils/nrp_exceptions.h"
+
+namespace gpb = google::protobuf;
+
+// TODO It feels like these functions should be symmetric...
+namespace protobuf_utils {
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    // TODO use engine name from 'from' after https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340 is resolved
+    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, const EngineGrpc::DataPackMessage & from)
+    {
+        const auto & dataPackId = from.datapackid();
+
+        if(!from.has_data())
+            return DataPackInterfaceConstSharedPtr(new DataPackInterface(dataPackId.datapackname(),
+                                                                         engineName, dataPackId.datapacktype()));
+        else if(from.data().Is<MSG_TYPE>())
+        {
+            MSG_TYPE * data = new MSG_TYPE();
+            from.data().UnpackTo(data);
+
+            return DataPackInterfaceConstSharedPtr(
+                    new DataPack<MSG_TYPE>(dataPackId.datapackname(), engineName, data));
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, from);
+        else
+            throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" + dataPackId.datapackname() + "\" in engine \"" + engineName + "\"");
+    }
+
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setDataPackMessageFromInterfaceSubset(const DataPackInterface & from, EngineGrpc::DataPackMessage * to)
+    {
+        try
+        {
+            const auto& message = dynamic_cast<const DataPack<MSG_TYPE> &>(from);
+            to->mutable_datapackid()->set_datapackname(message.name());
+            to->mutable_datapackid()->set_datapacktype(message.type());
+            to->mutable_datapackid()->set_enginename(message.engineName());
+            to->mutable_data()->PackFrom(message.getData());
+
+            return;
+        }
+        catch(const std::bad_cast& e)
+        {
+            // Do not process the exception.
+            // Bad casts aren't 'bad' in this case, they simply mean that
+            // we haven't found the right message type yet.
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setDataPackMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(from, to);
+        else
+            throw NRPException::logCreate("DataPack \"" + from.name() + "\" is not supported by engine '" + from.engineName() + "'");
+    }
+
+
+    inline DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessage(const std::string &engineName, const EngineGrpc::DataPackMessage &from)
+    { return getDataPackInterfaceFromMessageSubset<@DATAPACK_MSG_TYPES@>(engineName, from); }
+
+
+    inline void setDataPackMessageFromInterface(const DataPackInterface & from, EngineGrpc::DataPackMessage * to)
+    { setDataPackMessageFromInterfaceSubset<@DATAPACK_MSG_TYPES@>(from, to); }
+
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    std::unique_ptr<gpb::Message> getDataFromDataPackMessageSubset(const EngineGrpc::DataPackMessage & from)
+    {
+        if(from.data().Is<MSG_TYPE>())
+        {
+            MSG_TYPE * dataPack = new MSG_TYPE();
+            from.data().UnpackTo(dataPack);
+            return std::unique_ptr<gpb::Message>(dataPack);
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return getDataFromDataPackMessageSubset<REMAINING_MSG_TYPES...>(from);
+        else
+        {
+            const auto errorMessage = "Unable to unpack data from DataPack '" +
+                                      from.datapackid().datapackname() +
+                                      "' in engine '"
+                                      + from.datapackid().enginename() + "'";
+
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+
+
+    inline std::unique_ptr<gpb::Message> getDataFromDataPackMessage(const EngineGrpc::DataPackMessage& from)
+    {
+        return getDataFromDataPackMessageSubset<@DATAPACK_MSG_TYPES@>(from);
+    }
+
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setDataPackMessageDataSubset(const google::protobuf::Message & from, EngineGrpc::DataPackMessage * to)
+    {
+        // TODO datapackname and enginename are set outside of this function, should we do it here?
+        //  To be considered as part of https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340
+        try
+        {
+            const auto& message = dynamic_cast<const MSG_TYPE &>(from);
+            to->mutable_data()->PackFrom(message);
+            return;
+        }
+        catch(const std::bad_cast& e)
+        {
+            // Do not process the exception.
+            // Bad casts aren't 'bad' in this case, they simply mean that
+            // we haven't found the right message type yet.
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setDataPackMessageDataSubset<REMAINING_MSG_TYPES...>(from, to);
+        else
+        {
+            const auto errorMessage = "Unable to pack data into DataPack '" +
+                                      to->datapackid().datapackname() +
+                                      "' in engine '" +
+                                      to->datapackid().enginename() + "'";
+
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+
+    inline void setDataPackMessageData(const google::protobuf::Message &from, EngineGrpc::DataPackMessage *to)
+    { setDataPackMessageDataSubset<@DATAPACK_MSG_TYPES@>(from, to); }
+}
+
+#endif // PROTO_UTILS_H

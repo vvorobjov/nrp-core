@@ -66,7 +66,7 @@ message(STATUS "Using gRPC cpp plugin ${GRPC_CPP_PLUGIN}")
 # Parse a .proto file PROTO_FILE_PATH and adds code for generating python bindings for each message definition found
 # The code is divided into include statements (appended to var PROTO_PYTHON_INCLUDE) and body statements (appended to
 # var PROTO_PYTHON_BODY)
-function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTHON_BODY)
+function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTHON_BODY PROTO_TYPES_FILE)
 
     set(PROTO_BINDING_DEFS "")
 
@@ -93,6 +93,7 @@ function(GENERATE_PROTO_BINDINGS PROTO_FILE_PATH PROTO_PYTHON_INCLUDE PROTO_PYTH
             string(SUBSTRING "${LINE}" "${msg_pos}" -1 msg_name)
             string(APPEND PROTO_BINDING_DEFS "    proto_python_bindings<${package_name}::${msg_name}>::create();\n")
             string(APPEND PROTO_BINDING_DEFS "    DataPack<${package_name}::${msg_name}>::create_python(\"${package_name}${msg_name}DataPack\");\n\n")
+            file(APPEND "${PROTO_TYPES_FILE}" "${package_name}::${msg_name};")
         endif()
     endforeach()
 
@@ -212,10 +213,13 @@ file(GLOB ENGINE_PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs/*.pr
 # Python bindings
 set(PROTO_PYTHON_INCLUDE_STR "")
 set(PROTO_PYTHON_BODY_STR "")
+file(WRITE "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" "")
 
 foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
-    generate_proto_bindings("${PROTO_FILE}" PROTO_PYTHON_INCLUDE_STR PROTO_PYTHON_BODY_STR)
+    generate_proto_bindings("${PROTO_FILE}" PROTO_PYTHON_INCLUDE_STR PROTO_PYTHON_BODY_STR "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt")
 endforeach()
+
+file(WRITE "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" "${PROTO_PYTHON_INCLUDE_STR}")
 
 # Proto generation
 set(PROTO_SRC_FILES "")
@@ -225,13 +229,55 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
     generate_proto_cpp("${PROTO_FILE}" PROTO_SRC_FILES)
 endforeach()
 
-generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_msgs.proto" PROTO_SRC_FILES)
 generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
 generate_proto_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 generate_grpc_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
+
+# Protobuf utils
+set(DATAPACK_MSG_TYPES "")
+set(DATAPACK_HEADERS "")
+
+# Find all protobuf messages defined by users
+foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
+    file(STRINGS ${PROTO_FILE} PROTO_FILE_LINES)
+    foreach(LINE IN LISTS PROTO_FILE_LINES)
+
+        # Find the package name
+        if(LINE MATCHES "package")
+            string(STRIP "${LINE}" LINE)
+            string(FIND "${LINE}" " " start)
+            string(SUBSTRING "${LINE}" ${start} -1 package_name)
+            string(REPLACE ";" "::" package_name "${package_name}")
+        endif()
+
+        # Find message names
+        if(LINE MATCHES "message")
+            string(STRIP "${LINE}" LINE)
+            string(FIND "${LINE}" " " end)
+            string(SUBSTRING "${LINE}" ${end} -1 message_name)
+            string(STRIP "${message_name}" message_name)
+
+            # Append full message name (package name + message name) to the list
+            string(APPEND DATAPACK_MSG_TYPES "${package_name}")
+            string(APPEND DATAPACK_MSG_TYPES "${message_name}")
+        endif()
+
+    endforeach()
+endforeach()
+
+string(STRIP ${DATAPACK_MSG_TYPES} DATAPACK_MSG_TYPES)
+string(REPLACE " " "," DATAPACK_MSG_TYPES ${DATAPACK_MSG_TYPES})
+
+# Create include clauses for protobuf_utils.h
+foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
+    get_filename_component(proto_basename ${PROTO_FILE} NAME_WLE)
+    string(APPEND proto_basename ".pb.h\"\n")
+    string(PREPEND proto_basename "\#include \"nrp_protobuf/")
+    string(APPEND DATAPACK_HEADERS ${proto_basename})
+endforeach()
 
 # Forces the generation of proto and grpc python code
 add_custom_target(
@@ -248,6 +294,9 @@ configure_file("config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/includ
 # Python Module defines
 configure_file("python_module/python_module.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/python_module/python_module.cpp" @ONLY)
 configure_file("python_module/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+
+# Protobuf utils
+configure_file("utils/protobuf_utils.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/protobuf_utils.h" @ONLY)
 
 ##########################################
 # NRPProtobuf

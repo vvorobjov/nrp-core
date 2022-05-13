@@ -41,6 +41,11 @@ namespace proto_field_ops {
     bpy::object GetScalarField(gpb::Message &m, const gpb::FieldDescriptor *field);
 
     /*!
+     * \brief Get scalar field value as a string
+     */
+    std::string GetScalarFieldAsString(const gpb::Message &m, const gpb::FieldDescriptor *field);
+
+    /*!
      * \brief Get repeated scalar field. Returns a copy of the field value
      */
     bpy::object GetRepeatedScalarField(gpb::Message &m, const gpb::FieldDescriptor *field, int index);

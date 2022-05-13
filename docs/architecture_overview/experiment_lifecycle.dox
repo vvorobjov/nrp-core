@@ -1,0 +1,22 @@
+/*! \page experiment_lifecycle Experiment Lifecycle
+
+The lifecycle of an experiment consists of a series of states in which the different components in the architecture interact to initialize, run, reset and shutdown the simulation. 
+In the diagram below is depicted the structure of an experiment lifecycle. 
+The edges in the graph correspond to possible transitions in each state
+
+\image html lifecycle_state_machine.png "Experiment Lifecycle"
+
+The experiment lifecycle is managed by the SimulationManager, which is in charge of storing the current state of the experiment and process transition requests.
+Internally, the SimulationManager owns and run the \ref simulation_loop "Simulation Loop".
+By default, the Simulation Loop run by the SimulationManager is an FTILoop, used in fully synchronous experiments and about which most of the documentation is referred to.
+Alternatively, the SimulationManager can run an EventLoop for asynchronous experiments.
+The EventLoop documentation can be found under this \ref event_loop "page".
+
+Depending on whether an FTILoop or an EventLoop is being managed by the SimulationManager, the internal structure of the states and transitions in the experiment lifecycle will be different.
+In the diagram below is depicted the internal structure of the *Running* state in the case of the FTILoop.
+
+\image html lifecycle_running_fti.png "Running State for FTILoop"
+
+Finally, this \subpage fti_lifecycle_components "page" contains another <b>diagram describing the actions performed by each architecture component</b> in each of the lifecycle transitions. This diagram is also based on the FTILoop case.
+
+ */

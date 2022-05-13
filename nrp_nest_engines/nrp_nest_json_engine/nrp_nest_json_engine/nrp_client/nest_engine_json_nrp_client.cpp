@@ -96,6 +96,9 @@ const std::vector<std::string> NestEngineJSONNRPClient::engineProcEnvParams() co
     // Add NRP library path
     envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":$LD_LIBRARY_PATH");
 
+    // Add NEST python packages to PYTHONPATH
+    envVars.push_back("PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH");
+
     return envVars;
 }
 

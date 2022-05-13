@@ -1,0 +1,44 @@
+/*! \page process_launcher_schema Process Launcher Schema
+
+ProcessLauncher is in responsible for spawning and managing external processes in NRPCore simulations.
+Typically it is used to bring up Engine server processes, but it can be used to execute arbitrary commands.
+The schema listed below allows user to specify which commands should be executed in a given NRPCore experiment.
+
+The \ref simulation_schema "Simulation Schema" contains a parameter *ExternalProcesses* of type array which elements are of type `https://neurorobotics.net/process_launcher.json#ProcessLauncher`, i.e, the type defined in the schema listed below.
+This parameter can be use to specify which commands should be launched alongside with the experiment.
+
+Below is a list of all the parameters needed to configure a ProcessLauncher.
+
+\section process_launcher_schema_parameters Parameters
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ProcCmd<td>Process Launch command<td>string<td><td>X<td>
+<tr><td>ProcStartParams<td>Process Start Parameters<td>string<td><td><td>X
+<tr><td>ProcEnvParams<td>Process Environment Parameters<td>string<td><td><td>X
+<tr><td>LaunchCommand<td>LaunchCommand type that will be used to launch the process<td>string<td>BasicFork<td><td>
+</table>
+
+\section process_launcher_schema_example Example
+
+Below is listed an example experiment configuration using ProcessLauncher to launch a "custom" command in a forked process.
+
+\code{.py}
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "Just writting a greetings message from a forked process using an environment variable",
+	"SimulationTimeout": 1,
+	"ExternalProcesses" : [
+		{
+			"ProcCmd": "export MSG=$GREETINGS_MSG && echo $MSG",
+			"ProcEnvParams": ["GREETINGS_MSG=\"Hello World!\""]
+		}
+	]
+}
+\endcode
+
+\section process_launcher_schema_schema Schema
+
+\include process_launcher.json
+
+*/
