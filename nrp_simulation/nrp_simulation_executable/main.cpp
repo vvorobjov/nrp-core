@@ -159,6 +159,10 @@ int main(int argc, char *argv[])
     std::unique_ptr<cxxopts::ParseResult> startParamPtr;
     try
     {
+        if(argc == 1)
+        {
+            throw cxxopts::OptionParseException("No input parameters are given.\n"); 
+        }
         startParamPtr.reset(new cxxopts::ParseResult(optParser.parse(argc, argv)));
     }
     catch(cxxopts::OptionParseException &e)

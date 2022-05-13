@@ -53,6 +53,8 @@ cxxopts::Options SimulationParams::createStartParamParser()
             (SimulationParams::ParamSlaveLong.data(), SimulationParams::ParamSlaveDesc.data(),
              cxxopts::value<SimulationParams::ParamSlaveT>()->default_value("0"));
 
+    opts.custom_help("-c <experiment_config_file> [OPTION...]");
+
     return opts;
 }
 
