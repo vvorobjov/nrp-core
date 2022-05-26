@@ -101,16 +101,3 @@ const std::vector<std::string> NestEngineJSONNRPClient::engineProcEnvParams() co
 
     return envVars;
 }
-
-const std::vector<std::string> NestEngineJSONNRPClient::engineProcStartParams() const
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    std::vector<std::string> startParams = this->EngineJSONNRPClient::engineProcStartParams();
-
-    // Add JSON Server address (will be used by plugin)
-    std::string address = this->engineConfig().at("ServerAddress");
-    startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + address);
-
-    return startParams;
-}

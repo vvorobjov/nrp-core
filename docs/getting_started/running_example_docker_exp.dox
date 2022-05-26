@@ -1,0 +1,64 @@
+/*! \page running_example_docker_exp Running the example experiments in multiple docker containers
+
+\image html multi_containers_deployment.png "Supported combinations of host/container execution for NRP-core and a containerized engine"
+
+The folder `"examples"` contains four examples (as list in the below table)of how to use \ref DockerLauncher.
+In those experiments, \ref DockerLauncher is used to launch and run an engine (i.e. \ref python_json_engine) and the controlled containerized engine in a docker container.
+
+<table>
+<tr><th>Example folder<th>Description<th>DockerImage
+<tr><td>husky_braitenberg_json<td>Running a gazebo_json engine with a husky model of Gazebo inside a docker container<td>nrp_gazebo:v0
+<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp_nest:v0
+<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp_opensim:v0
+<tr><td>tf_exchange<td>Running a python_json engine  inside a docker container<td>nrp_minimal:v0
+</table>
+
+As the figure shows, these experiments can be run in different configurations: NRP-core and the engines can be distributed (and containerized) in one or more hosts.
+The manager host(s) of containerized engine stores the engine docker image and runs the Manager Server that responds to NRP-core requests.
+
+To run the experiments, the users should first, on every host that requires the Manager Server (see Figure above), launch the latter using the python script in `"docker_components/manager/server"`.
+
+\code{.sh}
+python3 docker_launcher.py
+\endcode
+
+Since the husky model require vision devices, it needs to ask for devices library from the manager host. And its execution command is 
+
+\code{.sh}
+xhost +
+python3 docker_launcher.py
+\endcode
+
+Then, on the NRP host, one should run the experiment as usual. For example, for the example experiment that we provide:
+
+\code{.sh}
+cd examples/<example folder>
+NRPCoreSim -c simulation_config_docker.json
+\endcode
+
+If the user wishes to run NRP-core inside a docker container, the docker container should be launched first:
+
+\code{.sh}
+docker run -it --network="host" --name <container name> nrp:v0
+\endcode
+
+The <b>`"host"`</b> network mode is required to simplify the configuration of the connectivity of the containerized components.
+
+<b><em>NOTE:</em></b>
+
+The IP addresses of the local and remote hosts have to be specified in the experiment configuration file:
+- `"DaemonAddress"` is the IP address of the remote Manager server.
+- `"ServerAddress"` is IP address of remote engine
+- `"RegistrationServerAddress"` is IP address of NRP-core
+
+On the Manager host, the manager (i.e. docker_launcher.py) REST server will store experiment files at the specified location (defaults to `"/share/experiment_data/<engine name>"`) of the created container.
+
+With the `"pysim_examples/opensim_control"` example, the following simulator-specific configuration parameters are also required:
+- `"WorldFileName"` is the path of simulation model files inside the remote container. On the Manager host, the Manager server (i.e. docker_launcher.py) will store them at the specified location.
+- `"PythonFileName"` is the python script executed by python_json_engine inside remote the container. In the example is left unchanged.
+
+For different engines, the required configuration parameters are different. Please follow their `"config_schemas"` to configure the simulations.
+
+Further details can be found in the file `"docker_components\Readme.md"`.
+
+*/

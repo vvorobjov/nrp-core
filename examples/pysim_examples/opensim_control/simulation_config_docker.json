@@ -1,0 +1,45 @@
+{
+	"SimulationName": "tf_exchange",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 2,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "python_json",
+			"EngineName": "controller",
+			"PythonFileName": "controller.py",
+			"ServerAddress":"localhost:1234"
+		},
+		{
+			"EngineType": "py_sim",
+			"EngineName": "docker_server",
+			"Simulator":"Opensim",
+			"PythonFileName": "/share/experiment_data/docker_server/server.py",
+			"WorldFileName":"/share/experiment_data/docker_server/arm26/arm26_ground_offset.osim",
+			"Visualizer":false,
+			"ServerAddress":"localhost:6666",
+			"RegistrationServerAddress":"localhost:8008",
+			"EngineLaunchCommand":{
+				"LaunchType":"DockerLauncher",
+				"DaemonAddress":"localhost:5002",
+				"ImageName":"nrp_opensim:v0",
+				"UploadFolder":"./",
+				"EngineEnv":[
+					"LD_LIBRARY_PATH=/root/.local/nrp/lib:/Opensim/OpenSim/lib:$LD_LIBRARY_PATH",
+					"PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:/Opensim/OpenSim/lib/python3.8/site-packages:$PYTHONPATH"
+				]
+			}
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "from_ctrl",
+			"FileName": "from_ctrl.py"
+		},
+		{
+			"Name": "from_sim",
+			"FileName": "from_sim.py"
+		}
+	]
+}

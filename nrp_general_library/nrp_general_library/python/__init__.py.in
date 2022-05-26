@@ -20,3 +20,4 @@
 
 from .@PYTHON_MODULE_NAME@ import *
 
+from .docker_init import *

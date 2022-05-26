@@ -1,0 +1,32 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "This experiment launches Nest and uses a TF to access and modify the status of several simulation objects",
+	"SimulationTimeout": 10,
+	"EngineConfigs": [
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "/share/experiment_data/nest/nest_simple.py",
+			"ServerAddress":"localhost:6666",
+			"RegistrationServerAddress":"localhost:8008",
+			"EngineLaunchCommand":{
+				"LaunchType":"DockerLauncher",
+				"DaemonAddress":"localhost:5002",
+				"ImageName":"nrp_nest:v0",
+				"EngineEnv":[
+					"LD_LIBRARY_PATH=/root/.local/nrp/lib:$LD_LIBRARY_PATH",
+					"PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:$PYTHONPATH"
+				],
+				"UploadFolder":".",
+				"EngineCmd":"/root/.local/nrp/bin/NRPNestJSONExecutable",
+				"WorkDir": "/root"
+			}
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}

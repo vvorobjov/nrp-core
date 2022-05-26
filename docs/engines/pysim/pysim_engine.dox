@@ -1,18 +1,16 @@
 /*! \page pysim_engine PySim Engine
 
-This engine is based on the \ref python_json_engine and exploits python APIs for different simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) to interface simulations with NRP-core. It runs a simulator model specified the engine configuration and manages the synchronization and data exchange with other engines participating in the same experiment.
+This engine is based on the \ref python_json_engine and exploits python APIs for different simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) to interface simulations with NRP-core. The main difference between a PySim engine and a standard Python JSON engine is the way the Python APIs of several given simulators are called from a so-called \ref simulator_manager interface. As a whole, the PySim engine still runs a simulator model that specified the engine configuration and manages the synchronization and data exchange with other engines participating in the same experiment.
 
-
-The engine is used in a manner very similar to the Python JSON Engine (please refer to this \ref python_engine_guide "guide" for details on how to use it).
-Additionally, there are example experiments in the folder *examples/pysim_examples* that can be used as a reference for implementing experiments including this engine.
+In that sense, it is used in a manner very similar to the Python JSON Engine (please refer to this \ref python_engine_guide "guide" for details on how to use it). Additionally, there are example experiments in the folder *examples/pysim_examples* that can be used as a reference for implementing experiments including this engine.
 
 Similarly to the Python JSON Engine, the engine behavior in each experiment is implemented by subclassing a Python class *PySimEngineScript* and overriding the hook methods:
 - `initialize()`: executed when the engine is initialized
-- `runLoop(timestep)`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `run_loop()`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
 - `shutdown()`: executed when the engine is requested to shutdown
 - `reset()`: executed when the engine is requested to reset.
 
-The interaction with the wrapped simulator is performed by an instance of the SimulatorManager class, which is stored in PySimEngineScript in the attribute self.sim_manager. This attribute must be "manually" called from the PySimEngineScript subclass in order to advance, modify or get information from the different simulators. As an example of this use, the script implementing PySimEngineScript in experiment *examples/pysim_examples/opensim_control* is listed below:
+In this engine, several simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) with python API are wrapped as functions in type of \ref python_json_engine can apply. It includes shutdown, reset, runLoop, and calling model properties. The interaction with the wrapped simulators is performed by an instance of the class \ref simulator_manager, which is stored in PySimEngineScript in the attribute self.sim_manager. This attribute must be "manually" called from the PySimEngineScript subclass in order to advance, modify or get information from the different simulators. As an example of this use, the script implementing PySimEngineScript in experiment *examples/pysim_examples/opensim_control* is listed below:
 
 \include pysim_examples/opensim_control/server.py
 
@@ -59,7 +57,7 @@ To use the Python Simulator engine in an experiment, set `EngineType` to <b>"py_
 <tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
 <tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
 <tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
-<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 <tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
 <tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
 </table>
@@ -79,7 +77,7 @@ To use the Python Simulator engine in an experiment, set `EngineType` to <b>"py_
 <tr><td>PythonFileName<td>Path to the Python script containing the engine definition<td>string<td><td>X<td>
 <tr><td>WorldFileName<td>Path to the file of simulation world<td>string<td><td>X<td>
 <tr><td>Visualiser<td>To show the simulation in visualizer or not<td>bool<td>false<td><td>
-<tr><td>Simulator<td>To call the python AlPI for a special simulator<td>string<td><td><td></table>
+<tr><td>Simulator<td>To call the python API for a special simulator<td>string<td><td><td></table>
 
 
 \section engine_opensim_schema Schema

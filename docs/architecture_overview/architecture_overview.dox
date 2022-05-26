@@ -9,7 +9,9 @@ For more explanations, this \subpage sync_model_details "page" contains a more d
 Additionally, NRP-core offers an asynchronous mode which allows to interact with external simulation modules or other processes asynchronously.
 This asynchronous mode is implemented by the EventLoop and is described in detail in this \subpage event_loop "page".
 
-The inclusion of additional Engines into NRP-core experiments is managed by a system of \subpage plugin_system "Engine plugins", which allows for easy extensions of the set of available simulators. Users also can choose to run Engines either in separate processes, containers or machines. The spawning of Engines is controlled by \subpage process_launcher "Process Launchers".
+The inclusion of additional Engines into NRP-core experiments is managed by a system of \subpage plugin_system "Engine plugins", which allows for easy extensions of the set of available simulators. 
+Users also can choose to run Engines either in separate processes, containers or machines. 
+The spawning of Engines is controlled by \subpage process_launcher "Process Launchers" and the actual spawning behavior (eg.in separate processes, containers or machines) is implemented by \subpage launch_command "Launch Commands".
 
 Please also note that, while NRP-core is - quite literally - the beating heart of the NRP, the so-called NRPCoreSim is the standalone application based on NRP-core. This standalone application can execute experiments through the same \subpage experiment_lifecycle "lifecycle process", but without the additional functionalities of the NRP (e.g. front end, etc.). This \subpage nrp_simulation "page" contains more information about NRPCoreSim.
 

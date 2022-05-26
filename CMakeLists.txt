@@ -258,7 +258,6 @@ endif()
 add_subdirectory(nrp_python_json_engine)
 
 add_subdirectory(nrp_pysim_engines)
-
 ## Data Transfer Engine
 add_subdirectory("nrp_datatransfer_grpc_engine")
 
@@ -367,6 +366,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/architecture_overview/nrp_simulation.dox"
         "docs/architecture_overview/plugin_system.dox"
         "docs/architecture_overview/process_launcher.dox"
+        "docs/architecture_overview/launch_command.dox"
         "docs/architecture_overview/simulation_loop.dox"
         "docs/architecture_overview/sync_model_details.dox"
         "docs/architecture_overview/transceiver_function.dox"
@@ -401,6 +401,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/getting_started/installation.dox"
         "docs/getting_started/running_example_exp.dox"
         "docs/getting_started/python_client.dox"
+        "docs/getting_started/running_example_docker_exp.dox"
 
         "docs/guides/guides.dox"
         "docs/guides/general_developer_guide.dox"

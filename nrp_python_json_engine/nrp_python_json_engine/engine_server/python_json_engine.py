@@ -31,6 +31,7 @@ import socket
 from contextlib import closing
 import gunicorn.app.base
 
+import time
 # Disable debug printouts
 
 import logging
@@ -104,10 +105,10 @@ def parse_arguments() -> Namespace:
     return parser.parse_args()
 
 
-def is_port_in_use(port: int) -> bool:
+def is_port_in_use(address: str, port: int) -> bool:
     """Checks if given port is already in use"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
+        return s.connect_ex((address, port)) == 0
 
 
 def find_free_port() -> int:
@@ -127,7 +128,7 @@ def extract_hostname_port_from_url(url: str) -> tuple:
 
     # Check if the requested port is free. If it's not, then choose another one randomly
 
-    if is_port_in_use(port):
+    if is_port_in_use(hostname, port):
         port = find_free_port()
 
     return hostname, port
@@ -137,7 +138,13 @@ def register_in_regserver(regserver_url: str, engine_name: str, hostname: str, p
     """Registers in the registration server of the client"""
 
     registration_data = { "engine_name": engine_name, "address": hostname + ":" + str(port) }
-    response = requests.post("http://" + regserver_url, json=registration_data).content
+    repeat_count = 10
+    for i in range(repeat_count):
+        try:
+            response = requests.post("http://" + regserver_url, json=registration_data).content
+            break
+        except:
+            time.sleep(1)
 
 
 if __name__ == '__main__':

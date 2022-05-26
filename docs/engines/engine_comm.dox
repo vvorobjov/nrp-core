@@ -27,7 +27,7 @@ This engine type parameters are defined in EngineJSON schema (listed \ref engine
 <tr><td>EngineProcCmd<td>Command (executable) that will be run in the engine process<td>string<td><td><td>
 <tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
 <tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
-<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 <tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
 <tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
 </table>
@@ -57,7 +57,7 @@ This engine type parameters are defined in EngineGRPC schema (listed \ref engine
 <tr><td>EngineProcCmd<td>Command (executable) that will be run in the engine process<td>string<td><td><td>
 <tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
 <tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
-<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 <tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
 <tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
 </table>

@@ -51,6 +51,8 @@ set(LIB_SRC_FILES
     nrp_general_library/utils/wchar_t_converter.cpp
     nrp_general_library/utils/zip_container.cpp
     nrp_general_library/utils/pipe_communication.cpp
+
+    nrp_general_library/process_launchers/launch_commands/docker_launcher.cpp
 )
 
 # List of python module build files
@@ -341,7 +343,8 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
-
+install(FILES "${HEADER_DIRECTORY}/python/docker_init.py"
+    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}

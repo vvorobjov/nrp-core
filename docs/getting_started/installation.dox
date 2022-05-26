@@ -201,4 +201,15 @@ source $HOME/.bashrc
 
 \endcode
 
+\section installation_dockers Create docker images of engines and simulators for multi-container experiments
+
+To build a docker image of NRP-Core, use the script `"docker_components/full-nrp/install.sh"`. The name and tag of the built image will be `"nrp:v0"`.
+
+Four examples, showing how to set up an experiment running containerized simulators, are provided:
+- A docker image relates to containerized version of the \ref getting_started_experiment_tf_exchange "tf_exchange" experiment (build the image with `"docker_components/minimal-nrp/install.sh"`, `"nrp_minimal:v0"` defined in the installation script is the name and tag of the docker image).
+- A docker image relates to containerized OpenSim simulation, (build the image with `"docker_components/nrp-opensim/install.sh"`. `"nrp_opensim:v0"` defined in the installation script is the name and tag of the docker image).
+- A docker image relates to containerized version of the `"nest_simple"` experiment (build the image with `"docker_components/nrp-nest/install.sh"`. `"nrp_nest:v0"` defined in the installation script is the name and tag of the docker image).
+- A docker image relates to the containerized version of the `"husky_braitenberg_json"` experiment (build the image with `"docker_components/nrp-gazebo/install.sh"`. `"nrp_gazebo:v0"` defined in the installation script is the name and tag of the docker image).
+
+To be able to manage containers on the remote hosts, the Manager server component must be installed. The installation script is `"docker_components/manager/install.sh"` and can be used to install dependencies inside the manager host.
 */

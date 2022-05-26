@@ -75,6 +75,51 @@ TEST(ProcessLauncherBasicTest, TestLaunch)
     ASSERT_STREQ(readDat, TEST_PROC_STR_SIGTERM);
 }
 
+//TODO Improve engine configuration handling.
+// Quick fix: revert NRRPLT-8450. Remove test once a solution has been implemented
+TEST(ProcessEngineLauncherBasicTest, TestLaunch)
+{
+    ProcessLauncherBasic launcher;
+    PipeCommunication pCommPtC;
+    PipeCommunication pCommCtP;
+
+    // Add test params and envs
+    std::vector<std::string> startParams;
+    startParams.push_back(std::to_string(pCommPtC.readFd()));
+    startParams.push_back(std::to_string(pCommCtP.writeFd()));
+
+    std::vector<std::string> envVars;
+    envVars.push_back(TEST_PROC_ENV_VAR_NAME "=" TEST_PROC_ENV_VAR_VAL);
+
+    nlohmann::json config = R"({"EngineName" : "test_engine", "EngineType" : "test_engine"})"_json;
+    json_utils::validateJson(config, "https://neurorobotics.net/engines/engine_base.json#EngineBase");
+
+    config["EngineProcCmd"] = TEST_NRP_PROCESS_EXEC;
+
+    // Fork engine process
+    ASSERT_GE(launcher.launchEngineProcess(config, envVars, startParams), 0);
+
+    pCommCtP.closeWrite();
+    pCommPtC.closeRead();
+
+    // Sync processes
+    char readDat[50] = "";
+    pCommCtP.readP(readDat, sizeof(TEST_PROC_STR_START), 5, 1);
+    ASSERT_STREQ(readDat, TEST_PROC_STR_START);
+
+    pCommPtC.writeP(TEST_PROC_STR_START, sizeof(TEST_PROC_STR_START), 5, 1);
+
+    // Test that env value was set properly
+    ASSERT_EQ(pCommCtP.readP(readDat, sizeof(TEST_PROC_ENV_VAR_VAL), 5, 1), sizeof(TEST_PROC_ENV_VAR_VAL));
+    ASSERT_STREQ(readDat, TEST_PROC_ENV_VAR_VAL);
+
+    // Stop engine
+    ASSERT_LE(launcher.stopProcess(5), 0);
+
+    ASSERT_EQ(pCommCtP.readP(readDat, sizeof(TEST_PROC_STR_SIGTERM), 5, 1), sizeof(TEST_PROC_STR_SIGTERM));
+    ASSERT_STREQ(readDat, TEST_PROC_STR_SIGTERM);
+}
+
 
 TEST(ProcessLauncherBasicTest, TestEmptyLaunchCommand)
 {

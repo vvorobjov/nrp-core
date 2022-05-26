@@ -57,12 +57,23 @@ class ProcessLauncherInterface
         /*!
          * \brief Fork a new process. Will read environment variables and start params from procConfig
          * \param procConfig Process Configuration. Env variables and start params take precedence over envParams and startParams
-         * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-         * \param startParams Additional Start parameters
          * \param appendParentEnv Should parent env variables be appended to child process
          * \return Returns Process ID of child process on success
          */
         virtual pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) = 0;
+
+        // TODO Improve engine configuration handling.
+        // Quick fix: revert NRRPLT-8450
+        /*!
+        * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
+        * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
+        * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
+        * \param startParams Additional Start parameters
+        * \param appendParentEnv Should parent env variables be appended to child process
+        * \return Returns Process ID of child process on success
+        */
+        virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
         /*!
          * \brief Stop a running process
          * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinitely
@@ -157,6 +168,22 @@ class ProcessLauncher
                                                    procConfig.contains("ProcStartParams") ? procConfig.at("ProcStartParams").get<std::vector<std::string>>() : std::vector<std::string>(),
                                                            appendParentEnv,
                                                            _logFD);
+        }
+
+        // TODO Improve engine configuration handling.
+        // Quick fix: revert NRRPLT-8450
+        pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
+                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override final
+        {
+            nlohmann::json launcher_info = engineConfig.at("EngineLaunchCommand");
+            launcher_info["EngineName"] = engineConfig.at("EngineName");
+            launcher_info["EngineProcCmd"] = engineConfig.at("EngineProcCmd");
+            
+            if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
+            {   throw noLauncherFound(launcher_info.at("LaunchType"));  }
+
+            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(launcher_info.at("LaunchType"));
+            return this->_launchCmd->launchEngineProcess(launcher_info, envParams, startParams, appendParentEnv);
         }
 
         pid_t stopProcess(unsigned int killWait) override final

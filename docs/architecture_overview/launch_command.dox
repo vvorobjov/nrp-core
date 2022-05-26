@@ -1,0 +1,130 @@
+/*! \page launch_command Launch Commands
+
+\ref process_launcher relies on launch commands to implement the actual launching behavior. 
+All Launch Commands are derived from LaunchCommand class.
+LaunchCommand is a templated class with a single parameter `LAUNCH_COMMAND` of type `const char*`. 
+This parameter allows process launchers to infer the right LaunchCommand to use from the Engine configuration.
+See the section \ref configuration_schema below for more details.
+
+Currently, there are three launch commands available for launching engine processes:
+
+- EmptyLaunchCommand : Dummy launch command. Leaves the actual launching of the engine to the user
+- BasicFork (default): launches the engine server in an independent process
+- DockerLauncher: launches the engine server in a (possibly remote) docker container. Since this case is more complex than the previous ones and requires additional configuration, a section below is devoted to describing its functioning and behavior: \ref docker_launcher
+
+\section configuration_schema Configuration Schema
+
+In the experiment configuration file, the LaunchCommand that will be used to launch each of the engines in the experiment, can be specified.
+This is done by setting the parameter `EngineLaunchCommand` in the Engine configuration (see \ref engine_base_schema "here" for more details about Engines configuration schema), which is a JSON object defining which launch command will be used to launch the Engine process and required parameters, if any.
+
+The only required parameter in `EngineLaunchCommand` JSON object is `LaunchType` which allows ProcessLauncher to decide which LaunchCommand to use as described above in this page.
+
+The default value for `EngineLaunchCommand` is `{"LaunchType":"BasicFork"}`.
+
+When adding a new LaunchCommand to nrp-core, developers must create a schema specifying its LaunchType and its parameters; the created schema has to be referred by and listed in the \ref engine_base_schema_schema "EngineBase Schema" "EngineLaunchCommand" OneOf field. 
+The format for additional LaunchCommand schemas is the following:
+\code{.json}
+{
+  "<command_name>" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "...",
+    "description": "...",
+    "$id": "#<command_id>",
+    "properties" : {
+      "LaunchType":{
+        "type": "string",
+        "const": "<LAUNCH_COMMAND template parameter used in the implemented LaunchCommand class>"
+      },
+      <other properties>
+    },
+	"required" : ["LaunchType"]
+  }
+}
+\endcode
+The required property `"LaunchType"` is a const string value that uniquely defines the new LaunchCommand type.
+
+\section docker_launcher DockerLauncher
+
+The DockerLauncher launch command launches one docker container that runs a Engine. It connects to a \ref docker_launcher_manager "Manager Server" running on a (possibly remote) host, specified in the launch command configuration, where creates and run docker containers.
+
+For more details about the components involved in launching Engines in docker containers see \ref fti_lifecycle_components_docker "this diagram".
+
+\subsection docker_launcher_manager Manager Server
+
+"Manager Server" is a Python-based REST server running on the Manager Host and handling container management requests from NRP-Core.
+The Manager Host is the machine in which the Engine docker container will run, possibly localhost.
+It's available, by default, on port 5002.
+
+Manager Server is implemented in the file "docker_components/manager/server/docker_launcher.py".
+
+`"docker_launcher.py"` accepts the following command line arguments:
+- `--port`: The port on which `"Manager Server"` will wait for requests, defaults to 5002
+
+`"Manager Server"` provides the following REST interface accepting and returning JSON objects:
+- (`"/uploader"`, `methods=["POST"]`): Upload the experiment files to the docker container.
+  - Input: a zip file containing the experiment files, {"file": \<a zip file\>}
+  - Output: operation message and error message, {"msg":"", "Error": ""}
+- (`"/clear"`, `methods=["GET"]`): Remove any uploaded files and created nrp engine containers.
+  - Input: N/A
+  - Output: tips, {"msg":"Cleared"}
+- (`"/force_shutdown"`, `methods=["GET"]`): Shut `"Manager Server"` down.
+  - Input: N/A
+  - Output: tips, {"msg":"Force shutting down..."}
+- (`"/docker_run"`, `methods=["POST"]`): Create a docker container as per provided configuration, with a shared volume and `"host"` network mode.
+  - Input: configuration information of the container to run, {"img": \<ImageName\>,"engine": <EngineName">,"ExecCmd": <execution command>,"ExecEnvironment": <execution environment>, "WorkDir": \<path for working space in the container\>}
+
+  - Output: the created container ID and error messages, {"id": \<the container ID\>, "err": \<error message\>}
+- (`"/docker_stop"`, `methods=["POST"]`): Kill and remove the docker container having the provided container ID.
+  - Input: the ID of container to be shut down, "id": \<the container ID\>}
+  - Output: An error message, {"err":""}
+- (`"/docker_status"`, `methods=["POST"]`): Get the running status of the container having the provided container ID.
+  - Input: a container ID, {"id": \<the container ID\>}
+  - Output: the running status of the container, {"status": \<the status\>, "err": ""}
+
+\subsection docker_launcher_engine_param Remote Engine configuration
+
+Due to the distributed nature of the experiments when using a DockerLauncher, the Engine in use requires some extra configuration parameters that are usually left as default. Such parameters, in the case of EngineJSONServer, are shown below.
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>EngineJSONServer address. Should this address already be in use, the server will continue trying ports higher up<td>string<td>localhost:9002<td><td>
+<tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
+</table>
+
+<em>Note:</em>
+
+`"ServerAddress"` is the address of the remote engine, and the `"RegistrationServerAddress"` is the address of the host running NRP-Core.
+
+If `"ServerAddress"` and `"RegistrationServerAddress"` are left unset, the Manager REST server and NRP-Core are assumed to be running in the same host, (i.e. Case 1 of \ref running_example_docker_exp).
+Conversely, to implement the architecture of the other cases (Case 2 to 4), `"ServerAddress"` and `"RegistrationServerAddress"` are required.
+
+
+\subsection docker_launcher_schema Schema
+
+Below are listed the parameters required to configure DockerLauncher:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>LaunchType<td>The type of LaunchCommand<td>const string<td>DockerLauncher<td>X<td>
+<tr><td>EngineEnv<td>The environment variables required by the (remote) engine and simulator<td>string<td>Path to npr-core in the container<td><td>X
+<tr><td>EngineCmd<td>The command to be executed in the (remote) container<td>string<td> python3 -B python_json_engine.py <td><td>
+<tr><td>DaemonAddress<td>The IP address of manager host to connect<td>string<td><td>X<td>
+<tr><td>ImageName<td>The name of docker image to be used<td>string<td><td>X<td>
+<tr><td>ContainerName<td>The name of the container to run<td>string<td>""<td><td>
+<tr><td>WorkDir<td>The work directory of the simulator in the (remote) container<td>string<td>/root/remote_sim<td><td>
+<tr><td>UploadFolder<td>The name of the folder containing experiment data to be uploaded to the (remote) host<td>string<td>""<td><td>
+</table>
+
+The complete schema is listed below:
+
+\include config_schemas/launch_commands/docker_launcher_cmd.json
+
+\subsection docker_launcher_engines Usage
+
+The precondition for using DockerLauncher to run Engines
+is to deploy in the (remote) Manager host a docker image containing the Engine itself and its dependencies (e.g. the simulator and its requirements). In the case of said Engine being implemented as a specialization of one of the engines provided by nrp-core, those shall be included too (e.g. py_sim_engine requires PythonJSONEngine).
+Provided that, DockerLauncher can, then, be employed by setting up the experiment configuration as explained in the sections above.
+
+The page \ref running_example_docker_exp contains more details and examples on the use of DockerLauncher.
+
+*/

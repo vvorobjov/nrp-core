@@ -33,7 +33,7 @@
   "py_sim" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Python Simulation Engine",
-    "description": "Configure the Simulation Engine with python API of simulators",
+    "description": "A simulation engine for simulators offering a Python API.",
     "$id": "#PySim",
     "allOf": [
       { "$ref": "#/python_base" },

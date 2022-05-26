@@ -28,11 +28,9 @@ class EngineScript:
         self._name = ""
         self._config = None
 
-
     def _advanceTime(self, timestep_ns: int) -> None:
         """Advances the simulation time by given timestep"""
         self._time_ns = self._time_ns + timestep_ns
-
 
     def _registerDataPack(self, datapack_name: str) -> None:
         """
@@ -44,7 +42,6 @@ class EngineScript:
 
         self._datapacks[datapack_name] = None
 
-
     def _getDataPack(self, datapack_name: str) -> dict:
         """Returns cached data of the datapack with given name"""
         if datapack_name not in self._datapacks:
@@ -52,14 +49,12 @@ class EngineScript:
 
         return self._datapacks[datapack_name]
 
-
     def _setDataPack(self, datapack_name: str, data: dict) -> None:
         """Sets cached data of the datapack with given name"""
         if datapack_name not in self._datapacks:
             raise Exception(f"Attempting to set data on an unregistered DataPack ({datapack_name})")
 
         self._datapacks[datapack_name] = data
-
 
     def initialize(self) -> None:
         """
@@ -70,17 +65,15 @@ class EngineScript:
         """
         pass
 
-
     def runLoop(self, timestep_ns: int) -> None:
         """
-        Runs a signle step of the simulation.
+        Runs a single step of the simulation.
 
         This function should be overwritten by the derived class and
         should contain all steps necessary to advance the simulation
         by the specified time.
         """
         pass
-
 
     def shutdown(self) -> None:
         """
@@ -90,7 +83,6 @@ class EngineScript:
         should contain all steps necessary to clearly shutdown the simulation.
         """
         pass
-
 
     def reset(self) -> None:
         """
