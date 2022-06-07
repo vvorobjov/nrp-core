@@ -112,29 +112,68 @@ make nrp_doxygen
 
 
  * Start the simulation:
-	`NRPCoreSim -c <SIMULATION_CONFIG_FILE>`
+
+    `NRPCoreSim -c <SIMULATION_CONFIG_FILE>`
 
 ## Basic Information
 
  - The project is divided into multiple libraries, separated by folders:
-	 - nrp_general_library: Main Library. Contains classes and methods to interface with Python, Engines, and Transceiver-Functions
-	 - nrp_engine_protocols: Engine interfaces implementing server/client communication for different communication protocols
-	 - nrp_nest_engines: Nest Engine
-	 - nrp_gazebo_engines: Gazebo Engine
-	 - nrp_python_json_engine: Python JSON Engine
-	 - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
+     - nrp_general_library: Main Library. Contains classes and methods to interface with Python, Engines, and Transceiver-Functions
+     - nrp_engine_protocols: Engine interfaces implementing server/client communication for different communication protocols
+     - nrp_nest_engines: Nest Engine
+     - nrp_gazebo_engines: Gazebo Engine
+     - nrp_python_json_engine: Python JSON Engine
+     - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
  - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
  - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `${NRP_INSTALL_DIR}/lib/python3.8/site-packages`
 
 ## Examples
 
  - Examples are located in the examples subfolder:
-	 - To run them, first set the environment as described in **Running an experiment**. Then:
+     - To run them, first set the environment as described in **Running an experiment**. Then:
 
-			cd examples/<EXAMPLE_NAME>
-			NRPCoreSim -c <SIMULATION_CONFIG>
-			
-	 - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
+            cd examples/<EXAMPLE_NAME>
+            NRPCoreSim -c <SIMULATION_CONFIG>
+            
+     - If gazebo is running in the experiment, you can use `gzclient` to visualize the gazebo simulation
 
 
+## Docker-compose
 
+For a convenient usage of the Docker images containing the dependencies and the executables of the NRP-core and the simulators, the file `docker-compose.yaml` can be used. There are the hierarchy of the images, which are built with different Dockerfiles providing the different layers. The Dockerfiles are
+
+ -  `base.Dockerfile` provides contains the basic environment setup, like user/group definitions, directory creations and some basic utilities, like wget, git etc. Nothing related to NRP Core nor simulators is installed here. It’s also possible to specify the base image, e.g. regular Ubuntu or Ubuntu+NVidia/CUDA;
+ -  `nrp-core.Dockerfile` is a multi-stage Dockerfile, providing the NRP-core specific dependencies and compiling the NRP-core itself;
+ -  `<simulator>.Dockerfile` contain environments and executables needed to run different simulators. Generally there is one dockerfile per simulator, i.e. gazebo, opensim, nest, etc. All simulator Dockerfiles should be based on the NRP base image. It’s also possible to chain together multiple simulator images to create an image with multiple simulators (e.g. gazebo + nest).
+
+The hierarchical structure allows to compile the Dockerfiles into a Docker image with almost any combination of the environment and simulators. The pattern for the naming is the following
+
+ -  `base-<...>` is an image built from `base.Dockerfile` (derived from some standard image, i.e. Ubuntu 20.04);
+ -  `<simulator(s)>-env` is an image with the environment and the executables of the specified simulators, which is derived from some base image or other `<...>-env` image;
+ -  `nrp-<simulators>` is an image with the NRP-core installed in the environment with the specified simulators.
+
+### Variables
+which can be exported before calling docker-compose
+
+ -  `NRP_DOCKER_REGISTRY` specifies the registry address (in a from "example.com/", with slash)
+ -  `NRP_CORE_TAG` specifies the image tag (in the form ":tag", otherwise latest is used)
+
+### Parameters
+
+ -  `BASE_IMAGE` the base image that is used in the `FROM` directive in the Dockerfile (used for the images hierarchy)
+ -  `CMAKE_CACHE_FILE` defines the file with CMake parameters
+
+### Usage hints
+
+ -  without specifying `NRP_DOCKER_REGISTRY`, the images are build with the name "nrp-core/image-name";
+ -  as a `NRP_DOCKER_REGISTRY` one can specify the user name at DockerHub (to be able to pull/push there) or private Docker registry;
+ -  if `NRP_CORE_TAG` is not defined, the images are built with `latest` tag;
+ -  in order to build the chain of images (the desired and all in the dependency), run `docker-compose up --build <service-name>`;
+ -  in order to push/pull to a specific registry, export the NRP_DOCKER_REGISTRY before running docker-compose
+
+    ```bash
+    export NRP_DOCKER_REGISTRY=mydockerhub/
+    docker-compose pull gazebo-env
+    docker-compose build nrp-gazebo
+    docker-compose push nrp-gazebo
+    ```

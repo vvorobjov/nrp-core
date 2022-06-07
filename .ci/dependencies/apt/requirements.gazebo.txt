@@ -1,0 +1,3 @@
+libgazebo11-dev
+gazebo11
+gazebo11-plugin-base

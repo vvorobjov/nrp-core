@@ -366,6 +366,7 @@ void NestEngineServerNRPClient::shutdown()
         stopParams.push_back("python3");
 
         nlohmann::json stopConfig;
+        stopConfig["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
         stopConfig["ProcCmd"] = NRP_NEST_SERVER_EXECUTABLE_PATH;
         stopConfig["ProcEnvParams"] = this->engineProcEnvParams();
         stopConfig["ProcStartParams"] = stopParams;

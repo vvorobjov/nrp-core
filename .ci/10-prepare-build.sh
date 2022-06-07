@@ -21,7 +21,7 @@ source "$HOME"/.bashrc
 
 # Check if NEST_INSTALL_DIR is set and the external nest-simulator can be used
 
-[[ -z "$NRP_INSTALL_DIR" ]] && NEST_INSTALL_OPTION="" || NEST_INSTALL_OPTION="-DNEST_INSTALL_DIR=${NEST_INSTALL_DIR}"
+[[ -z "$NEST_INSTALL_DIR" ]] && NEST_INSTALL_OPTION="" || NEST_INSTALL_OPTION="-DNEST_INSTALL_DIR=${NEST_INSTALL_DIR}"
 
 # Run cmake
 
