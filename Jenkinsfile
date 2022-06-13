@@ -193,12 +193,27 @@ pipeline {
 
     post {
         aborted {
+            script{
+                commitMessage = sh(returnStdout: true, script: 'git show --summary').trim()
+                if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                    slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "warning", message: "NRP-core build of ${env.BRANCH_NAME} branch aborted! (${BUILD_URL})\n\n${commitMessage}")
+            }
             bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build aborted!')
         }
         failure {
+            script{
+                commitMessage = sh(returnStdout: true, script: 'git show --summary').trim()
+                if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                    slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "danger", message: "NRP-core build of ${env.BRANCH_NAME} branch failed! (${BUILD_URL})\n\n${commitMessage}")
+            }
             bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build failed, see console output!')
         }
         success{
+            script{
+                commitMessage = sh(returnStdout: true, script: 'git show --summary').trim()
+                if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                    slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "good", message: "NRP-core build of ${env.BRANCH_NAME} branch succeeded! (${BUILD_URL})\n\n${commitMessage}")
+            }
             bitbucketStatusNotify(buildState: 'SUCCESSFUL', buildDescription: 'branch ' + env.BRANCH_NAME)
         }
     }
