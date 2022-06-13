@@ -119,8 +119,8 @@ function(GENERATE_PROTO_CPP PROTO_FILE_NAME PROTO_SRC_FILES_VAR)
         COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
         COMMAND ${PROTOC}
         ARGS --cpp_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
             "${hw_proto}"
         DEPENDS "${hw_proto}")
 
@@ -145,8 +145,8 @@ function(GENERATE_GRPC_CPP PROTO_FILE_NAME PROTO_SRC_FILES_VAR)
             COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
             COMMAND ${PROTOC}
             ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
             --plugin=protoc-gen-grpc="${GRPC_CPP_PLUGIN}"
             "${hw_proto}"
             DEPENDS "${hw_proto}")
@@ -170,8 +170,8 @@ function(GENERATE_PROTO_PYTHON PROTO_FILE_NAME PROTO_PYTHON_FILES_VAR)
             COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
             COMMAND python3
             ARGS -m grpc_tools.protoc
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
             --python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
             "${hw_proto}"
             DEPENDS "${hw_proto}")
@@ -195,8 +195,8 @@ function(GENERATE_GRPC_PYTHON PROTO_FILE_NAME PROTO_PYTHON_FILES_VAR)
             COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
             COMMAND python3
             ARGS -m grpc_tools.protoc
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs"
-            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
+            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
             --grpc_python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
             "${hw_proto}"
             DEPENDS "${hw_proto}")
@@ -208,7 +208,7 @@ endfunction()
 ##########################################
 ## Protobuf code generation
 
-file(GLOB ENGINE_PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/engine_proto_defs/*.proto")
+file(GLOB ENGINE_PROTO_FILES "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs/*.proto")
 
 # Python bindings
 set(PROTO_PYTHON_INCLUDE_STR "")
@@ -229,12 +229,12 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
     generate_proto_cpp("${PROTO_FILE}" PROTO_SRC_FILES)
 endforeach()
 
-generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
-generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
-generate_proto_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
-generate_grpc_cpp("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
-generate_proto_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
-generate_grpc_python("${CMAKE_CURRENT_SOURCE_DIR}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
+generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
+generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
+generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
+generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
+generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
+generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 
 # Protobuf utils
 set(DATAPACK_MSG_TYPES "")

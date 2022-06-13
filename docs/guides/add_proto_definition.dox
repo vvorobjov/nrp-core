@@ -1,15 +1,19 @@
 /*! \page tutorial_add_proto_definition Adding new protobuf message definitions
 
-This guide shows how to extend the protobuf message definitions availabe in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and gRPC Engines.
+This guide shows how to extend the protobuf message definitions available in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and gRPC Engines.
 
-The process is very simple and consists only of two steps:
+The protobuf messages definitions are stored in a <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">separate repository</a>, in the *protobuf* directory. This repository is checked out as a git submodule during CMake project configuration into *nrp-core-msgs* folder. You can skip the automatic checkout by setting `-D GIT_SUBMODULE=OFF` when calling CMake, then you should manually make sure that the messages definitions on their place in *nrp-core-msgs* folder.
+
+The process of adding the new definitions is very simple and consists only of two steps:
 
 1. Add your new message definitions into a separate *.proto* file. Refer to <a href="https://developers.google.com/protocol-buffers/docs/proto3">proto3 language guide</a> to check available possibilities.
-2. Place the new *.proto* file in the folder *nrp_protobuf/engine_proto_defs*. In this way your message defitinions will be automatically compiled during the NRP-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
+2. Place the new *.proto* file in the folder *nrp-core-msgs/protobuf/engine_proto_defs*. In this way your message definitions will be automatically compiled during the NRP-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
 
 
 After completing the aforementioned steps, the new message definitions will be also available to exchange data with gRPC Engines through the *Engine.DataPackMessage* message type.
-This is the message type used by gRPC Engine servers to send data to gRPC Engine clients. It contains a DataPack Id and the data itself, stored in a *data* field of type *Any*. *Any* is a type of field (please refer to the guide listed above for more information) which can store any type of message. Those message types compiled with NRP-Core from the folder *nrp_protobuf/engine_proto_defs* can be sent to gRPC Engine servers wrapped in *Engine.DataPackMessage*.
+This is the message type used by gRPC Engine servers to send data to gRPC Engine clients. It contains a DataPack Id and the data itself, stored in a *data* field of type *Any*. *Any* is a type of field (please refer to the guide listed above for more information) which can store any type of message. Those message types compiled with NRP-Core from the folder *nrp-core-msgs/protobuf/engine_proto_defs* can be sent to gRPC Engine servers wrapped in *Engine.DataPackMessage*.
 
-The *Engine.DataPackMessage* can be found in the folder *nrp_protobuf/nrp_proto_defs*.
+The *Engine.DataPackMessage* can be found in the folder *nrp-core-msgs/protobuf/nrp_proto_defs*.
+
+Note, that *nrp-core-msgs* is a git submodule that is by default is checked out during the build. If you want to disable the automatic checkout, please, specify `-DGIT_SUBMODULE=OFF` when calling CMake, but make sure that the folder *nrp-core-msgs* exists and has all the necessary files. 
 */

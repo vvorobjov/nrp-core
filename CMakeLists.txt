@@ -129,9 +129,46 @@ endfunction(add_doxygen_source)
 
 
 ##########################################
+## Update git submodules
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+# Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
+
+##########################################
 ## General NRP library
 ## Includes components to create new datapacks and engines
 add_subdirectory(nrp_general_library)
+
+
+##########################################
+## Declare nrp-core-msgs path
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/nrp-core-msgs")
+    set(NRP_CORE_MSGS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nrp-core-msgs/")
+
+    if(NOT EXISTS "${NRP_CORE_MSGS_PATH}/protobuf")
+        message(FATAL_ERROR "The Proto definitions are not found in submodule nrp-core-msgs! Please update submodules and try again.")
+    endif()
+    set(NRP_CORE_MSGS_PROTO_PATH "${NRP_CORE_MSGS_PATH}/protobuf/")
+
+    if(NOT EXISTS "${NRP_CORE_MSGS_PATH}/nrp_ros_msgs")
+        message(FATAL_ERROR "ROS definitions are not found in submodule nrp-core-msgs! Please update submodules and try again.")
+    endif()
+else()
+    message(FATAL_ERROR "The submodule nrp-core-msgs does not exist! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
 
 ##########################################
 ## NRP Supported payload libraries
@@ -341,11 +378,11 @@ set(DOXYGEN_EXAMPLE_PATH
         "examples"
         "config_schemas"
         "nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
-        "nrp_protobuf/nrp_proto_defs"
-        "nrp_protobuf/engine_proto_defs"
+        "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
+        "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
         "nrp_general_library/CMakeLists.txt"
         "CMakeLists.txt"
-        "nrp_ros/nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt"
+        "${NRP_CORE_MSGS_PATH}/nrp_ros_msgs/CMakeLists.txt"
         "README.md")
 
 ## Example Engine. It is built to ensure the examples are not out of date in the documentation

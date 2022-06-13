@@ -1,0 +1,3 @@
+[submodule "nrp-core-msgs"]
+	path = nrp-core-msgs
+	url = https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git
