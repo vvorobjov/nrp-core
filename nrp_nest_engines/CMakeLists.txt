@@ -17,7 +17,7 @@ if(ENABLE_NEST STREQUAL FULL)
         endif()
 
         set(NRP_NEST_CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/nest-simulator/nest-simulator)
-        set(NEST_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
+        set(NEST_INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX})
         if(NOT TARGET nest-simulator)
             ExternalProject_Add(nest-simulator
                     GIT_REPOSITORY https://github.com/nest/nest-simulator.git

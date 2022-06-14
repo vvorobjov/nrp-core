@@ -84,43 +84,28 @@ include(FetchContent)
 find_package(cxxopts 2.2 QUIET)
 if(NOT ${cxxopts_FOUND})
     message("Please wait. Downloading cxxopts...")
-    FetchContent_Declare(cxxopts
+    ExternalProject_Add(cxxopts
         GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
-        GIT_TAG v2.2.1)
+        GIT_TAG v2.2.1
+        INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX})
 
-    FetchContent_GetProperties(cxxopts)
-    if(NOT cxxopts_POPULATED)
-        FetchContent_Populate(cxxopts)
+    set(CXXOPTS_BUILD_EXAMPLES OFF)
+    set(CXXOPTS_BUILD_TESTS OFF)
 
-        set(CXXOPTS_BUILD_EXAMPLES OFF)
-        set(CXXOPTS_BUILD_TESTS OFF)
-
-        add_subdirectory(${cxxopts_SOURCE_DIR} ${cxxopts_BINARY_DIR})
-        add_library(cxxopts::cxxopts ALIAS cxxopts)
-    endif()
 endif()
 
 # restclient-cpp: REST client library
 find_package(restclient-cpp QUIET)
 if(NOT ${restclient-cpp_FOUND})
     message("Please wait. Downloading restclient-cpp...")
-    FetchContent_Declare(restclient-cpp
-        GIT_REPOSITORY https://github.com/mrtazz/restclient-cpp.git
-        GIT_TAG c140e62ecc793533ad40794c17d2982121aebc0b)
 
-    FetchContent_GetProperties(restclient-cpp)
-    if(NOT restclient-cpp_POPULATED)
-        FetchContent_Populate(restclient-cpp)
-        add_subdirectory(${restclient-cpp_SOURCE_DIR} ${restclient-cpp_BINARY_DIR})
-        target_include_directories(restclient-cpp
-            INTERFACE "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+    ExternalProject_Add(restclient-cpp
+            GIT_REPOSITORY https://github.com/mrtazz/restclient-cpp.git
+            GIT_TAG c140e62ecc793533ad40794c17d2982121aebc0b
+            INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -Dwith-mpi=ON -Dwith-python=ON)
 
-        # not very nice hack to prevent restclient-cpp tests from compiling.
-        execute_process(
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                COMMAND rm ${CMAKE_BINARY_DIR}/_deps/restclient-cpp-build/test-program[1]_include.cmake
-        )
-    endif()
 endif()
 
 # pistache: REST server library
@@ -134,16 +119,32 @@ find_package(nlohmann_json REQUIRED)
 find_package(nlohmann_json_schema_validator 2.1.0 QUIET)
 if(NOT ${nlohmann_json_schema_validator_FOUND})
     message("Please wait. Downloading nlohmann_json_schema_validator...")
-    FetchContent_Declare(json_schema
+    ExternalProject_Add(nlohmann_json_schema_validator
             GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
-            GIT_TAG 2.1.0)
+            GIT_TAG 2.1.0
+            INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DBUILD_SHARED_LIBS=ON)
 
-#   FetchContent_MakeAvailable(json_schema)
-    if(NOT json_schema_POPULATED)
-        FetchContent_Populate(json_schema)
-        set(BUILD_TESTS OFF)
-        add_subdirectory(${json_schema_SOURCE_DIR} ${json_schema_BINARY_DIR})
-    endif()
+
+    set(BUILD_TESTS OFF)
+
+endif()
+
+## Log library
+find_package(spdlog 1.8.1 QUIET)
+if(NOT ${spdlog_FOUND})
+    message("Please wait. Downloading spdlog...")
+    ExternalProject_Add(spdlog
+            GIT_REPOSITORY https://github.com/gabime/spdlog.git
+            GIT_TAG v1.8.1
+            INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DSPDLOG_BUILD_SHARED=ON)
+
+
+
+    set(SPDLOG_BUILD_SHARED ON)
+    set(SPDLOG_INSTALL ON)
+
 endif()
 
 # libzip: ZIP Manipulation
@@ -177,20 +178,48 @@ target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<
 set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
 set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
 
+if(NOT ${cxxopts_FOUND})
+    add_dependencies(${LIBRARY_NAME} cxxopts)
+endif()
+
+if(NOT ${restclient-cpp_FOUND})
+    add_dependencies(${LIBRARY_NAME} restclient-cpp)
+endif()
+
+if(NOT ${nlohmann_json_schema_validator_FOUND})
+    add_dependencies(${LIBRARY_NAME} nlohmann_json_schema_validator)
+endif()
+
+if(NOT ${spdlog_FOUND})
+    add_dependencies(${LIBRARY_NAME} spdlog)
+endif()
+
+
+add_library(lib_restclient STATIC IMPORTED )
+set_property(TARGET lib_restclient PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/librestclient-cpp.so")
+
+add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
+set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
+    IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
+
+add_library(lib_spdlog STATIC IMPORTED )
+set_property(TARGET lib_spdlog PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
+
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}
         Boost::filesystem
-        cxxopts::cxxopts
         nlohmann_json::nlohmann_json
-        nlohmann_json_schema_validator
         PkgConfig::Pistache
         PkgConfig::LibZip
         Python3::Module
         Python3::Python
-        restclient-cpp
-        spdlog::spdlog
+        lib_nlohmann_json_schema_validator
+        lib_restclient
+        lib_spdlog
         rt
 
     PRIVATE
@@ -201,6 +230,8 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+        "$<BUILD_INTERFACE:${NRP_DEP_CMAKE_INSTALL_PREFIX}/include>"
+
 
     PRIVATE
 )
@@ -250,7 +281,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     set_target_properties(${TEST_PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
     target_link_libraries(${TEST_PYTHON_MODULE_NAME} ${NAMESPACE_NAME}::${LIBRARY_NAME})
 
-    # Create testing process executble (used for testing ProcessLaunchers)
+    # Create testing process executable (used for testing ProcessLaunchers)
     set(TEST_NRP_PROCESS_EXEC "TestNRPProcessExec")
     add_executable(${TEST_NRP_PROCESS_EXEC} tests/test_process_exec.cpp)
     target_link_options(${TEST_NRP_PROCESS_EXEC} PUBLIC ${NRP_COMMON_LD_FLAGS})
@@ -294,11 +325,10 @@ endif()
 
 set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
+
 # Install library files
 install(TARGETS
         ${LIBRARY_NAME}
-        # TODO: move to its own install command
-        nlohmann_json_schema_validator
     EXPORT
         ${LIB_EXPORT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

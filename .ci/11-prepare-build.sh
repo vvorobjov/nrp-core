@@ -20,15 +20,16 @@ fi
 source "$HOME"/.bashrc
 
 # Check if NEST_INSTALL_DIR is set and the external nest-simulator can be used
-
 [[ -z "$NEST_INSTALL_DIR" ]] && NEST_INSTALL_OPTION="" || NEST_INSTALL_OPTION="-DNEST_INSTALL_DIR=${NEST_INSTALL_DIR}"
 
 # Check if NEST_INSTALL_DIR is set and the external nest-simulator can be used
-
 [[ -z "$CMAKE_CACHE_FILE" ]] && CMAKE_CACHE_FILE="${repo_root}/.ci/cmake_cache/vanilla.cmake"
+
+# set NRP_DEPS_INSTALL_DIR to NRP_INSTALL_DIR if not defined
+NRP_DEPS_INSTALL_DIR="${NRP_DEPS_INSTALL_DIR:-$NRP_INSTALL_DIR}"
 
 # Run cmake
 
-cmake -C "$CMAKE_CACHE_FILE" -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" "${NEST_INSTALL_OPTION}" -Bbuild
+cmake -C "$CMAKE_CACHE_FILE" -DCMAKE_INSTALL_PREFIX="$NRP_INSTALL_DIR" -DNRP_DEP_CMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" "${NEST_INSTALL_OPTION}" -Bbuild
 
 # EOF

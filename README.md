@@ -6,6 +6,7 @@ This README file contains information on how to get nrp-core installed in your s
  
  ```
 export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
+export NRP_DEPS_INSTALL_DIR="/home/${USER}/.local/nrp_deps"
  ```
 
 ## Dependency Installation
@@ -42,31 +43,32 @@ pip install flask_cors mpi4py docopt
 pip install grpcio-tools pytest psutil
    
 # ROS
-Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
 
-Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an existing catkin workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
+# Install ROS: follow the installation instructions: http://wiki.ros.org/noetic Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
+
+#Tell nrp-core where your catkin workspace is located: export a variable CATKIN_WS pointing to an existing catkin workspace root folder. If the variable does not exist, a new catkin workspace will be created at `${HOME}/catkin_ws`.
 
 # SpiNNaker
-Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
-Ensure that if using a virtualenv, this is active when running any SpiNNaker scripts.
+# Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
+# Ensure that if using a virtualenv, this is active when running any SpiNNaker scripts.
 
 # MQTT Paho library, required by datatransfer engine for streaming data over network
 # More information on the project web site https://github.com/eclipse/paho.mqtt.cpp
 # If you do not want to add network data streaming feature, you can skip this step.
 # MQTT Paho C library
-git clone https://github.com/eclipse/paho.mqtt.c.git \
-cd paho.mqtt.c \
-git checkout v1.3.8 \
-cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"\
-cmake --build build/ --target install \
+git clone https://github.com/eclipse/paho.mqtt.c.git
+cd paho.mqtt.c
+git checkout v1.3.8
+cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"
+cmake --build build/ --target install
 sudo ldconfig && cd ..
 
 # MQTT Paho CPP
-git clone https://github.com/eclipse/paho.mqtt.cpp \
-cd paho.mqtt.cpp \
-git checkout v1.2.0 \
-cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
-cmake --build build/ --target install \
+git clone https://github.com/eclipse/paho.mqtt.cpp
+cd paho.mqtt.cpp
+git checkout v1.2.0
+cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_DEPS_INSTALL_DIR}"
+cmake --build build/ --target install
 sudo ldconfig && cd ..
 
 # End of dependencies installation
@@ -80,9 +82,9 @@ git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
 cd nrp-core
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"
+cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DNRP_DEP_CMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"
 mkdir -p "${NRP_INSTALL_DIR}"
-# the installation process might take some time, as it downloads and compiles Nest as well. Also, Ubuntu has an outdated version of nlohman_json. CMake will download a newer version, which takes time as well
+# the installation process might take some time, as it downloads and compiles Nest as well.
 # If you haven't installed MQTT libraries, add ENABLE_MQTT=OFF definition to cmake (-DENABLE_MQTT=OFF).
 make
 make install
@@ -99,10 +101,10 @@ make nrp_doxygen
  ```bash
  # Start of setting environment
  export NRP_INSTALL_DIR="/home/${USER}/.local/nrp" # The installation directory, which was given before
- export PYTHONPATH="${NRP_INSTALL_DIR}"/lib/python3.8/site-packages:$PYTHONPATH
- export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}"/lib:$LD_LIBRARY_PATH
- export PATH=$PATH:"${NRP_INSTALL_DIR}"/bin
- export ROS_PACKAGE_PATH=/<prefix-to-nrp-core>/nrp-core:$ROS_PACKAGE_PATH
+ export NRP_DEPS_INSTALL_DIR="/home/${USER}/.local/nrp_deps"
+ export PYTHONPATH="${NRP_INSTALL_DIR}"/lib/python3.8/site-packages:"${NRP_DEPS_INSTALL_DIR}"/lib/python3.8/site-packages:$PYTHONPATH
+ export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}"/lib:"${NRP_DEPS_INSTALL_DIR}"/lib:$LD_LIBRARY_PATH
+ export PATH=$PATH:"${NRP_INSTALL_DIR}"/bin:"${NRP_DEPS_INSTALL_DIR}"/bin
  . /usr/share/gazebo-11/setup.sh
  . /opt/ros/noetic/setup.bash
  . ${CATKIN_WS}/devel/setup.bash

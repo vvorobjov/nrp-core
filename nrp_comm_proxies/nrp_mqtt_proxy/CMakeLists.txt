@@ -43,6 +43,8 @@ set(TEST_SRC_FILES
 
 ##########################################
 ## Dependencies
+set(ENV{CMAKE_PREFIX_PATH} "${NRP_DEP_CMAKE_INSTALL_PREFIX}:$ENV{CMAKE_PREFIX_PATH}")
+message(STATUS "Using CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH}")
 
 find_package(eclipse-paho-mqtt-c 1.3.8 REQUIRED)
 find_package(PahoMqttCpp 1.2.0 REQUIRED)
@@ -125,6 +127,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})

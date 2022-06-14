@@ -228,20 +228,15 @@ if(NOT ENABLE_SPINNAKER STREQUAL OFF)
     add_library(${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME} ALIAS ${SPINNAKER_LIBRARY_NAME})
     target_compile_options(${SPINNAKER_LIBRARY_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
-    # TODO: It is downloaded every time
-    find_package(SpyNNakerExternalDeviceLib QUIET)
-    if(NOT ${SpyNNakerExternalDeviceLib_FOUND})
-        message("Downloading SpyNNakerExternalDeviceLib")
-        FetchContent_Declare(SpyNNakerVisualiser
-                GIT_REPOSITORY https://github.com/SpiNNakerManchester/Visualiser)
-        FetchContent_MakeAvailable(SpyNNakerVisualiser)
-        add_custom_target(
-                sPyNNakerExternalDevices ALL
-                COMMAND make clean && make CPPFLAGS=-fPIC
-                WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
-        include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
-        add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)
-    endif()
+    FetchContent_Declare(SpyNNakerVisualiser
+            GIT_REPOSITORY https://github.com/SpiNNakerManchester/Visualiser)
+    FetchContent_MakeAvailable(SpyNNakerVisualiser)
+    add_custom_target(
+            sPyNNakerExternalDevices ALL
+            COMMAND make clean && make CPPFLAGS=-fPIC
+            WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+    include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+    add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)
 
     target_include_directories(${SPINNAKER_LIBRARY_NAME} BEFORE
             PUBLIC

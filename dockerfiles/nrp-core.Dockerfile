@@ -36,18 +36,22 @@ RUN pip install opencv-python
 COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies/apt/requirements.docs.txt ${HOME}/.dependencies/apt/requirements.docs.txt
 RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.docs.txt  | tr "\n" " ")
 
-# Install MQTT (to NRP_INSTALL_DIR)
+# Add dependencies installation directory to PATH
+ENV PATH=$PATH:$NRP_DEPS_INSTALL_DIR/bin:$HOME/.local/bin
+ENV LD_LIBRARY_PATH=$NRP_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+
+# Install MQTT (to NRP_DEPS_INSTALL_DIR)
 RUN git clone https://github.com/eclipse/paho.mqtt.c.git \
     && cd paho.mqtt.c \
     && git checkout v1.3.8 \
-    && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}"\
+    && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"\
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.c
 
 RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
     && cd paho.mqtt.cpp \
     && git checkout v1.2.0 \
-    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_INSTALL_DIR}"\
+    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_DEPS_INSTALL_DIR}"\
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
 

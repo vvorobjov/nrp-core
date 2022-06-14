@@ -90,29 +90,6 @@ list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
 
 
-
-
-##########################################
-## Log library
-find_package(spdlog 1.8.1 QUIET)
-if(NOT ${spdlog_FOUND})
-    message("Please wait. Downloading spdlog...")
-    FetchContent_Declare(spdlog
-        GIT_REPOSITORY https://github.com/gabime/spdlog.git
-        GIT_TAG v1.8.1)
-
-    FetchContent_GetProperties(spdlog)
-    if(NOT spdlog_POPULATED)
-        FetchContent_Populate(spdlog)
-
-        set(SPDLOG_BUILD_SHARED ON)
-        set(SPDLOG_INSTALL ON)
-
-        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
-    endif()
-endif()
-
-
 ##########################################
 ## Doxygen
 find_package(Doxygen REQUIRED)
@@ -127,6 +104,11 @@ function(add_doxygen_source directory)
     set_property(GLOBAL PROPERTY DOXYGEN_SOURCE_LIST "${tmp}")
 endfunction(add_doxygen_source)
 
+if(NOT DEFINED NRP_DEP_CMAKE_INSTALL_PREFIX)
+    set(NRP_DEP_CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+else()
+    message(STATUS "Installing nrp-core dependencies at: ${NRP_DEP_CMAKE_INSTALL_PREFIX}")
+endif()
 
 ##########################################
 ## Update git submodules
