@@ -76,6 +76,7 @@ ENV LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 ENV PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
 
 COPY --from=nrp-core-builder ${NRP_INSTALL_DIR} ${NRP_INSTALL_DIR}
+COPY --from=nrp-core-builder ${NRP_DEPS_INSTALL_DIR} ${NRP_DEPS_INSTALL_DIR}
 
 # Define entrypoint
 WORKDIR ${HOME}

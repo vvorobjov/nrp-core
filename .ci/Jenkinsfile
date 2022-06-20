@@ -45,6 +45,7 @@ def generateStage(job) {
                     docker.image("${DockerRegistryUrl}/nrp-core/${job.image}").pull()
                     docker.image("${DockerRegistryUrl}/nrp-core/${job.image}").inside {
                         checkout scm
+                        sh 'git submodule update --init'
                         echo "This is ${job.name}."
                         sh "export CMAKE_CACHE_FILE=${job.cmakeconf}; bash .ci/11-prepare-build.sh"
                         sh 'bash .ci/20-build.sh'
@@ -101,6 +102,7 @@ pipeline {
                 label 'cd_label'
             }
             steps {
+                sh 'git submodule update --init'
                 sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose build"
                 withCredentials([usernamePassword(credentialsId: 'nexusadmin', usernameVariable: 'USER', passwordVariable: 'PASSWORD')])
                 {

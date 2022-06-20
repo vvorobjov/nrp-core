@@ -21,7 +21,7 @@ RUN sudo python3 setup.py develop
 # Install TVB root
 
 WORKDIR ${HOME}
-RUN git clone https://github.com/the-virtual-brain/tvb-root.git
+RUN git clone -b '2.6' --single-branch --depth 1 https://github.com/the-virtual-brain/tvb-root.git
 WORKDIR ${HOME}/tvb-root/tvb_build
 RUN sh install_full_tvb.sh
 
