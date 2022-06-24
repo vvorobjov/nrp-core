@@ -49,6 +49,14 @@ if(ENABLE_NEST STREQUAL FULL)
     endif()
 endif()
 
+set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
+set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
+
+# add to nrp env vars
+list(APPEND NRP_ENV_VARS "PATH=${NEST_CMAKE_INSTALL_BINDIR}:\${PATH}")
+list(APPEND NRP_ENV_VARS "PYTHONPATH=${NEST_CMAKE_INSTALL_PYNEST}:\${PYTHONPATH}")
+set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
+
 
 ##########################################
 ## Nest Engines

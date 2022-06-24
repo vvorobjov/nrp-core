@@ -45,7 +45,7 @@ The required property `"LaunchType"` is a const string value that uniquely defin
 
 \section docker_launcher DockerLauncher
 
-The DockerLauncher launch command launches one docker container that runs a Engine. It connects to a \ref docker_launcher_manager "Manager Server" running on a (possibly remote) host, specified in the launch command configuration, where creates and run docker containers.
+The DockerLauncher launch command launches an Engine inside of a docker container. It connects to a \ref docker_launcher_manager "Manager Server" running on a (possibly remote) host, specified in the launch command configuration, where creates and run docker containers.
 
 For more details about the components involved in launching Engines in docker containers see \ref fti_lifecycle_components_docker "this diagram".
 
@@ -55,14 +55,17 @@ For more details about the components involved in launching Engines in docker co
 The Manager Host is the machine in which the Engine docker container will run, possibly localhost.
 It's available, by default, on port 5002.
 
-Manager Server is implemented in the file "docker_components/manager/server/docker_launcher.py".
+Manager Server is implemented in the file "docker_manager/server/docker_launcher.py".
 
 `"docker_launcher.py"` accepts the following command line arguments:
 - `--port`: The port on which `"Manager Server"` will wait for requests, defaults to 5002
 
 `"Manager Server"` provides the following REST interface accepting and returning JSON objects:
 - (`"/uploader"`, `methods=["POST"]`): Upload the experiment files to the docker container.
-  - Input: a zip file containing the experiment files, {"file": \<a zip file\>}
+  - Input: a zip file containing the experiment files, {"filename": \<string\>}
+  - Output: the log file, res.content
+- (`"/downloader"`, `methods=["GET"]`): Fetch a file from the docker container mounted share volume. Used to retrieve experiment log files.
+  - Input: name of the file to fetch, {"file": \<file name\>}
   - Output: operation message and error message, {"msg":"", "Error": ""}
 - (`"/clear"`, `methods=["GET"]`): Remove any uploaded files and created nrp engine containers.
   - Input: N/A
@@ -71,7 +74,7 @@ Manager Server is implemented in the file "docker_components/manager/server/dock
   - Input: N/A
   - Output: tips, {"msg":"Force shutting down..."}
 - (`"/docker_run"`, `methods=["POST"]`): Create a docker container as per provided configuration, with a shared volume and `"host"` network mode.
-  - Input: configuration information of the container to run, {"img": \<ImageName\>,"engine": <EngineName">,"ExecCmd": <execution command>,"ExecEnvironment": <execution environment>, "WorkDir": \<path for working space in the container\>}
+  - Input: configuration information of the container to run, {"img": \<ImageName\>,"engine": <EngineName">,"ExecCmd": <execution command>,"ExecEnvironment": <execution environment>}
 
   - Output: the created container ID and error messages, {"id": \<the container ID\>, "err": \<error message\>}
 - (`"/docker_stop"`, `methods=["POST"]`): Kill and remove the docker container having the provided container ID.
@@ -81,9 +84,13 @@ Manager Server is implemented in the file "docker_components/manager/server/dock
   - Input: a container ID, {"id": \<the container ID\>}
   - Output: the running status of the container, {"status": \<the status\>, "err": ""}
 
+Finally, the Manager Server can be installed by executing the script `"docker_manager/install.sh"`.
+
 \subsection docker_launcher_engine_param Remote Engine configuration
 
-Due to the distributed nature of the experiments when using a DockerLauncher, the Engine in use requires some extra configuration parameters that are usually left as default. Such parameters, in the case of EngineJSONServer, are shown below.
+Due to the distributed nature of the experiments when using a DockerLauncher, some Engine parameters that can be usually left with their default values, must be set properly.
+These usually involve ip addresses. 
+For example, in the case of the PythonJSONEngine, the following parameters should be taken care of:
 
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
@@ -91,13 +98,10 @@ Due to the distributed nature of the experiments when using a DockerLauncher, th
 <tr><td>RegistrationServerAddress<td>Address EngineJSONRegistrationServer is listening at. Once the JSON engine server has bound to a port, it will use this address to register itself with the SimulationManager<td>string<td>localhost:9001<td><td>
 </table>
 
-<em>Note:</em>
+If `"ServerAddress"` and `"RegistrationServerAddress"` are left unset, the Manager REST server and NRP-Core are assumed to be running in the same host (i.e. Case 1 of \ref running_example_docker_exp).
+If the Engine process will be run in a remote host, (Cases 2 to 4), `"ServerAddress"` and `"RegistrationServerAddress"` must be set properly.
 
-`"ServerAddress"` is the address of the remote engine, and the `"RegistrationServerAddress"` is the address of the host running NRP-Core.
-
-If `"ServerAddress"` and `"RegistrationServerAddress"` are left unset, the Manager REST server and NRP-Core are assumed to be running in the same host, (i.e. Case 1 of \ref running_example_docker_exp).
-Conversely, to implement the architecture of the other cases (Case 2 to 4), `"ServerAddress"` and `"RegistrationServerAddress"` are required.
-
+In conclusion, when running Engines in remote hosts their configuration parameters should be carefully reviewed.
 
 \subsection docker_launcher_schema Schema
 
@@ -106,12 +110,8 @@ Below are listed the parameters required to configure DockerLauncher:
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>LaunchType<td>The type of LaunchCommand<td>const string<td>DockerLauncher<td>X<td>
-<tr><td>EngineEnv<td>The environment variables required by the (remote) engine and simulator<td>string<td>Path to npr-core in the container<td><td>X
-<tr><td>EngineCmd<td>The command to be executed in the (remote) container<td>string<td> python3 -B python_json_engine.py <td><td>
-<tr><td>DaemonAddress<td>The IP address of manager host to connect<td>string<td><td>X<td>
+<tr><td>DockerServerAddress<td>The IP address of manager host to connect<td>string<td><td>X<td>
 <tr><td>ImageName<td>The name of docker image to be used<td>string<td><td>X<td>
-<tr><td>ContainerName<td>The name of the container to run<td>string<td>""<td><td>
-<tr><td>WorkDir<td>The work directory of the simulator in the (remote) container<td>string<td>/root/remote_sim<td><td>
 <tr><td>UploadFolder<td>The name of the folder containing experiment data to be uploaded to the (remote) host<td>string<td>""<td><td>
 </table>
 
@@ -122,8 +122,8 @@ The complete schema is listed below:
 \subsection docker_launcher_engines Usage
 
 The precondition for using DockerLauncher to run Engines
-is to deploy in the (remote) Manager host a docker image containing the Engine itself and its dependencies (e.g. the simulator and its requirements). In the case of said Engine being implemented as a specialization of one of the engines provided by nrp-core, those shall be included too (e.g. py_sim_engine requires PythonJSONEngine).
-Provided that, DockerLauncher can, then, be employed by setting up the experiment configuration as explained in the sections above.
+is to deploy in the (remote) Manager host a docker image containing the Engine itself and its dependencies (e.g. the simulator and its requirements).
+Provided that, DockerLauncher can then be employed by setting up the experiment configuration as explained in the sections above.
 
 The page \ref running_example_docker_exp contains more details and examples on the use of DockerLauncher.
 

@@ -162,11 +162,6 @@ class EngineJSONNRPClient
             return startParams;
         }
 
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        {
-            return this->engineConfig().at("EngineEnvParams");
-        }
-
         virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);

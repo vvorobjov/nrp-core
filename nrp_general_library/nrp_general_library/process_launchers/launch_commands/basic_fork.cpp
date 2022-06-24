@@ -41,9 +41,11 @@ BasicFork::~BasicFork()
     this->stopProcess(60);
 }
 
-pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
-                                     const std::vector<std::string> &startParams, bool appendParentEnv,
-                                     int logFD)
+pid_t BasicFork::launchProcess(const nlohmann::json &/*launcherConfig*/, const std::string& procCmd,
+                               const std::vector<std::string> &envParams,
+                               const std::vector<std::string> &startParams,
+                               bool appendParentEnv,
+                               int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -146,15 +148,6 @@ pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std
         // Fork failed, throw error
         throw NRPException::logCreate("Forking child process failed");
     }
-}
-pid_t BasicFork::launchEngineProcess(const nlohmann::json &launcher_info, const std::vector<std::string> &envParams,
-                                     const std::vector<std::string> &startParams, bool appendParentEnv)
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    return this->launchProcess(launcher_info.at("EngineProcCmd").get<std::string>(),
-                                envParams, startParams,
-                                appendParentEnv);
 }
 
 pid_t BasicFork::stopProcess(unsigned int killWait)

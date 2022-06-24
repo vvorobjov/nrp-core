@@ -302,11 +302,6 @@ class EngineGrpcClient
             return startParams;
         }
 
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        {
-            return this->engineConfig().at("EngineEnvParams");
-        }
-
     protected:
 
         void resetEngineTime() override

@@ -31,10 +31,13 @@ EngineClientInterface::~EngineClientInterface() = default;
 pid_t EngineClientInterface::launchEngine()
 {
     // Launch engine
+    nlohmann::json procConf;
+    procConf["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
+    procConf["ProcCmd"] = this->engineConfig().at("EngineProcCmd");
+    procConf["ProcEnvParams"] = this->engineConfig().at("EngineEnvParams");
+    procConf["ProcStartParams"] = this->engineProcStartParams();
 
-    // TODO Improve engine configuration handling.
-    // Quick fix: revert NRRPLT-8450.
-    return this->_process->launchEngineProcess(this->engineConfig(), this->engineProcEnvParams(), this->engineProcStartParams());
+    return this->_process->launchProcess(procConf);
 }
 
 const EngineClientInterface::datapacks_t &EngineClientInterface::updateDataPacksFromEngine(const EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers)

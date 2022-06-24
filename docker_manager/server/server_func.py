@@ -6,7 +6,7 @@ import docker
 import time
 
 def unzip_file(zip_file_name):
-    store_path = zip_file_name.strip(".zip")
+    store_path = os.path.dirname(zip_file_name)
     with zipfile.ZipFile(zip_file_name, "r") as zip_file:
         for f_name in zip_file.namelist():
             zip_file.extract(f_name, store_path)
@@ -99,7 +99,7 @@ class DockerContainer(object):
         """
         exec_cmd = exec_info["ExecCmd"]
         exec_env = exec_info["ExecEnvironment"]
-        exec_dir = exec_info["WorkDir"]
+        exec_dir = self.share_volume
 
         msg = ""
         try:

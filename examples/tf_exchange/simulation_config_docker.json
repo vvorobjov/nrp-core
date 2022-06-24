@@ -7,18 +7,13 @@
 		{
 			"EngineType": "python_json",
 			"EngineName": "python_1",
-			"PythonFileName": "/share/experiment_data/python_1/engine_1.py",
+			"PythonFileName": "engine_1.py",
 			"ServerAddress":"localhost:6666",
 			"RegistrationServerAddress":"localhost:8008",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DaemonAddress":"localhost:5002",
-				"ImageName":"nrp_minimal:v0",
-				"UploadFolder":".",
-				"EngineEnv":[
-					"LD_LIBRARY_PATH=/root/.local/nrp/lib:$LD_LIBRARY_PATH",
-					"PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:$PYTHONPATH"
-				]
+				"DockerServerAddress":"localhost:5002",
+				"ImageName":"nrp-core/nrp-vanilla-ubuntu20:latest"
 			}
 		},
 		{

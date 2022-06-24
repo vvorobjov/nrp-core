@@ -24,10 +24,8 @@ RUN mkdir ${HOME}/nrp \
     && cd models \
     && ./create-symlinks.sh
 
-ENV GAZEBO_PLUGIN_PATH "${NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:$GAZEBO_PLUGIN_PATH"
-ENV LD_LIBRARY_PATH "${NRP_INSTALL_DIR}/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:${NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:$LD_LIBRARY_PATH"
-ENV GAZEBO_MODEL_PATH "/usr/share/gazebo-11/models:${GAZEBO_MODEL_PATH}"
-
+# Setup gazebo
 WORKDIR ${HOME}
+RUN echo '. /usr/share/gazebo-11/setup.sh' >> ${HOME}/.bashrc
 
 # EOF

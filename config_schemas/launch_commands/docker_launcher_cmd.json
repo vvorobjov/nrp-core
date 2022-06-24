@@ -9,41 +9,20 @@
         "type": "string",
         "const": "DockerLauncher"
       },
-      "EngineEnv":{
-        "type": "array",
-        "default":[
-          "LD_LIBRARY_PATH=/root/.local/nrp/lib:$LD_LIBRARY_PATH",
-          "PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:$PYTHONPATH"
-        ],
-        "description": "The environment variables required by the (remote) engine and simulator"
-      },
-      "EngineCmd":{
+      "DockerServerAddress": {
         "type": "string",
-        "default":"python3 -B python_json_engine.py",
-        "description": "The command to be executed in the (remote) container"
+        "description": "the IP address of the Docker Server"
       },
-      "WorkDir":{
-        "type": "string",
-        "default":"/root/remote_sim",
-        "description": "The work directory of the simulator in the (remote) container."
-      },
-      "DaemonAddress": {
-        "type": "string",
-        "description": "the IP address of the (remote) Manager server."
-      },
-      "ImageName":{
+      "ImageName": {
         "type": "string",
         "description": "The name of docker image to be used."
       },
-      "ContainerName":{
-        "type": "string",
-        "description": "The name of the container to run."
-      },
       "UploadFolder":{
         "type": "string",
-        "description": "The name of the folder containing experiment data to be uploaded to the (remote) host."
+        "description": "The name of the folder containing experiment files to be uploaded to the Docker container",
+        "default": ""
       }
     },
-    "required" : ["LaunchType","DaemonAddress", "ImageName"]
+    "required" : ["LaunchType","DockerServerAddress", "ImageName"]
   }
 }

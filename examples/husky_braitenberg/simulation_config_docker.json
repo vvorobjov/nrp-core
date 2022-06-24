@@ -4,24 +4,15 @@
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
-			"EngineType": "gazebo_json",
+			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
+			"GazeboWorldFile": "husky_world.sdf",
 			"EngineProcStartParams": ["--verbose"],
-			"GazeboWorldFile": "/share/experiment_data/gazebo/husky_world.sdf",
-			"ServerAddress":"localhost:6666",
-			"RegistrationServerAddress":"localhost:8008",
+			"EngineProcCmd": "xvfb-run /usr/bin/gzserver",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DaemonAddress":"localhost:5002",
-				"ImageName":"nrp_gazebo:v0",
-				"EngineEnv":[
-					"LD_LIBRARY_PATH=/root/.local/nrp/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/root/.local/nrp/lib/nrp_gazebo_plugins:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:$LD_LIBRARY_PATH",
-					"PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:$PYTHONPATH",
-					"DISPLAY=:1"
-				],
-				"UploadFolder":".",
-				"EngineCmd":"/usr/bin/gzserver",
-				"WorkDir": "/root"
+				"DockerServerAddress":"localhost:5002",
+				"ImageName":"nrp-core/nrp-gazebo-ubuntu20:latest"
 			}
 		},
 		{

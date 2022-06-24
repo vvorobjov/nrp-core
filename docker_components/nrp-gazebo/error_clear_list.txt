@@ -1,3 +1,0 @@
-empty_world
-husky_model
-vr_screen

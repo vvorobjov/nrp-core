@@ -87,11 +87,6 @@ class EngineClientInterface
         virtual const std::vector<std::string> engineProcStartParams() const = 0;
 
         /*!
-         * \brief Get all Engine Process Environment variables.
-         */
-        virtual const std::vector<std::string> engineProcEnvParams() const = 0;
-
-        /*!
          * \brief Launch the engine
          * \return Returns engine process ID on success, throws on failure
          */

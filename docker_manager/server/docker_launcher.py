@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from server_func import *
 import os,signal,time
 
@@ -35,6 +35,14 @@ def uploader():
     app.logger.info(msg)
 
     return {"msg":msg, "Error": err}
+
+
+@app.route('/downloader', methods=['GET'])
+def downloader():
+    file_name = request.json["filename"]
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'], file_name, as_attachment=True
+    )
 
 
 @app.route("/clear", methods=['GET'])

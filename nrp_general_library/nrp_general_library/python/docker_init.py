@@ -13,38 +13,35 @@ class DockerConnector(object):
     """
     def __init__(self, configure_str): 
         super(DockerConnector, self).__init__()
-        # Server
+
         self.configure_val = json.loads(configure_str)
-        self.configure_val["ExecEnvironment"] = \
-            self.configure_val["ExecEnvironment"].split(',')
-        self.configure_val["ExecEnvironment"].extend(self.configure_val["EngineEnv"])
         self.log_info = ""
         self.container_id = -1
 
-        self.ip_host = self.configure_val["DaemonAddress"]
+        self.ip_host = self.configure_val["DockerServerAddress"]
         zip_folder = self.configure_val["UploadFolder"]
 
-        # Upload necessary files to the remote server
-        if zip_folder != "":
-            zip_file = self.configure_val["EngineName"] + ".zip"
-            zip_folder = os.path.join(os.getcwd(), zip_folder)
-            if os.path.exists(zip_folder):
-                if zip_folder[-1] != "/":
-                    zip_folder += "/"
-                self.make_zip(zip_folder, zip_file)
-                self.upload_file(zip_file)
-                os.remove(zip_file)
-            else:
-                self.log_info = "The necessary folder is not found !!!"
+        # If "UploadFolder" == "", zip the current folder
+        if zip_folder == "":
+            zip_folder = os.getcwd()
+
+        zip_file = os.path.basename(zip_folder) + ".zip"
+
+        if os.path.exists(zip_folder):
+            if zip_folder[-1] != "/":
+                zip_folder += "/"
+            self.make_zip(zip_folder, zip_file)
+            self.upload_file(zip_file)
+            os.remove(zip_file)
+        else:
+            self.log_info = f"The folder {zip_folder} does not exist and can't be uploaded to docker server"
 
     """ Send a request to create a container inside the remote server """
     def initializing(self):
+
         config_info = {"img": self.configure_val["ImageName"],
-                       "engine": self.configure_val["EngineName"],
-                       "ExecCmd": f'{self.configure_val["EngineCmd"]}'
-                                  f'{self.configure_val["EngineProcCmdArgs"]}',
-                       "ExecEnvironment": self.configure_val["ExecEnvironment"],
-                       "WorkDir": self.configure_val["WorkDir"]}
+                       "ExecCmd": f'{self.configure_val["ProcCmd"]} ' + ' '.join(self.configure_val["ProcCmdArgs"]),
+                       "ExecEnvironment": self.configure_val["ExecEnvironment"]}
         try:
             # Execute program in the created docker container
             resp = requests.post("http://" + self.ip_host + \
@@ -74,7 +71,7 @@ class DockerConnector(object):
 
     """ Receive the status of the created container inside the remote server """
     def get_container_status(self):
-        status = "RUNNING"
+        status = "ERROR"
         try:
             # Check the created docker container is removed or not
             resp = requests.post("http://" + self.ip_host + \
@@ -113,7 +110,7 @@ class DockerConnector(object):
 
     """ Upload the necessary file to the remote server """
     def upload_file(self, file_name):
-        with  open(file_name, 'rb') as exp_files:
+        with open(file_name, 'rb') as exp_files:
             file_info = {'file': exp_files}
             trg_url = "http://" + self.ip_host + "/uploader"
             try:
@@ -126,3 +123,20 @@ class DockerConnector(object):
                 self.log_info = "Could not convert the data: " + e.__str__()
             except BaseException as e:
                 self.log_info = "Shutdown Error " + e.__str__()
+
+    """ Download the necessary file from the remote server """
+    def download_file(self, folder, filename):
+        try:
+            resp = requests.get("http://" + self.ip_host + \
+                                "/downloader", json={"filename": filename})
+
+            if resp.status_code == 404:
+                self.log_info = f"File {filename} not found in server"
+            else:
+                with open(os.path.join(folder, filename), 'wb') as file:
+                    file.write(resp.content)
+
+        except requests.exceptions.ConnectionError as e:
+            self.log_info = "Shutdown with Connection Error" + e.__str__()
+        except BaseException as e:
+            self.log_info = "Shutdown Error " + e.__str__()

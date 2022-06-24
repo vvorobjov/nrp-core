@@ -1,65 +1,94 @@
 import grpc
 import os
-import signal
 from contextlib import redirect_stdout
-import psutil
 from threading import Thread
 
 from nrp_server_pb2 import EmptyMessage, RunLoopMessage
 from nrp_server_pb2_grpc import NrpCoreStub
+
+from nrp_core.nrp_server_launchers import *
 
 
 class NrpCore:
 
     TIMEOUT_SEC = 15
 
-    def __init__(self, address, args, log_output=True) -> None:
-        """Spawns a child process for NRP Core with given arguments"""
+    def __init__(self, address, experiment_folder="", config_file="simulation_config.json", args="",
+                 log_output=True, docker_server_address="", image_name="") -> None:
+        """Spawns NRPCoreSim with given arguments
+
+        :param str address: the address that will be used by NRPCoreSim server
+        :param str experiment_folder: path to the folder containing all files needed to execute the experiment.
+                                        By default, is an empty string, which is interpreted as the current folder.
+        :param str config_file: path to the experiment configuration file. It can be an absolute path or
+                                relative to `experiment_folder`.
+                                By default, "simulation_config.json"
+        :param str args: additional NRPCoreSim command line parameters
+        :param bool log_output: if True, console output from NRPCoreSim process is hidden and logged into a file named
+                                .console_output.log in the experiment folder. Default is True.
+        :param str docker_server_address: IP address of the \ref docker_launcher_manager "Docker Manager server" used
+                                            to launch the experiment in a docker container (more detail below).
+                                            Empty by default.
+        :param str image_name: name of the docker image which will be used to run the experiment (more detail below).
+                                Empty by default.
+        """
+        
         self._devnull = open(os.devnull, 'w')
-        self.child_pid = os.fork()
-        is_child = (self.child_pid == 0)
 
-        # Server side
-        if is_child:
-            args = f"{args} -m server --server_address {address} --slave"
-            if log_output:
-                args = args + " --logoutput=all"
-            args_final = ["NRPCoreSim"] + args.split(" ")
-            os.execvp("NRPCoreSim", args_final)
-        # Client side
+        # Initialize variables in case NRPServer launching fails
+        self._sim_state = "None"
+        self._is_open = False
+        self._channel = None
+        self._stub = None
+
+        # Spawn NRP Core server process with chosen launcher
+        log_file = ".console_output.log"
+        server_args = ["-c", config_file, "-m", "server", "--server_address", address]
+        if args:
+            server_args += args.split(" ")
+        if log_output:
+            server_args += ["--logoutput=all", f"--logfilename={log_file}"]
+
+        self._launcher = None
+
+        if docker_server_address:
+            self._launcher = NRPCoreDockerLauncher(server_args,
+                                                   experiment_folder,
+                                                   docker_server_address,
+                                                   image_name,
+                                                   log_file)
         else:
-            # Connect to server
-            self._channel = grpc.insecure_channel(address)
-            self._stub = NrpCoreStub(self._channel)
+            self._launcher = NRPCoreForkLauncher(server_args, experiment_folder)
 
-            # Wait for the server to start
-            n = self._wait_until_server_ready(self._channel)
-            if n > 0:
-                self._kill_nrp_core_process()
-                if n >= self.TIMEOUT_SEC:
-                    raise TimeoutError("Timeout during NRP Server startup.")
-                else:
-                    raise ChildProcessError("Error during NRP Server startup.")
-            # Set simulation state
-            self._sim_state = "Created"
-            self._is_open = True
+        # Connect to server
+        self._channel = grpc.insecure_channel(address)
+        self._stub = NrpCoreStub(self._channel)
+
+        # Wait for the server to start
+        n = self._wait_until_server_ready(self._channel, self._launcher.is_alive_nrp_process)
+        if n > 0:
+            self._launcher.kill_nrp_process()
+            if n >= self.TIMEOUT_SEC:
+                raise TimeoutError("Timeout during NRP Server startup.")
+            else:
+                raise ChildProcessError("Error during NRP Server startup.")
+
+        # Set simulation state
+        self._sim_state = "Created"
+        self._is_open = True
 
     def __del__(self) -> None:
-        """Deletes the NRP Core objects and kills its subprocess"""
+        """Deletes the NRP Core objects and kills the server"""
         try:
             with redirect_stdout(self._devnull):
                 self.shutdown()
+                self._close_client()
         except grpc.RpcError:
             pass
 
         self._devnull.close()
 
-    def _kill_nrp_core_process(self):
-        """Sends SIGTERM signal to the NRP Core subprocess"""
-        try:
-            os.kill(self.child_pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
+    def _close_client(self):
 
         if self._channel:
             self._channel.close()
@@ -68,15 +97,11 @@ class NrpCore:
 
         print("NRP Server is closed now. This object can be deleted.")
 
-    def _wait_until_server_ready(self, channel) -> int:
+    def _wait_until_server_ready(self, channel, is_server_alive) -> int:
         """Waits for the gRPC server of the NRP Core process to start"""
         n = 1
         while n <= self.TIMEOUT_SEC:
-            try:
-                p = psutil.Process(self.child_pid)
-                if p.status() == "zombie":
-                    return n
-            except psutil.NoSuchProcess:
+            if not is_server_alive():
                 return n
 
             try:
@@ -158,14 +183,9 @@ class NrpCore:
     def shutdown(self):
         """Calls the shutdown() RPC of the NRP Core Server"""
         with redirect_stdout(self._devnull):
-            self._call_rpc(self._stub.shutdown, EmptyMessage())
+            if self._stub:
+                self._call_rpc(self._stub.shutdown, EmptyMessage())
 
-        # Server is closed now
-        try:
-            os.waitpid(self.child_pid, 0)
-        except ChildProcessError:
-            pass
-
-        self._kill_nrp_core_process()
+        self._launcher.kill_nrp_process()
 
 # EOF

@@ -168,6 +168,11 @@ configure_file("nrp_general_library/python/__init__.py.in" "${CMAKE_CURRENT_BINA
 # Process startup script
 configure_file("cmake/set_env_exec.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/set_env_exec.sh" @ONLY)
 
+# add to nrp env vars
+list(APPEND NRP_ENV_VARS "PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}:\${PATH}")
+list(APPEND NRP_ENV_VARS "LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:\${LD_LIBRARY_PATH}")
+set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
+
 
 ##########################################
 # NRPGeneralLibrary

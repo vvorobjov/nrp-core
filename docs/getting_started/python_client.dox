@@ -6,17 +6,19 @@ Additionally, we provide a Python module, *nrp_core.client*, which can be used t
 
 The main class used to launch and control NRP-Core experiment is *nrp_core.client.NrpCore*.
 When instantiated, it internally launches an NRPCoreSim process in \ref server_mode "server mode" and forwards requests made through its methods to the NRPCoreSim GRPC server.
+The NRPCoreSim process can be launched either as a forked process or inside of a docker container.
+More details on these options are given below.
 
 nrp_core.client.NrpCore provides methods which match the available services in NRPCoreSim server: initialize(), run_loop(int number_of_iterations), run_until_timeout(), stop(), reset() and shutdown().
 Each of these methods calls the corresponding GRPC service as described \ref server_mode "here".
 
-Below there is an example on how to use **NrpCore** for loading the \ref getting_started_experiment_tf_exchange "tf_exchange" experiment and running it:
+Below there is an example on how to use **NrpCore** for launching the \ref getting_started_experiment_tf_exchange "tf_exchange" experiment and running it:
 
 \code{.py}
 # Import NrpCore
 from nrp_core.client import NrpCore
 # Start NRPCoreSim server with tf_exchange experiment and connects to it
-n = NrpCore('localhost:5345',"-c simulation_config.json -d nrp-core/examples/tf_exchange", True)
+n = NrpCore('localhost:5345',"nrp-core/examples/tf_exchange","simulation_config.json")
 # Initialize the experiment
 n.initialize()
 # Run the simulation loop for 10 iterations
@@ -33,8 +35,12 @@ n.shutdown()
 
 NrpCore takes as arguments:
 - address (str): the address that will be used by NRPCoreSim server
-- args (str): command line arguments to start NRPCoreSim with (as described here: \ref nrp_simulation)
+- experiment_folder (str): path to the folder containing all files needed to execute the experiment. By default is an empty string, which is interpreted as the current folder
+- config_file (str): path to the experiment configuration file. It can be an absolute path or relative to `experiment_folder`. By default, "simulation_config.json"
+- args (str): additional NRPCoreSim command line parameters
 - log_output (bool): if true, console output from NRPCoreSim process is hidden and logged into a file .console_output.log in the experiment folder. It is true by default.
+- docker_server_address (str): ip address of the \ref docker_launcher_manager "Docker Manager server" used to launch the experiment in a docker container (more detail below). Empty by default.
+- image_name (str): name of the docker image which will be used to run the experiment (more detail below). Empty by default.
 
 Each of the methods provided to control the experiment returns a boolean value which is True if the request was processed correctly and False otherwise.
 They can return False either because the request was not possible from the current state of the experiment (see \ref experiment_lifecycle "here" for more information on the experiment lifecycle FSM) or because there was an error while executing the request.
@@ -45,4 +51,15 @@ With the exception of *run_loop()* and *run_until_timeout()*, which accepts a pa
 When called with *run_async=True* they return a *Thread* object which can be used to monitor the state of the request.
 In combination with the *stop()* request and the \ref datatransfer_engine "datatransfer" engine, this option could be used to monitor the simulation and stop it after some condition fulfills or visualize or process experiment data in realtime.
 
+\section python_client_docker Launching Experiment in Docker Containers
+
+By default, when instantiating `NrpCore` object, NRPCoreSim is started in a forked process. 
+In case of willing to run NRPCoreSim in a docker container instead, set the parameters `docker_server_address` and `image_name` as described above.
+
+When running NRPCoreSim in a container from NrpCore Python client, the behavior of the latter remains unchanged, i.e. as explained above in this page.
+The only noticeable difference / constraint, is that the path specified in the `config_file` parameter of NrpCore client must be relative to `experiment_folder`, and the configuration file should be itself placed inside of the experiment folder.
+This is the normal case anyways, therefore this constraint will go unnoticed most of the times.
+
+<b>NOTE:</b> in order to launch experiment in dockers, the \ref docker_launcher_manager "Docker Manager server" must be running in the host specified by the parameters `docker_server_address`.
+See this \ref running_example_docker_exp "page" for more details on how to do this.
 */

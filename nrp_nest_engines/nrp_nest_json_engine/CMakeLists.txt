@@ -54,16 +54,18 @@ set(TEST_SRC_FILES
 ##########################################
 ## Header configuration
 
+set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
+
 # General Nest Header defines
 set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_json_engine/config/cmake_constants.h.in")
-set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
-set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
 configure_file("nrp_nest_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
+# add to nrp env vars
+list(APPEND NRP_ENV_VARS ${NEST_CMAKE_INSTALL_PYNEST})
+set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
 
 ##########################################
 # NRPNestDataPackInterface

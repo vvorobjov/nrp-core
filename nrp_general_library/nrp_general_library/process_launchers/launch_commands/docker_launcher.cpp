@@ -35,27 +35,24 @@ DockerLauncher::~DockerLauncher()
     this->stopProcess(60);
 }
 
-pid_t DockerLauncher::launchEngineProcess(const nlohmann::json &launcher_info, const std::vector<std::string> &envParams,
-                                    const std::vector<std::string> &startParams, bool appendParentEnv)
+pid_t DockerLauncher::launchProcess(const nlohmann::json &launcherConfig, const std::string& procCmd,
+                               const std::vector<std::string> &envParams,
+                               const std::vector<std::string> &startParams,
+                               bool /*appendParentEnv*/,
+                               int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-    // Clear environment if it shouldn't be passed to engine
-    if(!appendParentEnv)
-        clearenv();
+    if(logFD >= 0)
+        NRPLogger::debug("log File Descriptor (logFD) is not used by DockerLauncher");
 
-    // Docker container launching cmd
-    std::string tmpLog = "";
+    // Set engineConfig and pass it to DockerConnector
+    nlohmann::json configInfo = launcherConfig;
+    configInfo["ProcCmd"] = "nrp-run.bash " + procCmd;
+    configInfo["ProcCmdArgs"] = startParams;
+    configInfo["ExecEnvironment"] = envParams;
+
+    // Call DockerConnector init with engine configuration
     Py_Initialize();
-    // Use engineConfig and pass it to DockerConnector
-    nlohmann::json configInfo = launcher_info;
-    std::string execArgs = "";
-    for(const auto &curParam : startParams)
-        execArgs += " " + std::string(curParam.data());
-    configInfo["EngineProcCmdArgs"] = execArgs;
-    std::string envStr = "";
-    for(const auto &curParam : envParams)
-        envStr += "," + std::string(curParam.data());
-    configInfo["ExecEnvironment"] = envStr;
     PyObject* pArg = PyTuple_New(1);                              
     PyTuple_SetItem(pArg, 0, Py_BuildValue("s", configInfo.dump().c_str()));
 
@@ -68,14 +65,14 @@ pid_t DockerLauncher::launchEngineProcess(const nlohmann::json &launcher_info, c
     this->pInit = PyObject_GetAttrString(pObject, "initializing");
     this->pInspect = PyObject_GetAttrString(pObject, "get_container_status");
     this->pShutdown = PyObject_GetAttrString(pObject, "shutdown");
-    tmpLog = this->getDockerInfo(this->pLog);
+    std::string tmpLog = this->getDockerInfo(this->pLog);
     if(tmpLog != ""){
         NRPLogger::error("{}", tmpLog);
         exit(-1);
     }
 
-    NRPLogger::info("Remote server {} is connected !!!",
-     configInfo["DaemonAddress"]);
+    NRPLogger::info("Remote server {} is connected! ",
+     configInfo["DockerServerAddress"]);
 
     PyEval_CallObject(this->pInit, NULL);
     tmpLog = this->getDockerInfo(this->pLog);
@@ -83,6 +80,7 @@ pid_t DockerLauncher::launchEngineProcess(const nlohmann::json &launcher_info, c
         NRPLogger::error("{}", tmpLog);
         exit(-1);
     }
+
     // Parameter end
     const auto tPid = std::stoi(this->getDockerInfo(this->pCID));
     this->_enginePID = tPid;

@@ -5,12 +5,13 @@
 	"EngineConfigs": 
 	[
 		{
-			"EngineType": "opensim",
+			"EngineType": "py_sim",
 			"EngineName": "opensim",
+			"Simulator":"Opensim",
 			"EngineTimestep": 0.01,
 			"PythonFileName": "opensim_engine.py",
 			"WorldFileName":"arm26/arm26_ground_offset.osim",
-			"Visualizer":true
+			"Visualizer":false
 		},
 		{
 			"EngineType": "python_json",

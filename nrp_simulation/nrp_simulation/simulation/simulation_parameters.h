@@ -74,8 +74,12 @@ struct SimulationParams
     using ParamFileLogLevelT = std::string;
 
     static constexpr std::string_view ParamLogOutputLong = "logoutput";
-    static constexpr std::string_view ParamLogOutputDesc = "Option for redirecting stdout and stderr in the experiment: engines, all, silent";
+    static constexpr std::string_view ParamLogOutputDesc = "Option for logging stdout and stderr in the experiment: engines, all, silent";
     using ParamLogOutputT = std::string;
+
+    static constexpr std::string_view ParamLogFilenameLong = "logfilename";
+    static constexpr std::string_view ParamLogFilenameDesc = "If 'logoutput' option is 'engines' or 'all', name of the log file";
+    using ParamFilenameT = std::string;
 
     static constexpr std::string_view ParamLogDirLong = "logdir";
     static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";

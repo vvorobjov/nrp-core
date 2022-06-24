@@ -42,14 +42,7 @@ class EmptyLaunchCommand
         * \brief launchProcess always returns -1
         * \return -1
         */
-        pid_t launchProcess(const std::string &, const std::vector<std::string> &, const std::vector<std::string> &, bool, int)
-        {
-            return -1;
-        }
-
-        // TODO Improve engine configuration handling.
-        // Quick fix: Revert NRRPLT-8450.
-        pid_t launchEngineProcess(const nlohmann::json &, const std::vector<std::string> &, const std::vector<std::string> &, bool )
+        pid_t launchProcess(const nlohmann::json &, const std::string &, const std::vector<std::string> &, const std::vector<std::string> &, bool, int)
         {
             return -1;
         }

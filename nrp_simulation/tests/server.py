@@ -11,9 +11,9 @@ class TestNrpServer(unittest.TestCase):
     def setUp(self) -> None:
         """Test fixture setup method, spawns an instance of NRP Core client."""
         address = "localhost:50051"
-        args = "-c simulation_config.json -p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
+        args = "-p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
 
-        self.nrp_core = NrpCore(address, args)
+        self.nrp_core = NrpCore(address, args=args)
 
     def tearDown(self) -> None:
         """
@@ -52,15 +52,15 @@ class TestNrpServer(unittest.TestCase):
     def test_constructor_errors(self):
         self.nrp_core.shutdown()
         address = "localhost:50051"
-        args = "-c simulation_config.json -p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
+        args = "-p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
 
         # Pass an incorrect address so the client can't connect
         old_timeout = NrpCore.TIMEOUT_SEC
         NrpCore.TIMEOUT_SEC = 3
-        self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args)
+        self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args=args)
         NrpCore.TIMEOUT_SEC = old_timeout
-        # Pass wrong cmd line params
-        self.assertRaises(ChildProcessError, NrpCore, address, "wrong_args")
+        # Pass wrong config file, make NRPCoreSim process die
+        self.assertRaises(ChildProcessError, NrpCore, address, config_file="wrong_file", args=args)
 
     def test_runloop_no_init(self):
         """

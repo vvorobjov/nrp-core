@@ -41,6 +41,6 @@
 /*!
  * \brief Name of NRP Nest Executable
  */
-#define ${engine_name_uppercase}_JSON_ENGINE_EXECUTABLE_PATH "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@/@EXECUTABLE_NAME@"
+#define ${engine_name_uppercase}_JSON_ENGINE_EXECUTABLE_PATH "@EXECUTABLE_NAME@"
 
 #endif // ${engine_name_uppercase}_JSON_ENGINE

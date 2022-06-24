@@ -52,32 +52,17 @@ class LaunchCommandInterface
         * additional strings defined in envParams and startParams before starting the Engine specified in
         * engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child. If set to false, scrub the
         * environment before continuing
-        * \param procCmd Process command. Env variables and start params take precedence over envParams and startParams
-        * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
+        * \param launcherConfig Configuration specific to the launch command
+        * \param procCmd Process command
+        * \param envParams Additional Environment Variables for Engine process. Will take precedence over default env params if appendParentEnv is true
         * \param startParams Additional Start parameters
-        * \param appendParentEnv Should parent env variables be appended to child process
+        * \param appendParentEnv Should parent env variables be appended to Engine process
         * \return Returns PID of child process on success
         */
-        virtual pid_t launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
-                                          const std::vector<std::string> &startParams,
-                                          bool appendParentEnv = true, int logFD = -1) = 0;
-        // TODO Improve engine configuration handling.
-        // Quick fix: revert NRRPLT-8450
-        /*!
-         * \brief Fork a new process for the given engine. Will read environment variables and start params from engineConfig
-         * The function should take the environment parameters and start parameters defined in engineConfig, and append any
-         * additional strings defined in envParams and startParams before starting the Engine specified in
-         * engineConfig. If appendParentEnv is set to true, use the parent environment in the forked child. If set to false, scrub the
-         * environment before continuing
-         * \param engineConfig Engine Configuration. Env variables and start params take precedence over envParams and startParams
-         * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-         * \param startParams Additional Start parameters
-         * \param appendParentEnv Should parent env variables be appended to child process
-         * \param logFD File descriptor to route stdout and stderror outputs in child process
-         * \return Returns PID of child process on success
-         */
-        virtual pid_t launchEngineProcess(const nlohmann::json &engineConfig, const std::vector<std::string> &envParams,
-                                          const std::vector<std::string> &startParams, bool appendParentEnv = true) = 0;
+        virtual pid_t launchProcess(const nlohmann::json &launcherConfig, const std::string& procCmd,
+                                    const std::vector<std::string> &envParams,
+                                    const std::vector<std::string> &startParams,
+                                    bool appendParentEnv = true, int logFD = -1) = 0;
 
         /*!
          * \brief Stop a running engine process

@@ -48,8 +48,6 @@ class GazeboEngineJSONNRPClient
         virtual void shutdown() override;
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
-
-        virtual const std::vector<std::string> engineProcEnvParams() const override;
 };
 
 using GazeboEngineJSONLauncher = GazeboEngineJSONNRPClient::EngineLauncher<GazeboJSONConfigConst::EngineType>;

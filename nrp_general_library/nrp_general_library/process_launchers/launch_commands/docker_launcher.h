@@ -37,17 +37,10 @@ class DockerLauncher
     public:
         ~DockerLauncher() override;
 
-        //TODO
-        // Implement launchProcess once an improved engine configuration handling has been implemented see NRRPLT-8450.
-        // DockerLauncher needs the launcher configuration, procCmd is not enough.
-        pid_t launchProcess(const std::string&, const std::vector<std::string> &,
-                            const std::vector<std::string> &, bool, int) override
-        {
-            throw std::runtime_error( "DockerLauncher doesn't implement LaunchCommandInterface::launchProcess");
-        }
-
-        pid_t launchEngineProcess(const nlohmann::json &launcher_info, const std::vector<std::string> &envParams,
-                                  const std::vector<std::string> &startParams, bool appendParentEnv = true) override;
+    pid_t launchProcess(const nlohmann::json &launcherConfig, const std::string& procCmd,
+                        const std::vector<std::string> &envParams,
+                        const std::vector<std::string> &startParams, bool appendParentEnv = true,
+                        int logFD = -1) override;
 
         pid_t stopProcess(unsigned int killWait) override;
 

@@ -106,13 +106,12 @@ static void loadEngines(PluginManager & pluginManager,
             loadPlugins(libName.c_str(), pluginManager, engines, engineTypes);
 }
 
-static int processLogOutputOption(const std::string& logOutput, std::string logDir)
+static int processLogOutputOption(const std::string& logOutput, std::string logFilename, std::string logDir)
 {
     int enginesFD = -1;
     if (logOutput == "silent")
         enginesFD = open("/dev/null", O_WRONLY);
     else if (logOutput == "engines" || logOutput == "all") {
-        std::string fileName = ".console_output.log";
 
         if(!logDir.empty()) {
             if (!std::filesystem::is_directory(logDir)) {
@@ -122,9 +121,9 @@ static int processLogOutputOption(const std::string& logOutput, std::string logD
             } else
                 logDir = logDir + "/";
 
-            fileName = logDir + fileName;
+            logFilename = logDir + logFilename;
         }
-        enginesFD = open(fileName.data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        enginesFD = open(logFilename.data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     }
     else {
         std::cerr << "Failed to process Engines output cmd line option: " << logOutput
@@ -203,6 +202,7 @@ int main(int argc, char *argv[])
     // Process log output option
     int enginesFD = startParams.count(SimulationParams::ParamLogOutputLong.data()) ? processLogOutputOption(
             startParams[SimulationParams::ParamLogOutputLong.data()].as<SimulationParams::ParamLogOutputT>(),
+            startParams[SimulationParams::ParamLogFilenameLong.data()].as<SimulationParams::ParamFilenameT>(),
                     startParams[SimulationParams::ParamLogDirLong.data()].as<SimulationParams::ParamLogDirT>()
                             ) : -1;
 

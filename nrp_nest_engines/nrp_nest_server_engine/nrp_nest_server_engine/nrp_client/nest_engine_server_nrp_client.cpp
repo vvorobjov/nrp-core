@@ -227,6 +227,10 @@ namespace
 NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineClient(config, std::move(launcher))
 {
+    // Disable RestrictedPython
+    this->engineConfig().at("EngineEnvParams").get<std::vector<std::string>>().emplace_back("NEST_SERVER_RESTRICTION_OFF=1");
+
+    // set engine command
     int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
     if(n_mpi <= 1)
         setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_SERVER_EXECUTABLE_PATH);
@@ -235,7 +239,7 @@ NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, Pro
         setDefaultProperty<std::string>("EngineProcCmd", mpi_cmd);
     }
 
-
+    // address
     if(!this->engineConfig().contains("NestServerPort"))
         setDefaultProperty<int>("NestServerPort", findUnboundPort(this->PortSearchStart));
 
@@ -368,7 +372,7 @@ void NestEngineServerNRPClient::shutdown()
         nlohmann::json stopConfig;
         stopConfig["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
         stopConfig["ProcCmd"] = NRP_NEST_SERVER_EXECUTABLE_PATH;
-        stopConfig["ProcEnvParams"] = this->engineProcEnvParams();
+        stopConfig["ProcEnvParams"] = this->engineConfig().at("EngineEnvParams");
         stopConfig["ProcStartParams"] = stopParams;
 
         NRPLogger::debug("Using parameters for stopping nest server:\n{}", stopConfig.dump(4));
@@ -467,24 +471,6 @@ SimulationTime NestEngineServerNRPClient::runLoopStepCallback(SimulationTime tim
 std::string NestEngineServerNRPClient::serverAddress() const
 {
     return this->_serverAddress;
-}
-
-const std::vector<std::string> NestEngineServerNRPClient::engineProcEnvParams() const
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    std::vector<std::string> envVars = this->engineConfig().at("EngineEnvParams");
-
-    // Add NRP library path
-    envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":$LD_LIBRARY_PATH");
-
-    // Add NEST python packages to PYTHONPATH
-    envVars.push_back("PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH");
-
-    // Disable RestrictedPython
-    envVars.push_back("NEST_SERVER_RESTRICTION_OFF=1");
-
-    return envVars;
 }
 
 const std::vector<std::string> NestEngineServerNRPClient::engineProcStartParams() const

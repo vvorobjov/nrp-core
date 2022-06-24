@@ -6,20 +6,11 @@
 		{
 			"EngineType": "nest_json",
 			"EngineName": "nest",
-			"NestInitFileName": "/share/experiment_data/nest/nest_simple.py",
-			"ServerAddress":"localhost:6666",
-			"RegistrationServerAddress":"localhost:8008",
+			"NestInitFileName": "nest_simple.py",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DaemonAddress":"localhost:5002",
-				"ImageName":"nrp_nest:v0",
-				"EngineEnv":[
-					"LD_LIBRARY_PATH=/root/.local/nrp/lib:$LD_LIBRARY_PATH",
-					"PYTHONPATH=/root/.local/nrp/lib/python3.8/site-packages:$PYTHONPATH"
-				],
-				"UploadFolder":".",
-				"EngineCmd":"/root/.local/nrp/bin/NRPNestJSONExecutable",
-				"WorkDir": "/root"
+				"DockerServerAddress":"localhost:5002",
+				"ImageName":"nrp-core/nrp-nest-ubuntu20:latest"
 			}
 		}
 	],

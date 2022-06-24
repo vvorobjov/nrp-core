@@ -55,7 +55,9 @@ RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
 
+# Add nrp-core env vars to .bashrc
 WORKDIR ${HOME}
+RUN echo 'source $NRP_INSTALL_DIR/bin/.nrp_env' >> ${HOME}/.bashrc
 
 
 # Configure and install NRP in a intermediate sub-image

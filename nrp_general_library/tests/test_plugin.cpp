@@ -50,9 +50,6 @@ class TestEngine
         virtual const std::vector<std::string> engineProcStartParams() const override
         { return std::vector<std::string>(); }
 
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        { return std::vector<std::string>(); }
-
         virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
         {}
 

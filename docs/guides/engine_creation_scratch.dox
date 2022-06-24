@@ -193,10 +193,6 @@ These methods are used by the process launcher.
 - EngineClientInterface::engineProcStartParams() - should return all startup parameters of the simulation process.
 Related to \ref engine_proc_start_params "EngineProcStartParams" config parameter.
 
-- EngineClientInterface::engineProcEnvParams() - should return any extra environment variables needed to run the simulation process.
-Related to \ref engine_env_params "EngineEnvParams" config parameter.
-
-
 \subsection tutorial_engine_creation_engine_client_example Example
 
 \include nrp_example_engine/nrp_client/example_engine_client.h

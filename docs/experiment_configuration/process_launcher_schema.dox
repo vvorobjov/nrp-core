@@ -16,7 +16,7 @@ Below is a list of all the parameters needed to configure a ProcessLauncher.
 <tr><td>ProcCmd<td>Process Launch command<td>string<td><td>X<td>
 <tr><td>ProcStartParams<td>Process Start Parameters<td>string<td><td><td>X
 <tr><td>ProcEnvParams<td>Process Environment Parameters<td>string<td><td><td>X
-<tr><td>LaunchCommand<td>LaunchCommand type that will be used to launch the process<td>string<td>BasicFork<td><td>
+<tr><td>LaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 </table>
 
 \section process_launcher_schema_example Example
