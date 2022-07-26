@@ -86,10 +86,6 @@ void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInter
             const auto interfaceResultIterator = this->_tf_results.find(engine->engineName());
             if(interfaceResultIterator != this->_tf_results.end())
                 engine->sendDataPacksToEngine(interfaceResultIterator->second);
-
-            // If no datapacks are available, have interface handle empty datapack input list
-            // TODO: be sure that this is right
-            engine->sendDataPacksToEngine(typename EngineClientInterface::datapacks_ptr_t());
         }
         catch(std::exception &e)
         {

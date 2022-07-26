@@ -1,31 +1,30 @@
-set(PROJECT_NAME "NRPGRPCEngineProtocol")
-set(HEADER_DIRECTORY "nrp_grpc_engine_protocol")
+set(PROJECT_NAME "NRPUnityGrpcEngine")
+set(HEADER_DIRECTORY "unity_grpc_engine")
 
 set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
-set(PYTHON_MODULE_NAME "NRPProtoPythonModule")
-set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
+set(PYTHON_MODULE_NAME "Unity_grpc")
+set(EXECUTABLE_NAME "NRPUnityGrpcServerExecutable")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
 set(LIB_CONFIG_NAME "${LIBRARY_NAME}Config")
 set(LIB_VERSION_NAME "${LIB_CONFIG_NAME}Version")
+set(ENV{NRP_ENGINE_LAUNCHERS} "${LIBRARY_NAME}.so;$ENV{NRP_ENGINE_LAUNCHERS}")
 
 cmake_minimum_required(VERSION 3.16)
-project("${PROJECT_NAME}" VERSION ${NRP_VERSION})
+project("${PROJECT_NAME}" VERSION 1.0.0)
 
 include(GNUInstallDirs)
+include(ExternalProject)
 
 # List library build files
 set(LIB_SRC_FILES
-    nrp_grpc_engine_protocol/config/engine_grpc_config.cpp
-    nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
-    nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
-    nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
+    unity_grpc_engine/engine_client/unity_grpc_client.cpp
 )
 
-# List of python module build files
+# List of Python module build files
 set(PYTHON_MODULE_SRC_FILES
 )
 
@@ -35,34 +34,43 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
-    tests/engine_grpc.cpp
 )
 
 
 ##########################################
 ## Dependencies
 
-find_package(PkgConfig REQUIRED)
-
-# Protobuf: google's Protocol Buffers library
-pkg_check_modules(PROTOBUF REQUIRED protobuf)
-message(STATUS "Using protobuf ${PROTOBUF_VERSION}")
-
-# gRPC: google's Remote Procedure Calls library
-pkg_check_modules(GRPC REQUIRED grpc++)
-message(STATUS "Using gRPC ${GRPC_VERSION}")
 
 ##########################################
 ## Header configuration
 
+# General Header defines
+set(NRP_UNITY_EXECUTABLE ${EXECUTABLE_NAME})
+configure_file("unity_grpc_engine/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
+
+# Python module dependencies
+#configure_file("nrp_example_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+
+
 ##########################################
-# NRPGRPCEngineProtocol
+## NRPExampleEngineLibrary
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+target_compile_options(${LIBRARY_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+
+set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
+
+target_link_libraries(${LIBRARY_NAME}
+    PUBLIC
+        ${NRP_GEN_LIB_TARGET}
+        NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+
+    PRIVATE
+)
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-    PUBLIC
+    PUBLIC 
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
@@ -70,20 +78,9 @@ target_include_directories(${LIBRARY_NAME} BEFORE
     PRIVATE
 )
 
-target_link_libraries(${LIBRARY_NAME}
-    PUBLIC
-        ${NRP_GEN_LIB_TARGET}
-        ${NRP_PROTO_LIB_TARGET}
-        ${PROTOBUF_LIBRARIES}
-        ${GRPC_LIBRARIES}
-        gpr
-
-    PRIVATE
-)
-
 
 ##########################################
-## NRPGRPCEngineProtocolPythonModule
+## example_engine
 if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
     add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
@@ -92,6 +89,7 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 
     target_include_directories(${PYTHON_MODULE_NAME}
         PUBLIC
+
     )
 
     target_link_libraries(${PYTHON_MODULE_NAME}
@@ -102,7 +100,7 @@ endif()
 
 
 ##########################################
-## Executable
+## NRPExampleServerExecutable
 if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
     add_executable(${EXECUTABLE_NAME} ${EXEC_SRC_FILES})
     target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
@@ -111,22 +109,24 @@ endif()
 
 ##########################################
 ## Append Doxygen files
-add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} "${HEADER_DIRECTORY}")
+#add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} ${HEADER_DIRECTORY})
 
 
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+    # Create testing env files
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
+
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
-    target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
-    target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
-        GTest::GTest
-        GTest::Main)
+        GTest::gtest
+        GTest::gtest_main)
 
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
@@ -144,8 +144,8 @@ install(TARGETS
         ${LIBRARY_NAME}
     EXPORT
         ${LIB_EXPORT_NAME}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
+    ARCHIVE DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}
@@ -170,13 +170,13 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
         PATTERN "*.hpp"
 )
 
-# Install python module
+# Install Python module
 if(TARGET ${PYTHON_MODULE_NAME})
     install(TARGETS ${PYTHON_MODULE_NAME}
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files

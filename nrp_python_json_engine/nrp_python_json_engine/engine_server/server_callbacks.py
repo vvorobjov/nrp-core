@@ -154,7 +154,8 @@ def shutdown(request_json: dict) -> None:
     """Calls the shutdown() method of the Script object"""
     global script
 
-    script.shutdown()
+    if script:
+        script.shutdown()
     _flush_std()
 
 # EOF
