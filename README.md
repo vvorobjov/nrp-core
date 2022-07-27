@@ -40,7 +40,10 @@ sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3
 pip install flask_cors mpi4py docopt
 
 # required by nrp-server, which uses gRPC python bindings
-pip install grpcio-tools pytest psutil
+pip install grpcio-tools pytest psutil docker
+
+# Required for using docker with ssh
+pip install paramiko
    
 # ROS
 

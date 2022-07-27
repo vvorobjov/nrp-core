@@ -5,7 +5,7 @@ import json
 
 from abc import ABC, abstractmethod
 
-from nrp_core import DockerConnector
+from nrp_core.docker_handle import NRPDockerHandle
 
 
 class NRPCoreServerLauncher(ABC):
@@ -16,6 +16,10 @@ class NRPCoreServerLauncher(ABC):
 
     @abstractmethod
     def kill_nrp_process(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_exit_report(self) -> dict:
         raise NotImplementedError
 
 
@@ -55,26 +59,35 @@ class NRPCoreForkLauncher(NRPCoreServerLauncher):
         except ChildProcessError:
             pass
 
+    def get_exit_report(self) -> dict:
+        # TODO: implement
+        return {'exit_code': None, 'logs': []}
+
 
 class NRPCoreDockerLauncher(NRPCoreServerLauncher):
 
-    def __init__(self, args, experiment_folder, docker_server_address, image_name, log_file):
-        config = {"DockerServerAddress": docker_server_address,
-                  "UploadFolder": experiment_folder,
-                  "ProcCmd": "xvfb-run nrp-run.bash NRPCoreSim",
-                  "ProcCmdArgs": args,
-                  "ExecEnvironment": [],
-                  "ImageName": image_name}
+    def __init__(self, args, experiment_folder, docker_daemon_ip, image_name, log_file, get_archives):
+        proc_cmd = 'nrp-run.bash xvfb-run NRPCoreSim ' + ' '.join(args)
 
         self._log_file = log_file
-        self._experiment_folder = experiment_folder
-        self._docker = DockerConnector(json.dumps(config))
-        self._docker.initializing()
+        self._get_archives = get_archives
+        self._docker = NRPDockerHandle(docker_daemon_ip, image_name, experiment_folder, proc_cmd, [])
 
     def is_alive_nrp_process(self) -> bool:
-        return self._docker.get_container_status() == "RUNNING"
+        status = self._docker.get_status()
+        return status and status['running']
+
+    def get_exit_report(self) -> dict:
+        status = self._docker.get_status()
+        return {'exit_code': status['exit_code'] if status else None,
+                'logs': self._docker.get_logs()}
 
     def kill_nrp_process(self) -> None:
-        if self.is_alive_nrp_process():
-            self._docker.download_file(self._experiment_folder, self._log_file)
-            self._docker.shutdown()
+        status = self._docker.get_status()
+        if status:
+            self._docker.get_experiment_archive(self._log_file)
+            for archive in self._get_archives:
+                self._docker.get_experiment_archive(archive)
+
+            self._docker.stop()
+            self._docker.remove()

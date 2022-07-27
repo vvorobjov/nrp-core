@@ -11,11 +11,11 @@ from nrp_core.nrp_server_launchers import *
 
 class NrpCore:
 
-    TIMEOUT_SEC = 15
-
     def __init__(self, address, experiment_folder="", config_file="simulation_config.json", args="",
-                 log_output=True, docker_server_address="", image_name="") -> None:
-        """Spawns NRPCoreSim with given arguments
+                 log_output=True, server_timeout=10, docker_daemon_address="unix:///var/run/docker.sock", image_name="",
+                 get_archives=[]) -> None:
+        """
+        Spawns an NRPCoreSim process in server mode and connects to it
 
         :param str address: the address that will be used by NRPCoreSim server
         :param str experiment_folder: path to the folder containing all files needed to execute the experiment.
@@ -26,14 +26,20 @@ class NrpCore:
         :param str args: additional NRPCoreSim command line parameters
         :param bool log_output: if True, console output from NRPCoreSim process is hidden and logged into a file named
                                 .console_output.log in the experiment folder. Default is True.
-        :param str docker_server_address: IP address of the \ref docker_launcher_manager "Docker Manager server" used
+        :param int server_timeout: time in seconds for waiting for connection with the NRPCoreSim grpc server.
+                                    10 seconds by default.
+        :param str docker_daemon_address: IP address of the docker daemon used
                                             to launch the experiment in a docker container (more detail below).
-                                            Empty by default.
+                                            'unix:///var/run/docker.sock' by default.
         :param str image_name: name of the docker image which will be used to run the experiment (more detail below).
                                 Empty by default.
+
+        :param list get_archives: list of archives (files or folders) that should be retrieved from the docker container
+                                when shutting down the simulation (e.g. folder containing logged simulation data)
         """
         
         self._devnull = open(os.devnull, 'w')
+        self._server_timeout = server_timeout
 
         # Initialize variables in case NRPServer launching fails
         self._sim_state = "None"
@@ -51,12 +57,13 @@ class NrpCore:
 
         self._launcher = None
 
-        if docker_server_address:
+        if image_name:
             self._launcher = NRPCoreDockerLauncher(server_args,
                                                    experiment_folder,
-                                                   docker_server_address,
+                                                   docker_daemon_address,
                                                    image_name,
-                                                   log_file)
+                                                   log_file,
+                                                   get_archives)
         else:
             self._launcher = NRPCoreForkLauncher(server_args, experiment_folder)
 
@@ -67,9 +74,23 @@ class NrpCore:
         # Wait for the server to start
         n = self._wait_until_server_ready(self._channel, self._launcher.is_alive_nrp_process)
         if n > 0:
+            
+            with redirect_stdout(self._devnull):
+                report = self._launcher.get_exit_report()
+
+            if report['exit_code'] or report['logs']:
+                # print report
+                msg = f"NRP Process has exit with code: {report['exit_code']}.\n"
+                msg += "Logs from process:\n"
+                for l in report['logs']:
+                    msg += f"{l}\n"
+
+                print(msg)
+
             self._launcher.kill_nrp_process()
-            if n >= self.TIMEOUT_SEC:
-                raise TimeoutError("Timeout during NRP Server startup.")
+
+            if n >= self._server_timeout:
+                raise TimeoutError("Timeout while connecting to NRP Server.")
             else:
                 raise ChildProcessError("Error during NRP Server startup.")
 
@@ -83,7 +104,8 @@ class NrpCore:
             with redirect_stdout(self._devnull):
                 self.shutdown()
                 self._close_client()
-        except grpc.RpcError:
+        except Exception:
+            # it's ok, we are shutting down
             pass
 
         self._devnull.close()
@@ -100,7 +122,7 @@ class NrpCore:
     def _wait_until_server_ready(self, channel, is_server_alive) -> int:
         """Waits for the gRPC server of the NRP Core process to start"""
         n = 1
-        while n <= self.TIMEOUT_SEC:
+        while n <= self._server_timeout:
             if not is_server_alive():
                 return n
 
@@ -109,7 +131,7 @@ class NrpCore:
                 return 0
             except grpc.FutureTimeoutError:
                 if n > 5:
-                    print(f"Waiting for NRP Server connection: {n} out of {self.TIMEOUT_SEC} seconds")
+                    print(f"Waiting for NRP Server connection: {n} out of {self._server_timeout} seconds")
 
             n += 1
 
@@ -186,6 +208,7 @@ class NrpCore:
             if self._stub:
                 self._call_rpc(self._stub.shutdown, EmptyMessage())
 
-        self._launcher.kill_nrp_process()
+        if self._launcher:
+            self._launcher.kill_nrp_process()
 
 # EOF

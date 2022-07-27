@@ -26,8 +26,9 @@
 #include "nrp_general_library/process_launchers/launch_commands/launch_command.h"
 #include <iostream>
 
-#include "Python.h"
-#define PY_CORE_MODULE "nrp_core"
+#include <boost/python.hpp>
+
+namespace bpy = boost::python;
 
 inline const char LAUNCH_DOCKER_COMMAND[] = "DockerLauncher";
 
@@ -37,7 +38,7 @@ class DockerLauncher
     public:
         ~DockerLauncher() override;
 
-    pid_t launchProcess(const nlohmann::json &launcherConfig, const std::string& procCmd,
+        pid_t launchProcess(const nlohmann::json &launcherConfig, const std::string& procCmd,
                         const std::vector<std::string> &envParams,
                         const std::vector<std::string> &startParams, bool appendParentEnv = true,
                         int logFD = -1) override;
@@ -47,20 +48,17 @@ class DockerLauncher
         ENGINE_RUNNING_STATUS getProcessStatus() override;
 
     private:
-        /*!
-         * \brief ID of the docker container in a remote server
-         */
-        pid_t _enginePID = -1;
-        /*!
-         * \brief function object of python to connect remote server
-         */
-        PyObject* pCID = NULL;
-        PyObject* pLog = NULL;
-        PyObject* pInit = NULL;
-        PyObject* pInspect = NULL;
-        PyObject* pShutdown = NULL;
 
-        std::string getDockerInfo(PyObject* pObj);
+        /*! \brief ID of the docker container in a remote server */
+        pid_t _enginePID = 0;
+        /*! \brief python object storing an instance to NRPDockerHandle */
+        bpy::object _dockerHandle;
+        /*! \brief command to be run in the Docker container */
+        std::string _procCmd;
+        /*! \brief command to be run in the Docker container */
+        bool _printLogs = true;
+        /*! \brief returns logs from the Docker container */
+        std::string getDockerLogs();
 };
 
 #endif // DOCKER_LAUNCHER_H

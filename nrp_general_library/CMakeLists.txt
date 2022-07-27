@@ -378,7 +378,7 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
-install(FILES "${HEADER_DIRECTORY}/python/docker_init.py"
+install(FILES "${HEADER_DIRECTORY}/python/docker_handle.py"
     DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})

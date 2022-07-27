@@ -2,7 +2,7 @@
 
 NRP-Core experiments can be run from the provided application, \ref nrp_simulation.
 In this way, the experiment is loaded from a specified configuration file and run until the specified timeout.
-Additionally, we provide a Python module, *nrp_core.client*, which can be used to start experiments from Python and which enable more control over the experiment execution.
+Additionally, we provide a Python module, *nrp_core.client.NrpCore*, which can be used to start experiments from Python and which enable more control over the experiment execution.
 
 The main class used to launch and control NRP-Core experiment is *nrp_core.client.NrpCore*.
 When instantiated, it internally launches an NRPCoreSim process in \ref server_mode "server mode" and forwards requests made through its methods to the NRPCoreSim GRPC server.
@@ -39,8 +39,10 @@ NrpCore takes as arguments:
 - config_file (str): path to the experiment configuration file. It can be an absolute path or relative to `experiment_folder`. By default, "simulation_config.json"
 - args (str): additional NRPCoreSim command line parameters
 - log_output (bool): if true, console output from NRPCoreSim process is hidden and logged into a file .console_output.log in the experiment folder. It is true by default.
-- docker_server_address (str): ip address of the \ref docker_launcher_manager "Docker Manager server" used to launch the experiment in a docker container (more detail below). Empty by default.
+- server_timeout (int): time in seconds for waiting for connecting to the NRPCoreSim grpc server. 10 seconds by default.
+- docker_daemon_address (str): IP address of the docker daemon used to launch the experiment in a docker container (more detail below). 'unix:///var/run/docker.sock' by default, which is the value expected when docker daemon is running locally with its default configuration.
 - image_name (str): name of the docker image which will be used to run the experiment (more detail below). Empty by default.
+- get_archives (list): list of archives (files or folders) that should be retrieved from the docker container when shutting down the simulation (eg. folder containing logged simulation data from a data transfer engine). Empty list by default.
 
 Each of the methods provided to control the experiment returns a boolean value which is True if the request was processed correctly and False otherwise.
 They can return False either because the request was not possible from the current state of the experiment (see \ref experiment_lifecycle "here" for more information on the experiment lifecycle FSM) or because there was an error while executing the request.
@@ -51,15 +53,28 @@ With the exception of *run_loop()* and *run_until_timeout()*, which accepts a pa
 When called with *run_async=True* they return a *Thread* object which can be used to monitor the state of the request.
 In combination with the *stop()* request and the \ref datatransfer_engine "datatransfer" engine, this option could be used to monitor the simulation and stop it after some condition fulfills or visualize or process experiment data in realtime.
 
-\section python_client_docker Launching Experiment in Docker Containers
+\section python_client_docker Launching Experiments in Docker Containers
 
-By default, when instantiating `NrpCore` object, NRPCoreSim is started in a forked process. 
-In case of willing to run NRPCoreSim in a docker container instead, set the parameters `docker_server_address` and `image_name` as described above.
+By default, when instantiating a `NrpCore` object, NRPCoreSim is started in a forked process.
+In case of willing to run NRPCoreSim in a docker container instead, set the parameters `image_name`, and optionally `docker_daemon_address`, as described above.
 
-When running NRPCoreSim in a container from NrpCore Python client, the behavior of the latter remains unchanged, i.e. as explained above in this page.
+When running NRPCoreSim in a container from the NrpCore Python client, the behavior of the latter remains unchanged, i.e. as explained above in this page.
 The only noticeable difference / constraint, is that the path specified in the `config_file` parameter of NrpCore client must be relative to `experiment_folder`, and the configuration file should be itself placed inside of the experiment folder.
 This is the normal case anyways, therefore this constraint will go unnoticed most of the times.
 
-<b>NOTE:</b> in order to launch experiment in dockers, the \ref docker_launcher_manager "Docker Manager server" must be running in the host specified by the parameters `docker_server_address`.
-See this \ref running_example_docker_exp "page" for more details on how to do this.
+As explained above, if `log_output` is set to True when instantiating the NrpCore client, the experiment console output is logged to a file named `.console_output.log`. When running the experiment in a docker container this file is fetched from the container and saved to `experiment_folder` when the experiment is shutdown.
+
+In the same way, it is possible to specify in the NrpCore constructor an additional list of archives (files or folders) that should be fetched from the container and saved to `experiment_folder` when the experiment is shutdown. 
+These archives are passed to the constructor using the `get_archives` parameter.
+
+The latter is useful for example when including a \ref datatransfer_engine "Data Transfer Engine" in the experiment. 
+In this case datapacks are either streamed to an MQTT topic (which can be subscribed to from outside the container) or logged into a file.
+These files are stored into a folder (`data` by default) which can be added to the `get_archives` list parameter so the logs are retrieved from the container before stopping it.
+
+<b>NOTE:</b> 
+
+In order to launch experiments in docker containers, a docker daemon must be accessible at the IP specified in the parameter `docker_daemon_address`.
+See this \ref configuring_docker_daemon "guide" for more information on how to do this.
+
+Also keep in mind that the address of the NRPCoreSim server ('address' parameter in the NrpCore constructor) will be an address in the host where docker daemon is running, and must be accessible from the host where NrpCore is instantiated.
 */

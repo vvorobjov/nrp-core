@@ -268,15 +268,13 @@ class EngineClient
                  */
                 EngineClientInterfaceSharedPtr launchEngine(nlohmann::json &engineConfig, ProcessLauncherInterface::unique_ptr &&launcher) override
                 {
-                    auto launcherName = launcher->launcherName();
-
                     EngineClientInterfaceSharedPtr engine(new ENGINE(engineConfig, std::move(launcher)));
 
                     switch (engine->launchEngine())
                     {
                         case 0: { // TODO: process not forked (error)
                                 NRPLogger::error(
-                                    "\"{}\" EngineClient (type: \"{}\") could NOT launch an EngineServer using \"{}\" launcher.", engine->engineName(), this->engineType(), launcherName);
+                                    "\"{}\" Engine (type: \"{}\") could NOT be launched.", engine->engineName(), this->engineType());
                             }; break;
                         case -1: { // process not forked (empty launcher, expected behaviour)
                                 NRPLogger::info(
@@ -284,7 +282,7 @@ class EngineClient
                             }; break;
                         default: { // success
                                 NRPLogger::info(
-                                    "\"{}\" EngineServer (type: \"{}\") launched successfully by \"{}\" launcher.", engine->engineName(), this->engineType(), launcherName);
+                                    "\"{}\" Engine (type: \"{}\") launched successfully", engine->engineName(), this->engineType());
                             }; break;
                     };
 

@@ -9,7 +9,7 @@
 			"NestInitFileName": "nest_simple.py",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DockerServerAddress":"localhost:5002",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
 				"ImageName":"nrp-core/nrp-nest-ubuntu20:latest"
 			}
 		}

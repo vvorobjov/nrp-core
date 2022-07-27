@@ -31,7 +31,7 @@ DockerLauncher::~DockerLauncher()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    // Stop and remove the docker container in a remote server 
+    // Stop and remove the docker container
     this->stopProcess(60);
 }
 
@@ -42,72 +42,67 @@ pid_t DockerLauncher::launchProcess(const nlohmann::json &launcherConfig, const 
                                int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    _printLogs = launcherConfig["PrintLogs"];
+
     if(logFD >= 0)
         NRPLogger::debug("log File Descriptor (logFD) is not used by DockerLauncher");
 
-    // Set engineConfig and pass it to DockerConnector
-    nlohmann::json configInfo = launcherConfig;
-    configInfo["ProcCmd"] = "nrp-run.bash " + procCmd;
-    configInfo["ProcCmdArgs"] = startParams;
-    configInfo["ExecEnvironment"] = envParams;
+    // Set NRPDockerHandle params
+    _procCmd = procCmd;
+    for(auto& param : startParams)
+        _procCmd.append(" " + param);
 
-    // Call DockerConnector init with engine configuration
-    Py_Initialize();
-    PyObject* pArg = PyTuple_New(1);                              
-    PyTuple_SetItem(pArg, 0, Py_BuildValue("s", configInfo.dump().c_str()));
+    bpy::list envPythonL;
+    for(size_t n = 0; n < envParams.size(); ++n)
+        envPythonL.append(bpy::str(envParams[n]));
 
-    PyObject* pModule = PyImport_ImportModule(PY_CORE_MODULE);
-    PyObject* pClass = PyObject_GetAttrString(pModule, "DockerConnector");
-    PyObject* pObject = PyEval_CallObject(pClass, pArg);
-    
-    this->pCID = PyObject_GetAttrString(pObject, "get_container_id");
-    this->pLog = PyObject_GetAttrString(pObject, "get_log_info");
-    this->pInit = PyObject_GetAttrString(pObject, "initializing");
-    this->pInspect = PyObject_GetAttrString(pObject, "get_container_status");
-    this->pShutdown = PyObject_GetAttrString(pObject, "shutdown");
-    std::string tmpLog = this->getDockerInfo(this->pLog);
-    if(tmpLog != ""){
-        NRPLogger::error("{}", tmpLog);
-        exit(-1);
+
+    // Call DockerHandle init with engine configuration
+    bpy::object nrpModule = bpy::import(PYTHON_MODULE_NAME_STR);
+    bpy::dict nrpDict(nrpModule.attr("__dict__"));
+
+    try {
+        _dockerHandle = nrpDict["NRPDockerHandle"](
+                bpy::str(launcherConfig["DockerDaemonAddress"].get<std::string>()),
+                bpy::str(launcherConfig["ImageName"].get<std::string>()),
+                bpy::str(launcherConfig["UploadFolder"].get<std::string>()),
+                bpy::str("nrp-run.bash " + _procCmd),
+                envPythonL);
     }
-
-    NRPLogger::info("Remote server {} is connected! ",
-     configInfo["DockerServerAddress"]);
-
-    PyEval_CallObject(this->pInit, NULL);
-    tmpLog = this->getDockerInfo(this->pLog);
-    if(tmpLog != ""){
-        NRPLogger::error("{}", tmpLog);
-        exit(-1);
+    catch (bpy::error_already_set const &) {
+        PyErr_Print();
+        std::string msg = "Failed to launch Engine process \"" + _procCmd + "\"in Docker container";
+        throw NRPException::logCreate(msg);
     }
 
     // Parameter end
-    const auto tPid = std::stoi(this->getDockerInfo(this->pCID));
-    this->_enginePID = tPid;
-    NRPLogger::info("Remote container ID: {}", tPid);
-    return tPid;
+    std::string id = bpy::extract<std::string>(_dockerHandle.attr("get_container_id")());
+    this->_enginePID = !id.empty() ? 1 : 0;
+    return this->_enginePID;
 }
 
-pid_t DockerLauncher::stopProcess(unsigned int killWait)
+pid_t DockerLauncher::stopProcess(unsigned int /*killWait*/)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-    if(this->_enginePID > 0)
+    if(this->_enginePID != 0)
     {
-        usleep(10*1000);
-        PyEval_CallObject(this->pShutdown, NULL);
-        // Set to maximum wait time if time is set to 0
-        if(killWait == 0)
-            killWait = std::numeric_limits<unsigned int>::max();
-        const auto end = std::chrono::system_clock::now() + std::chrono::duration<size_t>(killWait);
-        while(std::chrono::system_clock::now() < end){
-            if(this->getProcessStatus() == ENGINE_RUNNING_STATUS::STOPPED)
-                break;
-            usleep(10*1000);
-            PyEval_CallObject(this->pShutdown, NULL);
+        try {
+            NRPLogger::info("Stopping Engine process: " + _procCmd);
+            _dockerHandle.attr("stop")();
+            if(_printLogs) {
+                NRPLogger::info("Engine process \"" + _procCmd + "\" docker logs start:\n\n" +
+                this->getDockerLogs());
+                NRPLogger::info("Engine process \"" + _procCmd + "\" docker logs end");
+                _dockerHandle.attr("remove")();
+            }
+            this->_enginePID = 0;
         }
-        this->_enginePID = -1;
+        catch (bpy::error_already_set const &) {
+            PyErr_Print();
+        }
     }
-    Py_Finalize();
+
     return 0;
 }
 
@@ -116,27 +111,30 @@ LaunchCommandInterface::ENGINE_RUNNING_STATUS DockerLauncher::getProcessStatus()
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     if(this->_enginePID < 0)
         return ENGINE_RUNNING_STATUS::STOPPED;
-    // Check if the remote contained was already removed before
-    std::string tmpStatus = "";
-    tmpStatus = this->getDockerInfo(this->pInspect);
-    std::string tmpLog = "";
-    tmpLog = this->getDockerInfo(this->pLog);
-    if(tmpLog != ""){
-        NRPLogger::error("{}", tmpLog);
-        exit(-1);
+
+    // Get status
+    auto procStatus = ENGINE_RUNNING_STATUS::STOPPED;
+    bpy::object pyProcStatus(_dockerHandle.attr("get_status")());
+    if(not pyProcStatus.is_none()) {
+        bpy::dict pyProcStatusDict(pyProcStatus);
+        if(bpy::extract<bool>(pyProcStatusDict["running"]))
+            procStatus = ENGINE_RUNNING_STATUS::RUNNING;
     }
-    else if (tmpStatus == "STOPPED"){
-        return ENGINE_RUNNING_STATUS::STOPPED;
-    }
-    return ENGINE_RUNNING_STATUS::RUNNING;
+    return procStatus;
 }
 
-std::string DockerLauncher::getDockerInfo(PyObject* pObj){
-    PyObject* pRet1 = PyEval_CallObject(pObj, NULL);
-    char* ipInfo=0;
-    PyArg_Parse(pRet1, "s", &ipInfo);
-    std::string backStr(ipInfo);
-
-    return backStr;
+std::string DockerLauncher::getDockerLogs()
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    std::string logs = "";
+    if(this->_enginePID > 0)
+    {
+        bpy::list pyLog(_dockerHandle.attr("get_logs")());
+        for(auto i = 0; i < bpy::len(pyLog); ++i) {
+            logs.append(bpy::extract<std::string>(pyLog[i]));
+//            logs.append("\n");
+        }
+    }
+    return logs;
 }
 

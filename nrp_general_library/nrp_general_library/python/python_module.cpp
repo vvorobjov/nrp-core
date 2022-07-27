@@ -62,7 +62,7 @@ class PreprocessedDataPack
  * to be mapped to, effectively, a single class.
  *
  * There's no special behaviour of PreprocessingFunction with respect to the regular TransceiverFunction,
- * but the decorator was created for semantical clarity and possible future developments.
+ * but the decorator was created for semantic clarity and possible future developments.
  */
 class PreprocessingFunction
     : public TransceiverFunction

@@ -1,0 +1,64 @@
+/*! \page configuring_docker_daemon Configuring and Connecting to Docker Daemon
+
+NRPCore offers two possible ways of launching NRPCore related processes in docker containers:
+- Launching Engine processes in a docker container using \ref docker_launcher
+- Launching whole NRPCore experiments in a docker container using the \ref python_client "NrpCore Python client"
+
+Both use cases require docker daemon to be properly configured in the host where the containerized NRPCore process will be launched.
+In this guide we review the different possibilities available and give references to more complete guides.
+
+As specified in this <a href="https://docs.docker.com/engine/security/protect-access">guide</a>, by default docker runs through a non-networked UNIX socket.
+When connecting to the docker daemon from a remote host two options are available:
+- Connecting to the remote host through SSH
+- Configuring docker daemon to listen to a TCP port
+
+The first option requires setting up the remote host (where docker daemon is running) to accept SSH connections from the local host (where docker daemon is connected from).
+Be aware that docker only support public key authentication, password authentication is not supported.
+
+In order to test the setup before launching any experiment try:
+
+\code
+docker -H ssh://<user>@<remote host ip> ps
+\endcode
+
+When using NRPCore with docker through SSH there is an additional Python module, `paramiko`, which should be installed if it is not already:
+
+\code
+pip install paramiko
+\endcode
+
+The second option, configuring docker daemon to listen to a TCP port, should be consider carefully, since it involves potential security risks.
+In the next pages there is more information on how to configure and secure docker daemon to listen to TCP ports:
+- <a href="https://docs.docker.com/engine/reference/commandline/dockerd">https://docs.docker.com/engine/reference/commandline/dockerd/</a>
+- <a href="https://docs.docker.com/engine/security/protect-access">https://docs.docker.com/engine/security/protect-access</a>
+
+\subsection docker_daemon_ip Expected Format of Docker Daemon IP address
+
+Both when launching Engines with DockerLauncher or NRPCore experiments from the NrpCore Python client, it is required to specify the IP address that will be used to connect to docker daemon.
+Below is listed the expected format in each of the 3 possible cases:
+- connecting locally to docker daemon through an UNIX socket: `unix:///var/run/docker.sock`
+- connecting to docker daemon through SSH: `ssh://<user>@<remote host ip>`
+- connecting to docker daemon through TCP: `tcp://<remote host ip>:<port>`
+
+
+\subsection docker_daemon_configuration Configuration of the remote host
+
+The remote host requires two things in order to be able to run an engine:
+- SSH server with your public key
+- docker daemon with root privileges
+
+To install an SSH server (remote machine):
+
+\code{.sh}
+sudo apt install openssh-server
+\endcode
+
+To copy your public key to the remote machine (from local machine):
+
+\code{.sh}
+ssh-copy-id -i ~/.ssh/id_rsa.pub <remote_user>@<remote_host_ip>
+\endcode
+
+To add docker to the privileged group (remote machine), please refer to <a href=https://docs.docker.com/engine/install/linux-postinstall/>these instructions</a>
+
+*/

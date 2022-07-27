@@ -177,7 +177,7 @@ FTILoop FTILoopSimManager::createSimLoop()
         }
         catch(std::exception &e)
         {
-            throw NRPException::logCreate(e, "Failed to launch engine interface \"" + engineLauncher->engineType() + "\"");
+            throw NRPException::logCreate(e, "Failed to launch engine:  \"" + engineName + "\"");
         }
     }
 

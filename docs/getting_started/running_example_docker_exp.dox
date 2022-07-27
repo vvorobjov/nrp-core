@@ -1,9 +1,7 @@
-/*! \page running_example_docker_exp Running the example experiments in multiple docker containers
+/*! \page running_example_docker_exp Launching Engines in Docker Containers Examples
 
-\image html multi_containers_deployment.png "Supported combinations of host/container execution for NRP-core and a containerized engine"
-
-The folder `"examples"` contains four examples (listed in the table below) of how to use \ref DockerLauncher.
-In each of these experiments there is a `simulation_config_docker.json` configuration file which uses \ref DockerLauncher to launch and run one of the engines in the experiment in a docker container.
+The folder `"examples"` contains four examples (listed in the table below) of how to use the \ref docker_launcher "DockerLauncher launch command" to launch Engine processes in docker containers.
+In each of these experiments there is a `simulation_config_docker.json` configuration file which uses DockerLauncher to launch and run one of the engines in the experiment in a docker container.
 
 <table>
 <tr><th>Example folder<th>Description<th>DockerImage
@@ -16,44 +14,24 @@ In each of these experiments there is a `simulation_config_docker.json` configur
 The images referenced in the table can be manually built from the different dockerfiles available in the folder "/dockerfiles" using docker-compose.
 For more information on how to use the provided dockerfiles to build custom, modular docker images with the necessary dependencies to run different Engines, see this \ref docker_compose "page".
 
-As the figure shows, these experiments can be run in different configurations: NRP-core and the engines can be distributed (and containerized) in one or more hosts.
-The manager host(s) of containerized engine stores the engine docker image and runs the Manager Server that responds to NRP-core requests.
+To run the experiments, users should first, on the host where Engines are to be launched in docker containers, setup docker daemon properly.
+See this \ref configuring_docker_daemon "guide" for more information on how to do this.
 
-To run the experiments, the users should first, on every host that requires the Manager Server (see Figure above), launch the latter using the python script in `"docker_manager/server"`.
-
-\code{.sh}
-python3 docker_launcher.py
-\endcode
-
-Since the husky model require vision devices, it needs to ask for devices library from the manager host. And its execution command is 
-
-\code{.sh}
-xhost +$USER
-python3 docker_launcher.py
-\endcode
-
-Then, on the NRP host, one should run the experiment as usual. For example, for the example experiment that we provide:
+Once this is done, on the host where the experiment is launched, one should run the experiment as usual. For example:
 
 \code{.sh}
 cd examples/<example folder>
 NRPCoreSim -c simulation_config_docker.json
 \endcode
 
-If the user wishes to run NRP-core inside a docker container, the docker container should be launched first:
-
-\code{.sh}
-docker run -it --network="host" --name <container name> <image name>
-\endcode
-
-The <b>`"host"`</b> network mode is required to simplify the configuration of the connectivity of the containerized components.
-
 <b><em>NOTE:</em></b>
 
-The IP addresses of the local and remote hosts have to be specified in the experiment configuration file:
-- `"DockerServerAddress"` is the IP address of the remote Manager server.
-- `"ServerAddress"` is IP address of remote engine
-- `"RegistrationServerAddress"` is IP address of NRP-core
+The IP addresses of the local and remote hosts have to be taken into account when setting the experiment configuration parameters.
+For example, in the case of launching a PythonJSONEngine:
 
-On the Manager host, the manager (i.e. docker_launcher.py) REST server will temporarily store (i.e. for the duration of the experiment) the experiment files and mount this folder on the container in which the engine is run.
+- `"DockerDaemonAddress"` is the IP address of the remote docker daemon.
+- `"ServerAddress"` is the IP address of engine running inside of the docker container (in the remote host)
+- `"RegistrationServerAddress"` is the IP address of NRPCore
 
+Also it must be ensured that ports required to connect to the aforementioned IP addresses are accessible from the respective hosts.
 */

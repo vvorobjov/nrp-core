@@ -55,10 +55,7 @@ class TestNrpServer(unittest.TestCase):
         args = "-p NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so,NRPPythonJSONEngine.so"
 
         # Pass an incorrect address so the client can't connect
-        old_timeout = NrpCore.TIMEOUT_SEC
-        NrpCore.TIMEOUT_SEC = 3
-        self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args=args)
-        NrpCore.TIMEOUT_SEC = old_timeout
+        self.assertRaises(TimeoutError, NrpCore, 'wrong_address', args=args, server_timeout=3)
         # Pass wrong config file, make NRPCoreSim process die
         self.assertRaises(ChildProcessError, NrpCore, address, config_file="wrong_file", args=args)
 

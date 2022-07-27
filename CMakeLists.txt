@@ -435,6 +435,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/python_engine_creation.dox"
         "docs/guides/troubleshooting.dox"
         "docs/guides/docker_compose.dox"
+        "docs/guides/docker_daemon.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"

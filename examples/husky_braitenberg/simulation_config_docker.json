@@ -11,7 +11,7 @@
 			"EngineProcCmd": "xvfb-run /usr/bin/gzserver",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DockerServerAddress":"localhost:5002",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
 				"ImageName":"nrp-core/nrp-gazebo-ubuntu20:latest"
 			}
 		},

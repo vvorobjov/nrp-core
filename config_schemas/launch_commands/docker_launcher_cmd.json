@@ -9,20 +9,26 @@
         "type": "string",
         "const": "DockerLauncher"
       },
-      "DockerServerAddress": {
+      "DockerDaemonAddress": {
         "type": "string",
+        "default": "unix:///var/run/docker.sock",
         "description": "the IP address of the Docker Server"
       },
       "ImageName": {
         "type": "string",
         "description": "The name of docker image to be used."
       },
-      "UploadFolder":{
+      "UploadFolder": {
         "type": "string",
         "description": "The name of the folder containing experiment files to be uploaded to the Docker container",
         "default": ""
+      },
+      "PrintLogs": {
+        "type": "boolean",
+        "default": true,
+        "description": "If true, prints the console output from the Docker container when shutting down the process"
       }
     },
-    "required" : ["LaunchType","DockerServerAddress", "ImageName"]
+    "required" : ["LaunchType", "ImageName"]
   }
 }

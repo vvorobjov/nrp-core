@@ -20,7 +20,7 @@
 			"RegistrationServerAddress":"localhost:8008",
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
-				"DockerServerAddress":"localhost:5002",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
 				"ImageName":"nrp-core/nrp-opensim-ubuntu20:latest"
 			}
 		}
