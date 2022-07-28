@@ -21,7 +21,7 @@
 //
 
 #include "tests/test_env_cmake.h"
-#include "tests/test_transceiver_function_interpreter.h"
+#include "tests/test_transceiver_function_manager.h"
 
 #include <boost/python.hpp>
 

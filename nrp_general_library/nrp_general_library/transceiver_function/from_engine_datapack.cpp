@@ -22,7 +22,7 @@
 
 #include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
+#include "nrp_general_library/transceiver_function/function_manager.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 EngineDataPack::EngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed)
@@ -34,7 +34,7 @@ EngineDataPack::EngineDataPack(const std::string &keyword, const DataPackIdentif
 EngineClientInterface::datapack_identifiers_set_t EngineDataPack::getRequestedDataPackIDs() const
 {
     // If this is a preprocessing function this and _datapackID must be linked to the same engine
-    if(this->isPrepocessing() && this->_datapackID.EngineName != this->linkedEngineName())
+    if(this->isPreprocessing() && this->_datapackID.EngineName != this->linkedEngineName())
         throw NRPException::logCreate("Preprocessing function is linked to engine \"" + this->linkedEngineName() +
         "\" but its input datapack \""+ this->_datapackID.Name + "\" is linked to engine \"" + this->_datapackID.EngineName +
         "\". Preprocessing functions can just take input datapacks from their linked engines");

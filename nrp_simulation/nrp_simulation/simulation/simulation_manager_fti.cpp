@@ -141,6 +141,11 @@ void FTILoopSimManager::runSimulationOnce()
         throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
 }
 
+const std::string & FTILoopSimManager::getStatus()
+{
+    return this->_loop->getStatus();
+}
+
 FTILoop FTILoopSimManager::createSimLoop()
 {
    this->_timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));

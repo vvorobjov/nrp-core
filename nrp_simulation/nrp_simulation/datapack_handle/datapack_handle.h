@@ -80,6 +80,13 @@ public:
         sendDataPacksToEngines(engines);
         NRP_LOG_TIME("after_send_datapacks");
     }
+
+    const std::string & getStatus()
+    {
+        return this->_status;
+    }
+
+    std::string _status = "";
 };
 
 #endif // DATAPACK_HANDLE_H

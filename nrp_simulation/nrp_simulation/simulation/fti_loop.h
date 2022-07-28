@@ -72,6 +72,12 @@ class FTILoop
         inline SimulationTime getSimTime() const
         {   return this->_simTime;  }
 
+
+        const std::string & getStatus()
+        {
+            return _devHandler->getStatus();
+        }
+
     private:
         /*!
          * \brief Configuration of simulation

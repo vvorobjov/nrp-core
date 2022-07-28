@@ -154,6 +154,8 @@ def shutdown(request_json: dict) -> None:
     """Calls the shutdown() method of the Script object"""
     global script
 
+    # It may happen that the script was never created, because the initialize() function failed
+
     if script:
         script.shutdown()
     _flush_std()

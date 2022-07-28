@@ -22,8 +22,7 @@
 #ifndef TF_MANAGER_HANDLE_H
 #define TF_MANAGER_HANDLE_H
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
-#include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
+#include "nrp_general_library/transceiver_function/function_manager.h"
 #include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
@@ -47,25 +46,35 @@ public:
     /*!
      * \brief Execute PreprocessingFunctions for each engine and place output datapacks in its cache
      *
-     * \param tfManager tfManager
+     * \param functionManager function manager
      * \param engines Engines that are been synchronize in the current loop
      */
-    static void executePreprocessingFunctions(TransceiverFunctionManager &tfManager,
+    static void executePreprocessingFunctions(FunctionManager &functionManager,
                                               const std::vector<EngineClientInterfaceSharedPtr> &engines);
 
     /*!
      * \brief Execute TransceiverFunctions for each engine
      *
-     * \param tfManager tfManager
+     * \param functionManager tfManager
      * \param engines Engines that are been synchronize in the current loop
      */
-    static TransceiverFunctionSortedResults executeTransceiverFunctions(TransceiverFunctionManager &tfManager,
+    static TransceiverFunctionSortedResults executeTransceiverFunctions(FunctionManager &functionManager,
                                                                         const std::vector<EngineClientInterfaceSharedPtr> &engines);
 
 private:
 
-    /*! \brief  TransceiverFunctionManager handling datapack operations */
-    TransceiverFunctionManager _tfManager;
+    /*!
+     * \brief Loads all DataPack Processing Functions defined in the config
+     */
+    void loadDataPackFunctions(const jsonSharedPtr &simConfig);
+
+    /*!
+     * \brief Loads Status Function defined in the config
+     */
+    void loadStatusFunction(const jsonSharedPtr &simConfig);
+
+    /*! \brief  FunctionManager handling datapack operations */
+    FunctionManager _functionManager;
     /*! \brief  tf results */
     TransceiverFunctionSortedResults _tf_results;
 };

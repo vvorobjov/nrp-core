@@ -49,6 +49,7 @@ class FTILoopSimManager
          */
         ~FTILoopSimManager();
 
+        const std::string & getStatus() override;
 
     private:
 

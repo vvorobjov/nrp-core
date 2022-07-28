@@ -19,7 +19,7 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
+#include "nrp_general_library/transceiver_function/function_manager.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 #include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 

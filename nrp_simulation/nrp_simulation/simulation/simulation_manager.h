@@ -121,6 +121,8 @@ public:
      */
     SimState currentState();
 
+    virtual const std::string & getStatus() = 0;
+
     /*!
      * \brief returns a simulation state as a string
      */

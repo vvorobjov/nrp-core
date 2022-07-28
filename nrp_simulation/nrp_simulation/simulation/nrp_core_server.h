@@ -107,7 +107,8 @@ private:
      *
      * \param result Result of the processed request
      */
-    void markRequestAsProcessed(const SimulationManager::RequestResult & result);
+    void markRequestAsProcessed(const SimulationManager::RequestResult & result,
+                                const std::string & data);
 
     //// Request processing methods
 
@@ -121,42 +122,42 @@ private:
      * \return            Status of the request. In case of failure, it will contain grpc::StatusCode::CANCELLED
      *                    and the error message returned by the consumer.
      */
-    grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::SimStateMessage * returnMessage);
+    grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::Response * returnMessage);
 
     /*!
      * \brief Set content in rpc return message from SimulationManager RequestResult
      */
-     void setReturnMessageContent(const SimulationManager::RequestResult& res, NrpCore::SimStateMessage * returnMessage);
+    void setReturnMessageContent(const SimulationManager::RequestResult& res, NrpCore::SimStateMessage * returnMessage);
 
     /*!
      * \brief Callback for the initialization request coming from the client
      */
-    grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
 
     /*!
      * \brief Callback for the run loop request coming from the client
      */
-    grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::Response * status) override;
 
     /*!
      * \brief Callback for the run until timeout loop request coming from the client
      */
-    grpc::Status runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
 
     /*!
      * \brief Callback for the stop request coming from the client
      */
-    grpc::Status stopLoop(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status stopLoop(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
 
     /*!
      * \brief Callback for the reset request coming from the client
      */
-    grpc::Status reset(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status reset(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
 
     /*!
      * \brief Callback for the shutdown request coming from the client
      */
-    grpc::Status shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage) override;
+    grpc::Status shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
 
     //// Synchronization members
 
@@ -185,6 +186,7 @@ private:
 
     /*! \brief Request status and error messages */
     SimulationManager::RequestResult _requestResult;
+    std::string _jsonData = "";
 
     /*! \brief SimulationManager which actually perform actions from requests */
     std::shared_ptr<SimulationManager> _manager;

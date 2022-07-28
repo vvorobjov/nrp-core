@@ -2,6 +2,7 @@ import grpc
 import os
 from contextlib import redirect_stdout
 from threading import Thread
+import json
 
 from nrp_server_pb2 import EmptyMessage, RunLoopMessage
 from nrp_server_pb2_grpc import NrpCoreStub
@@ -145,31 +146,35 @@ class NrpCore:
     def _call_rpc(self, sim_rpc, message) -> bool:
         """Processes calls to RPCs of the NRP Core Server"""
         if not self._is_open:
-            print("This NRP Server is closed. Please delete this object and create a new one")
-            return False
+            raise ChildProcessError("This NRP Server is closed. Please delete this object and create a new one")
 
         try:
-            res = sim_rpc(message)
-            self._sim_state = res.currentState
+            response = sim_rpc(message)
+
+            # Extract the state message from the RPC response
+            self._sim_state = response.simState.currentState
+
             if self._sim_state == "Failed":
-                print(f"Request failed with error \"{res.errorMsg}\". The only possible action now is \"shutdown()\".")
-                return False
+                raise RuntimeError(f"Request failed with error \"{response.simState.errorMsg}\". The only possible action now is \"shutdown()\".")
+
         except grpc.RpcError as rpc_error:
             if rpc_error.code() == grpc.StatusCode.CANCELLED:
-                print(f"Can't process request: {rpc_error.details()}")
-                return False
+                raise ConnectionError(f"Can't process request") from rpc_error
             elif rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
-                print(f"NRP Server is unavailable")
-                return False
+                raise ConnectionError(f"NRP Server is unavailable") from rpc_error
             else:
                 # TODO: depending on the error, maybe the server process should be killed?
-                raise rpc_error
-        except ValueError:
-            # Channel has been closed already
-            return False
-            
-        return True
-    
+                raise
+        except ValueError as e:
+            raise ConnectionError("Channel has been closed already") from e
+
+        # Return any JSON data passed in the response
+
+        if response.json:
+            return json.loads(response.json)
+        else:
+            return None
+
     def current_state(self):
         return self._sim_state
 

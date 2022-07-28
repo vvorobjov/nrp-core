@@ -46,6 +46,11 @@
       "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
       "description": "Transceiver and Preprocessing functions that will be used in the experiment"
     },
+    "StatusFunction" : {
+      "type" : "object",
+      "items": {"$ref": "https://neurorobotics.net/transceiver_function.json#TransceiverFunction"},
+      "description": "Status Function that will be used in the experiment"
+    },
     "ComputationalGraph" : {
       "type" : "array",
       "items": "string",

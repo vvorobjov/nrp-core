@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "tests/test_transceiver_function_interpreter.h"
+#include "tests/test_transceiver_function_manager.h"
 
 TestSimpleTransceiverDataPack::TestSimpleTransceiverDataPack(boost::python::api::object fcn)
     : _fcn(fcn)

@@ -25,6 +25,9 @@
 //#include "nrp_general_library/datapack_interface/datapack.h"
 
 #define TEST_TRANSCEIVER_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function.py"
+#define TEST_STATUS_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/status_function.py"
+#define TEST_STATUS_FCN2_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/status_function2.py"
+#define TEST_INVALID_STATUS_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/invalid_status_function.py"
 #define TEST_TRANSCEIVER_FCN2_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function2.py"
 #define TEST_PREPROCESSING_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/preprocessing_function.py"
 #define TEST_PREPROCESSING_FCN2_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/preprocessing_function2.py"

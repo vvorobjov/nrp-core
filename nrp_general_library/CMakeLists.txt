@@ -32,10 +32,10 @@ set(LIB_SRC_FILES
     nrp_general_library/process_launchers/process_launcher_basic.cpp
     nrp_general_library/process_launchers/process_launcher_manager.cpp
     nrp_general_library/transceiver_function/from_engine_datapack.cpp
+    nrp_general_library/transceiver_function/status_function.cpp
     nrp_general_library/transceiver_function/transceiver_function.cpp
     nrp_general_library/transceiver_function/transceiver_datapack_interface.cpp
-    nrp_general_library/transceiver_function/transceiver_function_interpreter.cpp
-    nrp_general_library/transceiver_function/transceiver_function_manager.cpp
+    nrp_general_library/transceiver_function/function_manager.cpp
     nrp_general_library/transceiver_function/transceiver_function_sorted_results.cpp
     nrp_general_library/utils/file_finder.cpp
     nrp_general_library/utils/fixed_string.cpp
@@ -51,7 +51,6 @@ set(LIB_SRC_FILES
     nrp_general_library/utils/wchar_t_converter.cpp
     nrp_general_library/utils/zip_container.cpp
     nrp_general_library/utils/pipe_communication.cpp
-
     nrp_general_library/process_launchers/launch_commands/docker_launcher.cpp
 )
 
@@ -71,7 +70,7 @@ set(TEST_SRC_FILES
     tests/engine_launcher_manager.cpp
     tests/plugin_manager.cpp
     tests/test_process_launcher_basic.cpp
-    tests/transceiver_function_interpreter.cpp
+    tests/test_function_manager.cpp
 )
 
 ##########################################
@@ -282,7 +281,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Python Module for testing
     set(TEST_PYTHON_MODULE_NAME "NRPGeneralPythonTestModule")
 
-    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/python_module.cpp" "tests/test_transceiver_function_interpreter.cpp")
+    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/python_module.cpp" "tests/test_transceiver_function_manager.cpp")
     set_target_properties(${TEST_PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
     target_link_libraries(${TEST_PYTHON_MODULE_NAME} ${NAMESPACE_NAME}::${LIBRARY_NAME})
 

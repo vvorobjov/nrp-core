@@ -26,6 +26,7 @@
 
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
+#include "nrp_general_library/transceiver_function/status_function.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 #include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
@@ -173,4 +174,12 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
+
+    // StatusFunction
+    class_<StatusFunction, bases<TransceiverDataPackInterface> >("StatusFunction", init<>())
+            .def("__call__", &StatusFunction::pySetup)
+            .def("runTf", &StatusFunction::runTf);
+
+    register_ptr_to_python<PtrTemplates<StatusFunction>::shared_ptr>();
+    register_ptr_to_python<PtrTemplates<StatusFunction>::const_shared_ptr>();
 }

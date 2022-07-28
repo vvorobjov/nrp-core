@@ -30,7 +30,7 @@ TransceiverFunction::TransceiverFunction(std::string linkedEngine, bool isPrepro
 const std::string &TransceiverFunction::linkedEngineName() const
 {   return this->_linkedEngine; }
 
-bool TransceiverFunction::isPrepocessing() const
+bool TransceiverFunction::isPreprocessing() const
 {   return this->_isPreprocessing; }
 
 TransceiverDataPackInterface::shared_ptr TransceiverFunction::pySetup(boost::python::object transceiverFunction)
@@ -41,7 +41,7 @@ TransceiverDataPackInterface::shared_ptr TransceiverFunction::pySetup(boost::pyt
 
     assert(tf->_tfInterpreterRegistryPtr == nullptr);
     if(tf->_tfInterpreterRegistryPtr == nullptr)
-        tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewTransceiverFunction(this->linkedEngineName(), tf);
+        tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewDataPackFunction(this->linkedEngineName(), tf);
 
     return tf;
 }
@@ -56,7 +56,7 @@ boost::python::object TransceiverFunction::runTf(boost::python::tuple &args, boo
 void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::object &tfOutput) const
 {
     // error msg
-    std::string function_type = this->isPrepocessing() ? "Preprocessing" : "Transceiver";
+    std::string function_type = this->isPreprocessing() ? "Preprocessing" : "Transceiver";
     std::string error_msg = function_type + " functions must return a list of DataPacks";
 
     // TFs must returns a list
@@ -70,7 +70,7 @@ void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::obj
         if (!boost::python::extract<DataPackInterface *>(tfOutput[i]).check())
             throw NRPException::logCreate(error_msg);
         // If PF, DataPack and PF have the same Engine
-        else if(this->isPrepocessing())
+        else if(this->isPreprocessing())
         {
             DataPackInterface *dev = boost::python::extract<DataPackInterface *>(tfOutput[i]);
             if (dev->engineName() != this->linkedEngineName())

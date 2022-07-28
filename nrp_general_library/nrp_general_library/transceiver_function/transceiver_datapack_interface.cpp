@@ -22,26 +22,26 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
-TransceiverFunctionInterpreter *TransceiverDataPackInterface::TFInterpreter = nullptr;
+FunctionManager *TransceiverDataPackInterface::TFInterpreter = nullptr;
 
 const std::string &TransceiverDataPackInterface::linkedEngineName() const
 {
-    return this->_function->linkedEngineName();
+    return this->_nextDecorator->linkedEngineName();
 }
 
-bool TransceiverDataPackInterface::isPrepocessing() const
+bool TransceiverDataPackInterface::isPreprocessing() const
 {
-    return this->_function->isPrepocessing();
+    return this->_nextDecorator->isPreprocessing();
 }
 
 boost::python::object TransceiverDataPackInterface::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
 {
-    return this->_function->runTf(args, kwargs);
+    return this->_nextDecorator->runTf(args, kwargs);
 }
 
 EngineClientInterface::datapack_identifiers_set_t TransceiverDataPackInterface::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
 {
-    auto subDataPackIDs = this->_function->updateRequestedDataPackIDs(std::move(datapackIDs));
+    auto subDataPackIDs = this->_nextDecorator->updateRequestedDataPackIDs(std::move(datapackIDs));
     auto newDataPackIDs = this->getRequestedDataPackIDs();
 
     subDataPackIDs.insert(newDataPackIDs.begin(), newDataPackIDs.end());
@@ -54,12 +54,12 @@ EngineClientInterface::datapack_identifiers_set_t TransceiverDataPackInterface::
     return EngineClientInterface::datapack_identifiers_set_t();
 }
 
-void TransceiverDataPackInterface::setTFInterpreter(TransceiverFunctionInterpreter *interpreter)
+void TransceiverDataPackInterface::setTFInterpreter(FunctionManager *interpreter)
 {
     TransceiverDataPackInterface::TFInterpreter = interpreter;
 }
 
 TransceiverDataPackInterface::shared_ptr *TransceiverDataPackInterface::getTFInterpreterRegistry()
 {
-    return this->_function->getTFInterpreterRegistry();
+    return this->_nextDecorator->getTFInterpreterRegistry();
 }

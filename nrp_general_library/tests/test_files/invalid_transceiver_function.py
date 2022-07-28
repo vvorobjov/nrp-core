@@ -19,19 +19,11 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from libnrp_core import *
-from testModule import TestInputDataPack, TestOutputDataPack
 
-# Invalid syntax
-fsdavhufdsihjk = jfdaonv
+@TransceiverFunction("engine")
+def transceiver_function():
 
-@EngineDataPack(keyword='datapack', id=DataPackIdentifier('dev', 'type', 'engine'))
-@TransceiverFunction()
-def transceiver_function(datapack):
-    test_val = datapack.test_value
-    
-    ret_dev = TestInputDataPack()
-    ret_dev.test_value = str(test_val)
-    
-    return [ret_dev]
+    fsdavhufdsihjk = jfdaonv
+
+    return []
 
