@@ -72,6 +72,13 @@ static vartype fromSimulationTime(SimulationTime time)
  */
 double getRoundedRunTimeMs(const SimulationTime runTime, const float simulationResolutionMs);
 
+/*!
+ * \brief returns the current local time as a string in the format: YYMMDD-hhmmss-pid,
+ * being pid the pid of the calling process
+ */
+std::string getTimestamp();
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef TIME_PROFILE
@@ -82,37 +89,53 @@ double getRoundedRunTimeMs(const SimulationTime runTime, const float simulationR
 #define ANONYMOUS_VAR CONCAT(_anonymous, __LINE__)
 
 /*!
- * \brief macro which logs the current clock time wrt to 'start' time in microseconds. It is voided by defining \TIME_PROFILE
+ * \brief macro which sets the clock time timepoints are logged wrt. It is voided by not defining \TIME_PROFILE
  */
-#define NRP_LOG_TIME(filename) TimeProfiler::recordTimePoint(filename)
+#define NRP_LOG_TIME_SET_START TimeProfiler::setStartTime()
 
 /*!
- * \brief macro which records the time passed between the call and the end of the block. It is voided by defining \TIME_PROFILE
+ * \brief macro which logs the current clock time wrt 'start' time in microseconds. It is voided by not defining \TIME_PROFILE
+ */
+#define NRP_LOG_TIME(filename) TimeProfiler::recordTimePoint(filename)
+#define NRP_LOG_TIME_WITH_COMMENT(filename, comment) TimeProfiler::recordTimePoint(filename, comment)
+
+/*!
+ * \brief macro which records the time passed between the call and the end of the block. It is voided by not defining \TIME_PROFILE
  */
 #define NRP_LOG_TIME_BLOCK(filename) auto ANONYMOUS_VAR = BlockProfiler(filename)
+#define NRP_LOG_TIME_BLOCK_WITH_COMMENT(filename, comment) auto ANONYMOUS_VAR = BlockProfiler(filename, comment)
 
 /*!
  * \brief Struct containing time profile logs and methods
  */
 struct TimeProfiler {
+
     static std::map<std::string,  std::ofstream> files;
     static std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    static std::string timeLogsDir;
 
     /*!
-     * \brief Records the current clock time wrt to 'start' time in microseconds
+     * \brief set the clock start which timepoints are logged wrt
+     */
+    static void setStartTime();
+
+    /*!
+     * \brief Records the current clock time wrt 'start' time in microseconds
      *
      * \param filename name of the file to which the record will be added
+     * \param comment text  to be prepended to the time record
      * \param newLine if true a new line is added, if false a space is added after the record
      */
-    static void recordTimePoint(const std::string& filename, bool newLine = true);
+    static void recordTimePoint(const std::string& filename, const std::string& comment = "", bool newLine = true);
 
     /*!
      * \brief add a record with the specified duration
      *
      * \param filename name of the file to which the record will be added
+     * \param comment text to be prepended to the time record
      * \param newLine if true a new line is added, if false a space is added after the record
      */
-    static void recordDuration(const std::string& filename, const std::chrono::microseconds& duration, bool newLine = true);
+    static void recordDuration(const std::string& filename, const std::chrono::microseconds& duration, const std::string& comment = "", bool newLine = true);
 };
 
 /*!
@@ -125,18 +148,23 @@ struct BlockProfiler {
      * \brief Constructor
      *
      * \param filename name of the file to which the record will be added
+     * \param comment text to be prepended to the time record
      */
-    BlockProfiler(const std::string& filename);
+    BlockProfiler(const std::string& filename, const std::string& comment="");
 
     ~BlockProfiler();
 
     std::chrono::time_point<std::chrono::high_resolution_clock> _start;
     std::string _filename;
+    std::string _comment;
 };
 
 #else
+#define NRP_LOG_TIME_SET_START
 #define NRP_LOG_TIME(filename)
+#define NRP_LOG_TIME_WITH_COMMENT(filename, comment)
 #define NRP_LOG_TIME_BLOCK(filename)
+#define NRP_LOG_TIME_BLOCK_WITH_COMMENT(filename, comment)
 #endif
 
 #endif // TIME_UTILS_H

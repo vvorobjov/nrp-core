@@ -153,6 +153,8 @@ static int processLogOutputOption(const std::string& logOutput, std::string logF
 
 int main(int argc, char *argv[])
 {
+    NRP_LOG_TIME_BLOCK_WITH_COMMENT("experiment_stats", "NRPCoreSim execution time");
+
     //// PARSE COMMAND LINE PARAMETERS
     auto optParser = SimulationParams::createStartParamParser();
     std::unique_ptr<cxxopts::ParseResult> startParamPtr;

@@ -128,6 +128,8 @@ bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condi
         this->runSimulationOnce();
     }
 
+    this->_loop->waitForEngines();
+
     return hasCondition;
 }
 

@@ -74,11 +74,11 @@ public:
     void datapackCycle(const std::vector<EngineClientInterfaceSharedPtr> &engines)
     {
         updateDataPacksFromEngines(engines);
-        NRP_LOG_TIME("get");
+        NRP_LOG_TIME("after_get_datapacks");
         compute(engines);
-        NRP_LOG_TIME("run");
+        NRP_LOG_TIME("after_run_tfs");
         sendDataPacksToEngines(engines);
-        NRP_LOG_TIME("send");
+        NRP_LOG_TIME("after_send_datapacks");
     }
 };
 

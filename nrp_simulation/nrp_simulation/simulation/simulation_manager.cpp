@@ -23,6 +23,7 @@
 #include "nrp_simulation/simulation/simulation_manager.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
+#include "nrp_general_library/utils/time_utils.h"
 
 void SimulationManager::validateConfig(jsonSharedPtr &config)
 {
@@ -122,6 +123,7 @@ SimulationManager::RequestResult SimulationManager::processRequest(
         std::function<void ()> action, std::vector<SimState> validSourceStates,
         std::string actionMsg1, std::string actionMsg2, bool lockMutex)
 {
+    NRP_LOG_TIME_BLOCK_WITH_COMMENT("experiment_stats", actionMsg1 + " Simulation");
     NRPLogger::info(actionMsg1 + " Simulation");
     checkTransitionConstraints(std::move(validSourceStates), actionMsg2);
 

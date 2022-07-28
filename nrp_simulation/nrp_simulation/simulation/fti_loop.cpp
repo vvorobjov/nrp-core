@@ -159,7 +159,6 @@ void FTILoop::shutdownLoop()
 void FTILoop::runLoop(SimulationTime runLoopTime)
 {
     NRP_LOGGER_TRACE("{} called [ runLoopTime: {} ]", __FUNCTION__, runLoopTime.count());
-    NRP_LOG_TIME_BLOCK("sim_loop");
 
     const auto loopStopTime = this->_simTime + runLoopTime;
 
@@ -174,6 +173,9 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
     // _engineQueue is sorted by completion time of engine last step
     while(this->_engineQueue.begin()->first < loopStopTime)
     {
+        // Log the duration of the whole loop step
+        NRP_LOG_TIME_BLOCK("step_duration");
+
         // Get the next batch of engines which should finish next
         std::vector<EngineClientInterfaceSharedPtr> idleEngines;
         const auto nextCompletionTime = this->_engineQueue.begin()->first;
@@ -186,7 +188,7 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
         }
         while(!this->_engineQueue.empty() && this->_engineQueue.begin()->first <= nextCompletionTime);
 
-        NRP_LOG_TIME("begin");
+        NRP_LOG_TIME("step_start");
 
         // Wait for engines which will be processed to complete execution
         for(const auto &engine : idleEngines)
@@ -194,7 +196,7 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
             runLoopStepAsyncGet(engine);
         }
 
-        NRP_LOG_TIME("wait");
+        NRP_LOG_TIME("after_wait_for_engines");
 
         // Retrieve datapacks required by TFs from completed engines
         // Execute preprocessing TFs and TFs sequentially
@@ -237,15 +239,17 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
             engine = nullptr;
         }
 
-        NRP_LOG_TIME("start");
+        NRP_LOG_TIME("after_restart_engines");
     }
 
-    // Wait for all engines to finish their last loop step
+    this->_simTime = loopStopTime;
+}
 
+void FTILoop::waitForEngines()
+{
+    // Wait for all engines to finish their last loop step
     for(const auto &engine : this->_engineQueue)
     {
         runLoopStepAsyncGet(engine.second);
     }
-
-    this->_simTime = loopStopTime;
 }

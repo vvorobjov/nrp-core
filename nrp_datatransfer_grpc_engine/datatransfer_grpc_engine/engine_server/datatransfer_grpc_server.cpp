@@ -23,6 +23,8 @@
 #include "datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.h"
 #include "datatransfer_grpc_engine/engine_server/stream_datapack_controller.h"
 
+#include "nrp_general_library/utils/time_utils.h"
+
 int DataTransferGrpcServer::_iteration = 0;
 SimulationTime DataTransferGrpcServer::_simulationTime = SimulationTime::zero();
 
@@ -49,13 +51,7 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
 {
     NRPLogger::info("Initializing Data Transfer Engine");
 
-    const auto t = std::time(nullptr);
-    const auto tm = *std::localtime(&t);
-
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "/%Y%m%d-%H%M%S-") << getpid();
-
-    std::string timeStamp = oss.str();
+    std::string timeStamp = getTimestamp();
 
     bool mqttConnected = false;
 #ifdef MQTT_ON
@@ -83,7 +79,7 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
 #endif
 
     auto &dumps = data.at("dumps");
-    std::string dataDir = std::string(data.at("dataDirectory")) + timeStamp;
+    std::string dataDir = std::string(data.at("dataDirectory")) + "/" + timeStamp;
 
     this->_handleDataPackMessage = data.at("streamDataPackMessage") && mqttConnected;
 

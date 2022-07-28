@@ -28,8 +28,11 @@ set(NRP_COMMON_LD_FLAGS ${GCOV_LD_FLAGS})
 # Uncomment to compile a production version of code (without trace calls)
 # add_definitions(-DPRODUCTION_RELEASE)
 
-# Uncomment to compile time profile calls
-# add_definitions(-DTIME_PROFILE)
+# Set to ON to compile time profile calls
+OPTION(ENABLE_TIME_PROFILE "If ON, nrp-core will be compiled with time profiling tools" OFF) # Disabled by default
+if(ENABLE_TIME_PROFILE)
+    add_definitions(-DTIME_PROFILE)
+endif()
 
 include(GNUInstallDirs)
 include(ExternalProject)
