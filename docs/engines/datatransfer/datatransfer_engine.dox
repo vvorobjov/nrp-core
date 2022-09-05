@@ -3,20 +3,20 @@
 The DataTransfer Engine brings data logging and streaming capabilities to NRP-core.
 It enables users to log experiment data to file for further offline anaylisis or to stream it over the network for, e.g., remote data visualization and experiment monitoring.
 
-The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and, therefore, accepts \ref datapacks_protobuf "Protobuf DataPacks". 
+The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and, therefore, accepts \ref datapacks_protobuf "Protobuf DataPacks".
 
 In transceiver functions, users can fetch datapacks from other engines and process them or send them directly to the DataTransfer Engine where they will be logged or streamed.
-Which datapacks are accepted by the engine and how are they processed (i.e. whether they are logged or streamed or both) is specified in the engine json configuration. 
+Which datapacks are accepted by the engine and how are they processed (i.e. whether they are logged or streamed or both) is specified in the engine json configuration.
 See \ref engine_datatransfer_config_section "below" for more details about the engine configuration parameters.
 
 In the folder *examples/husky_braitenberg_dump* insterested users can find a complete experiment using the DataTransfer Engine.
 
 \section datatransfer_engine_streaming Enabling Data Streaming with MQTT
 
-As commented above, besides from logging to file, the DataTransfer Engine allows to stream datapacks over the network. 
-For this purpose the MQTT protocol is used. 
+As commented above, besides from logging to file, the DataTransfer Engine allows to stream datapacks over the network.
+For this purpose the MQTT protocol is used.
 
-In order to enable data streaming from NRP-core, the Paho MQTT library must be installed beforehand as described in \ref installation. 
+In order to enable data streaming from NRP-core, the Paho MQTT library must be installed beforehand as described in \ref installation.
 Additionally, the Engine will need to connect to an MQTT broker and the latter's address specified in the engine configuration.
 
 In case of needing to bring up your own MQTT broker, below are provided commands to quickly set one up and run it from docker.
@@ -24,42 +24,42 @@ The commands should be run from the NRP-core source root folder.
 
 \code{.sh}
 sudo docker pull eclipse-mosquitto
-sudo docker run -it -p 1883:1883 -p 9010:9001 -v ${PWD}/nrp_datatransfer_grpc_engine/mosquitto.conf:/mosquitto/config/mosquitto.conf
+sudo docker run -it -p 1883:1883 -v ${PWD}/nrp_comm_proxies/nrp_mqtt_proxy/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
 \endcode
 
-The resulting MQTT broker will be listening to port *1883*. 
-If a different port is wished, it can be specified in *nrp_datatransfer_grpc_engine/mosquitto.conf*. 
+The resulting MQTT broker will be listening to port *1883*.
+If a different port is wished, it can be specified in *nrp_comm_proxies/nrp_mqtt_proxy/mosquitto.conf*.
 
 \section datatransfer_engine_datapacks DataPacks
 
-The DataTransfer Engine processes every incoming datapack and tries to save its "data" field to file and/or send it to and MQTT broker, depending on the experiment configuration. 
+The DataTransfer Engine processes every incoming datapack and tries to save its "data" field to file and/or send it to and MQTT broker, depending on the experiment configuration.
 
-\ref datapacks_protobuf "Protobuf DataPacks", containing any protobuf message type, can be sent to the DataTransfer Engine for logging or streaming, with some limitations. 
-Protobuf message types that have *repeated* fields cannot be logged to files, but can still be streamed. 
+\ref datapacks_protobuf "Protobuf DataPacks", containing any protobuf message type, can be sent to the DataTransfer Engine for logging or streaming, with some limitations.
+Protobuf message types that have *repeated* fields cannot be logged to files, but can still be streamed.
 
-Additionally, two Protobuf message types are provided with special formatting support for logging into the file: *Dump.String* and *Dump.ArrayFloat*. 
-*Dump.String* has a single field *string_stream* of string type. 
+Additionally, two Protobuf message types are provided with special formatting support for logging into the file: *Dump.String* and *Dump.ArrayFloat*.
+*Dump.String* has a single field *string_stream* of string type.
 *Dump.ArrayFloat* can be used to transfer arrays as explained below.
 
 \subsection dump_array_float Logging arrays with Dump.ArrayFloat
 
 The *Dump.ArrayFloat* Protobuf message contains two fields:
 - float_stream: repeated float field containing the array data.
-- dims: repeated integer field specifying the dimensions of the array. 
+- dims: repeated integer field specifying the dimensions of the array.
 
 The number of elements in the *dims* field specifies the number of dimensions of the array, and the value of each element the number of elements of the array in that dimension.
 
 The DataTransfer engine supports arrays of one or two dimensions.
-If *dims* is not set or has one element, the array is treated as 1-dimensional. 
-If it has two, the array is treated as 2-dimensional. 
-In this case the first element indicates the number of rows of the array and the second element the number of columns (*r* and *c* in the explanation below). 
+If *dims* is not set or has one element, the array is treated as 1-dimensional.
+If it has two, the array is treated as 2-dimensional.
+In this case the first element indicates the number of rows of the array and the second element the number of columns (*r* and *c* in the explanation below).
 The formatting of 3- or more-dimensional arrays is not supported, if *dims* has a number of elements other than 2, then *float_stream* is formatted as a 1-dimensional array.
 
-When the engine is requested to log to file a *Dump.ArrayFloat* message *r* lines are printed to the logged file, each of them containing *c* elements from *float_stream*. 
-In case the size of *float_stream* is greater than the specified dimensions (i.e. than r * c), the remaining data (not fitting into the number of rows multiplied by the number of columns) is truncated and not printed. 
+When the engine is requested to log to file a *Dump.ArrayFloat* message *r* lines are printed to the logged file, each of them containing *c* elements from *float_stream*.
+In case the size of *float_stream* is greater than the specified dimensions (i.e. than r * c), the remaining data (not fitting into the number of rows multiplied by the number of columns) is truncated and not printed.
 In case the total size of *float_stream* is smaller, then the remaining "space" of the array is printed empty.
 
-In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples examples for constructing *Dump.ArrayFloat*. 
+In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples examples for constructing *Dump.ArrayFloat*.
 
 \subsection logging_address Logging and streaming address
 
