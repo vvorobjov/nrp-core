@@ -177,6 +177,15 @@ class EngineGrpcServer : public EngineGrpcService::Service
         }
 
         /*!
+        * \brief Returns the pointer to the DataPackController of the Data Pack with the specified name
+        */
+        ProtoDataPackController* getDataPackController(const std::string & datapackName)
+        {
+            return this->_datapacksControllers.find(datapackName)->second;
+        }
+
+
+        /*!
         * \brief If true controllers are sent incoming DataPackMessages, if false only the contained data
         */
         bool _handleDataPackMessage = false;

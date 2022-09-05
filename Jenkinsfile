@@ -8,6 +8,7 @@
 pipeline {
     environment {
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
+        IMAGE_TAG = TOPIC_BRANCH.replace("/", "-");
         BITBUCKET_DOC_REPO = "${env.BRANCH_NAME == "master" ? "hbpneurorobotics" : "nrp-core-dev-docs"}"
     }
     agent {
@@ -23,14 +24,14 @@ pipeline {
         stage('Build image') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Image build nrp-core')
-                sh 'export NRP_CORE_TAG=:${TOPIC_BRANCH}; docker-compose up --build nrp-gazebo-nest-env'
+                sh 'export NRP_CORE_TAG=:${IMAGE_TAG}; docker-compose up --build nrp-gazebo-nest-env'
             }
         }
 
         stage('Build and test') {
             agent {
                 docker {
-                    image "nrp-core/nrp-gazebo-nest-ubuntu20-env:${TOPIC_BRANCH}"
+                    image "nrp-core/nrp-gazebo-nest-ubuntu20-env:${IMAGE_TAG}"
                     args '-u nrpuser:nrpgroup --privileged --net=host'
                     reuseNode true
                 }

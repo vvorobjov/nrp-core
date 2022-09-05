@@ -233,7 +233,7 @@ if(NOT ENABLE_SPINNAKER STREQUAL OFF)
     FetchContent_MakeAvailable(SpyNNakerVisualiser)
     add_custom_target(
             sPyNNakerExternalDevices ALL
-            COMMAND make clean && make CPPFLAGS=-fPIC
+            COMMAND $(MAKE) clean && $(MAKE) CPPFLAGS=-fPIC
             WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
     include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
     add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)

@@ -119,6 +119,11 @@ class DataTransferGrpcServer
          */
         std::string _engineName;
 
+        /*!
+         * \brief The list of the names of the associated DataPacks
+         */
+        std::vector< std::string > _dataPacksNames;
+
 #ifdef MQTT_ON
         /*!
          * \brief MQTT client
