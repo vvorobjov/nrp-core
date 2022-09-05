@@ -46,7 +46,7 @@ class TestEngineJSONServer
     public:
     template<class ...T>
     TestEngineJSONServer(T &&...properties)
-        : EngineJSONServer(std::forward<T>(properties)...)
+        : EngineJSONServer(std::forward<T>(properties)..., "", "")
     {}
 
     virtual ~TestEngineJSONServer() override = default;

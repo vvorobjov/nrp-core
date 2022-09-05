@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
     const auto serverAddress = options[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
     const auto engineName    = options[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
 
-    auto server = DataTransferGrpcServer(serverAddress, engineName, "");
+    auto server = DataTransferGrpcServer(serverAddress, engineName);
 
     // Start the server
 

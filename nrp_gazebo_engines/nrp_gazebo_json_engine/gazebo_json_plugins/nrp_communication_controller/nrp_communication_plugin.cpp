@@ -51,8 +51,10 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     // Create server with given URL
     auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
 
-    // Save bound URL
+    // Save server parameters
     this->_serverAddress = newController.serverAddress();
+    this->_engineName = engineName;
+    this->_registrationAddress = registrationAddr;
     NRPLogger::info("NRP Communication plugin: Starting server on {}", this->_serverAddress);
 
     // Start the server
@@ -67,7 +69,7 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);
+    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_registrationAddress);
 
     // Start server
     newController.startServerAsync();

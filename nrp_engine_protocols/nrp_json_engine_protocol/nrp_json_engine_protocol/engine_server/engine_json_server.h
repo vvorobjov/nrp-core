@@ -66,11 +66,10 @@ class EngineJSONServer
         EngineJSONServer(const std::string &engineAddress, const std::string &engineName, const std::string &clientAddress);
 
         /*!
-         * \brief Constructor. Will try to bind to engineAddress
-         * \param engineAddress Server address
+         * \brief No dummy servers without name and address
          */
-        EngineJSONServer(const std::string &engineAddress);
-        EngineJSONServer();
+        EngineJSONServer() = delete;
+
         virtual ~EngineJSONServer();
 
         // Delete copy mechanisms
@@ -186,6 +185,11 @@ class EngineJSONServer
          */
         virtual void setDataPackData(const nlohmann::json &reqData);
 
+        /*!
+         * \brief Get the Engine name
+         */
+        const std::string &getEngineName() { return _engineName; }
+
     private:
         /*!
          * \brief Is the server running?
@@ -211,6 +215,14 @@ class EngineJSONServer
          * \brief Routes
          */
         Pistache::Rest::Router _router;
+
+        /*!
+         * \brief Name of the simulation engine
+         *
+         * Must be the same on the server and the client side. It should be imprinted
+         * in the datapack metadata, which allows for additional consistency checks.
+         */
+        std::string _engineName;
 
         using enpoint_ptr_t = std::unique_ptr<Pistache::Http::Endpoint>;
 

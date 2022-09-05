@@ -67,18 +67,10 @@ class NRPCommunicationController
         /*!
          * \brief Reset server with the given server URL
          * \param serverURL URL used by server
-         * \return Returns reference to server instance
-         */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL);
-
-        /*!
-         * \brief Reset server with the given server URL
-         * \param serverURL URL used by server
          * \param engineName Name of this engine
-         * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName);
 
 
         /*!
@@ -153,13 +145,7 @@ class NRPCommunicationController
         /*!
          * \brief Make private for singleton
          */
-        NRPCommunicationController() = default;
-
-        /*!
-         * \brief Constructor. Private for singleton
-         * \param address Server Address
-         */
-        NRPCommunicationController(const std::string &address);
+        NRPCommunicationController() = delete;
 
         /*!
          * \brief Constructor. Private for singleton
@@ -168,7 +154,7 @@ class NRPCommunicationController
          * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        NRPCommunicationController(const std::string &serverURL, const std::string &engineName);
 };
 
 #endif

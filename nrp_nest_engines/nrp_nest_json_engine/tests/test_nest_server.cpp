@@ -49,7 +49,7 @@ TEST(TestNestJSONServer, DISABLED_TestFunc)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-    NestJSONServer server(server_address, pyGlobals);
+    NestJSONServer server(server_address, "", "", pyGlobals);
 
     // Test Init
     pyState.allowThreads();
@@ -98,7 +98,7 @@ TEST(TestNestJSONServer, TestInitError)
     std::string server_address = "localhost:5434";
     config["ServerAddress"] = server_address;
 
-    NestJSONServer server(server_address, pyGlobals);
+    NestJSONServer server(server_address, "", "", pyGlobals);
 
     pyState.allowThreads();
 

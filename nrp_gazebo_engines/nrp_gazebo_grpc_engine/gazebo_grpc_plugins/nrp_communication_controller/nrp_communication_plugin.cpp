@@ -31,7 +31,7 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 
     NRPLogger::info("NRP Communication plugin: Initializing...");
 
-    std::string serverAddr, engineName, registrationAddr;
+    std::string serverAddr, engineName;
     try
     {
         // Parse options from input
@@ -40,9 +40,7 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
         // Save given URL
         serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
         engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
-        // TODO: remove registrationAddr parameter everywhere
-        // registrationAddr = inputArgsParse[EngineGRPCConfigConst::EngineRegistrationServerAddrArg.data()].as<std::string>();
-        registrationAddr = "";
+
     }
     catch(cxxopts::OptionException &e)
     {
@@ -52,11 +50,12 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     }
 
     // Create server with given URL
-    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
+    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName);
 
-    // Save bound URL
+    // Save the server parameters
     this->_serverAddress = newController.serverAddress();
-    NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server on {}", this->_serverAddress);
+    this->_engineName = engineName;
+    NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server {} on {}", this->_engineName, this->_serverAddress);
 
     // Start the server
     newController.startServerAsync();
@@ -70,7 +69,7 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress);
+    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName);
 
     // Start server
     newController.startServerAsync();

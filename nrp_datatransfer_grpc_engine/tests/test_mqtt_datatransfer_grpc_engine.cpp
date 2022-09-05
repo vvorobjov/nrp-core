@@ -46,7 +46,7 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"], "");
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "connected" status
@@ -92,7 +92,7 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"], "");
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "disconnected" status
@@ -125,7 +125,7 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"], "");
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // We can try connection to non-existent real broker, but it may fail if broker exists

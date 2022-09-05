@@ -37,7 +37,7 @@ class DataTransferGrpcServer
     : public EngineGrpcServer
 {
     public:
-        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);
+        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName);
         ~DataTransferGrpcServer() = default;
 
         /*!

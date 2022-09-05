@@ -29,9 +29,8 @@ int DataTransferGrpcServer::_iteration = 0;
 SimulationTime DataTransferGrpcServer::_simulationTime = SimulationTime::zero();
 
 DataTransferGrpcServer::DataTransferGrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName,
-                                     const std::string &registrationAddress)
-    : EngineGrpcServer(serverAddress, engineName, registrationAddress),
+                                     const std::string &engineName)
+    : EngineGrpcServer(serverAddress, engineName),
     _engineName(engineName)
 {
     _dataPacksNames.clear();

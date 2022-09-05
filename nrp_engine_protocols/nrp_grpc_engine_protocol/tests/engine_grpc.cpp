@@ -114,7 +114,7 @@ class TestEngineGrpcServer
     public:
 
         TestEngineGrpcServer(const std::string & serverAddress)
-            : EngineGrpcServer(serverAddress)
+            : EngineGrpcServer(serverAddress, "TestEngineGrpcServer")
         {
 
         }

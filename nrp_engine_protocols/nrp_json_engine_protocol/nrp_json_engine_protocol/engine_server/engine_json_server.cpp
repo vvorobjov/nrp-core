@@ -33,6 +33,7 @@ using json = nlohmann::json;
 EngineJSONServer::EngineJSONServer(const std::string &engineAddress, const std::string &engineName, const std::string &clientAddress)
     : _serverAddress(engineAddress),
       _router(EngineJSONServer::setRoutes(this)),
+      _engineName(engineName),
       _loggerCfg(engineName)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -71,33 +72,13 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress, const std::
     while(this->_pEndpoint == nullptr);
 
     // Register port
-    if(!engineName.empty())
+    if(!this->_engineName.empty())
     {
-        if(!EngineJSONRegistrationServer::sendClientEngineRequest(clientAddress, engineName, this->_serverAddress, 20, 1))
-            throw NRPException::logCreate(std::string("Error while trying to register engine \"") + engineName + "\" at " + clientAddress);
+        if(!EngineJSONRegistrationServer::sendClientEngineRequest(clientAddress, this->_engineName, this->_serverAddress, 20, 1))
+            throw NRPException::logCreate(std::string("Error while trying to register engine \"") + this->_engineName + "\" at " + clientAddress);
     }
 
-    NRPLogger::info("EngineJSONServer {} has been created", engineName);
-}
-
-EngineJSONServer::EngineJSONServer(const std::string &engineAddress)
-    : _serverAddress(engineAddress),
-      _router(EngineJSONServer::setRoutes(this)),
-      _pEndpoint(enpoint_ptr_t(new Pistache::Http::Endpoint(Pistache::Address(engineAddress)))),
-      _loggerCfg("EngineJSONServer")
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    RestClientSetup::ensureInstance();
-
-    // Add routes to endpoint
-    this->_pEndpoint->setHandler(this->_router.handler());
-}
-
-EngineJSONServer::EngineJSONServer()
-    : EngineJSONServer("")
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    NRPLogger::info("EngineJSONServer {} has been created", this->_engineName);
 }
 
 EngineJSONServer::~EngineJSONServer()

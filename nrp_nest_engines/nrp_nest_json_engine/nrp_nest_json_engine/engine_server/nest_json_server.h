@@ -35,7 +35,6 @@ class NestJSONServer
         : public EngineJSONServer
 {
     public:
-        NestJSONServer(const std::string &serverAddress, boost::python::dict globals);
         NestJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, boost::python::dict globals);
         virtual ~NestJSONServer() override;
 

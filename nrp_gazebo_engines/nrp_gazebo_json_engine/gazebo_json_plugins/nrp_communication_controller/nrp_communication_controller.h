@@ -59,12 +59,6 @@ class NRPCommunicationController
          */
         static NRPCommunicationController& getInstance();
 
-        /*!
-         * \brief Reset server with the given server URL
-         * \param serverURL URL used by server
-         * \return Returns reference to server instance
-         */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL);
 
         /*!
          * \brief Reset server with the given server URL
@@ -148,13 +142,7 @@ class NRPCommunicationController
         /*!
          * \brief Make private for singleton
          */
-        NRPCommunicationController() = default;
-
-        /*!
-         * \brief Constructor. Private for singleton
-         * \param address Server Address
-         */
-        NRPCommunicationController(const std::string &address);
+        NRPCommunicationController() = delete;
 
         /*!
          * \brief Constructor. Private for singleton
