@@ -6,10 +6,10 @@ project(NESTEngines VERSION ${NRP_VERSION})
 ## Installs nest-simulator, used by nest engine servers as python modules (ie. not required at compilation time)
 ## Contains nest-server app
 
-set(NRP_NEST_SERVER_EXECUTABLE "nest-server")
-set(NRP_NEST_SERVER_MPI_EXECUTABLE "nest-server-mpi")
+if(BUILD_NEST_ENGINE_SERVER)
+    set(NRP_NEST_SERVER_EXECUTABLE "nest-server")
+    set(NRP_NEST_SERVER_MPI_EXECUTABLE "nest-server-mpi")
 
-if(ENABLE_NEST STREQUAL FULL)
     # If NEST_INSTALL_DIR is not specified at running cmake, then install nest-simulator from source
     if(NOT DEFINED NEST_INSTALL_DIR)
         if("${NEST_BUILD_DIR}" STREQUAL "")
@@ -47,16 +47,18 @@ if(ENABLE_NEST STREQUAL FULL)
         endif()
         message("Using preinstalled nest-simulator: ${NEST_INSTALL_DIR}")
     endif()
+
+    # Setup nest-simulator variables
+    set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
+    set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
+    
+    # add to nrp env vars
+    list(APPEND NRP_ENV_VARS "PATH=${NEST_CMAKE_INSTALL_BINDIR}:\${PATH}")
+    list(APPEND NRP_ENV_VARS "PYTHONPATH=${NEST_CMAKE_INSTALL_PYNEST}:\${PYTHONPATH}")
+    set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
+else()
+    message(STATUS "Building NRP-core without nest-simulator engines server parts")
 endif()
-
-set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
-
-# add to nrp env vars
-list(APPEND NRP_ENV_VARS "PATH=${NEST_CMAKE_INSTALL_BINDIR}:\${PATH}")
-list(APPEND NRP_ENV_VARS "PYTHONPATH=${NEST_CMAKE_INSTALL_PYNEST}:\${PYTHONPATH}")
-set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
-
 
 ##########################################
 ## Nest Engines

@@ -72,7 +72,7 @@ target_link_libraries(${LIBRARY_NAME}
     PRIVATE
 )
 
-if(NOT ENABLE_MQTT STREQUAL OFF)
+if(ENABLE_MQTT)
     list(
         APPEND TEST_SRC_FILES
         tests/test_stream_datapack_controller.cpp

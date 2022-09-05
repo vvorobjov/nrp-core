@@ -12,7 +12,22 @@ set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 #string(APPEND CMAKE_SHARED_LINKER_FLAGS " -Wl,--no-undefined")
 
-set(COVERAGE OFF CACHE BOOL "Enables code coverage")
+## NRP-core compilation options (NAME DESCRIPTION DEFAULT)
+# See the section "common NRP-core CMake options" for the explanation about these parameters
+option(ENABLE_ROS "Enable ROS support" ON)
+option(ENABLE_MQTT "Enable MQTT support" ON)
+option(ENABLE_SPINNAKER "Enable Spinnaker support" ON)
+
+include(CMakeDependentOption)
+# See the section "common NRP-core CMake options" for the explanation about ENABLE_SIMULATOR parameters
+option(ENABLE_NEST "Enable nest-simulator support" ON)
+cmake_dependent_option(BUILD_NEST_ENGINE_SERVER "Build the server part of the nest-simulator engines" ON "ENABLE_NEST" OFF)
+option(ENABLE_GAZEBO "Enable Gazebo support" ON)
+cmake_dependent_option(BUILD_GAZEBO_ENGINE_SERVER "Build the server part of the Gazebo engines" ON "ENABLE_GAZEBO" OFF)
+
+option(COVERAGE "Enables code coverage" OFF)
+option(BUILD_RST "Convert Doxygen documentation into the reStructuredText source files." OFF)
+## end of: NRP-core compilation options
 
 if(${COVERAGE} STREQUAL ON)
     set(GCOV_CXX_FLAGS -coverage)
@@ -163,31 +178,17 @@ add_subdirectory(nrp_protobuf)
 
 # ROS
 set(NRP_CATKIN_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "Catkin packages containing msg definitions supported in nrp-core")
-if(NOT DEFINED ENABLE_ROS)
-    message(VERBOSE "ENABLE_ROS defaults to FULL")
-    set(ENABLE_ROS FULL)
-else()
-    message(VERBOSE "ENABLE_ROS is set to ${ENABLE_ROS}")
-endif()
-
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     message(STATUS "Building ROS msgs Python bindings")
     add_definitions(-DROS_ON)
     add_subdirectory(nrp_ros)
     add_subdirectory(nrp_comm_proxies/nrp_ros_proxy)
 else()
-    message(STATUS "Ros msgs python bindings will not be built")
+    message(STATUS "ROS msgs python bindings will not be built")
 endif()
 
 # Spinnaker
-if(NOT DEFINED ENABLE_SPINNAKER)
-    message(VERBOSE "ENABLE_SPINNAKER defaults to FULL")
-    set(ENABLE_SPINNAKER FULL)
-else()
-    message(VERBOSE "ENABLE_SPINNAKER is set to ${ENABLE_SPINNAKER}")
-endif()
-
-if(ENABLE_SPINNAKER STREQUAL FULL)
+if(ENABLE_SPINNAKER)
     message(STATUS "Building Spinnaker support")
     add_definitions(-DSPINNAKER_ON)
 else()
@@ -195,17 +196,12 @@ else()
 endif()
 
 #MQTT
-if(NOT DEFINED ENABLE_MQTT)
-    message(VERBOSE "ENABLE_MQTT defaults to FULL")
-    set(ENABLE_MQTT FULL)
-else()
-    message(VERBOSE "ENABLE_MQTT is set to ${ENABLE_MQTT}")
-endif()
-
-if(NOT ENABLE_MQTT STREQUAL OFF)
+if(ENABLE_MQTT)
     message(STATUS "Building with MQTT support")
     add_subdirectory(nrp_comm_proxies/nrp_mqtt_proxy)
     add_definitions(-DMQTT_ON)
+else()
+    message(STATUS "MQTT support is disabled")
 endif()
 
 ##########################################
@@ -221,39 +217,6 @@ add_subdirectory(nrp_engine_protocols/nrp_json_engine_protocol)
 ## GRPC Communication Protocol
 add_subdirectory(nrp_engine_protocols/nrp_grpc_engine_protocol)
 
-##########################################
-## ENABLE_SIMULATOR Flags
-## 
-## These flags allow to disable the compilation of those parts of nrp-core that depends on or install a specific simulator (eg. gazebo, nest)
-##
-## The expected behavior for each of these flags is as follows:
-## - the NRPCoreSim is always built regardless of any of the flags values.
-## - if a flag is set to OFF:
-##   - the related simulator won't be assumed to be installed in the system, ie. make won't fail if it isn't. Also it won't be installed in the compilation process if this possibility is available (as in the case of nest)
-##   - The engines connected with this simulator won't be built (nor client nor server components)
-##   - tests that would fail if the related simulator is not available won't be built
-## - if the flag is set to CLIENT: Same as above but:
-##   - the engine clients connected to this simulator will be built. This means that they should not depend on or link to any specific simulator
-##   - the engine server side components might or might not be built, depending on if the related simulator is required at compilation time
-## - if the flag is set to FULL the simulator is assumed to be installed or it will be installed from source if this option is available. All targets connected with this simulator will be built
-##
-## This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential dependency conflicts
-## between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
-
-if(NOT DEFINED ENABLE_NEST)
-    message(VERBOSE "ENABLE_NEST defaults to FULL")
-    set(ENABLE_NEST FULL)
-else()
-    message(VERBOSE "ENABLE_NEST is set to ${ENABLE_NEST}")
-endif()
-
-if(NOT DEFINED ENABLE_GAZEBO)
-    message(VERBOSE "ENABLE_GAZEBO defaults to FULL")
-    set(ENABLE_GAZEBO FULL)
-else()
-    message(VERBOSE "ENABLE_GAZEBO is set to ${ENABLE_GAZEBO}")
-endif()
-
 
 ##########################################
 ## NRP Engines
@@ -261,7 +224,7 @@ set(ENV{NRP_ENGINE_LAUNCHERS} ""
         CACHE STRING "Default engines which will always be available in the NRP simulation")
 
 ## Gazebo targets
-if(NOT ENABLE_GAZEBO STREQUAL OFF)
+if(ENABLE_GAZEBO)
     message(STATUS "Building Gazebo engines")
     add_subdirectory(nrp_gazebo_engines)
 else()
@@ -269,11 +232,11 @@ else()
 endif()
 
 ## NEST Engines
-if(NOT ENABLE_NEST STREQUAL OFF)
-    message(STATUS "Building NEST engines")
+if(ENABLE_NEST)
+    message(STATUS "Building nest-simulator engines")
     add_subdirectory(nrp_nest_engines)
 else()
-    message(STATUS "NEST engines will not be built")
+    message(STATUS "nest-simulator engines will not be built")
 endif()
 
 ## Python Engine
@@ -352,7 +315,7 @@ set(DOXYGEN_GENERATE_TREEVIEW YES)
 set(DOXYGEN_DISABLE_INDEX YES)
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
 set(DOXYGEN_IMAGE_PATH "docs/images")
-if(BUILD_RST STREQUAL ON)
+if(BUILD_RST)
     set(DOXYGEN_GENERATE_XML YES)
     set(DOXYGEN_XML_OUTPUT xml)
     set(DOXYGEN_XML_PROGRAMLISTING NO)
@@ -449,7 +412,7 @@ doxygen_add_docs(nrp_doxygen
         COMMENT "Generating documentation")
 
 
-if(BUILD_RST STREQUAL ON)
+if(BUILD_RST)
     if("${DOXYREST_DIR}" STREQUAL "")
         set(DOXYREST_DIR "${CMAKE_CURRENT_BINARY_DIR}/doxyrest" CACHE INTERNAL "Doxyrest build dir")
     endif()

@@ -32,6 +32,37 @@ In any case, be aware that NEST 2.x is incompatible with NRP-core.
 \skip Start of installation
 \until End of installation
 
+\section installation_options Common NRP-core CMake options
+
+Here is the list of the CMake options which can help to modify the project configuration (turn on and turn off the support of some components and features).
+
+Developers options:
+- <b>COVERAGE</b> enables generation of the code coverage reports during the testing;
+- <b>BUILD_RST</b> enables generation of the reStructuredText source files from the Doxygen documentation.
+
+Communication protocols options:
+- <b>ENABLE_ROS</b> enables compilation with the ROS support;
+- <b>ENABLE_MQTT</b> enables compilation with the MQTT support.
+
+ENABLE_SIMULATOR and BUILD_SIMULATOR_ENGINE_SERVER options:
+- <b>ENABLE_NEST</b> and <b>BUILD_NEST_ENGINE_SERVER</b>;
+- <b>ENABLE_GAZEBO</b> and <b>BUILD_GAZEBO_ENGINE_SERVER</b>.
+
+The ENABLE_SIMULATOR and BUILD_SIMULATOR_ENGINE_SERVER flags allow to disable the compilation of those parts of nrp-core that depends on or install a specific simulator (eg. gazebo, nest)
+
+The expected behavior for each of these pairs flags is as follows:
+- the NRPCoreSim is always built regardless of any of the flags values.
+- if ENABLE_SIMULATOR is set to OFF:
+  - the related simulator won't be assumed to be installed in the system, ie. make won't fail if it isn't. Also it won't be installed in the compilation process if this possibility is available (as in the case of nest)
+  - The engines connected with this simulator won't be built (nor client nor server components)
+  - tests that would fail if the related simulator is not available won't be built
+- if the ENABLE_SIMULATOR is set to ON and BUILD_SIMULATOR_ENGINE_SERVER is set to OFF: Same as above, but:
+  - the engine clients connected to this simulator will be built. This means that they should not depend on or link to any specific simulator
+  - the engine server side components might or might not be built, depending on if the related simulator is required at compilation time
+- if the both flags are set to ON the simulator is assumed to be installed or it will be installed from source if this option is available. All targets connected with this simulator will be built
+
+This flag system allows to configure the resulting nrp-core depending on which simulators are available on the system, both for avoiding potential dependency conflicts between simulators and enforcing modularity, opening the possibility of having specific engine servers running on a different machine or inside containers.
+
 \section installation_environment Setting the environment
 
 In order to properly set the environment to run experiments with NRP-core, please make sure to add the lines below to your ~/.bashrc file

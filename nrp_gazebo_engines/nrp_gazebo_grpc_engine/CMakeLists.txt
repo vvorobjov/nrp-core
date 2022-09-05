@@ -34,15 +34,17 @@ set(EXEC_SRC_FILES
 )
 
 # List testing build files
-set(TEST_SRC_FILES
-    tests/test_gazebo_engine.cpp
-)
+if(BUILD_GAZEBO_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+        tests/test_gazebo_engine.cpp
+    )
+endif()
 
 
 ##########################################
 ## Dependencies
 
-if(ENABLE_GAZEBO STREQUAL FULL)
+if(BUILD_GAZEBO_ENGINE_SERVER)
     find_package(Gazebo REQUIRED)
 endif()
 
@@ -112,7 +114,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 
 ## This section needs Gazebo libraries installed
-if(ENABLE_GAZEBO STREQUAL FULL)
+if(BUILD_GAZEBO_ENGINE_SERVER)
 
     ##########################################
     ## Gazebo Grpc DataPack Controllers

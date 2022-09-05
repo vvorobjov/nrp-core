@@ -32,12 +32,16 @@ set(PYTHON_MODULE_SRC_FILES
 )
 
 # List executable build files
-set(EXEC_SRC_FILES
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(EXEC_SRC_FILES
+    )
+endif()
 
 # List testing build files
-set(TEST_SRC_FILES
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+    )
+endif()
 
 
 ##########################################
@@ -113,7 +117,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 
     # Create testing executable
     enable_testing()
@@ -169,8 +173,10 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 )
 
 # Patch nest-server to use package manager's uwsgi plugin system
-install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
-    WORKING_DIRECTORY '${NEST_CMAKE_INSTALL_BINDIR}')")
+if(BUILD_NEST_ENGINE_SERVER)
+    install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
+        WORKING_DIRECTORY '${NEST_CMAKE_INSTALL_BINDIR}')")
+endif()
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})

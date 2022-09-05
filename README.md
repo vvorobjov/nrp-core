@@ -85,6 +85,7 @@ git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
 cd nrp-core
 mkdir build
 cd build
+# See the section "Common NRP-core CMake options" in the documentation for the additional ways to configure the project with CMake
 cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DNRP_DEP_CMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"
 mkdir -p "${NRP_INSTALL_DIR}"
 # the installation process might take some time, as it downloads and compiles Nest as well.

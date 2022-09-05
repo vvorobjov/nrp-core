@@ -22,12 +22,15 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
     nrp_nest_json_engine/config/nest_config.cpp
-    nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.cpp
-    nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.cpp
-    nrp_nest_json_engine/engine_server/nest_json_server.cpp
     nrp_nest_json_engine/nrp_client/nest_engine_json_nrp_client.cpp
     nrp_nest_json_engine/python/create_datapack_class.cpp
 )
+if(BUILD_NEST_ENGINE_SERVER)
+    list(APPEND LIB_SRC_FILES
+        nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.cpp
+        nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.cpp
+        nrp_nest_json_engine/engine_server/nest_json_server.cpp)
+endif()
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
@@ -35,17 +38,21 @@ set(PYTHON_MODULE_SRC_FILES
 )
 
 # List executable build files
-set(EXEC_SRC_FILES
-    nest_server_executable/main.cpp
-    nest_server_executable/nest_server_executable.cpp
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(EXEC_SRC_FILES
+        nest_server_executable/main.cpp
+        nest_server_executable/nest_server_executable.cpp
+    )
+endif()
 
 # List testing build files
-set(TEST_SRC_FILES
-    nest_server_executable/nest_server_executable.cpp
-    tests/test_nest_executable.cpp
-    tests/test_nest_server.cpp
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+        nest_server_executable/nest_server_executable.cpp
+        tests/test_nest_executable.cpp
+        tests/test_nest_server.cpp
+    )
+endif()
 
 
 ##########################################
@@ -127,7 +134,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Create testing env files
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)
