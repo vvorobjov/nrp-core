@@ -2,7 +2,7 @@
 
 In order to start working with NRP-core, the latter must be first compiled and installed. The installation guide can be found in the following page: \subpage installation "Installation Instructions"
 
-We provide a number of example experiments within the NRP-core repository. They are located in the `examples` subdirectory. They give a good overview of the capabilities of the NRP and should be relatively easy to adapt to user-specific needs. More details about running these experiments can be found on the pages: \subpage running_example_exp "Running the example experiments" and \subpage running_example_docker_exp "Running the example experiments inside different docker containers".
+We provide a number of example experiments within the NRP-core repository. They are located in the `examples` subdirectory. They give a good overview of the capabilities of the NRP and should be relatively easy to adapt to user-specific needs. More details about running these experiments can be found on the pages: \subpage running_example_exp "Running the example experiments", \subpage running_example_docker_exp "Running the example experiments inside different Docker containers" and \subpage running_example_docker_compose "Running the experiments inside different Docker containers with docker-compose".
 
 This \subpage python_client "page" describes how to run NRP-Core experiments from Python.
 

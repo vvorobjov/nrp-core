@@ -92,4 +92,65 @@ Provided that, DockerLauncher can then be employed by setting up the experiment 
 
 The page \ref running_example_docker_exp contains more details and examples on the use of DockerLauncher.
 
+
+
+\section docker_compose_launch Launching experiments with docker-compose
+
+Another mechanism for the launching of the different Engines in the different Docker containers on the single host is the usage of the docker-compose file. This file determines the properties and the order of the containers which should be started, as well as the commands for launching the NRP and the Engines. The DockerLauncher launcher is not used in this case, and the orchestration is performed by the Docker built-in tools. This feature can be used, in particular, for the launching of the experiment with the Engines having conflicting dependencies, or for a quick scaling of the experiment over the set of hosts.
+
+
+\subsection docker_compose_file docker-compose file
+
+The general structure of the docker-compose file can be found on the official Docker website https://docs.docker.com/compose/
+
+Shortly, this file describes services, each of them spawns a Docker container. In order to run the NRP experiment, one of the services should spawn a container with the running NRP-core (with all the needed clients but can be without Engines' servers), the other services may run the detached Engines or other instruments (like MQTT broker). The data sharing is done with the mounting of the shared volume(s) in the different containers.
+
+The user can use any Docker images for the services, for example, the nest-simulator can be spawn from the official NEST Docker image docker-registry.ebrains.eu/nest/nest-simulator:latest.
+
+The page \ref running_example_docker_compose contains the description of the example which can be started with docker-compose.
+
+
+\subsection docker_compose_file Experiment configuration file for launching with docker-compose
+
+There are some changes in the experiment configuration file are needed for a proper usage of the docker-compose launching mechanism.
+
+Those Engines, which are supposed to be run in the separate containers (separate from the NRP-core) should have an `"EmptyLaunchCommand"` as an `"EngineLaunchCommand"`, because the launching is handled by the docker-compose now (not by the NRP-core). Those Engines, which are supposed to be run in the same container as the NRP-core, should be configured as usual. As a result, the NRP-core expects the Engines in the separate containers are running without its participation, and it tries to launch the Engines in the container, which is used by itself. 
+
+\code{.json}
+    {
+      "EngineType": ...,
+      "EngineName": ...,
+      ...
+      "EngineLaunchCommand": {
+        "LaunchType": "EmptyLaunchCommand"
+      }
+    }
+\endcode
+
+In Linux systems the Docker containers are available by their names within the network created by the docker-compose. Thus, the addresses of the Engines, which are supposed to be run in the separate containers, should be setup correspondingly, so that NRP-core could connect with them. For example, if the MQTT broker is running in the container with the name `mqtt-broker` at the port 1883, then the corresponding address in the \ref datatransfer_engine should look like `"mqtt-broker:1883"`
+
+\code{.json}
+    {
+      "EngineType": "datatransfer_grpc_engine",
+      "EngineName": "datatransfer_engine",
+      ...
+      "MQTTBroker": "mqtt-broker:1883"
+    }
+\endcode
+
+The last but not least, when the "localhost" of the container should be involved as an address, the IP-address `0.0.0.0` should be used instead of `127.0.01` or `localhost`. This is the default Docker configuration. For example, if the \ref datatransfer_engine is launched in the same container as NRP-core itself at the port 9004, then its `"ServerAddress"` should be set as `"0.0.0.0:9004"`
+
+\code{.json}
+    {
+      "EngineType": "datatransfer_grpc_engine",
+      "EngineName": "datatransfer_engine",
+      "ServerAddress": "0.0.0.0:9004",
+      ...
+      "MQTTBroker": "mqtt-broker:1883"
+    }
+\endcode
+
+The page \ref running_example_docker_compose contains the description of the example which can be started with docker-compose.
+
+
 */

@@ -427,6 +427,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/getting_started/running_example_exp.dox"
         "docs/getting_started/python_client.dox"
         "docs/getting_started/running_example_docker_exp.dox"
+        "docs/getting_started/running_example_docker_compose.dox"
 
         "docs/guides/guides.dox"
         "docs/guides/general_developer_guide.dox"

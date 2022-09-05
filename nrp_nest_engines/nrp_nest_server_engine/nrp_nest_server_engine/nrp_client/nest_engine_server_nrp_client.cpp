@@ -344,41 +344,11 @@ void NestEngineServerNRPClient::shutdown()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
-
-    if(n_mpi <= 1) {
-        // The `nest-server start` spawns uwsgi server, which runs in a separate (from the launching shell) process.
-        // When the forked process is closed, the uwsgi remains alive.
-        // The `nest-server stop` command kills this uwgsi procees by matching it in process list.
-        // Thus, the parameters after `stop` should coincide with the uwsgi process parameters.
-        // After spawning it looks like 
-        // `uwsgi --plugin python3 --module nest.server:app --http-socket localhost:5002 --uid <username>`
-        // Where `--plugin python3` is used by default when -o parameter is used at start,
-        // but it should be passed at stop.
-        // See NRP_NEST_SERVER_EXECUTABLE_PATH script for understanding.
-
-        std::vector<std::string> stopParams;
-
-        int port = this->engineConfig().at("NestServerPort");
-        
-        stopParams.push_back("stop");
-        stopParams.push_back("-h");
-        stopParams.push_back(this->engineConfig().at("NestServerHost"));
-        stopParams.push_back("-p");
-        stopParams.push_back(std::to_string(port));
-        stopParams.push_back("-P");
-        stopParams.push_back("python3");
-
-        nlohmann::json stopConfig;
-        stopConfig["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
-        stopConfig["ProcCmd"] = NRP_NEST_SERVER_EXECUTABLE_PATH;
-        stopConfig["ProcEnvParams"] = this->engineConfig().at("EngineEnvParams");
-        stopConfig["ProcStartParams"] = stopParams;
-
-        NRPLogger::debug("Using parameters for stopping nest server:\n{}", stopConfig.dump(4));
-
-        this->_process->launchProcess(stopConfig);
-    }
+    // Empty
+    // Revert https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/96 changes
+    // When nest-server is launched separately with EmptyLaunchCommand, then this "hacked" shutdown gives an error
+    // The proper shutdown of the server instances should be handled correctly by the launcher,
+    // which knows how it was started
 }
 
 const std::string & NestEngineServerNRPClient::getDataPackIdList(const std::string & datapackName) const

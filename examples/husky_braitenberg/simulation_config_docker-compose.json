@@ -1,0 +1,60 @@
+{
+	"SimulationName": "husky_simulation_nest_server",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the nest_server engine.",
+	"SimulationTimeout": 20,
+	"EngineConfigs": [
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "husky_world.sdf",
+			"EngineProcStartParams": ["--verbose"],
+			"ServerAddress": "nrp-gazebo:9000",
+			"EngineLaunchCommand": {
+				"LaunchType": "EmptyLaunchCommand"
+			}
+		},
+		{
+			"EngineType": "nest_server",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg_nest_server.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"],
+			"NestServerHost": "nrp-nest-simulator",
+			"NestServerPort": 9000,
+			"EngineLaunchCommand": {
+				"LaunchType": "EmptyLaunchCommand"
+			}
+		},
+		{
+			"EngineType": "datatransfer_grpc_engine",
+			"EngineName": "datatransfer_engine",
+			"ServerAddress": "0.0.0.0:9004",
+			"MQTTBroker": "mqtt-broker:1883",
+			"dataDirectory": "data/test",
+			"streamDataPackMessage": true,
+			"dumps":[
+				{"name": "test_datapack1", "network": true, "file": true},
+				{"name": "test_datapack2", "network": true, "file": true},
+				{"name": "test_datapack3", "network": true, "file": true},
+				{"name": "husky::back_left_joint", "network": true, "file": true}
+			]
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "cam_pf",
+			"FileName": "cam_pf.py"
+		},
+		{
+			"Name": "mot_tf",
+			"FileName": "mot_tf.py"
+		},
+		{
+			"Name": "brain_stimulation_tf",
+			"FileName": "brain_stimulation_tf.py"
+		},
+		{
+			"Name": "data_transfer_tf",
+			"FileName": "data_transfer_tf.py"
+		}
+	]
+}
