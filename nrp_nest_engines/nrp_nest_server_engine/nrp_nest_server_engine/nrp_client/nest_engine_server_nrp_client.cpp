@@ -241,7 +241,7 @@ NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, Pro
 
     // address
     if(!this->engineConfig().contains("NestServerPort"))
-        setDefaultProperty<int>("NestServerPort", findUnboundPort(this->PortSearchStart));
+        setDefaultProperty<int>("NestServerPort", getFreePort(this->engineConfig().at("NestServerHost").get<std::string>()));
 
     RestClientSetup::ensureInstance();
 
