@@ -90,17 +90,17 @@ bool FTILoopSimManager::runUntilTimeOutCB()
                               toSimulationTime<unsigned, std::ratio<1>>(int(this->_simConfig->at("SimulationTimeout"))));
     };
 
-    return runSimulationUntilCondition(condition);
+    return runSimulationUntilCondition(condition, nlohmann::json());
 }
 
-bool FTILoopSimManager::runCB(unsigned numIterations)
+bool FTILoopSimManager::runCB(unsigned numIterations, const nlohmann::json & json)
 {
     unsigned iteration = 0;
     std::function condition = [&] () {
         return (numIterations > 0 && iteration++ >= numIterations);
     };
 
-    return runSimulationUntilCondition(condition);
+    return runSimulationUntilCondition(condition, json);
 }
 
 void FTILoopSimManager::shutdownCB()
@@ -111,7 +111,7 @@ void FTILoopSimManager::shutdownCB()
     }
 }
 
-bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condition)
+bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condition, const nlohmann::json & json)
 {
     if(this->_loop == nullptr)
         return false;
@@ -125,7 +125,7 @@ bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condi
         if(hasCondition)
             break;
 
-        this->runSimulationOnce();
+        this->runSimulationOnce(json);
     }
 
     this->_loop->waitForEngines();
@@ -133,10 +133,10 @@ bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condi
     return hasCondition;
 }
 
-void FTILoopSimManager::runSimulationOnce()
+void FTILoopSimManager::runSimulationOnce(const nlohmann::json & json)
 {
     if(this->_loop != nullptr)
-        this->_loop->runLoop(this->_timeStep);
+        this->_loop->runLoop(this->_timeStep, json);
     else
         throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
 }

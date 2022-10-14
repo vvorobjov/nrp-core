@@ -50,7 +50,7 @@ void NrpCoreServer::runServerLoop()
                     result = _manager->initializeSimulation();
                     break;
                 case NrpCoreServer::RequestType::RunLoop:
-                    result = _manager->runSimulation(this->getRequestNumIterations());
+                    result = _manager->runSimulation(this->getRequestNumIterations(), this->_clientData);
                     data   = _manager->getStatus();
                     break;
                 case NrpCoreServer::RequestType::RunUntilTimeout:
@@ -185,6 +185,7 @@ grpc::Status NrpCoreServer::runLoop(grpc::ServerContext * , const NrpCore::RunLo
     std::unique_lock<std::mutex> lock(this->_mutex);
 
     this->_numIterations = message->numiterations();
+    this->_clientData = nlohmann::json::parse(message->json());
     return requestHelper(lock, RequestType::RunLoop, status);
 }
 

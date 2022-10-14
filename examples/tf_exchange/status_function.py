@@ -1,12 +1,11 @@
 from nrp_core import *
-from nrp_core.data.nrp_json import SimulationStatus
+from nrp_core.data.nrp_json import SimulationStatus, JsonDataPack
 
 counter = 0
 
 @EngineDataPack(keyword='datapack_engine', id=DataPackIdentifier('datapack1', 'python_1'))
-#@EngineDataPack(keyword='datapack_tf', id=DataPackIdentifier("rec_datapack2", 'python_2'))
 @StatusFunction()
-def transceiver_function(datapack_engine):
+def transceiver_function(datapack_engine, client_data):
     global counter
     status = SimulationStatus()
 
@@ -20,6 +19,9 @@ def transceiver_function(datapack_engine):
         pass
 
     counter += 1
-    return status
+
+    datapack = JsonDataPack("actions", "python_1")
+    datapack.data["test"] = 5
+    return status, [datapack]
 
 # EOF

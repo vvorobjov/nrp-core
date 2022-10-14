@@ -382,11 +382,13 @@ TEST_F(FunctionManagerTest, TestFunctionChain)
     this->devs.push_back(resultDataPack->moveToSharedPtr());
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    std::unique_ptr<nlohmann::json> results = functionManager->executeStatusFunction();
+    auto results = functionManager->executeStatusFunction(nlohmann::json());
 
-    ASSERT_EQ((*results)["test_value1"], "10");
-    ASSERT_EQ((*results)["test_value2"], "5");
-    ASSERT_EQ((*results)["test_value3"], "10");
+    const auto resultsJson = std::move(std::get<0>(results));
+
+    ASSERT_EQ((*resultsJson)["test_value1"], "10");
+    ASSERT_EQ((*resultsJson)["test_value2"], "5");
+    ASSERT_EQ((*resultsJson)["test_value3"], "10");
 }
 
 
@@ -405,11 +407,14 @@ TEST_F(FunctionManagerTest, TestStatusFunction)
     this->prepareInputDataPack(devName, testValue);
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    std::unique_ptr<nlohmann::json> results = functionManager->executeStatusFunction();
+    auto results = functionManager->executeStatusFunction({{"test", 999}});
 
-    ASSERT_EQ((*results)["test_int"], 456);
-    ASSERT_TRUE((*results)["test_flags"][0]);
-    ASSERT_FALSE((*results)["test_flags"][1]);
+    const auto resultsJson = std::move(std::get<0>(results));
+
+    ASSERT_EQ((*resultsJson)["test_int"], 456);
+    ASSERT_EQ((*resultsJson)["actions"], 999);
+    ASSERT_TRUE((*resultsJson)["test_flags"][0]);
+    ASSERT_FALSE((*resultsJson)["test_flags"][1]);
 }
 
 
@@ -443,7 +448,7 @@ TEST_F(FunctionManagerTest, TestStatusFunctionInvalid)
     const std::string statusFuntionFilename = TEST_INVALID_STATUS_FCN_FILE_NAME;
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    ASSERT_THROW(functionManager->executeStatusFunction(), NRPException);
+    ASSERT_THROW(functionManager->executeStatusFunction(nlohmann::json()), NRPException);
 }
 
 
@@ -468,7 +473,10 @@ TEST_F(FunctionManagerTest, TestStatusFunctionNoFile)
  */
 TEST_F(FunctionManagerTest, TestStatusFunctionUndefined)
 {
-    ASSERT_EQ(functionManager->executeStatusFunction(), nullptr);
+    auto results = functionManager->executeStatusFunction(nlohmann::json());
+    const auto resultsJson = std::move(std::get<0>(results));
+
+    ASSERT_EQ(resultsJson, nullptr);
 }
 
 

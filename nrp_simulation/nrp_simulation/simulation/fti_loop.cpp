@@ -156,7 +156,7 @@ void FTILoop::shutdownLoop()
     }
 }
 
-void FTILoop::runLoop(SimulationTime runLoopTime)
+void FTILoop::runLoop(SimulationTime runLoopTime, const nlohmann::json & clientData)
 {
     NRP_LOGGER_TRACE("{} called [ runLoopTime: {} ]", __FUNCTION__, runLoopTime.count());
 
@@ -201,7 +201,7 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
         // Retrieve datapacks required by TFs from completed engines
         // Execute preprocessing TFs and TFs sequentially
         // Send tf output datapacks to corresponding engines
-        this->_devHandler->datapackCycle(idleEngines);
+        this->_devHandler->datapackCycle(idleEngines, clientData);
 
         // Restart engines
         for(auto &engine : idleEngines)

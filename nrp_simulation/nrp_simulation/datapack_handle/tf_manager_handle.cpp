@@ -106,15 +106,24 @@ void TFManagerHandle::updateDataPacksFromEngines(const std::vector<EngineClientI
     }
 }
 
-void TFManagerHandle::compute(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+void TFManagerHandle::compute(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & clientData)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     executePreprocessingFunctions(this->_functionManager, engines);
     this->_tf_results = executeTransceiverFunctions(this->_functionManager, engines);
 
-    auto status = this->_functionManager.executeStatusFunction();
-    this->_status = status ? status->dump() : "";
+    auto statusTuple = this->_functionManager.executeStatusFunction(clientData);
+
+    // Extract the JSON status object from the returned tuple
+
+    auto statusJson = std::move(std::get<0>(statusTuple));
+
+    // Extract DataPacks from the status function
+
+    this->_tf_results.addResults(std::move(std::get<1>(statusTuple)));
+
+    this->_status = statusJson ? statusJson->dump() : "";
 }
 
 void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines)

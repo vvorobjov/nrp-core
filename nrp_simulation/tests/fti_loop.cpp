@@ -91,10 +91,10 @@ TEST(FTILoopTest, RunLoop)
     ASSERT_NO_THROW(simLoop.initLoop());
 
     ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
-    ASSERT_NO_THROW(simLoop.runLoop(timestep));
+    ASSERT_NO_THROW(simLoop.runLoop(timestep, nlohmann::json()));
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(simLoop.getSimTime(), timestep);
-    ASSERT_NO_THROW(simLoop.runLoop(timestep));
+    ASSERT_NO_THROW(simLoop.runLoop(timestep, nlohmann::json()));
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
 }

@@ -57,7 +57,7 @@ public:
      *
      * \param engines Engines that are been synchronize in the current loop
      */
-    virtual void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines) = 0;
+    virtual void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & json) = 0;
 
     /*!
      * \brief Send datapacks to engines
@@ -70,12 +70,13 @@ public:
      * \brief Execute sequentially the update, compute and send operations
      *
      * \param engines Engines that are been synchronize in the current loop
+     * \param clientData Extra data coming from the NRP Client, will be passed to the status function
      */
-    void datapackCycle(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+    void datapackCycle(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & clientData)
     {
         updateDataPacksFromEngines(engines);
         NRP_LOG_TIME("after_get_datapacks");
-        compute(engines);
+        compute(engines, clientData);
         NRP_LOG_TIME("after_run_tfs");
         sendDataPacksToEngines(engines);
         NRP_LOG_TIME("after_send_datapacks");

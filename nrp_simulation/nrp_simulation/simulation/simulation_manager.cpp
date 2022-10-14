@@ -55,12 +55,12 @@ SimulationManager::RequestResult SimulationManager::initializeSimulation()
                           "initialized");
 }
 
-SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations)
+SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations, const nlohmann::json & clientData)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     return processRequest([&]() {
                               changeState(SimState::Running);
-                              if(!this->runCB(numIterations))
+                              if(!this->runCB(numIterations, clientData))
                                   NRPLogger::debug("Simulation has been stopped before running the specified number of iterations");
                               changeState(SimState::Stopped);
                           },

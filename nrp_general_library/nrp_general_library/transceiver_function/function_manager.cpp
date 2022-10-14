@@ -118,13 +118,13 @@ boost::python::object FunctionManager::runDataPackFunction(const std::string &tf
 }
 
 
-std::unique_ptr<nlohmann::json> FunctionManager::executeStatusFunction()
+FunctionManager::status_function_results_t FunctionManager::executeStatusFunction(const nlohmann::json & clientData)
 {
     // Early return in case status function is not registered
 
     if(this->_statusFunction == nullptr)
     {
-        return nullptr;
+        return std::make_tuple(nullptr, FunctionManager::tf_results_t());
     }
 
     // Run the status function
@@ -135,6 +135,8 @@ std::unique_ptr<nlohmann::json> FunctionManager::executeStatusFunction()
     {
         boost::python::tuple args;
         boost::python::dict kwargs;
+
+        kwargs["client_data"] = boost::ref(clientData);
 
         results = this->_statusFunction->Function->runTf(args, kwargs);
     }
@@ -147,20 +149,44 @@ std::unique_ptr<nlohmann::json> FunctionManager::executeStatusFunction()
     // Extract the results - a single nlohmann::json object should be returned by the status function
 
     std::unique_ptr<nlohmann::json> retval;
+    FunctionManager::tf_results_t dataPacks;
 
     try
     {
-        retval.reset(boost::python::extract<nlohmann::json *>(results));
+        boost::python::tuple resultsTuple(results);
+
+        if(boost::python::len(resultsTuple) != 2)
+        {
+            throw NRPException::logCreate("Python error occurred during extraction of results from Status Function '" +
+                                          this->_statusFunction->Name + ". " +
+                                          "\nPlease make sure that the function returns a tuple with two elements: a SimulationStatus object,"
+                                          "and a (possibly empty) list of DataPacks");
+        }
+
+        // The first element in the tuple should be a JSON status object
+
+        retval.reset(boost::python::extract<nlohmann::json *>(resultsTuple[0]));
+
+        // The second element should be a list of DataPacks (it can be empty)
+
+        boost::python::list resultsListDataPacks(resultsTuple[1]);
+        DataPackFunctionResult resultDataPacks(std::move(resultsListDataPacks));
+
+        // Extract pointers to retrieved datapacks
+        resultDataPacks.extractDataPacks();
+
+        dataPacks.push_back(resultDataPacks);
     }
     catch(boost::python::error_already_set &)
     {
         throw NRPException::logCreate("Python error occurred during extraction of results from Status Function '" +
                                       this->_statusFunction->Name + "': " +
                                       handle_pyerror() +
-                                      "\nPlease make sure that the function returns a single object of type SimulationStatus");
+                                      "\nPlease make sure that the function returns a tuple with two elements: a SimulationStatus object,"
+                                      "and a (possibly empty) list of DataPacks");
     }
 
-    return retval;
+    return std::make_tuple(std::move(retval), std::move(dataPacks));
 }
 
 

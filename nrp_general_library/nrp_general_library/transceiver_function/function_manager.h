@@ -105,6 +105,7 @@ class FunctionManager
         using function_datas_t = std::multimap<std::string, FunctionData>;
         using linked_functions_t = std::pair<FunctionManager::function_datas_t::iterator, FunctionManager::function_datas_t::iterator>;
         using tf_results_t = std::list<DataPackFunctionResult>;
+        using status_function_results_t = std::tuple<std::unique_ptr<nlohmann::json>, FunctionManager::tf_results_t>;
 
         FunctionManager();
         FunctionManager(const boost::python::dict &tfGlobals);
@@ -170,11 +171,12 @@ class FunctionManager
 
         /*!
          * \brief Executes Status Function registered loaded by the manager
+         * \param clientData Extra data coming from the NRP Client, will be passed to the status function
          * \return Results of the Status Function execution as JSON object
          *
          * This method will run the Status Function that was loaded using `loadStatusFunction` method.
          */
-        std::unique_ptr<nlohmann::json> executeStatusFunction();
+        status_function_results_t executeStatusFunction(const nlohmann::json & clientData);
 
     private:
         /*!

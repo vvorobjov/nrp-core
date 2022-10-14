@@ -6,7 +6,7 @@ from nrp_core.data.nrp_json import SimulationStatus
 @PreprocessedDataPack(keyword='datapack_preprocessed', id=DataPackIdentifier('tf_input_preprocessing', 'engine', 'type'))
 @PreprocessedDataPack(keyword='datapack_tf', id=DataPackIdentifier('return_datapack', 'engine', 'type'))
 @StatusFunction()
-def transceiver_function(datapack_engine, datapack_preprocessed, datapack_tf):
+def transceiver_function(datapack_engine, datapack_preprocessed, datapack_tf, client_data):
     # Extract test values from the input DataPacks
 
     test_val1 = datapack_engine.test_value
@@ -21,6 +21,6 @@ def transceiver_function(datapack_engine, datapack_preprocessed, datapack_tf):
     status["test_value2"] = str(test_val2)
     status["test_value3"] = str(test_val3)
 
-    return status
+    return status, []
 
 # EOF

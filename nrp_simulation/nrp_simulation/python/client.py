@@ -182,10 +182,11 @@ class NrpCore:
         """Calls the initialize() RPC of the NRP Core Server"""
         return self._call_rpc(self._stub.initialize, EmptyMessage())
 
-    def run_loop(self, num_iterations, run_async=False):
+    def run_loop(self, num_iterations, json_data = None, run_async=False):
         """Calls the runLoop() RPC of the NRP Core Server"""
         message = RunLoopMessage()
         message.numIterations = num_iterations
+        message.json = json.dumps(json_data)
 
         if run_async:
             return self._call_rpc_async(self._stub.runLoop, message)

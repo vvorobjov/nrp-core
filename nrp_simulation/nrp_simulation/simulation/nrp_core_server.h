@@ -184,6 +184,8 @@ private:
     /*! \brief Number of iterations of runLoop requested by the client */
     unsigned _numIterations = 0;
 
+    nlohmann::json _clientData;
+
     /*! \brief Request status and error messages */
     SimulationManager::RequestResult _requestResult;
     std::string _jsonData = "";

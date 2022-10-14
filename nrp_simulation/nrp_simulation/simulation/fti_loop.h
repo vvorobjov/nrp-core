@@ -62,8 +62,9 @@ class FTILoop
         /*!
          * \brief Runs simulation for a total of runLoopTime (in s)
          * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
+         * \param clientData Extra data coming from the NRP Client, will be passed to the status function
          */
-        void runLoop(SimulationTime runLoopTime);
+        void runLoop(SimulationTime runLoopTime, const nlohmann::json & clientData);
 
         /*!
          * \brief Get Simulation Time (in seconds)

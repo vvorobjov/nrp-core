@@ -39,7 +39,7 @@ public:
 
     void updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & clientData) override;
 
     void sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
 

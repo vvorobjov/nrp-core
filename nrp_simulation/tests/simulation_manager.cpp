@@ -53,7 +53,7 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.resetSimulation(), std::logic_error);
     ASSERT_THROW(manager.stopSimulation(), std::logic_error);
-    ASSERT_THROW(manager.runSimulation(1), std::logic_error);
+    ASSERT_THROW(manager.runSimulation(1, nlohmann::json()), std::logic_error);
     ASSERT_THROW(manager.runSimulationUntilTimeout(), std::logic_error);
     ASSERT_THROW(manager.initializeSimulation(), std::logic_error);
     // Current state
@@ -67,7 +67,7 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.resetSimulation(), std::logic_error);
     ASSERT_THROW(manager.stopSimulation(), std::logic_error);
-    ASSERT_THROW(manager.runSimulation(1), std::logic_error);
+    ASSERT_THROW(manager.runSimulation(1, nlohmann::json()), std::logic_error);
     ASSERT_THROW(manager.runSimulationUntilTimeout(), std::logic_error);
     ASSERT_THROW(manager.shutdownSimulation(), std::logic_error);
     // Current state
@@ -81,7 +81,7 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.initializeSimulation(), std::logic_error);
     // Valid actions
-    ASSERT_NO_THROW(manager.runSimulation(1));
+    ASSERT_NO_THROW(manager.runSimulation(1, nlohmann::json()));
     ASSERT_NO_THROW(manager.runSimulationUntilTimeout());
     ASSERT_NO_THROW(manager.stopSimulation());
     ASSERT_NO_THROW(manager.resetSimulation());
