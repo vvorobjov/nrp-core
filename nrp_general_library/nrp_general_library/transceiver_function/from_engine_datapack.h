@@ -40,9 +40,31 @@ class EngineDataPack
 
     private:
 
-        std::string      _keyword;
+        std::string _keyword;
         DataPackIdentifier _datapackID;
-        bool             _isPreprocessed;
+        bool _isPreprocessed;
+};
+
+/*!
+ * \brief Class for input multiple datapacks for a single transceiver function, mapped to EngineDataPacks python decorator
+ */
+class EngineDataPacks
+        : public TransceiverDataPackInterface
+{
+public:
+    EngineDataPacks(const std::string &keyword, const boost::python::list &datapackListNames, const std::string &engineName, bool isPreprocessed);
+    virtual ~EngineDataPacks() override = default;
+
+    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+
+    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+
+private:
+
+    std::string _keyword;
+    std::vector<DataPackIdentifier> _datapacksIDs;
+    std::string _engineName;
+    bool _isPreprocessed;
 };
 
 #endif // SINGLE_TRANSCEIVER_DATAPACK_H

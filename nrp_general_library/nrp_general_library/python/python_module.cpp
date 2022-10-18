@@ -154,6 +154,10 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
     class_<EngineDataPack, bases<TransceiverDataPackInterface> >("EngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
             .def("__call__", &TransceiverDataPackInterface::pySetup<EngineDataPack>);
 
+    // EngineDataPacks
+    class_<EngineDataPacks, bases<TransceiverDataPackInterface> >("EngineDataPacks", init<const std::string&, const boost::python::list&, const std::string &, bool>( (arg("keyword"), arg("datapackNames"), arg("engineName"), arg("isPreprocessed") = false) ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<EngineDataPacks>);
+
     // PreprocessedDataPack
     class_<PreprocessedDataPack, bases<EngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
             .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);

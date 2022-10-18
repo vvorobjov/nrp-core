@@ -21,14 +21,18 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@EngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'engine', 'type'))
-@PreprocessingFunction("engine")
-def transceiver_function(datapack):
-    test_val = datapack.test_value
-    
-    ret_dev = JsonDataPack("tf_input_preprocessing", "another_engine")
-    ret_dev.data["test_value"] = str(test_val + 1)
-    
+@EngineDataPacks(keyword='datapacks_engine', datapackNames=['tf_input_datapack2','tf_input_datapack1'], engineName='engine')
+@PreprocessedDataPack(keyword='datapack_preprocessed', id=DataPackIdentifier('tf_input_preprocessing', 'engine', 'type'))
+@TransceiverFunction("engine")
+def transceiver_function(datapacks_engine, datapack_preprocessed):
+    test_val1 = datapacks_engine['tf_input_datapack1'].test_value
+    test_val2 = datapacks_engine['tf_input_datapack2'].test_value
+    prep_val = int(datapack_preprocessed.data["test_value"])
+
+    ret_dev = JsonDataPack('return_datapack', 'engine')
+    ret_dev.data["test_value1"] = str(test_val1+prep_val)
+    ret_dev.data["test_value2"] = str(test_val2+prep_val)
+
     return [ret_dev]
 
 # EOF
