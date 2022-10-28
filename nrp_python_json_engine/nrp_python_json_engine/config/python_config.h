@@ -47,6 +47,11 @@ struct PythonConfigConst
     static constexpr std::string_view ErrorMsg = "Message";
 
     /*!
+    * \brief Parameter name that is used to pass along the server address
+    */
+    static constexpr std::string_view ExtraServerOptionsArg = "options";
+
+    /*!
      * \brief Ratio used by SimulationTime
      *
      * The ratio should be passed to the server on initialization.

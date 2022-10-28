@@ -72,6 +72,7 @@ To use the Python JSON engine in an experiment, set `EngineType` to <b>"python_j
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>PythonFileName<td>Path to the Python script containing the engine definition<td>string<td><td>X<td>
+<tr><td>ServerOptions<td>Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - "{'key1': value, 'key2': 'value_str'}". The full list of options can be found at <a href="https://docs.gunicorn.org/en/stable/settings.html">the official page</a><td>string<td><td><td>
 </table>
 
 \section python_json_schema Schema

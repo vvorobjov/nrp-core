@@ -10,6 +10,11 @@
           "PythonFileName" : {
             "type": "string",
             "description": "Path to the python script containing the engine definition"
+          },
+          "ServerOptions" : {
+            "type": "string",
+            "default": "",
+            "description": "Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - \"{'key1': value, 'key2': 'value_str'}\". The full list of options can be found at the official page - https://docs.gunicorn.org/en/stable/settings.html."
           }
         },
         "required": ["PythonFileName"]

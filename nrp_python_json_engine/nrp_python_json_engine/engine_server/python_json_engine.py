@@ -22,16 +22,24 @@
 
 
 from argparse import Namespace, ArgumentParser
+import sys
 import flask
 from flask import Flask, request, jsonify
 import requests
 import nrp_core.engines.python_json.server_callbacks as server_callbacks
 import urllib.parse
 import socket
+import ast
 from contextlib import closing
 import gunicorn.app.base
 
 import time
+
+# Constants
+
+DEFAULT_TIMEOUT = 90
+DEFAULT_WORKERS = 1
+
 # Disable debug printouts
 
 import logging
@@ -102,6 +110,7 @@ def parse_arguments() -> Namespace:
     parser.add_argument('--engine',     type=str, required=True)
     parser.add_argument('--serverurl',  type=str, required=True)
     parser.add_argument('--regservurl', type=str, required=True)
+    parser.add_argument('--options',    type=str)
     return parser.parse_args()
 
 
@@ -147,15 +156,49 @@ def register_in_regserver(regserver_url: str, engine_name: str, hostname: str, p
             time.sleep(1)
 
 
+def parse_extra_options(options_str: str) -> dict:
+    """
+    Parses the extra server options passed by the user
+    Expected format is a python dict: '{ "option1": value1, "option2": value2 }'
+    """
+
+    if not options_str:
+        return {}
+
+    return ast.literal_eval(options_str)
+
+
+def prepare_options(extra_options: str, hostname: str, port: int) -> dict:
+    """Prepares the dictionary with options for the server application"""
+
+    # Parse the extra options passed by the user
+
+    try:
+        extra_options = parse_extra_options(args.options)
+    except:
+        sys.exit(f"Malformed server options: '{args.options}'. Expected format: \"{{ 'option1': value1, 'option2': value2 }}")
+
+    # Some default options that we set internally
+
+    standard_options = {
+        'bind': '%s:%s' % (hostname, port),
+        'workers': DEFAULT_WORKERS,
+        'timeout': DEFAULT_TIMEOUT,
+    }
+
+    # Merge the two dictionaries
+    # The values from the second dictionary take priority over the standard values
+
+    return {**standard_options, **extra_options}
+
+
 if __name__ == '__main__':
     args = parse_arguments()
     hostname, port = extract_hostname_port_from_url(args.serverurl)
     register_in_regserver(args.regservurl, args.engine, hostname, port)
 
-    options = {
-        'bind': '%s:%s' % (hostname, port),
-        'workers': 1,
-    }
+    options = prepare_options(args.options, hostname, port)
+
     StandaloneApplication(app, options).run()
 
 # EOF
