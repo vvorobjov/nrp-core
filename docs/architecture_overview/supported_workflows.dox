@@ -1,0 +1,27 @@
+/*! \page supported_workflows Supported Workflows in NRP Core
+
+\section supported_workflows_basic Standalone Simulation
+
+In this workflow, the \ref nrp_simulation "NRP-core process" orchestrates the simulation, which consists of
+multiple Engines (two in this particular diagram) exchanging data with the help of \ref transceiver_function "Transceiver Functions".
+NRP-core will keep advancing the simulation, with every engine running at the frequency defined in the configuration,
+until the given timeout is reached.
+
+The diagram below shows the data flow in a simulation with two engines and four Transceiver Functions.
+
+\image html dataflow_basic.png
+
+\section supported_workflows_client Simulation driven by a Master Script
+
+In this scenario, a Python script using \ref python_client "NRP-core Python Client" that drives the simulation.
+NRP-core is launched in \ref server_mode "server mode" and controlled externally by this Master Script, which is responsible for initializing, advancing and shutting down the simulation.
+
+The diagram below shows the data flow in a simulation with a single engine and a \ref status_function "Status Function".
+The Status Function enables the exchange of data between the Engines and the Master Script.
+
+This workflow becomes particularly useful in machine learning scenarios (e.g., Reinforcement Learning), or for performing hyper-parameter optimization. 
+In the former case, the engine/s running in the experiment implemented with NRP-core are usually physics/environment simulators, and the learning algorithm resides in the Master Script. The necessary data can be passed using the NRP Python Client interface and the Status Function.
+
+\image html dataflow_master_script.png
+
+*/

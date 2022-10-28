@@ -53,6 +53,32 @@ With the exception of *run_loop()* and *run_until_timeout()*, which accepts a pa
 When called with *run_async=True* they return a *Thread* object which can be used to monitor the state of the request.
 In combination with the *stop()* request and the \ref datatransfer_engine "datatransfer" engine, this option could be used to monitor the simulation and stop it after some condition fulfills or visualize or process experiment data in realtime.
 
+\section python_client_status_function Passing data between client and engines
+
+A mechanism was implemented to allow passing data from the client to the engines, as well as the other way around.
+The data for the engines must be in JSON format and can be passed as optional argument named `client_data` to the `run_loop` method of `NrpCore` Python object.
+Once passed to the NRP-core process, this data becomes accessible inside the so-called \ref status_function "Status Function".
+There, it can be translated into DataPacks that will then be routed to the proper engines.
+
+The data may also be passed from the engines to the client. DataPacks coming from the engines can be accessed in the Status Function,
+where they must be translated into JSON format. The JSON object can then be passed back to the client,
+which will return the data (still in JSON format) as the result of `run_loop` method.
+
+Please note that it is possible to run multiple simulation steps with a single call to `run_loop` and still use this data passing mechanism.
+In that case, the Status Function will still be called on every Simulation Step, and it will reuse the same `client_data` on every call.
+The data returned from the Status Function to the client will contain only the data returned from the last call.
+
+More information about how to write the Status Function can be found on this \ref status_function "page".
+
+\code{.py}
+reference = {}
+reference["velocity"] = 5
+# Pass data from the client to the status function
+result = n.run_loop(1, client_data=reference)
+# Extract the data coming from the status function
+print(result["position"])
+\endcode
+
 \section python_client_docker Launching Experiments in Docker Containers
 
 By default, when instantiating a `NrpCore` object, NRPCoreSim is started in a forked process.

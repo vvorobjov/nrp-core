@@ -359,6 +359,8 @@ doxygen_add_docs(nrp_doxygen
         "docs/architecture_overview/sync_model_details.dox"
         "docs/architecture_overview/transceiver_function.dox"
         "docs/architecture_overview/preprocessing_function.dox"
+        "docs/architecture_overview/supported_workflows.dox"
+        "docs/architecture_overview/status_function.dox"
         "docs/architecture_overview/lifecycle_components.dox"
         "docs/architecture_overview/experiment_lifecycle.dox"
         "docs/architecture_overview/main_elements.dox"
