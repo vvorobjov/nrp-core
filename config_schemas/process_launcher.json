@@ -26,9 +26,9 @@
       "$id": "#LaunchCommand",
       "type":"object",
       "oneOf":[
-        { "$ref": "https://neurorobotics.net/launch_commands/empty_launch_cmd.json#/empty_launch_cmd" },
-        { "$ref": "https://neurorobotics.net/launch_commands/basicfork_cmd.json#/basicfork_cmd" },
-        { "$ref": "https://neurorobotics.net/launch_commands/docker_launcher_cmd.json#/docker_launcher_cmd" }
+        { "$ref": "json://nrp-core/launch_commands/empty_launch_cmd.json#/empty_launch_cmd" },
+        { "$ref": "json://nrp-core/launch_commands/basicfork_cmd.json#/basicfork_cmd" },
+        { "$ref": "json://nrp-core/launch_commands/docker_launcher_cmd.json#/docker_launcher_cmd" }
       ],
       "default":{"LaunchType":"BasicFork"}
     }

@@ -7,7 +7,7 @@ Experiments are run using the provided application \ref nrp_simulation. It takes
 
 \section getting_started_experiment_husky Husky braitenberg
 
-This experiment replicates the <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="https://neurorobotics.net/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
+This experiment replicates the <i>Husky Braitenberg</i> experiment often used in previous versions of the NRP to exemplify its functionality. More details about the experiment can be found <a href="json://nrp-core/Documentation/nrp/user_manual/user_interface/introduction.html#template-experiments">here</a>. It displays a virtual robot connected to a brain reacting to color stimuli.
 
 The experiment engages two simulators, <a href="http://gazebosim.org/">Gazebo</a> as robot simulator, and <a href="https://www.nest-simulator.org/">NEST</a> as neural network simulator.
 

@@ -27,7 +27,7 @@
 
 void SimulationManager::validateConfig(jsonSharedPtr &config)
 {
-    json_utils::validateJson(*config, "https://neurorobotics.net/simulation.json#Simulation");
+    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
 
     // Set default values
     json_utils::setDefault<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());

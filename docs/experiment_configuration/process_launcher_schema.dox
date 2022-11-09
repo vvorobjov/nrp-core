@@ -4,7 +4,7 @@ ProcessLauncher is in responsible for spawning and managing external processes i
 Typically it is used to bring up Engine server processes, but it can be used to execute arbitrary commands.
 The schema listed below allows user to specify which commands should be executed in a given NRPCore experiment.
 
-The \ref simulation_schema "Simulation Schema" contains a parameter *ExternalProcesses* of type array which elements are of type `https://neurorobotics.net/process_launcher.json#ProcessLauncher`, i.e, the type defined in the schema listed below.
+The \ref simulation_schema "Simulation Schema" contains a parameter *ExternalProcesses* of type array which elements are of type `json://nrp-core/process_launcher.json#ProcessLauncher`, i.e, the type defined in the schema listed below.
 This parameter can be use to specify which commands should be launched alongside with the experiment.
 
 Below is a list of all the parameters needed to configure a ProcessLauncher.

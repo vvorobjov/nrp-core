@@ -29,7 +29,7 @@
 struct PySimConfigConst
 {
     static constexpr char EngineType[] = "py_sim";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/py_sim";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_python.json#/py_sim";
 };
 
 #endif // PYSIM_CONFIG_H

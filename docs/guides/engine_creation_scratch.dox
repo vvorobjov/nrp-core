@@ -112,7 +112,7 @@ are validated using <a href="https://json-schema.org/">JSON schemas</a>. This \r
 
 Every new engine configuration schema should be based on the provided basic configuration schema:
 
-    https://neurorobotics.net/engines/engine_base.json#/EngineBase
+    json://nrp-core/engines/engine_base.json#/EngineBase
 
 The new engine schema can be afterwards placed into a separate JSON file in <i>config_schemas/engines/</i> folder, so it can be found at run time.
 
@@ -131,7 +131,7 @@ as template argument to the base class of your new engine:
 
 \code
 class ExampleEngineClient
-        : public EngineClient<ExampleEngineClient, "https://neurorobotics.net/engines/engine_example.json#/EngineExample">
+        : public EngineClient<ExampleEngineClient, "json://nrp-core/engines/engine_example.json#/EngineExample">
 \endcode
 
 A further explanation of how schema URIs are structured can be found in the section \ref schema_reference.

@@ -45,7 +45,7 @@ TEST(FTILoopTest, Constructor)
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
-    json_utils::validateJson(*config, "https://neurorobotics.net/simulation.json#Simulation");
+    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
 
     EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
     EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
@@ -59,7 +59,7 @@ TEST(FTILoopTest, RunLoop)
 
     auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
-    json_utils::validateJson(*config, "https://neurorobotics.net/simulation.json#Simulation");
+    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
 
     const char *procName = "test";
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));

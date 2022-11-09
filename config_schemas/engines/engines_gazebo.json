@@ -32,7 +32,7 @@
     "description": "Gazebo Grpc Engine",
     "$id": "#GazeboGRPCEngine",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc" },
+      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_grpc" },
       { "$ref": "#/engine_gazebo_base" },
       {
         "properties": {
@@ -48,7 +48,7 @@
     "description": "Gazebo Json Engine",
     "$id": "#GazeboJSONEngine",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       { "$ref": "#/engine_gazebo_base" },
       {
         "properties": {

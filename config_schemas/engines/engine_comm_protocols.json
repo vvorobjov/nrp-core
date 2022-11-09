@@ -4,7 +4,7 @@
     "description": "Base Json Engine configuration schema",
     "$id": "#EngineJSON",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      { "$ref": "json://nrp-core/engines/engine_base.json#EngineBase" },
       {
         "properties" : {
           "ServerAddress": {
@@ -27,7 +27,7 @@
     "description": "Base Grpc Engine configuration schema",
     "$id": "#EngineGRPC",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      { "$ref": "json://nrp-core/engines/engine_base.json#EngineBase" },
       {
         "properties" : {
           "ServerAddress": {

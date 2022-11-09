@@ -18,11 +18,11 @@ Each JSON schema can have an <a href="https://json-schema.org/understanding-json
 
 The `type` of a parameter can be a simple type or a reference to another schema. A reference to another schema is formatted as a standard <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier/">URI</a>, with the next parts:
 
-- authority: identifying the institution responsible for the schema. For the schemas developed by the <a href="https://neurorobotics.net/who-we-are.html">NRP Team</a> this will always be https://neurorobotics.net
+- authority: identifying the institution responsible for the schema. For the schemas developed by the <a href="json://nrp-core/who-we-are.html">NRP Team</a> this will always be json://nrp-core
 - path: this is the path to the file containing the referenced schema from `config_schemas` folder
 - fragment: the id of the referenced schema
 
-For example `"https://neurorobotics.net/engines/engine_base.json#EngineBase"` references a schema with id `EngineBase` which is stored in `config_schemas/engines/engine_base.json` file and was implemented by the NRP Team. It must be noticed that even though the reference looks like a URL it is actually a URI, meaning that it might not (and usually won't) point to a resource that can be found online.
+For example `"json://nrp-core/engines/engine_base.json#EngineBase"` references a schema with id `EngineBase` which is stored in `config_schemas/engines/engine_base.json` file and was implemented by the NRP Team. It must be noticed that even though the reference looks like a URL it is actually a URI, meaning that it might not (and usually won't) point to a resource that can be found online.
 
 There is one limitation when referencing a schema by its `id`. json-schema allows to define multiple schemas in a single file. In this case, the top-level JSON object can be a dictionary storing all the defined schemas. For an example see `config_schemas/engines/engines_nest.json`. In this case in which the schema is not define at the top-level of the JSON object referencing it by `id` doesn't work. The alternative is to reference it by the path to the schema in the JSON object. For example, if the schema below is stored in a file named `example.json`:
 

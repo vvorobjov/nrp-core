@@ -28,7 +28,7 @@
 struct GazeboGrpcConfigConst
 {
     static constexpr char EngineType[] = "gazebo_grpc";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_gazebo.json#/engine_gazebo_grpc";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engines_gazebo.json#/engine_gazebo_grpc";
 
     /*!
      * \brief Gazebo Start Parameters Argument for plugins

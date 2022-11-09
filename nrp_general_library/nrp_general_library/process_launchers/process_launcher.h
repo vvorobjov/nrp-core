@@ -145,7 +145,7 @@ class ProcessLauncher
 
         pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) override final
         {
-            json_utils::validateJson(procConfig, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+            json_utils::validateJson(procConfig, "json://nrp-core/process_launcher.json#ProcessLauncher");
 
             nlohmann::json launcherConfig = procConfig.at("LaunchCommand");
 

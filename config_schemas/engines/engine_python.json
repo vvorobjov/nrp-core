@@ -4,7 +4,7 @@
     "description": "Python Json Engine Base Configuration",
     "$id": "#PythonJSONEngineBase",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       {
         "properties": {
           "PythonFileName" : {
