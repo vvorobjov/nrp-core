@@ -60,11 +60,13 @@ class StreamDataPackController
          * \param[in] engineName The engine name
          * \param[in] baseDir output data files location
          * \param[in] mqttClient initialized MQTT client pointer
+         * \param[in] mqttBaseTopic the common MQTT topic name base (prefix)
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
                                  const std::string &baseDir,
-                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                 const std::string &mqttBaseTopic);
 
         /*!
          * \brief StreamDataPackController constructor for streaming to network
@@ -72,10 +74,12 @@ class StreamDataPackController
          * \param[in] datapackName The name of the datapack
          * \param[in] engineName The engine name
          * \param[in] mqttClient initialized MQTT client pointer
+         * \param[in] mqttBaseTopic the common MQTT topic name base (prefix)
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
-                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                 const std::string &mqttBaseTopic);
 #endif
 
         /*!
@@ -190,6 +194,11 @@ class StreamDataPackController
          * \brief mpqtt topic for publishing message type
          */
         std::string _mqttTypeTopic;
+
+        /*!
+         * \brief mpqtt topics name base
+         */
+        std::string _mqttBase;
 
         std::shared_ptr< NRPMQTTClient > _mqttClient;
 #endif

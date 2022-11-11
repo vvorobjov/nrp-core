@@ -54,22 +54,25 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
 #ifdef MQTT_ON
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
-                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                                    const std::string &mqttBaseTopic)
     : StreamDataPackController(datapackName, engineName)
 {
     _netDump = true;
     _mqttClient = mqttClient;
-    _mqttDataTopic = std::string("nrp/data/" + datapackName);
-    _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
+    this->_mqttBase = std::string(mqttBaseTopic);
+    _mqttDataTopic = std::string(this->_mqttBase + "/data/" + datapackName);
+    _mqttTypeTopic = std::string(this->_mqttBase + "/data/" + datapackName + "/type");
     // announce topic
-    _mqttClient->publish("nrp/data", _mqttDataTopic);
+    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic);
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
                                                     const std::string &baseDir,
-                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
-    : StreamDataPackController(datapackName, engineName, mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                                    const std::string &mqttBaseTopic)
+    : StreamDataPackController(datapackName, engineName, mqttClient, mqttBaseTopic)
 {
     _fileDump = true;
     _baseDir = baseDir;

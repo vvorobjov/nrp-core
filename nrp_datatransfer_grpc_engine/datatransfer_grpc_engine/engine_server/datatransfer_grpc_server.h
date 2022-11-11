@@ -30,7 +30,7 @@
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
-#define MQTT_WELCOME "nrp/welcome"
+#define MQTT_BASE "nrp/"
 #endif /*MQTT_ON*/
 
 class DataTransferGrpcServer
@@ -129,6 +129,11 @@ class DataTransferGrpcServer
          * \brief MQTT client
          */
         std::shared_ptr< NRPMQTTClient > _mqttClient;
+
+        /*!
+         * \brief mpqtt topics name base
+         */
+        std::string _mqttBase;
 
 public:
         /*!

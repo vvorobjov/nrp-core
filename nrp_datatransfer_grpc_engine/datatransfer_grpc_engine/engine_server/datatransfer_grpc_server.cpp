@@ -43,6 +43,12 @@ SimulationTime DataTransferGrpcServer::runLoopStep(SimulationTime timeStep)
     _iteration++;
 
     this->_simulationTime += timeStep;
+    
+#ifdef MQTT_ON
+    if (_mqttClient->isConnected()){
+         _mqttClient->publish(this->_mqttBase + "/time", std::to_string(fromSimulationTime<float, std::ratio<1>>(this->_simulationTime)));
+    }
+#endif
 
     return _simulationTime;
 }
@@ -67,12 +73,13 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         NRPLogger::info("Using preset MQTT client connection");
     }
     mqttConnected = _mqttClient->isConnected();
+    this->_mqttBase = std::string(MQTT_BASE) + std::string(data.at("simulationID"));
     if(!mqttConnected)
     {
         NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");
     }
     else {      
-        _mqttClient->publish(MQTT_WELCOME, "NRP-core is connected!");  
+        _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!");  
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -93,10 +100,10 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         }
 #ifdef MQTT_ON
         else if (fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir, _mqttClient));
+            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir, _mqttClient, this->_mqttBase));
         }
         else if (!fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, _mqttClient));
+            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, _mqttClient, this->_mqttBase));
         }
 #endif
         else {
@@ -116,7 +123,7 @@ void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
 #ifdef MQTT_ON
     try{
         if (_mqttClient->isConnected()){
-            _mqttClient->publish("nrp/welcome", "Bye! NRP-core is disconnecting!");
+            _mqttClient->publish(this->_mqttBase + "/welcome", "Bye! NRP-core is disconnecting!");
             _mqttClient->disconnect();
         }
     }

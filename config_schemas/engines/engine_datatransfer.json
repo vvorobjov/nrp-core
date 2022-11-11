@@ -39,6 +39,11 @@
             "default": "data",
             "description": "Path to the storage of file streams."
           },
+          "simulationID": {
+            "type": "string",
+            "default": "0",
+            "description": "A simulation identifier to be added to MQTT topics published by this Engine"
+          },
           "streamDataPackMessage" : {
             "type": "boolean",
             "default": true,

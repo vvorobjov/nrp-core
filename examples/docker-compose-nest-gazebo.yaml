@@ -50,9 +50,9 @@ services:
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf
         container_name: mqtt-broker
-        # # uncomment the following lines to make the MQTT stream available on localhost:1884
-        # ports:
-        #     - "1884:1883"
+        ports:
+            - "1883:1883"
+            - "8883:8883"
 
     mqtt-client-service:
         image: efrecon/mqtt-client

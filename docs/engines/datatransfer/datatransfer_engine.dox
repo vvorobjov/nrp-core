@@ -24,11 +24,11 @@ The commands should be run from the NRP-core source root folder.
 
 \code{.sh}
 sudo docker pull eclipse-mosquitto
-sudo docker run -it -p 1883:1883 -v ${PWD}/nrp_comm_proxies/nrp_mqtt_proxy/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
+sudo docker run -it -p 1883:1883 -v ${PWD}/examples/husky_braitenberg/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
 \endcode
 
 The resulting MQTT broker will be listening to port *1883*.
-If a different port is wished, it can be specified in *nrp_comm_proxies/nrp_mqtt_proxy/mosquitto.conf*.
+If a different port is wished, it can be specified in *examples/husky_braitenberg/mosquitto.conf* or in other mosquitto configuration file.
 
 \section datatransfer_engine_datapacks DataPacks
 
@@ -65,8 +65,12 @@ In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples ex
 
 Finally, about where datapacks are logged and streamed:
 - datapacks will always be logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter.
-- dataPacks are published to an *nrp/data/<datapack_name>* MQTT topic as serialized protobuf objects.
-The type of the streamed protobuf message is published once to the topic *nrp/data/<_data_name>/type*. The data topic address (i.e. *nrp/data/<_data_name>*) is also published once to the topic *nrp/data*.
+- datapacks are published to an *nrp/<simulationID>/data/<datapack_name>* MQTT topic as serialized protobuf objects.
+The type of the streamed protobuf message is published once to the topic *nrp/<simulationID>/data/<_data_name>/type*. The data topic address (i.e. *nrp/<simulationID>/data/<_data_name>*) is also published once to the topic *nrp/<simulationID>/data*. 
+
+Aditionally:
+- a welcome message is published once to the topic *nrp/<simulationID>/welcome* 
+- the experiment simulation time is published every timestep to the topic *nrp/<simulationID>/time*.
 
 
 \section engine_datatransfer_config_section Engine Configuration Parameters
@@ -102,6 +106,7 @@ To use this engine in an experiment, set `EngineType` to <b>"datatransfer_grpc_e
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>MQTTBroker<td>Address of the MQTT broker<td>string<td>localhost:1883<td><td>
 <tr><td>dataDirectory<td>Path to the storage of file streams<td>string<td>data<td><td>
+<tr><td>simulationID<td>A simulation identifier to be added to MQTT topics published by this Engine<td>string<td>0<td><td>
 <tr><td>streamDataPackMessage<td>If true the engine will stream DataPackMessages, if false it will stream their contained data<td>boolean<td>true<td><td>
 <tr><td>dumps<td>List of datapacks for transfer<td>dumpItem<td>[]<td><td>X
 </table>
