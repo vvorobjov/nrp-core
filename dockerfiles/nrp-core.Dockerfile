@@ -2,9 +2,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE} AS nrp-core-env
 
-# CMake configuration
-ARG CMAKE_CACHE_FILE
-ENV CMAKE_CACHE_FILE ${CMAKE_CACHE_FILE}
+## Environment image
 
 # Install dependencies for testing
 
@@ -60,9 +58,14 @@ WORKDIR ${HOME}
 RUN echo 'source $NRP_INSTALL_DIR/bin/.nrp_env' >> ${HOME}/.bashrc
 
 
+## Build image
 # Configure and install NRP in a intermediate sub-image
-
 FROM nrp-core-env AS nrp-core-builder
+
+# CMake configuration
+ARG CMAKE_CACHE_FILE
+ENV CMAKE_CACHE_FILE ${CMAKE_CACHE_FILE}
+
 RUN mkdir -p ${HOME}/nrp-core-src
 # TODO: copy source files more elegant, but without breaking the cache
 # Copying the root (.) immediatly breaks the cache
@@ -70,6 +73,7 @@ COPY --chown=${NRP_USER}:${NRP_GROUP} . ${HOME}/nrp-core-src/
 RUN cd ${HOME}/nrp-core-src && ls -al && bash .ci/11-prepare-build.sh && bash .ci/20-build.sh
 
 
+## NRP-core image
 # Copy the installed nrp to the main image (the intermediate container with code will be unseen for production)
 FROM nrp-core-env
 

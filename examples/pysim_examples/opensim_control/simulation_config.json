@@ -15,7 +15,7 @@
 			"Simulator":"Opensim",
 			"PythonFileName": "server.py",
 			"WorldFileName":"arm26/arm26_ground_offset.osim",
-			"Visualizer":true
+			"Visualizer": true
 		}
 	],
 	"DataPackProcessingFunctions":

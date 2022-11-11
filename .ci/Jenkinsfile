@@ -2,39 +2,59 @@
 // Parallel jobs configuration
 def jobs = [
     [
-        name: "Nest+Gazebo",
-        image: "nrp-gazebo-nest-ubuntu20:latest",
+        name: "Nest+Gazebo Examples",
+        image: "nrp-gazebo-nest-ubuntu20",
         cmakeconf: ".ci/cmake_cache/nest-gazebo.cmake",
-        testFailThr: "3"
+        build: false,
+        cmakeProj: "./examples/"
     ],
     [
-        name: "Nest+Gazebo -ROS -MQTT",
-        image: "nrp-gazebo-nest-ubuntu20:latest",
+        name: "Nest+Gazebo -ROS-MQTT Build+Examples",
+        image: "nrp-gazebo-nest-ubuntu20-env",
         cmakeconf: ".ci/cmake_cache/nest-gazebo-nomqtt-noros.cmake",
-        testFailThr: "3"
+        build: true,
+        cmakeProj: ""
     ],
     [
-        name: "Vanilla NRP",
-        image: "nrp-vanilla-ubuntu20:latest",
+        name: "Vanilla_NRP Build+Examples",
+        image: "nrp-vanilla-ubuntu20-env",
         cmakeconf: ".ci/cmake_cache/vanilla.cmake",
-        testFailThr: "3"
+        build: true,
+        cmakeProj: ""
     ],
     [
-        name: "Vanilla NRP -ROS -MQTT",
-        image: "nrp-vanilla-ubuntu20:latest",
+        name: "Vanilla_NRP -ROS-MQTT Build+Examples",
+        image: "nrp-vanilla-ubuntu20-env",
         cmakeconf: ".ci/cmake_cache/vanilla-nomqtt-noros.cmake",
-        testFailThr: "3"
+        build: true,
+        cmakeProj: ""
     ],
     [
-        name: "Vanilla NRP CUDA",
-        image: "nrp-nvidia-cuda-ubuntu20:latest",
+        name: "Vanilla_NRP CUDA Examples",
+        image: "nrp-nvidia-cuda-ubuntu20",
         cmakeconf: ".ci/cmake_cache/nrp-nvidia-cuda.cmake",
-        testFailThr: "3"
+        build: false,
+        cmakeProj: "./examples/"
+    ],
+    [
+        name: "Opensim Examples",
+        image: "nrp-opensim-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/opensim.cmake",
+        build: false,
+        cmakeProj: "./examples/"
+    ],
+    [
+        name: "Opensim+TVB Examples",
+        image: "nrp-opensim-tvb-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/opensim-tvb-tests.cmake",
+        build: false,
+        cmakeProj: "./examples/"
     ]
 ]
 
+
 def parallelStagesMap = jobs.collectEntries {
-    ["${it}" : generateStage(it)]
+    ["${it.name}" : generateStage(it)]
 }
 def generateStage(job) {
     return {
@@ -42,38 +62,43 @@ def generateStage(job) {
         {
             node('ci_label') {
                 docker.withRegistry("https://${DockerRegistryUrl}", 'nexusadmin') {
-                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}").pull()
-                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}").inside {
+                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").pull()
+                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").inside {
                         checkout scm
                         sh 'git submodule update --init'
                         echo "This is ${job.name}."
-                        sh "export CMAKE_CACHE_FILE=${job.cmakeconf}; bash .ci/11-prepare-build.sh"
-                        sh 'bash .ci/20-build.sh'
+                        sh "export CMAKE_CACHE_FILE=${job.cmakeconf}; export NRP_CMAKE_PROJECT=${job.cmakeProj}; bash .ci/11-prepare-build.sh"
+                        script
+                        {
+                            if (job.build)
+                            {
+                                sh 'bash .ci/20-build.sh'
+                            }
+                        }                        
                         lock("${NODE_NAME}-nrp-core-unit-tests") {
                             sh 'bash .ci/30-run-tests.sh'
                         }
-                        sh 'bash .ci/40-run-cppcheck.sh'
+                        // sh 'bash .ci/40-run-cppcheck.sh'
                         xunit (
-                        thresholds: [
-                            skipped(failureThreshold: "${job.testFailThr}"),
-                            failed(failureThreshold: '0')
+                            thresholds: [
+                                skipped(unstableNewThreshold: '0'),
+                                failed(failureThreshold: '1', unstableThreshold: '0')
                             ],
-                        tools: [CTest(
-                            pattern: 'build/Testing/**/*.xml',
-                            deleteOutputFiles: true,
-                            failIfNotNew: false,
-                            skipNoTestFiles: false,
-                            stopProcessingIfError: true
-                            ),
-                            JUnit(
-                            pattern: 'build/xml/*.xml',
-                            deleteOutputFiles: true,
-                            failIfNotNew: false,
-                            skipNoTestFiles: false,
-                            stopProcessingIfError: true
+                            tools: [CTest(
+                                pattern: 'build/Testing/**/*.xml',
+                                deleteOutputFiles: true,
+                                failIfNotNew: false,
+                                skipNoTestFiles: false,
+                                stopProcessingIfError: true
+                                ),
+                                JUnit(
+                                pattern: 'build/xml/*.xml',
+                                deleteOutputFiles: true,
+                                failIfNotNew: false,
+                                skipNoTestFiles: true,
+                                stopProcessingIfError: true
                             )]
                         )
-
                     }
                 }
             }
@@ -103,18 +128,18 @@ pipeline {
             }
             steps {
                 sh 'git submodule update --init'
-                sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose build"
+                sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml build; docker-compose -f docker-compose-nrp.yaml build --parallel"
                 withCredentials([usernamePassword(credentialsId: 'nexusadmin', usernameVariable: 'USER', passwordVariable: 'PASSWORD')])
                 {
                     sh 'docker login -u $USER -p $PASSWORD ${DockerRegistryUrl}'
-                    sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose push"
+                    sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml push; docker-compose -f docker-compose-nrp.yaml push"
                 }
                 sh "docker logout ${DockerRegistryUrl}"
             }
             post {
                 aborted {
                     script{
-                        if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
                             slackSend(
                                 channel: "${env.NRP_CORE_SLACK_CHANNEL}",
                                 color: "warning",
@@ -123,7 +148,7 @@ pipeline {
                 }
                 failure {
                     script{
-                        if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
                             slackSend(
                                 channel: "${env.NRP_CORE_SLACK_CHANNEL}",
                                 color: "danger",
@@ -132,7 +157,7 @@ pipeline {
                 }
                 success{
                     script{
-                        if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
                             slackSend(
                                 channel: "${env.NRP_CORE_SLACK_CHANNEL}",
                                 color: "good",
@@ -152,7 +177,7 @@ pipeline {
             post {
                 aborted {
                     script{
-                        if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
                             slackSend(
                                 channel: "${env.NRP_CORE_SLACK_CHANNEL}",
                                 color: "warning",
@@ -161,7 +186,7 @@ pipeline {
                 }
                 failure {
                     script{
-                        if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
                             slackSend(
                                 channel: "${env.NRP_CORE_SLACK_CHANNEL}",
                                 color: "danger",

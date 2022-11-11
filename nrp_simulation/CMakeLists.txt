@@ -171,13 +171,17 @@ if(BUILD_GAZEBO_ENGINE_SERVER AND BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING}
         set_property(TEST NrpServer PROPERTY ENVIRONMENT
             "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
     endif()
+endif()
 
-    # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+# Add tests based on running example experiments
+if(ENABLE_EXAMPLES_TESTING)
     add_test(
-        NAME HuskyBraitenbergJsonExample 
-        COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=2
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
+        NAME Examples.LoopSync 
+        COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+    set_tests_properties(Examples.LoopSync 
+        PROPERTIES 
+            DISABLED $<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>)
 endif()
 
 

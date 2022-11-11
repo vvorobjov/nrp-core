@@ -10,3 +10,5 @@ set(BUILD_NEST_ENGINE_SERVER OFF CACHE BOOL  "Disable nest-simulator engines ser
 
 set(ENABLE_ROS ON CACHE BOOL "Enable ROS support")
 set(ENABLE_MQTT ON CACHE BOOL "Enable MQTT support")
+
+set(ENABLE_EXAMPLES_TESTING ON CACHE STRING "Enable running of examples in tests")

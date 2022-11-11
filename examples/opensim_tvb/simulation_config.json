@@ -11,7 +11,7 @@
 			"EngineTimestep": 0.01,
 			"PythonFileName": "opensim_engine.py",
 			"WorldFileName":"arm26/arm26_ground_offset.osim",
-			"Visualizer":false
+			"Visualizer": false
 		},
 		{
 			"EngineType": "python_json",

@@ -16,7 +16,7 @@
 			"PythonFileName": "gym_simulator.py",
 			"WorldFileName":"MountainCar-v0",
 			"Simulator":"OpenAI",
-			"Visualizer":true
+			"Visualizer": true
 		}
 	],
 	"DataPackProcessingFunctions":

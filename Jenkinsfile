@@ -24,7 +24,7 @@ pipeline {
         stage('Build image') {
             steps {
                 bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Image build nrp-core')
-                sh 'export NRP_CORE_TAG=:${IMAGE_TAG}; docker-compose up --build nrp-gazebo-nest-env'
+                sh 'export NRP_CORE_TAG=:${IMAGE_TAG}; docker-compose -f docker-compose-env.yaml up --build nrp-gazebo-nest-env'
             }
         }
 

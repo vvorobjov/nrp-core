@@ -59,6 +59,8 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 ##########################################
 ## Unit testing library
 option(ENABLE_TESTING "Build tests" ON)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_EXAMPLES_TESTING "Run Tests with examples" OFF "ENABLE_TESTING" OFF)
 if(${ENABLE_TESTING})
     enable_testing()
 
@@ -84,6 +86,11 @@ if(${ENABLE_TESTING})
     # Add cmake file that allows to find gmock libraries
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
     find_package(GMock REQUIRED)
+
+    # Add tests based on running example experiments
+    if(ENABLE_EXAMPLES_TESTING)
+        add_subdirectory(examples)
+    endif()
 endif()
 
 
@@ -289,13 +296,16 @@ add_custom_target(cppcheck
 
 ##########################################
 ## coverage
-
-add_custom_target(gcovr
+add_custom_target(gcovr-unittest
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND gcovr -r ../ --exclude "_deps" --exclude ".*example_engine.*" --xml gcovr.xml --html gcovr.html
     COMMENT "Running gcovr"
     VERBATIM
 )
+if(NOT TARGET gcovr)
+    add_custom_target(gcovr)
+endif()
+add_dependencies(gcovr gcovr-unittest)
 
 # Generate code from the template gRPC engine
 execute_process(

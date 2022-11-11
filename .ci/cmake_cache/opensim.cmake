@@ -3,6 +3,7 @@ set(BUILD_RST OFF CACHE BOOL "Build rst files for the documentation")
 
 set(ENABLE_GAZEBO OFF CACHE BOOL "Enable gazebo support")
 set(ENABLE_NEST OFF CACHE BOOL "Enable nest support")
+set(ENABLE_OPENSIM ON CACHE STRING "Enable opensim support")
 
 set(ENABLE_SPINNAKER OFF CACHE STRING "Enable SpiNNaker support")
 set(ENABLE_ROS OFF CACHE BOOL "Enable ROS support")
