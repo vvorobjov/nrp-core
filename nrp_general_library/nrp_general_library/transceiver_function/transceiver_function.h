@@ -24,7 +24,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
+#include "nrp_general_library/transceiver_function/function_manager.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
 #include <string>
@@ -48,7 +48,7 @@ class TransceiverFunction
 
         const std::string &linkedEngineName() const override;
 
-        bool isPrepocessing() const override;
+        bool isPreprocessing() const override;
 
         /*!
          * \brief Decorator __call__() function. Takes the Transfer Function as a parameter. Moves this class into a shared_ptr.

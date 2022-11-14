@@ -36,6 +36,7 @@ StreamDataPackController::StreamDataPackController( const std::string & datapack
     , _netDump(false)
     , _fileDump(false)
     , _initialized(false)
+    , _rstCnt(0)
 {
     _fmtCallback = &StreamDataPackController::fmtDummy;
 }
@@ -46,39 +47,65 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
     : StreamDataPackController(datapackName, engineName)
 {
     _fileDump = true;
-    this->initFileLogger(baseDir);
+    _baseDir = baseDir;
+    this->initFileLogger();
 }
 
 #ifdef MQTT_ON
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
-                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                                    const std::string &mqttBaseTopic)
     : StreamDataPackController(datapackName, engineName)
 {
     _netDump = true;
     _mqttClient = mqttClient;
-    _mqttDataTopic = std::string("nrp/data/" + datapackName);
-    _mqttTypeTopic = std::string("nrp/data/" + datapackName + "/type");
+    this->_mqttBase = std::string(mqttBaseTopic);
+    _mqttDataTopic = std::string(this->_mqttBase + "/data/" + datapackName);
+    _mqttTypeTopic = std::string(this->_mqttBase + "/data/" + datapackName + "/type");
     // announce topic
-    _mqttClient->publish("nrp/data", _mqttDataTopic);
+    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic);
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
                                                     const std::string &baseDir,
-                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient)
-    : StreamDataPackController(datapackName, engineName, mqttClient)
+                                                    const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                                    const std::string &mqttBaseTopic)
+    : StreamDataPackController(datapackName, engineName, mqttClient, mqttBaseTopic)
 {
     _fileDump = true;
-    this->initFileLogger(baseDir);
+    _baseDir = baseDir;
+    this->initFileLogger();
 }
 #endif
 
-void StreamDataPackController::initFileLogger(const std::string &baseDir)
+void StreamDataPackController::initFileLogger()
 {
-    _fileLogger = spdlog::rotating_logger_mt(_datapackName, baseDir + "/" + _datapackName + ".data", 1048576 * 5, 3);
+    std::string filename = this->_baseDir + "/" + _datapackName + "-" + std::to_string(this->_rstCnt) + ".data";
+    _fileLogger = spdlog::rotating_logger_mt(_datapackName, filename, NRP_MAX_LOG_FILE_SIZE, NRP_MAX_LOG_FILE_N);
     _fileLogger->set_pattern("%T.%e,%v");
     _fileLogger->flush_on(spdlog::level::info);
+    NRPLogger::debug("DataPack {} is streaming into the file {}", this->_datapackName, filename);
+}
+
+void StreamDataPackController::resetSinks()
+{
+    if (this->_fileDump){
+        NRPLogger::debug("Resetting the file stream of the DataPack {}...", this->_datapackName);
+        _fileLogger->flush();
+        spdlog::drop(_datapackName);
+        // Increment the reset counter and switch file directory if we step over max value
+        (this->_rstCnt++ < std::numeric_limits<unsigned int>::max()) ? "OK" : this->_baseDir += "-next";
+        this->initFileLogger();
+        NRPLogger::info("The file stream of the DataPack {} is reset.", this->_datapackName);
+    }
+#ifdef MQTT_ON
+    if (_netDump){
+        _mqttClient->publish(_mqttDataTopic, "reset");
+        NRPLogger::info("The MQTT stream of the DataPack {} got reset message.", this->_datapackName);
+    }
+#endif
 }
 
 void StreamDataPackController::handleDataPackData(const google::protobuf::Message &data)
@@ -162,7 +189,7 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
     std::stringstream m_data;
 
     auto n = data.GetDescriptor()->field_count();
-    for(int i=0;i<n;++i)
+    for(int i = 0; i < n; ++i)
         if(!this->_initialized)
             m_data << data.GetDescriptor()->field(i)->name() << " ";
         else

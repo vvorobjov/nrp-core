@@ -49,7 +49,7 @@ TEST(ProcessLauncherBasicTest, TestLaunch)
     config["ProcCmd"] = TEST_NRP_PROCESS_EXEC;
     config["ProcStartParams"] = startParams;
     config["ProcEnvParams"] = envVars;
-    json_utils::validateJson(config, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+    json_utils::validateJson(config, "json://nrp-core/process_launcher.json#ProcessLauncher");
 
     // Fork engine process
     ASSERT_GE(launcher.launchProcess(config), 0);
@@ -89,8 +89,8 @@ TEST(ProcessLauncherBasicTest, TestEmptyLaunchCommand)
     config["ProcCmd"] = "";
     config["ProcStartParams"] = startParams;
     config["ProcEnvParams"] = envVars;
-    config["LaunchCommand"] = "EmptyLaunchCommand";
-    json_utils::validateJson(config, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+    config["LaunchCommand"] = R"({"LaunchType":"EmptyLaunchCommand"})"_json;
+    json_utils::validateJson(config, "json://nrp-core/process_launcher.json#ProcessLauncher");
 
     // the launching of an Engine with an Empty launch command returns -1
     ASSERT_GE(launcher.launchProcess(config), -1);

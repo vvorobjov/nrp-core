@@ -81,7 +81,7 @@ class TestGrpcDataPackController
 struct TestEngineGRPCConfigConst
 {
     static constexpr char EngineType[] = "test_engine";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_grpc";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_comm_protocols.json#/engine_grpc";
 };
 
 class TestEngineGrpcClient
@@ -114,7 +114,7 @@ class TestEngineGrpcServer
     public:
 
         TestEngineGrpcServer(const std::string & serverAddress)
-            : EngineGrpcServer(serverAddress)
+            : EngineGrpcServer(serverAddress, "TestEngineGrpcServer")
         {
 
         }
@@ -187,21 +187,22 @@ class TestEngineGrpcServer
         int            _sleepTimeMs = 0;
 };
 
-TEST(EngineGrpc, BASIC)
+TEST(EngineGrpc, Connection)
 {
-    // TODO This one has a linking issue, fix it!
+    nlohmann::json config;
+    config["EngineName"] = "engine";
+    config["EngineType"] = "test_engine_grpc";
 
-    /*TestEngineGrpcServer               server;
-    SimulationConfig::config_storage_t config;
-    TestEngineGrpcClient               client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server("localhost:9004");
+    TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
-    ASSERT_EQ(client.getChannelStatus(), grpc_connectivity_state::GRPC_CHANNEL_IDLE);
+    // Should throw, because no server is running
+
+    ASSERT_ANY_THROW(client.connectToServer());
 
     server.startServer();
-
-    ASSERT_EQ(client.connect(), grpc_connectivity_state::GRPC_CHANNEL_READY);
-
-    server.shutdownServer();*/
+    client.connectToServer();
+    server.shutdownServer();
 }
 
 TEST(EngineGrpc, InitCommand)

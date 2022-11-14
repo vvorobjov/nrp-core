@@ -1,0 +1,62 @@
+version: '3.2'
+
+services:
+
+    nest-service:
+        image: docker-registry.ebrains.eu/nest/nest-simulator:3.3
+        environment:
+            NEST_CONTAINER_MODE: "nest-server"
+            NEST_SERVER_BUFFER_SIZE: 65535
+            NEST_SERVER_HOST: "0.0.0.0"
+            NEST_SERVER_MODULES: "nest,numpy"
+            NEST_SERVER_PORT: 9000
+            NEST_SERVER_RESTRICTION_OFF: 1
+            NEST_SERVER_STDOUT: 1
+        container_name: nrp-nest-simulator
+        # logging:
+        #     driver: none
+
+    gazebo-service:
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        environment:
+            GAZEBO_WORLD_FILE: /experiment/husky_world.sdf
+            GAZEBO_NRP_PLUGINS: NRPGazeboGrpcCommunicationPlugin.so
+            GAZEBO_PORT: 9000
+            GAZEBO_ADDITIONAL_PARAMETERS: "--verbose"
+            GAZEBO_RNG_SEED: 0
+        command: /usr/xvfb-run-gazebo-runcmd.bash
+        # # expose 11345 port for gzclient
+        # ports:
+        #     - "11345:11345"
+        container_name: nrp-gazebo
+        # logging:
+        #     driver: none
+
+    nrp-core-service:
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json --floglevel trace -o SimulationTimeout=10
+        depends_on:
+            - nest-service
+            - gazebo-service
+            - mqtt-broker-service
+        container_name: nrp-core
+
+    mqtt-broker-service:
+        image: eclipse-mosquitto
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf
+        container_name: mqtt-broker
+        ports:
+            - "1883:1883"
+            - "8883:8883"
+
+    mqtt-client-service:
+        image: efrecon/mqtt-client
+        command: sub -h mqtt-broker -t "#" -v
+        depends_on:
+            - mqtt-broker-service
+

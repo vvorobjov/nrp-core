@@ -163,7 +163,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::invalid_argument);
     }
 
@@ -181,7 +181,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
         ASSERT_EQ(simConfig->at("SimulationName").get<std::string>(), "NewName");
     }
@@ -200,7 +200,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
         ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineName").get<std::string>(), "NewName");
         ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineType").get<std::string>(), "NewType");
@@ -220,7 +220,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::logic_error);
     }
 
@@ -238,7 +238,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
         ASSERT_TRUE(simConfig->at("EngineConfigs").at(0).empty());
     }
@@ -257,7 +257,7 @@ TEST(SimulationParametersTest, OverrideExperimentConfig)
 
         jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "https://neurorobotics.net/simulation.json#Simulation"));
+        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
         ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::out_of_range);
     }
 }

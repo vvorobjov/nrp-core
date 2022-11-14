@@ -92,7 +92,7 @@ set(ROS_TEST_SRC_FILES
 ##########################################
 ## Dependencies
 
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
 endif()
 
@@ -107,7 +107,7 @@ find_package(Boost COMPONENTS
 configure_file("nrp_event_loop/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Configures ros_edge_factory.h
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     file(READ "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" NRP_ROS_MSG_HEADERS)
     set(ROS_MSG_TYPES_INCLUDE "")
     foreach(MSG ${NRP_ROS_MSG_HEADERS})
@@ -124,7 +124,7 @@ if(NOT ENABLE_ROS STREQUAL OFF)
 endif()
 
 # Configures mqtt_edge_factory.h
-if(NOT ENABLE_MQTT STREQUAL OFF)
+if(ENABLE_MQTT)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" PROTO_MSG_TYPES_INCLUDE)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" NRP_PROTO_MSG_TYPES)
     set(PROTO_MSG_TYPES_CHECK "")
@@ -173,7 +173,7 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 )
 
 # ROS nodes target
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     set(ROS_LIBRARY_NAME "${LIBRARY_NAME}ROSNodes")
     add_library(${ROS_LIBRARY_NAME} SHARED ${ROS_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${ROS_LIBRARY_NAME} ALIAS ${ROS_LIBRARY_NAME})
@@ -200,7 +200,7 @@ if(NOT ENABLE_ROS STREQUAL OFF)
 endif()
 
 # MQTT nodes target
-if(NOT ENABLE_MQTT STREQUAL OFF)
+if(ENABLE_MQTT)
     set(MQTT_LIBRARY_NAME "${LIBRARY_NAME}MQTTNodes")
     add_library(${MQTT_LIBRARY_NAME} SHARED ${MQTT_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${MQTT_LIBRARY_NAME} ALIAS ${MQTT_LIBRARY_NAME})
@@ -222,26 +222,21 @@ if(NOT ENABLE_MQTT STREQUAL OFF)
 endif()
 
 # SPINNAKER nodes target
-if(NOT ENABLE_SPINNAKER STREQUAL OFF)
+if(ENABLE_SPINNAKER)
     set(SPINNAKER_LIBRARY_NAME "${LIBRARY_NAME}SPINNAKERNodes")
     add_library(${SPINNAKER_LIBRARY_NAME} SHARED ${SPINNAKER_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME} ALIAS ${SPINNAKER_LIBRARY_NAME})
     target_compile_options(${SPINNAKER_LIBRARY_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
-    # TODO: It is downloaded every time
-    find_package(SpyNNakerExternalDeviceLib QUIET)
-    if(NOT ${SpyNNakerExternalDeviceLib_FOUND})
-        message("Downloading SpyNNakerExternalDeviceLib")
-        FetchContent_Declare(SpyNNakerVisualiser
-                GIT_REPOSITORY https://github.com/SpiNNakerManchester/Visualiser)
-        FetchContent_MakeAvailable(SpyNNakerVisualiser)
-        add_custom_target(
-                sPyNNakerExternalDevices ALL
-                COMMAND make clean && make CPPFLAGS=-fPIC
-                WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
-        include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
-        add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)
-    endif()
+    FetchContent_Declare(SpyNNakerVisualiser
+            GIT_REPOSITORY https://github.com/SpiNNakerManchester/Visualiser)
+    FetchContent_MakeAvailable(SpyNNakerVisualiser)
+    add_custom_target(
+            sPyNNakerExternalDevices ALL
+            COMMAND $(MAKE) clean && $(MAKE) CPPFLAGS=-fPIC
+            WORKING_DIRECTORY ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+    include_directories(${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib)
+    add_dependencies(${SPINNAKER_LIBRARY_NAME} sPyNNakerExternalDevices)
 
     target_include_directories(${SPINNAKER_LIBRARY_NAME} BEFORE
             PUBLIC
@@ -279,21 +274,21 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
             ${NRP_PROTO_LIB_TARGET}
     )
 
-    if(NOT ENABLE_ROS STREQUAL OFF)
+    if(ENABLE_ROS)
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${ROS_LIBRARY_NAME}
                 )
     endif()
 
-    if(NOT ENABLE_MQTT STREQUAL OFF)
+    if(ENABLE_MQTT)
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${MQTT_LIBRARY_NAME}
                 )
     endif()
 
-    if(NOT ENABLE_SPINNAKER STREQUAL OFF)
+    if(ENABLE_SPINNAKER)
         target_link_libraries(${PYTHON_MODULE_NAME}
                 PUBLIC
                 ${NAMESPACE_NAME}::${SPINNAKER_LIBRARY_NAME}
@@ -332,7 +327,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
         EXTRA_ARGS -VV)
 
-    if(NOT ENABLE_ROS STREQUAL OFF AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
+    if(ENABLE_ROS AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
         set(ROS_TEST_NAME "${TEST_NAME}ROS")
         add_executable(${ROS_TEST_NAME} ${ROS_TEST_SRC_FILES})
@@ -396,21 +391,21 @@ if(TARGET ${PYTHON_MODULE_NAME})
             DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
 endif()
 
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     if(TARGET ${ROS_LIBRARY_NAME})
         install(TARGETS ${ROS_LIBRARY_NAME}
                 DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
     endif()
 endif()
 
-if(NOT ENABLE_MQTT STREQUAL OFF)
+if(ENABLE_MQTT)
     if(TARGET ${MQTT_LIBRARY_NAME})
         install(TARGETS ${MQTT_LIBRARY_NAME}
                 DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
     endif()
 endif()
 
-if(NOT ENABLE_SPINNAKER STREQUAL OFF)
+if(ENABLE_SPINNAKER)
     if(TARGET ${SPINNAKER_LIBRARY_NAME})
         install(TARGETS ${SPINNAKER_LIBRARY_NAME}
                 DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")

@@ -76,6 +76,7 @@ target_link_libraries(${LIBRARY_NAME}
         ${NRP_PROTO_LIB_TARGET}
         ${PROTOBUF_LIBRARIES}
         ${GRPC_LIBRARIES}
+        gpr
 
     PRIVATE
 )

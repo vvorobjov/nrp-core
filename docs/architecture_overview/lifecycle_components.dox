@@ -23,4 +23,14 @@ Below is the complete diagram. In order to see it in full size (right click on i
 
 \image html lifecycle_components.png
 
+\section fti_lifecycle_components_docker Launching Engines in Docker containers
+
+In case of launching one or multiple engines with \ref docker_launcher "DockerLauncher" launch command, i.e. some engines are launched inside of docker containers, there is some additional structure in the <b>Process Management</b> component which is depicted in the diagram below:
+
+\image html lifecycle_multi_docker.png "Simplified lifecycle components diagram of NRP-Core with docker containers"
+
+The main differences with respect to the previous case are:
+- Process Launcher: connects to a remote docker daemon hosting the required docker images, issuing requests to the latter to create, kill, and remove docker containers.
+- Docker Daemon: Manages requests from the NRP-Core process. Runs the containerized simulation.
+
 */

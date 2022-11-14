@@ -7,7 +7,7 @@
 struct ExampleConfigConst
 {
     static constexpr char EngineType[] = "example_engine";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_example.json#/EngineExample";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_example.json#/EngineExample";
 };
 
 #endif // EXAMPLE_CONFIG_H

@@ -13,7 +13,7 @@ Regardless of the chosen engine type, there is a set of parameters common to eve
 <tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
 <tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
 <tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
-<tr><td>EngineLaunchCommand<td>LaunchCommand type that will be used to launch the engine process<td>string<td>BasicFork<td><td>
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 <tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
 <tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
 </table>
@@ -45,10 +45,6 @@ In any case, if a value for `EngineProcCmd` is set in the configuration file, it
 \subsection engine_proc_start_params EngineProcStartParams
 
 This parameter contains an array of strings that will be added as arguments to the Engine process launch command. In order to add flexibility in the formatting on these arguments, EngineClient has a dedicated method, EngineClient::engineProcStartParams, in which the `EngineProcStartParams` parameter is read from the configuration file and formatted appropriately. This is a virtual method that <b>every new engine implementation should implement</b>.
-
-\subsection engine_env_params EngineEnvParams
-
-This case is very similar to the previous one. This parameter contains the environment variables that will be passed along with the Engine process launch command when starting the Engine process. There is a virtual EngineClient::engineProcEnvParams method that allows to format the environment variables appropriately and that <b>every new engine implementation should implement</b>.
 
 \subsection additional_engine_configuration Additional Configuration Parameters
 

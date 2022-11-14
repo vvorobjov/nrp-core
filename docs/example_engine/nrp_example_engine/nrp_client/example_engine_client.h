@@ -58,17 +58,6 @@ class ExampleEngineClient
          */
         const std::vector<std::string> engineProcStartParams() const override;
 
-        /*!
-         * \brief Returns environment variables that should be used when starting the engine server
-         *
-         * The function should prepare and return additional environment variables that
-         * will be used when spawning the engine server process.
-         *
-         * \return Vector of start parameters for the engine server. The parameters must
-         *         be strings.
-         */
-        const std::vector<std::string> engineProcEnvParams() const override;
-
     protected:
 
         /*!

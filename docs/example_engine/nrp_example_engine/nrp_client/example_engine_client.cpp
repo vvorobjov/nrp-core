@@ -37,11 +37,6 @@ const std::vector<std::string> ExampleEngineClient::engineProcStartParams() cons
     return std::vector<std::string>();
 }
 
-const std::vector<std::string> ExampleEngineClient::engineProcEnvParams() const
-{
-    return std::vector<std::string>();
-}
-
 SimulationTime ExampleEngineClient::runLoopStepCallback(SimulationTime)
 {
     return getEngineTime();

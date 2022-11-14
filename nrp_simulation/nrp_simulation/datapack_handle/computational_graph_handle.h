@@ -106,7 +106,7 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             PyGILState_Release(_pyGILState);
     }
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/) override
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/, const nlohmann::json & /*json*/) override
     {
         if(!_slaveMode) {
 #ifdef ROS_ON

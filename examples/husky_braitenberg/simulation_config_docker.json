@@ -1,0 +1,39 @@
+{
+	"SimulationName": "husky_simulation",
+	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot",
+	"SimulationTimeout": 20,
+	"EngineConfigs": [
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "husky_world.sdf",
+			"EngineProcStartParams": ["--verbose"],
+			"EngineProcCmd": "xvfb-run /usr/bin/gzserver",
+			"EngineLaunchCommand":{
+				"LaunchType":"DockerLauncher",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
+				"ImageName":"nrp-core/nrp-gazebo-ubuntu20:latest"
+			}
+		},
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "cam_pf",
+			"FileName": "cam_pf.py"
+		},
+		{
+			"Name": "mot_tf",
+			"FileName": "mot_tf.py"
+		},
+		{
+			"Name": "brain_stimulation_tf",
+			"FileName": "brain_stimulation_tf.py"
+		}
+	]
+}

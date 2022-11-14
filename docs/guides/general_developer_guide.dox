@@ -28,8 +28,8 @@ To run a single test or a group of tests you can use the ctest regex (-R) option
 (-VV runs the tests in verbose mode):
 
 \code{.sh}
-ctest -VV -R Simulation LoopTest.RunLoop  # Run a single test from the Simulation Loop group
-ctest -VV -R Simulation LoopTest          # Run all tests from the Simulation Loop group
+ctest -VV -R FTILoopTest.RunLoop  # Run a single test from the FTILoopTest group
+ctest -VV -R FTILoopTest          # Run all tests from the FTILoopTest group
 \endcode
 
 Every NRP Core module should have its own tests compiled into a single executable.
@@ -227,7 +227,7 @@ make cppcheck
 
 \section tutorial_developer_guide_time_profiler Time Profiler
 
-There are two macros available for time profiling: NRP_LOG_TIME and NRP_LOG_TIME_BLOCK. Both macros are only activated if TIME_PROFILE variable is defined at compilation. This allows easily hiding all time profile calls from the compiled code if wished.
+There are two macros available for time profiling: NRP_LOG_TIME and NRP_LOG_TIME_BLOCK. Both macros are only activated if <b>TIME_PROFILE</b> cmake variable is defined at compilation time. This allows easily hiding all time profile calls from the compiled code if wished.
 
 NRP_LOG_TIME takes a `filename` parameter and records in a file with that name (and `.log` extension) the time difference, expressed in microseconds, between the clock time at the moment of calling and a fix time point. For example the next call:
 
@@ -249,10 +249,15 @@ NRP_LOG_TIME_BLOCK functions in a similar way than NRP_LOG_TIME but records the 
 
 will add a record with the duration, also expressed in microseconds, until the execution reaches the end of the block to a file named `my_time_duration.log'.
 
-All time log files are stored in a subfolder `time_logs` of the simulation working directory.
+All time log files are stored in a subfolder `time_logs` of the experiment working directory.
 
 Finally, both macros are defined in \ref nrp_general_library/utils/time_utils.h, which must be included in order to use them.
 
+To enable these macros configure nrp-core with `-DENABLE_TIME_PROFILE=ON`:
+
+\code
+cmake -DENABLE_TIME_PROFILE=ON <other configuration parameters> ..
+\endcode
 
 \section tutorial_developer_guide_grpc Debugging gRPC engines
 

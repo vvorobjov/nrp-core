@@ -80,7 +80,7 @@ TEST(FTISimManagerTest, FTISimManagerInitialize)
 
     manager.initializeSimulation();
     ASSERT_EQ(manager.currentState(), SimulationManager::SimState::Initialized);
-    ASSERT_NO_THROW(manager.runSimulation(1));
+    ASSERT_NO_THROW(manager.runSimulation(1, nlohmann::json()));
     ASSERT_EQ(manager.currentState(), SimulationManager::SimState::Stopped);
 }
 
@@ -109,7 +109,7 @@ TEST(FTISimManagerTest, FTISimManagerLoopReset)
 
     manager.initializeSimulation();
 
-    ASSERT_NO_THROW(manager.runSimulation(1));
+    ASSERT_NO_THROW(manager.runSimulation(1, nlohmann::json()));
     ASSERT_EQ(manager.resetSimulation().currentState, SimulationManager::SimState::Initialized);
-    ASSERT_NO_THROW(manager.runSimulation(1));
+    ASSERT_NO_THROW(manager.runSimulation(1, nlohmann::json()));
 }

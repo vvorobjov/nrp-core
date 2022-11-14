@@ -32,9 +32,9 @@ pid_t EngineClientInterface::launchEngine()
 {
     // Launch engine
     nlohmann::json procConf;
-    procConf["ProcCmd"] = this->engineConfig().at("EngineProcCmd");
     procConf["LaunchCommand"] = this->engineConfig().at("EngineLaunchCommand");
-    procConf["ProcEnvParams"] = this->engineProcEnvParams();
+    procConf["ProcCmd"] = this->engineConfig().at("EngineProcCmd");
+    procConf["ProcEnvParams"] = this->engineConfig().at("EngineEnvParams");
     procConf["ProcStartParams"] = this->engineProcStartParams();
 
     return this->_process->launchProcess(procConf);

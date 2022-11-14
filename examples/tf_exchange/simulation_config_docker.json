@@ -1,0 +1,32 @@
+{
+	"SimulationName": "tf_exchange",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 2,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_1",
+			"PythonFileName": "engine_1.py",
+			"ServerAddress":"localhost:6666",
+			"RegistrationServerAddress":"localhost:8008",
+			"EngineLaunchCommand":{
+				"LaunchType":"DockerLauncher",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
+				"ImageName":"nrp-core/nrp-vanilla-ubuntu20:latest"
+			}
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_2",
+			"PythonFileName": "engine_2.py"
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}

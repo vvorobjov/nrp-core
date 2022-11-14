@@ -18,5 +18,5 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
+from .docker_handle import *
 from .@PYTHON_MODULE_NAME@ import *
-

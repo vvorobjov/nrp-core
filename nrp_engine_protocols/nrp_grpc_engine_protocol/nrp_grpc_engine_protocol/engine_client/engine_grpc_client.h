@@ -82,25 +82,34 @@ class EngineGrpcClient
             _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
         }
 
-        grpc_connectivity_state getChannelStatus()
-        {
-            return _channel->GetState(false);
-        }
-
-        grpc_connectivity_state connect()
+        virtual pid_t launchEngine() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            _channel->GetState(true);
-            _channel->WaitForConnected(gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN)));
-            return _channel->GetState(false);
+            // Launch engine process.
+            // enginePID == -1 means that the launcher hasn't launched a process
+            auto enginePID = this->EngineClientInterface::launchEngine();
+
+            this->connectToServer();
+
+            return enginePID;
+        }
+
+        void connectToServer()
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+            if(!_channel->WaitForConnected(gpr_time_add(
+                gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(20, GPR_TIMESPAN))))
+            {
+                throw NRPException::logCreate("Timeout while connecting to engine server (" + this->engineName() + ")");
+            }
         }
 
         void sendInitializeCommand(const nlohmann::json & data)
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-            sleep(1);
+
             EngineGrpc::InitializeRequest request;
             EngineGrpc::InitializeReply   reply;
             grpc::ClientContext           context;
@@ -136,6 +145,8 @@ class EngineGrpcClient
                 const auto errMsg = "Engine server reset failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
             }
+
+            resetEngineTime();
         }
 
         void sendShutdownCommand(const nlohmann::json & data)
@@ -300,11 +311,6 @@ class EngineGrpcClient
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
 
             return startParams;
-        }
-
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        {
-            return this->engineConfig().at("EngineEnvParams");
         }
 
     protected:

@@ -42,7 +42,7 @@ class EmptyLaunchCommand
         * \brief launchProcess always returns -1
         * \return -1
         */
-        pid_t launchProcess(const std::string &, const std::vector<std::string> &, const std::vector<std::string> &, bool, int)
+        pid_t launchProcess(const nlohmann::json &, const std::string &, const std::vector<std::string> &, const std::vector<std::string> &, bool, int)
         {
             return -1;
         }

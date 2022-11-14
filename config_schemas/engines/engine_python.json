@@ -4,12 +4,17 @@
     "description": "Python Json Engine Base Configuration",
     "$id": "#PythonJSONEngineBase",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       {
         "properties": {
           "PythonFileName" : {
             "type": "string",
             "description": "Path to the python script containing the engine definition"
+          },
+          "ServerOptions" : {
+            "type": "string",
+            "default": "",
+            "description": "Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - \"{'key1': value, 'key2': 'value_str'}\". The full list of options can be found at the official page - https://docs.gunicorn.org/en/stable/settings.html."
           }
         },
         "required": ["PythonFileName"]
@@ -33,7 +38,7 @@
   "py_sim" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Python Simulation Engine",
-    "description": "Configure the Simulation Engine with python API of simulators",
+    "description": "A simulation engine for simulators offering a Python API.",
     "$id": "#PySim",
     "allOf": [
       { "$ref": "#/python_base" },

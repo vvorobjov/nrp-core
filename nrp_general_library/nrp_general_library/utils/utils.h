@@ -35,38 +35,42 @@
 #include <stdexcept>
 #include <unistd.h>
 #include <boost/python.hpp>
+#include <boost/asio.hpp>
 
 
 /*!
- * \brief Searchs for an unbound port starting from startPort. Returns the first unbound port found as a uint16_t
+ * \brief Returns a free port number
+ * \param hostIpv4 IP4 address of the host
+ * \return Free port number
+ *
+ * The function asks the OS to return a free port number.
  */
-inline uint16_t findUnboundPort(uint16_t startPort)
+inline int getFreePort(std::string hostIpv4)
 {
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if(sock < 0)
-        throw std::runtime_error(std::string("Socket Error: ") + strerror(errno));
+    using namespace boost::asio;
 
-    struct sockaddr_in serv_addr;
-    do
+    ip::address addressStruct;
+
+    if(hostIpv4 == "localhost")
     {
-        bzero((char *) &serv_addr, sizeof(serv_addr));
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_addr.s_addr = INADDR_ANY;
-        serv_addr.sin_port = htons(startPort);
-        if(bind(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) >= 0)
-            break;
-
-        if(errno != EADDRINUSE)
-            throw std::runtime_error("Failed to bind port " + std::to_string(startPort) + ": " + strerror(errno));
-
-        startPort += 1;
+        addressStruct = ip::address_v4::loopback();
     }
-    while(true);
+    else
+    {
+        addressStruct = ip::address::from_string(hostIpv4);
+    }
 
-    if(close(sock) < 0)
-        throw std::runtime_error("Failed to close socket at port " + std::to_string(startPort) + ": " + strerror(errno));
+    io_service service;
+    ip::tcp::socket socket(service);
+    socket.open(ip::tcp::v4());
+    socket.bind(ip::tcp::endpoint(addressStruct, 0));
 
-    return startPort++;
+    int port = socket.local_endpoint().port();
+
+    // Close the socket, so that the port can be used by the caller
+    socket.close();
+
+    return port;
 }
 
 /*!

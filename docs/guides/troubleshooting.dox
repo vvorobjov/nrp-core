@@ -24,4 +24,28 @@ To run an experiment using Xvfb:
 xvfb-run NRPCoreSim -c simulation_config.json
 \endcode
 
+
+\section guide_troubleshooting_gunicorn_timeout Worker timeout when using Python JSON Engine
+
+The problem will be indicated by logs that look like this:
+
+\code
+[2022-08-03 15:25:52 +0000] [6908] [CRITICAL] WORKER TIMEOUT (pid:6919)
+[2022-08-03 15:25:52 +0000] [6896] [CRITICAL] WORKER TIMEOUT (pid:6907)
+[2022-08-03 15:26:03 +0000] [6896] [WARNING] Worker with pid 6907 was terminated due to signal 9
+[2022-08-03 15:26:03 +0000] [6908] [WARNING] Worker with pid 6919 was terminated due to signal 9
+\endcode
+
+Increase the timeout by adding the following option to the engine configuration:
+
+\code
+"ServerOptions": "{'timeout':600}"
+\endcode
+
+or disable the timeouts:
+
+\code
+"ServerOptions": "{'timeout':0}"
+\endcode
+
 */

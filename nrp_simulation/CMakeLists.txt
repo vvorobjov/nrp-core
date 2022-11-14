@@ -135,7 +135,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(BUILD_GAZEBO_ENGINE_SERVER AND BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     find_package(Gazebo REQUIRED)
 
     set(GAZEBO_WORLD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/empty_world.sdf")
@@ -171,13 +171,17 @@ if(ENABLE_GAZEBO STREQUAL FULL AND ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTIN
         set_property(TEST NrpServer PROPERTY ENVIRONMENT
             "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
     endif()
+endif()
 
-    # Add tests based on running example experiments
-    add_test(NAME LoopSync COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+# Add tests based on running example experiments
+if(ENABLE_EXAMPLES_TESTING)
     add_test(
-        NAME HuskyBraitenbergJsonExample 
-        COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=2
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/husky_braitenberg_json)
+        NAME Examples.LoopSync 
+        COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" 
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
+    set_tests_properties(Examples.LoopSync 
+        PROPERTIES 
+            DISABLED $<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>)
 endif()
 
 
@@ -227,7 +231,9 @@ if(TARGET ${PYTHON_MODULE_NAME})
 endif()
 
 # Install python module with the NRP client
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/client.py"
+install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/client.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/nrp_server_launchers.py"
     DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 
 # Install executable files

@@ -60,11 +60,13 @@ class StreamDataPackController
          * \param[in] engineName The engine name
          * \param[in] baseDir output data files location
          * \param[in] mqttClient initialized MQTT client pointer
+         * \param[in] mqttBaseTopic the common MQTT topic name base (prefix)
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
                                  const std::string &baseDir,
-                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                 const std::string &mqttBaseTopic);
 
         /*!
          * \brief StreamDataPackController constructor for streaming to network
@@ -72,10 +74,12 @@ class StreamDataPackController
          * \param[in] datapackName The name of the datapack
          * \param[in] engineName The engine name
          * \param[in] mqttClient initialized MQTT client pointer
+         * \param[in] mqttBaseTopic the common MQTT topic name base (prefix)
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
-                                 const std::shared_ptr<NRPMQTTClient> &mqttClient);
+                                 const std::shared_ptr<NRPMQTTClient> &mqttClient,
+                                 const std::string &mqttBaseTopic);
 #endif
 
         /*!
@@ -108,6 +112,15 @@ class StreamDataPackController
          */
         google::protobuf::Message * getDataPackInformation() override;
 
+        /*!
+         * \brief Resets the existing streams of the DataPacks
+         * 
+         * The file data stream gets the new file with the incremented name.
+         * The MQTT data stream gets the 'reset' message.
+         *
+         */
+        void resetSinks();
+
     private:
 
         /*!
@@ -120,10 +133,8 @@ class StreamDataPackController
 
         /*!
          * \brief Function for initialization of the file logger
-         *
-         * \param[in] baseDir output data files location
          */
-        void initFileLogger(const std::string &baseDir);
+        void initFileLogger();
 
         /*!
          * \brief Function for formatting Dump::String protobuf to string
@@ -159,6 +170,11 @@ class StreamDataPackController
         std::string _datapackName;
 
         /*!
+         * \brief Name of the directory for the data files storage
+         */
+        std::string _baseDir;
+
+        /*!
          * \brief Name of the engine to which the controller is bound
          */
         std::string _engineName;
@@ -179,6 +195,11 @@ class StreamDataPackController
          */
         std::string _mqttTypeTopic;
 
+        /*!
+         * \brief mpqtt topics name base
+         */
+        std::string _mqttBase;
+
         std::shared_ptr< NRPMQTTClient > _mqttClient;
 #endif
 
@@ -198,6 +219,11 @@ class StreamDataPackController
         bool _initialized;
 
         /*!
+         * \brief the counter for the resets, which is used for the data files naming
+         */
+        unsigned int _rstCnt;
+
+        /*!
          * \brief true if this controller is receiving messages of type DataPackMessage
          */
         bool _isDataPackMessage = false;
@@ -206,6 +232,16 @@ class StreamDataPackController
          * \brief formatting function that is used to convert protobuf to string, it is initialized when the first message is received
          */
         std::string (StreamDataPackController::*_fmtCallback) (const google::protobuf::Message &data);
+
+        /*!
+         * \brief the size of the rotating stream file (5 MB)
+         */
+        const unsigned int NRP_MAX_LOG_FILE_SIZE = 1024 * 1024 * 5;
+
+        /*!
+         * \brief the max number of the rotating stream files (0 - not restricted)
+         */
+        const unsigned int NRP_MAX_LOG_FILE_N = std::numeric_limits<unsigned int>::max();
 };
 
 #endif // STREAM_DATATRANSFER_GRPC_DATAPACK_CONTROLLER_SERVER_H

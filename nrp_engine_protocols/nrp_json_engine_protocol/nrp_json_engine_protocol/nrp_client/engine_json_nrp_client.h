@@ -82,6 +82,8 @@ class EngineJSONNRPClient
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
+            this->startRegistrationServer();
+
             // Launch engine process.
             // enginePID == -1 means that the launcher hasn't launched a process
             auto enginePID = this->EngineClientInterface::launchEngine();
@@ -90,6 +92,7 @@ class EngineJSONNRPClient
             if(enginePID > 0 && !this->engineConfig().at("RegistrationServerAddress").empty())
             {
                 const auto serverAddr = this->waitForRegistration(20, 1);
+
                 if(serverAddr.empty())
                     throw NRPException::logCreate("Error while waiting for engine \"" + this->engineName() + "\" to register its address. Did not receive a reply");
 
@@ -160,11 +163,6 @@ class EngineJSONNRPClient
             startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineRegistrationServerAddrArg.data() + "=" + reg_address);
 
             return startParams;
-        }
-
-        virtual const std::vector<std::string> engineProcEnvParams() const override
-        {
-            return this->engineConfig().at("EngineEnvParams");
         }
 
         virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
@@ -252,11 +250,9 @@ protected:
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
-            if(pRegistrationServer == nullptr)
-                pRegistrationServer = EngineJSONRegistrationServer::resetInstance(this->engineConfig().at("RegistrationServerAddress"));
 
-            if(!pRegistrationServer->isRunning())
-                pRegistrationServer->startServerAsync();
+            assert(pRegistrationServer != nullptr);
+            assert(pRegistrationServer->isRunning());
 
             // Try to retrieve engine address
             auto engineAddr = pRegistrationServer->requestEngine(this->engineName());
@@ -271,12 +267,16 @@ protected:
 
             // Close server if no additional clients are waiting for their engines to register
             if(pRegistrationServer->getNumWaitingEngines() == 0)
+            {
                 EngineJSONRegistrationServer::clearInstance();
+            }
 
             return engineAddr;
         }
 
     private:
+
+        const unsigned NUM_RETRIES_REG_SERVER = 2;
 
         /*!
          * \brief Server Address to send requests to
@@ -411,6 +411,25 @@ protected:
             else
             {
                 throw NRPException::logCreate("DataPack type \"" + datapackID.Type + "\" cannot be handled by the \"" + this->engineName() + "\" engine");
+            }
+        }
+
+        /*!
+         * \brief Starts the registration server
+         */
+        void startRegistrationServer()
+        {
+            const std::string regServerAddressConfig = this->engineConfig().at("RegistrationServerAddress");
+            const std::string regServerAddressActual = EngineJSONRegistrationServer::tryInstantiate(regServerAddressConfig, NUM_RETRIES_REG_SERVER);
+
+            if(regServerAddressActual != regServerAddressConfig)
+            {
+                NRPLogger::warn("Registration server failed to bind to the specified address '{}'. Using '{}' instead.", regServerAddressConfig, regServerAddressActual);
+
+                // Update the address in the config
+                // This value will be passed to the forked process
+
+                this->engineConfig()["RegistrationServerAddress"] = regServerAddressActual;
             }
         }
 };

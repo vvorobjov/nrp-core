@@ -1,0 +1,127 @@
+/*! \page status_function Status Functions
+
+A Status Function is a user-defined Python function used to enable and manage the exchange of arbitrary data between, on the one hand, a Python script (referred to in the following as the Master Script) that controls an NRP Core experiment (using the \ref python_client "NRP Core Python Client"), and on the other hand the Engines involved in that experiment.
+A diagram showing the data exchange flows in this case can be found \ref supported_workflows_client "here".
+
+\section status_function_definition Status Function definition
+
+A Status Function is quite similar to the \ref transceiver_function "Transceiver Functions" used by NRP Core.
+However, there is one important difference between the two insofar as the Status Function is not assigned to any particular engine.
+As such, the status function is called on every Simulation Timestep of NRP-core instead of an Engine Timestep.
+Furthermore, there may also be only one Status Function defined per simulation.
+
+To define a Status Function, one decorates a regular Python function with a special decorator, which is provided by NRP Core Python modules:
+
+\code{.py}
+from nrp_core import *
+
+@StatusFunction()
+def status_function(client_data):
+\endcode
+
+
+\section status_function_input Input arguments
+
+The Status Function must always have at least one parameter, named `client_data`.
+This parameter contains data in JSON format coming from the NRP Python Client.
+The actual JSON object may be empty, if the user doesn't need to pass any data to the function,
+but the parameter must still be present.
+
+\code{.py}
+@StatusFunction()
+def status_function(client_data):  # client_data is necessary
+\endcode
+
+The Status Function can accept DataPacks from both engines and preprocessing functions as arguments.
+Defining these extra parameters is done in the same way as in the Transceiver Functions - by using proper decorators
+and adding the `keywords` as parameters to the function definition. The `client_data` parameter should always be at the
+end of the parameter list.
+
+\code{.py}
+@EngineDataPack(keyword1, id1)        # DataPack coming directly from an engine
+@PreprocessedDataPack(keyword2, id2)  # DataPack coming from a Preprocessing Function
+@StatusFunction()
+def status_function(keyword1, keyword2, client_data):
+\endcode
+
+
+\section status_function_return Return values
+
+There are two types of objects that can be returned from a Status Function:
+- `SimulationStatus` object - the data that should be passed to the Master Script. The object behaves like a JSON object, 
+and the values can be set in similar way
+- `DataPacks` - the data that will be passed to the engines. They behave in the same way as in case of Transceiver Functions.
+
+The return value should be a tuple that consists of the `SimulationStatus` object and a list of DataPacks.
+The list of DataPacks can be left empty when there is no data that should be passed to the engines.
+
+\code{.py}
+@StatusFunction()
+def status_function(client_data):
+    status = SimulationStatus()
+    status["test"] = 555
+
+    datapack = JsonDataPack("reference", "python_1")
+    datapack.data["velocity"] = client_data["velocity"]
+
+    return status, [datapack]
+\endcode
+
+\section status_function_example Example
+
+An example implementation of the StatusFunction can be found below. The function requests a single DataPack
+from the `python_1` engine. It also returns a JSON object and a single DataPack for that same engine.
+
+\code{.py}
+from nrp_core import *
+from nrp_core.data.nrp_json import SimulationStatus, JsonDataPack
+
+counter = 0
+
+@EngineDataPack(keyword='datapack_engine', id=DataPackIdentifier('datapack1', 'python_1'))
+@StatusFunction()
+def transceiver_function(datapack_engine, client_data):
+    global counter
+
+    # Prepare a SimulationStatus object that will be passed to the client
+
+    status = SimulationStatus()
+
+    counter_mod = counter % 3
+    if counter_mod == 0:
+        status["integers"] = [0, 1, 2]
+    elif counter_mod == 1:
+        status["flags"] = [True, False]
+    else:
+        # Return an empty status
+        pass
+
+    counter += 1
+
+    # Prepare a DataPack that will be passed to "python_1" engine
+
+    datapack = JsonDataPack("actions", "python_1")
+    datapack.data["test"] = 5
+
+    # The return value is a tuple that consists of a SimulationStatus object and a list of DataPacks
+
+    return status, [datapack]
+\endcode
+
+
+\section status_function_configuration Configuration
+
+In order to link a Status Function to a simulation, one needs to use the `StatusFunction` parameter in the \ref simulation_schema "simulation configuration".
+The parameters that describe a Status Function are the same as for \ref transceiver_function_schema "Transceiver Functions".
+
+Example Status Function configuration (must be a part of the simulation schema):
+
+\code
+"StatusFunction":
+{
+	"Name": "status_function",
+	"FileName": "status_function.py"
+}
+\endcode
+
+*/

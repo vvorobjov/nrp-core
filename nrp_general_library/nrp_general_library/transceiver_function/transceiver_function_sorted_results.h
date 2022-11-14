@@ -22,8 +22,7 @@
 #ifndef TRANSCEIVER_FUNCTION_SORTED_RESULTS_H
 #define TRANSCEIVER_FUNCTION_SORTED_RESULTS_H
 
-#include "nrp_general_library/transceiver_function/transceiver_function_interpreter.h"
-#include "nrp_general_library/transceiver_function/transceiver_function_manager.h"
+#include "nrp_general_library/transceiver_function/function_manager.h"
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 
@@ -39,20 +38,20 @@ struct TransceiverFunctionSortedResults
      * \brief Add additional results to existing SortedResults
      * \param results Results to add
      */
-    void addResults(const TransceiverFunctionManager::tf_results_t &results);
+    void addResults(const FunctionManager::tf_results_t &results);
 
     /*!
      * \brief Sort results according to interface type
      * \param results Results to sort
      * \return Returns sorted results
      */
-    static TransceiverFunctionSortedResults sortResults(const TransceiverFunctionManager::tf_results_t &results);
+    static TransceiverFunctionSortedResults sortResults(const FunctionManager::tf_results_t &results);
 
     private:
         /*!
          * \brief All python lists. Manage them to prevent datapacks from destructing before their respective datapacks_ptr_t
          */
-        std::list<TransceiverFunctionInterpreter::datapack_list_t> _pyList;
+        std::list<DataPackFunctionResult::datapack_list_t> _pyList;
 
         /*!
          * \brief Adds TF Result to the map corresponding to the result interface

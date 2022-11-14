@@ -2,11 +2,13 @@
 
 This guide shows how to extend the ROS message definitions available in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and ROS Engines.
 
-The process is very simple and consists of these steps:
+The ROS messages definitions are stored in a <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">separate repository</a>, in the *nrp_ros_msgs* directory. This repository is checked out as a git submodule during CMake project configuration into *nrp-core-msgs* folder. You can skip the automatic checkout by setting `-D GIT_SUBMODULE=OFF` when calling CMake, then you should manually make sure that the messages definitions on their place in *nrp-core-msgs* folder.
+
+The process of adding the new definitions is very simple and consists of these steps:
 
 1. Add your new message definitions into a separate `.msg` file. Refer to <a href="http://wiki.ros.org/action/show/msg?action=show&redirect=ROS%2FMessage_Description_Language">creating a ROS msg guide</a> to check available possibilities.
-2. Place the new `.msg` file in the folder `nrp_ros/nrp_ros_msgs/nrp_ros_msgs/msg`. In this way your message definitions will be automatically compiled during the NRP-core build process. Also the Python bindings required (see \ref datapacks_rosmsg section) to use these new msg classes in tranceiver functions will be generated and compiled.
-3. Add the new `.msg` to `add_message_files()` FILES in `nrp_ros/nrp_ros_msgs/nrp_ros_msgs/CMakeLists.txt` so it is compiled:
+2. Place the new `.msg` file in the folder `nrp-core-msgs/nrp_ros_msgs/msg`. In this way your message definitions will be automatically compiled during the NRP-core build process. Also the Python bindings required (see \ref datapacks_rosmsg section) to use these new msg classes in transceiver functions will be generated and compiled.
+3. Add the new `.msg` to `add_message_files()` FILES in `nrp-core-msgs/nrp_ros_msgs/CMakeLists.txt` so it is compiled:
 \code
 add_message_files(
   FILES

@@ -26,6 +26,7 @@
 
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
+#include "nrp_general_library/transceiver_function/status_function.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 #include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
@@ -62,7 +63,7 @@ class PreprocessedDataPack
  * to be mapped to, effectively, a single class.
  *
  * There's no special behaviour of PreprocessingFunction with respect to the regular TransceiverFunction,
- * but the decorator was created for semantical clarity and possible future developments.
+ * but the decorator was created for semantic clarity and possible future developments.
  */
 class PreprocessingFunction
     : public TransceiverFunction
@@ -153,6 +154,10 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
     class_<EngineDataPack, bases<TransceiverDataPackInterface> >("EngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))
             .def("__call__", &TransceiverDataPackInterface::pySetup<EngineDataPack>);
 
+    // EngineDataPacks
+    class_<EngineDataPacks, bases<TransceiverDataPackInterface> >("EngineDataPacks", init<const std::string&, const boost::python::list&, const std::string &, bool>( (arg("keyword"), arg("datapackNames"), arg("engineName"), arg("isPreprocessed") = false) ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<EngineDataPacks>);
+
     // PreprocessedDataPack
     class_<PreprocessedDataPack, bases<EngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
             .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);
@@ -173,4 +178,12 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
+
+    // StatusFunction
+    class_<StatusFunction, bases<TransceiverDataPackInterface> >("StatusFunction", init<>())
+            .def("__call__", &StatusFunction::pySetup)
+            .def("runTf", &StatusFunction::runTf);
+
+    register_ptr_to_python<PtrTemplates<StatusFunction>::shared_ptr>();
+    register_ptr_to_python<PtrTemplates<StatusFunction>::const_shared_ptr>();
 }

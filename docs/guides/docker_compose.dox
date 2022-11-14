@@ -1,0 +1,53 @@
+/*! \page docker_compose Building NRPCore Docker images
+
+This page describes how to use the provided dockerfiles to build docker images containing nrp-core and necessary dependencies to run Engines or whole NRPCore experiments in them.
+For this purpose, the file `docker-compose.yaml` in the root folder can be used to build images from docker-compose.
+For example, the command below executed from the project root folder would build a docker image of name `nrp-core/nrp-gazebo-nest-ubuntu20:latest` containing the NRPCore libraries and executables plus the simulators gazebo and nest. 
+
+\code
+docker-compose build nrp-gazebo-nest
+\endcode
+
+In the rest of the page the structure and usage of these dockerfiles are described in greated detail.
+
+
+The next set of dockerfiles are provided:
+
+ -  `base.Dockerfile` provides the basic environment setup, like user/group definitions, directory creations and some basic utilities, like wget, git etc. Nothing related to NRP Core nor simulators is installed here. It’s also possible to specify the base image, e.g. regular Ubuntu or Ubuntu+NVidia/CUDA;
+ -  `nrp-core.Dockerfile` is a multi-stage Dockerfile, providing the NRP-core specific dependencies and compiling the NRP-core itself;
+ -  `<simulator>.Dockerfile` contain environments and executables needed to run different simulators. Generally there is one dockerfile per simulator, i.e. gazebo, opensim, nest, etc. All simulator Dockerfiles should be based on the NRP base image. It’s also possible to chain together multiple simulator images to create an image with multiple simulators (e.g. gazebo + nest).
+
+The hierarchical structure allows to compile the Dockerfiles into a Docker image with almost any combination of the environment and simulators. 
+The pattern for the naming of the resulting image is the following:
+
+ -  `base-<...>` is an image built from `base.Dockerfile` (derived from some standard image, i.e. Ubuntu 20.04);
+ -  `<simulator(s)>-env` is an image with the environment and the executables of the specified simulators, which is derived from some base image or other `<...>-env` image;
+ -  `nrp-<simulators>` is an image with the NRP-core installed in the environment with the specified simulators.
+
+\section docker_compose_variables Variables
+which can be exported before calling docker-compose
+
+ -  `NRP_DOCKER_REGISTRY` specifies the registry address (in a from "example.com/", with slash)
+ -  `NRP_CORE_TAG` specifies the image tag (in the form ":tag", otherwise latest is used)
+
+\section docker_compose_parameters Parameters
+
+ -  `BASE_IMAGE` the base image that is used in the `FROM` directive in the Dockerfile (used for the images hierarchy)
+ -  `CMAKE_CACHE_FILE` defines the file with CMake parameters
+
+\section docker_compose_usage Usage hints
+
+ -  without specifying `NRP_DOCKER_REGISTRY`, the images are build with the name "nrp-core/image-name";
+ -  as a `NRP_DOCKER_REGISTRY` one can specify the user name at DockerHub (to be able to pull/push there) or private Docker registry;
+ -  if `NRP_CORE_TAG` is not defined, the images are built with `latest` tag;
+ -  in order to build the chain of images (the desired and all in the dependency), run `docker-compose up --build <service-name>`;
+ -  in order to push/pull to a specific registry, export the NRP_DOCKER_REGISTRY before running docker-compose
+
+    ```bash
+    export NRP_DOCKER_REGISTRY=mydockerhub/
+    docker-compose pull gazebo-env
+    docker-compose build nrp-gazebo
+    docker-compose push nrp-gazebo
+    ```
+
+*/

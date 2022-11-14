@@ -22,12 +22,15 @@ include(ExternalProject)
 # List library build files
 set(LIB_SRC_FILES
     nrp_nest_json_engine/config/nest_config.cpp
-    nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.cpp
-    nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.cpp
-    nrp_nest_json_engine/engine_server/nest_json_server.cpp
     nrp_nest_json_engine/nrp_client/nest_engine_json_nrp_client.cpp
     nrp_nest_json_engine/python/create_datapack_class.cpp
 )
+if(BUILD_NEST_ENGINE_SERVER)
+    list(APPEND LIB_SRC_FILES
+        nrp_nest_json_engine/engine_server/nest_engine_datapack_controller.cpp
+        nrp_nest_json_engine/engine_server/nest_kernel_datapack_controller.cpp
+        nrp_nest_json_engine/engine_server/nest_json_server.cpp)
+endif()
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
@@ -35,17 +38,21 @@ set(PYTHON_MODULE_SRC_FILES
 )
 
 # List executable build files
-set(EXEC_SRC_FILES
-    nest_server_executable/main.cpp
-    nest_server_executable/nest_server_executable.cpp
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(EXEC_SRC_FILES
+        nest_server_executable/main.cpp
+        nest_server_executable/nest_server_executable.cpp
+    )
+endif()
 
 # List testing build files
-set(TEST_SRC_FILES
-    nest_server_executable/nest_server_executable.cpp
-    tests/test_nest_executable.cpp
-    tests/test_nest_server.cpp
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+        nest_server_executable/nest_server_executable.cpp
+        tests/test_nest_executable.cpp
+        tests/test_nest_server.cpp
+    )
+endif()
 
 
 ##########################################
@@ -54,16 +61,18 @@ set(TEST_SRC_FILES
 ##########################################
 ## Header configuration
 
+set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
+
 # General Nest Header defines
 set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_json_engine/config/cmake_constants.h.in")
-set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
-set(NRP_NEST_EXECUTABLE ${EXECUTABLE_NAME})
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
 configure_file("nrp_nest_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
+# add to nrp env vars
+list(APPEND NRP_ENV_VARS ${NEST_CMAKE_INSTALL_PYNEST})
+set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
 
 ##########################################
 # NRPNestDataPackInterface
@@ -125,7 +134,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Create testing env files
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/test_env.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/test_env.sh" @ONLY)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tests/test_env_cmake.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/tests/test_env_cmake.h" @ONLY)

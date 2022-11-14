@@ -1,0 +1,14 @@
+{
+  "empty_launch_cmd" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "EmptyLaunchCommand",
+    "description": "EmptyLaunchCommand configuration parameters",
+    "$id": "#EmptyLaunchCommandParams",
+    "properties" : {
+      "LaunchType":{
+        "type": "string",
+        "const": "EmptyLaunchCommand"
+      }
+    }
+  }
+}

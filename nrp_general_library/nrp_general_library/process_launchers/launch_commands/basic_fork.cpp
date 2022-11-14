@@ -41,9 +41,11 @@ BasicFork::~BasicFork()
     this->stopProcess(60);
 }
 
-pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std::string> &envParams,
-                                     const std::vector<std::string> &startParams, bool appendParentEnv,
-                                     int logFD)
+pid_t BasicFork::launchProcess(const nlohmann::json &/*launcherConfig*/, const std::string& procCmd,
+                               const std::vector<std::string> &envParams,
+                               const std::vector<std::string> &startParams,
+                               bool appendParentEnv,
+                               int logFD)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -118,7 +120,6 @@ pid_t BasicFork::launchProcess(const std::string& procCmd, const std::vector<std
                 std::exit(1);
             }
         }
-
         // Run command, stop current execution
         NRPLogger::debug("Launching process with cmd: {}",  startParamStr.c_str());
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));

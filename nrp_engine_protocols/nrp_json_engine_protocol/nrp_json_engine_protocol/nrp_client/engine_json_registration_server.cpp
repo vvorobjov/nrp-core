@@ -22,6 +22,7 @@
 
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
+#include "nrp_general_library/utils/utils.h"
 
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 
@@ -75,6 +76,64 @@ void EngineJSONRegistrationServer::clearInstance()
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     EngineJSONRegistrationServer::_instance.reset();
+}
+
+std::string EngineJSONRegistrationServer::tryInstantiate(const std::string & initialAddress, const unsigned maxRetries = 0)
+{
+    std::string address = initialAddress;
+    bool        failed  = false;
+    unsigned    retries = 0;
+
+    while(retries++ <= maxRetries)
+    {
+        auto *pRegistrationServer = EngineJSONRegistrationServer::getInstance();
+
+        if(pRegistrationServer == nullptr)
+        {
+            pRegistrationServer = EngineJSONRegistrationServer::resetInstance(address);
+        }
+
+        try
+        {
+            pRegistrationServer->startServerAsync();
+        }
+        catch(const std::exception & e)
+        {
+            EngineJSONRegistrationServer::clearInstance();
+
+            // Create a Pistache::Address object, so that we don't have to parse the address manually
+
+            Pistache::Address addressParse(address);
+            const std::string host = addressParse.host();
+
+            // Ask the OS for another (free) port
+
+            const uint16_t newPort = getFreePort(host);
+
+            // Recreate the address using the new port and the previous host
+
+            address = host + ":" + std::to_string(newPort);
+
+            // Mark the attempt to start the server as failed. We should try again with the new port
+
+            failed = true;
+        }
+
+        if(!failed)
+        {
+            break;
+        }
+
+        failed = false;
+    }
+
+    if(retries > maxRetries + 1)
+    {
+        throw NRPException::logCreate("Maximum number of retries has been reached when attempting to start the registration server."
+                                      "Please make sure that the address that you are trying to use ('" + initialAddress + "') is correct");
+    }
+
+    return address;
 }
 
 EngineJSONRegistrationServer::~EngineJSONRegistrationServer()
@@ -194,13 +253,18 @@ EngineJSONRegistrationServer::EngineJSONRegistrationServer(const std::string &ad
       _endpoint(Pistache::Address(address))
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-    
+
     // Set Endpoint options
     auto options = Pistache::Http::Endpoint::options();
     options.threads(1).backlog(10);
 
-    this->_endpoint.init(options);
+    // The CloseOnExec flag causes the socket to be closed immediately
+    // after exec() is called in the process launcher. This prevents inheritance
+    // of the socket by the child process.
 
+    options.flags(Pistache::Tcp::Options::CloseOnExec);
+
+    this->_endpoint.init(options);
     this->_endpoint.setHandler(Pistache::Http::make_handler<RequestHandler>(this));
 }
 

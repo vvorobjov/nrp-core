@@ -1,0 +1,37 @@
+/*! \page running_example_docker_exp Launching Engines in Docker Containers Examples
+
+The folder `"examples"` contains four examples (listed in the table below) of how to use the \ref docker_launcher "DockerLauncher launch command" to launch Engine processes in docker containers.
+In each of these experiments there is a `simulation_config_docker.json` configuration file which uses DockerLauncher to launch and run one of the engines in the experiment in a docker container.
+
+<table>
+<tr><th>Example folder<th>Description<th>DockerImage
+<tr><td>husky_braitenberg<td>Running a gazebo_grpc engine with a husky model inside a docker container<td>nrp-core/nrp-gazebo-ubuntu20:latest
+<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp-core/nrp-nest-ubuntu20:latest
+<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp-core/nrp-opensim-ubuntu20:latest
+<tr><td>tf_exchange<td>Running a python_json engine  inside a docker container<td>nrp-core/nrp-vanilla-ubuntu20:latest
+</table>
+
+The images referenced in the table can be manually built from the different dockerfiles available in the folder "/dockerfiles" using docker-compose.
+For more information on how to use the provided dockerfiles to build custom, modular docker images with the necessary dependencies to run different Engines, see this \ref docker_compose "page".
+
+To run the experiments, users should first, on the host where Engines are to be launched in docker containers, setup docker daemon properly.
+See this \ref configuring_docker_daemon "guide" for more information on how to do this.
+
+Once this is done, on the host where the experiment is launched, one should run the experiment as usual. For example:
+
+\code{.sh}
+cd examples/<example folder>
+NRPCoreSim -c simulation_config_docker.json
+\endcode
+
+<b><em>NOTE:</em></b>
+
+The IP addresses of the local and remote hosts have to be taken into account when setting the experiment configuration parameters.
+For example, in the case of launching a PythonJSONEngine:
+
+- `"DockerDaemonAddress"` is the IP address of the remote docker daemon.
+- `"ServerAddress"` is the IP address of engine running inside of the docker container (in the remote host)
+- `"RegistrationServerAddress"` is the IP address of NRPCore
+
+Also it must be ensured that ports required to connect to the aforementioned IP addresses are accessible from the respective hosts.
+*/

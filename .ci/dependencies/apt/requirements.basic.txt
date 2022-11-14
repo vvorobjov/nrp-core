@@ -4,3 +4,11 @@ gnupg2
 software-properties-common
 git
 curl
+doxygen
+cmake
+g++
+net-tools
+inetutils-tools
+inetutils-traceroute
+inetutils-ping
+nano

@@ -21,12 +21,16 @@ include(GNUInstallDirs)
 # List library build files
 set(LIB_SRC_FILES
     nrp_gazebo_json_engine/config/gazebo_json_config.cpp
-    nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
-    nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
-    nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
-    nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp
     nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.cpp
 )
+
+if(BUILD_GAZEBO_ENGINE_SERVER)
+    list(APPEND LIB_SRC_FILES
+        nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
+        nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
+        nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
+        nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp)
+endif()
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
@@ -37,37 +41,29 @@ set(EXEC_SRC_FILES
 )
 
 # List testing build files
-set(TEST_SRC_FILES
-    tests/test_gazebo_engine.cpp
-)
+if(BUILD_GAZEBO_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+        tests/test_gazebo_engine.cpp
+    )
+endif()
 
 
 ##########################################
 ## Dependencies
 
-if(ENABLE_GAZEBO STREQUAL FULL)
+if(BUILD_GAZEBO_ENGINE_SERVER)
     find_package(Gazebo REQUIRED)
 endif()
 
 ##########################################
 ## Header configuration
-set(NRP_GAZEBO_PLUGINS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/nrp_gazebo_plugins" CACHE PATH "Install location of gazebo plugins")
-
 set(NRP_GAZEBO_COMMUNICATION_PLUGIN NRPGazeboJSONCommunicationPlugin)
-
-set(NRP_GAZEBO_PLUGINS_INSTALL_DIR_ABSOLUTE ${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
-if(NOT IS_ABSOLUTE ${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
-    set(NRP_GAZEBO_PLUGINS_INSTALL_DIR_ABSOLUTE ${CMAKE_INSTALL_PREFIX}/${NRP_GAZEBO_PLUGINS_INSTALL_DIR})
-endif()
-
-list(JOIN GAZEBO_LIBRARY_DIRS ":" DEFAULT_GAZEBO_LIB_DIRS)
 
 # Gazebo defines
 configure_file("nrp_gazebo_json_engine/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
 #configure_file("nrp_gazebo_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 
 ##########################################
 # NRPGazeboJSONEngine
@@ -125,7 +121,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 
 ## This section needs Gazebo libraries installed
-if(ENABLE_GAZEBO STREQUAL FULL)
+if(BUILD_GAZEBO_ENGINE_SERVER)
 
     ##########################################
     ## Gazebo plugins

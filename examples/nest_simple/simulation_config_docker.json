@@ -1,0 +1,23 @@
+{
+	"SimulationName": "test_sim",
+	"SimDescription": "This experiment launches Nest and uses a TF to access and modify the status of several simulation objects",
+	"SimulationTimeout": 10,
+	"EngineConfigs": [
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "nest_simple.py",
+			"EngineLaunchCommand":{
+				"LaunchType":"DockerLauncher",
+				"DockerDaemonAddress":"unix:///var/run/docker.sock",
+				"ImageName":"nrp-core/nrp-nest-ubuntu20:latest"
+			}
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}

@@ -59,8 +59,6 @@ class NestEngineServerNRPClient
 
         virtual const std::vector<std::string> engineProcStartParams() const override;
 
-        virtual const std::vector<std::string> engineProcEnvParams() const override;
-
         using population_mapping_t = std::map<std::string, std::string>;
 
 

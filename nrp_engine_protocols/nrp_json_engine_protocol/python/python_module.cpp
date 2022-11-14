@@ -271,6 +271,9 @@ BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
         .def("json_type",   &nlohmannJsonType)
         .def("append",      &nlohmannJsonAppend);
 
+    // Create SimulationStatus Python class, which is simply an alias for NlohmannJson
+    boost::python::scope().attr("SimulationStatus") = boost::python::scope().attr("NlohmannJson");
+
     JsonDataPack::create_python("JsonDataPack");
 }
 

@@ -40,15 +40,6 @@ NRPCommunicationController &NRPCommunicationController::getInstance()
     return *(NRPCommunicationController::_instance.get());
 }
 
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL)
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    // Remove old server, start new one with given server URL
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL));
-    return NRPCommunicationController::getInstance();
-}
-
 NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -145,11 +136,6 @@ json NRPCommunicationController::shutdown(const json&)
     return nlohmann::json();
 }
 
-NRPCommunicationController::NRPCommunicationController(const std::string &address)
-    : EngineJSONServer(address)
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-}
 
 NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
     : EngineJSONServer(serverURL, engineName, registrationURL)

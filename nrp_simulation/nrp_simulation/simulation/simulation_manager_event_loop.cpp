@@ -92,7 +92,7 @@ bool  EventLoopSimManager::runUntilMilliseconds(const std::chrono::milliseconds&
     // start FTILoop
     if(_fTILoopSimManager) {
         std::function<void()> run_ftiloop = [&]() {
-            _fTILoopSimManager->runSimulation(0);
+            _fTILoopSimManager->runSimulation(0, nlohmann::json());
         };
 
         runFuture = std::async(run_ftiloop);
@@ -115,7 +115,7 @@ bool EventLoopSimManager::runUntilTimeOutCB()
     return runUntilMilliseconds(_timeout);
 }
 
-bool EventLoopSimManager::runCB(unsigned numIterations)
+bool EventLoopSimManager::runCB(unsigned numIterations, const nlohmann::json & /*clientData*/)
 {
     return runUntilMilliseconds(_timestep * numIterations);
 }

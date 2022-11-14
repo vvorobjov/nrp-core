@@ -55,19 +55,18 @@ class EngineGrpcServer : public EngineGrpcService::Service
         using mutex_t = std::timed_mutex;
         using lock_t  = std::unique_lock<EngineGrpcServer::mutex_t>;
 
-        EngineGrpcServer(const std::string &address)
-                : EngineGrpcServer(address, "EngineGrpcServer", "")
-        { }
+        /*!
+         * \brief No dummy servers, only those with name and url
+         */
+        EngineGrpcServer() = delete;
 
         /*!
          * \brief Constructor
          *
          * \param[in] serverAddress Address of the gRPC server
          * \param[in] engineName    Name of the simulation engine
-         * \param[in] registrationAddress Should be removed
          */
-        // TODO registrationAddress isn't needed
-        EngineGrpcServer(const std::string serverAddress, const std::string &engineName, const std::string &/*registrationAddress*/)
+        EngineGrpcServer(const std::string serverAddress, const std::string &engineName)
                 : _loggerCfg(engineName), _engineName(engineName)
         {
             this->_serverAddress   = serverAddress;
@@ -164,6 +163,11 @@ class EngineGrpcServer : public EngineGrpcService::Service
             return this->_datapacksControllers.size();
         }
 
+        /*!
+         * \brief Get the Engine name
+         */
+        const std::string &getEngineName() { return _engineName; }
+
     protected:
         mutex_t                       _datapackLock;
 
@@ -175,6 +179,15 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
             this->_datapacksControllers.clear();
         }
+
+        /*!
+        * \brief Returns the pointer to the DataPackController of the Data Pack with the specified name
+        */
+        ProtoDataPackController* getDataPackController(const std::string & datapackName)
+        {
+            return this->_datapacksControllers.find(datapackName)->second;
+        }
+
 
         /*!
         * \brief If true controllers are sent incoming DataPackMessages, if false only the contained data

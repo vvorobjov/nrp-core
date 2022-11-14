@@ -18,7 +18,7 @@ endif()
 
 execute_process(
         WORKING_DIRECTORY ${CATKIN_WS}
-        COMMAND cp -rf ${CMAKE_CURRENT_SOURCE_DIR}/nrp_ros_msgs src
+        COMMAND cp -rf ${NRP_CORE_MSGS_PATH}/nrp_ros_msgs src
         COMMAND bash -c "cd ${CATKIN_WS} && catkin_make && source devel/setup.bash && rospack profile"
 )
 

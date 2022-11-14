@@ -52,7 +52,8 @@ namespace json_utils {
 
         std::fstream s(schema_path.c_str());
         if (!s.good())
-            throw std::invalid_argument("could not open " + uri.url() + " for schema loading\n");
+            throw std::invalid_argument("\"" + uri.url() + "\" schema could not be found. It was looked in file \"" +
+            schema_path + "\". Please check that the file exists.");
 
         try {
             s >> schema;

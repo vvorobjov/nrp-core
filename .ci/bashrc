@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
+# TODO: Check the duplication of the env variables export (here and in Dockerfile)
 export PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
 export LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 export PATH=$PATH:$NRP_INSTALL_DIR/bin:$HOME/.local/bin
 
-
-source /opt/ros/noetic/setup.sh
+[ -f /opt/ros/noetic/setup.sh ] && . /opt/ros/noetic/setup.sh
 
 export CATKIN_WS=${HOME}/catkin_ws
 export ROS_PACKAGE_PATH=${CATKIN_WS}/src:${ROS_PACKAGE_PATH}

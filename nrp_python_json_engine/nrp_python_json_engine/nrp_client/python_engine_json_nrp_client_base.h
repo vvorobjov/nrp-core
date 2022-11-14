@@ -118,27 +118,24 @@ class PythonEngineJSONNRPClientBase
             this->sendShutdownCommand(nlohmann::json());
         }
 
-        virtual const std::vector<std::string> engineProcStartParams() const override
-        {
-            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-            std::vector<std::string> startParams = this->EngineJSONNRPClient<ENGINE, SCHEMA>::engineProcStartParams();
-
-            // Add JSON Server address (will be used by plugin)
-            std::string server_address = this->engineConfig().at("ServerAddress");
-            startParams.push_back(std::string("--") + EngineJSONConfigConst::EngineServerAddrArg.data() + "=" + server_address);
-
-
-            NRPLogger::debug("{} got the {} start parameters.", __FUNCTION__, startParams.size());
-
-            return startParams;
-        }
-
     private:
         /*!
          * \brief Error message returned by init command
          */
         std::string _initErrMsg = "";
+
+        virtual const std::vector<std::string> engineProcStartParams() const override
+        {
+            NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+            std::vector<std::string> startParams = EngineJSONNRPClient<ENGINE, SCHEMA>::engineProcStartParams();
+
+            // Pass any extra server options that were specififed by the user
+            std::string serverOptions = this->engineConfig().at("ServerOptions");
+            startParams.push_back(std::string("--") + PythonConfigConst::ExtraServerOptionsArg.data() + "=" + serverOptions);
+
+            return startParams;
+        }
 };
 
 #endif // PYTHON_ENGINE_JSON_NRP_CLIENT_BASE_H

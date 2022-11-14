@@ -108,7 +108,7 @@ public:
      * \param numIterations Number of iterations (i.e timesteps) to run simulation
      * \return Simulation state after processing the request
      */
-    RequestResult runSimulation(unsigned numIterations);
+    RequestResult runSimulation(unsigned numIterations, const nlohmann::json & json);
 
     /*!
      * \brief Shuts down the simulation.
@@ -120,6 +120,8 @@ public:
      * \brief returns the current state of the simulation
      */
     SimState currentState();
+
+    virtual const std::string & getStatus() = 0;
 
     /*!
      * \brief returns a simulation state as a string
@@ -138,7 +140,7 @@ protected:
     /*! \brief Run the simulation. */
     virtual bool runUntilTimeOutCB() = 0;
     /*! \brief Run the simulation. */
-    virtual bool runCB(unsigned numIterations) = 0;
+    virtual bool runCB(unsigned numIterations, const nlohmann::json & clientData) = 0;
     /*! \brief Shutdown the simulation. */
     virtual void shutdownCB() = 0;
 

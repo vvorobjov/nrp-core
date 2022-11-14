@@ -24,9 +24,8 @@
 #include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_datapack_controller.h"
 
 ${engine_name}GrpcServer::${engine_name}GrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName,
-                                     const std::string &registrationAddress)
-    : EngineGrpcServer(serverAddress, engineName, registrationAddress),
+                                     const std::string &engineName)
+    : EngineGrpcServer(serverAddress, engineName),
     _engineName(engineName)
 {
 

@@ -55,16 +55,16 @@ class FTILoop
         void shutdownLoop();
 
         /*!
-         * \brief Runs a single loop step
-         * \param timeStep How long the single components should run (in seconds)
+         * \brief Blocks until all running Engines finishe their execution
          */
-        //void runLoopStep(float timeStep);
+        void waitForEngines();
 
         /*!
          * \brief Runs simulation for a total of runLoopTime (in s)
          * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
+         * \param clientData Extra data coming from the NRP Client, will be passed to the status function
          */
-        void runLoop(SimulationTime runLoopTime);
+        void runLoop(SimulationTime runLoopTime, const nlohmann::json & clientData);
 
         /*!
          * \brief Get Simulation Time (in seconds)
@@ -72,6 +72,12 @@ class FTILoop
          */
         inline SimulationTime getSimTime() const
         {   return this->_simTime;  }
+
+
+        const std::string & getStatus()
+        {
+            return _devHandler->getStatus();
+        }
 
     private:
         /*!

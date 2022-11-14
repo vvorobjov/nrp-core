@@ -40,6 +40,7 @@ void NrpCoreServer::runServerLoop()
     {
         this->waitForRequest();
         SimulationManager::RequestResult result;
+        std::string data("");
         // Check the request type and handle it accordingly
         try
         {
@@ -49,7 +50,8 @@ void NrpCoreServer::runServerLoop()
                     result = _manager->initializeSimulation();
                     break;
                 case NrpCoreServer::RequestType::RunLoop:
-                    result = _manager->runSimulation(this->getRequestNumIterations());
+                    result = _manager->runSimulation(this->getRequestNumIterations(), this->_clientData);
+                    data   = _manager->getStatus();
                     break;
                 case NrpCoreServer::RequestType::RunUntilTimeout:
                     result = _manager->runSimulationUntilTimeout();
@@ -82,7 +84,7 @@ void NrpCoreServer::runServerLoop()
             result.errorMessage = e.what();
         }
 
-        this->markRequestAsProcessed(result);
+        this->markRequestAsProcessed(result, data);
 
         // Break out of the loop, if shutdown was requested
         if(isShutdown)
@@ -113,9 +115,11 @@ void NrpCoreServer::waitForRequest()
     this->_consumerConditionalVar.wait(_lock, [this]{ return this->isRequestPending(); });
 }
 
-void NrpCoreServer::markRequestAsProcessed(const SimulationManager::RequestResult & result)
+void NrpCoreServer::markRequestAsProcessed(const SimulationManager::RequestResult & result,
+                                           const std::string                      & data)
 {
     this->_requestResult = result;
+    this->_jsonData = data;
     this->resetRequest();
     this->_producerConditionalVar.notify_one();
     this->_lock.unlock();
@@ -132,7 +136,7 @@ bool NrpCoreServer::isRequestPending() const
     return (this->_requestType != RequestType::None);
 }
 
-grpc::Status NrpCoreServer::requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::Response * returnMessage)
 {
     // Set the event type
 
@@ -152,7 +156,14 @@ grpc::Status NrpCoreServer::requestHelper(std::unique_lock<std::mutex> & lock, R
     }
     else {
         // Set simulation state after processing the request
-        setReturnMessageContent(this->_requestResult, returnMessage);
+        setReturnMessageContent(this->_requestResult, returnMessage->mutable_simstate());
+
+        // Set the JSON data field if there's anything pending in the _jsonData string
+
+        if(!this->_jsonData.empty())
+        {
+            returnMessage->set_json(this->_jsonData);
+        }
         return grpc::Status::OK;
     }
 }
@@ -163,45 +174,46 @@ void NrpCoreServer::setReturnMessageContent(const SimulationManager::RequestResu
     returnMessage->set_errormsg(res.errorMessage);
 }
 
-grpc::Status NrpCoreServer::initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
     return requestHelper(lock, RequestType::Initialize, returnMessage);
 }
 
-grpc::Status NrpCoreServer::runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::Response * status)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
 
     this->_numIterations = message->numiterations();
-    return requestHelper(lock, RequestType::RunLoop, returnMessage);
+    this->_clientData = nlohmann::json::parse(message->json());
+    return requestHelper(lock, RequestType::RunLoop, status);
 }
 
-grpc::Status NrpCoreServer::runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
     return requestHelper(lock, RequestType::RunUntilTimeout, returnMessage);
 }
 
-grpc::Status NrpCoreServer::shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
     return requestHelper(lock, RequestType::Shutdown, returnMessage);
 }
 
-grpc::Status NrpCoreServer::reset(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::reset(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
     return requestHelper(lock, RequestType::Reset, returnMessage);
 }
 
-grpc::Status NrpCoreServer::stopLoop(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::SimStateMessage * returnMessage)
+grpc::Status NrpCoreServer::stopLoop(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
 {
     // Stop is the only request which is allowed to be processed in thread and without lock
     SimulationManager::RequestResult res;
     try {
         res = this->_manager->stopSimulation();
-        setReturnMessageContent(res, returnMessage);
+        setReturnMessageContent(res, returnMessage->mutable_simstate());
         return grpc::Status::OK;
     }
     catch(std::exception &e)

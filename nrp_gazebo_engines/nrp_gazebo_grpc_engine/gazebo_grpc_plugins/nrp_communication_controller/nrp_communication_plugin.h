@@ -45,9 +45,14 @@ namespace gazebo
 
         private:
             /*!
-             * \brief Server URL, read from program opts
+             * \brief Controller server URL, read from program opts
              */
             std::string _serverAddress;
+
+            /*!
+             * \brief Engine name, read from program opts
+             */
+            std::string _engineName;
     };
 
     GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)

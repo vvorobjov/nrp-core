@@ -57,12 +57,11 @@ class ProcessLauncherInterface
         /*!
          * \brief Fork a new process. Will read environment variables and start params from procConfig
          * \param procConfig Process Configuration. Env variables and start params take precedence over envParams and startParams
-         * \param envParams Additional Environment Variables for child process. Will take precedence over default env params if appendParentEnv is true
-         * \param startParams Additional Start parameters
          * \param appendParentEnv Should parent env variables be appended to child process
          * \return Returns Process ID of child process on success
          */
         virtual pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) = 0;
+
         /*!
          * \brief Stop a running process
          * \param killWait Time (in seconds) to wait for process to quit by itself before force killing it. 0 means it will wait indefinitely
@@ -146,13 +145,15 @@ class ProcessLauncher
 
         pid_t launchProcess(nlohmann::json procConfig, bool appendParentEnv = true) override final
         {
-            json_utils::validateJson(procConfig, "https://neurorobotics.net/process_launcher.json#ProcessLauncher");
+            json_utils::validateJson(procConfig, "json://nrp-core/process_launcher.json#ProcessLauncher");
+
+            nlohmann::json launcherConfig = procConfig.at("LaunchCommand");
 
             if constexpr (sizeof...(LAUNCHER_COMMANDS) == 0)
-            {   throw noLauncherFound(procConfig.at("LaunchCommand"));  }
+            {   throw noLauncherFound(launcherConfig.at("LaunchType"));  }
 
-            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(procConfig.at("LaunchCommand"));
-            return this->_launchCmd->launchProcess(procConfig.at("ProcCmd"),
+            this->_launchCmd = ProcessLauncher::findLauncher<LAUNCHER_COMMANDS...>(launcherConfig.at("LaunchType"));
+            return this->_launchCmd->launchProcess(launcherConfig, procConfig.at("ProcCmd"),
                                                    procConfig.contains("ProcEnvParams") ? procConfig.at("ProcEnvParams").get<std::vector<std::string>>() : std::vector<std::string>(),
                                                    procConfig.contains("ProcStartParams") ? procConfig.at("ProcStartParams").get<std::vector<std::string>>() : std::vector<std::string>(),
                                                            appendParentEnv,

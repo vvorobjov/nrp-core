@@ -22,7 +22,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
-void TransceiverFunctionSortedResults::addResults(const TransceiverFunctionManager::tf_results_t &results)
+void TransceiverFunctionSortedResults::addResults(const FunctionManager::tf_results_t &results)
 {
     for(const auto &cR : results)
     {
@@ -33,7 +33,7 @@ void TransceiverFunctionSortedResults::addResults(const TransceiverFunctionManag
     }
 }
 
-TransceiverFunctionSortedResults TransceiverFunctionSortedResults::sortResults(const TransceiverFunctionManager::tf_results_t &results)
+TransceiverFunctionSortedResults TransceiverFunctionSortedResults::sortResults(const FunctionManager::tf_results_t &results)
 {
     return TransceiverFunctionSortedResults().sortResults(results);
 }

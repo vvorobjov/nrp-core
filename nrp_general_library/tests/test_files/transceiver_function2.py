@@ -30,7 +30,7 @@ def transceiver_function(datapack_engine, datapack_preprocessed):
     
     ret_dev = JsonDataPack('return_datapack', 'engine')
     ret_dev.data["test_value1"] = str(test_val1)
-    ret_dev.data["test_value2"] = str(test_val2)
+    ret_dev.data["test_value2"] = test_val2
     
     return [ret_dev]
 

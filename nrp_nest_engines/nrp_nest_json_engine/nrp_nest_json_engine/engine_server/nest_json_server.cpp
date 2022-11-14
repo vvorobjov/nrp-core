@@ -37,13 +37,6 @@
 namespace python = boost::python;
 
 
-NestJSONServer::NestJSONServer(const std::string &serverAddress, python::dict globals)
-    : EngineJSONServer(serverAddress),
-      _pyGlobals(globals)
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-}
-
 NestJSONServer::NestJSONServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress, python::dict globals)
     : EngineJSONServer(serverAddress, engineName, registrationAddress),
       _pyGlobals(globals)

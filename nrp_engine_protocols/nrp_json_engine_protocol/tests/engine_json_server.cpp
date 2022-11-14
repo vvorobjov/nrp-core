@@ -38,8 +38,8 @@ class TestEngineJSONServer
 {
     public:
     template<class ...T>
-    TestEngineJSONServer(T &&...properties)
-        : EngineJSONServer(std::forward<T>(properties)...)
+    TestEngineJSONServer(T &...properties)
+        : EngineJSONServer(std::forward<T>(properties)..., "", "")
     {}
 
     virtual ~TestEngineJSONServer() override = default;
@@ -165,8 +165,6 @@ TEST(EngineJSONServerTest, HttpRequests)
     auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
     server.registerDataPack(dev1.name(), &dev1Ctrl);
 
-    ASSERT_FALSE(server.isServerRunning());
-    server.startServerAsync();
     ASSERT_TRUE(server.isServerRunning());
 
     // Init command

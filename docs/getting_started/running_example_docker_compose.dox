@@ -1,0 +1,46 @@
+/*! \page running_example_docker_compose Launching Engines in Docker Containers Examples with docker-compose
+
+The folder `"examples"` contains an example for running the experiment with Gazebo, NEST and DataTransfer Engines with help of the docker-compose. 
+There is the docker-compose file itself `docker-compose-nest-gazebo.yaml`, the bash script `run_docker-compose_example.sh` for setting the environment for running the experiment and the corresponding experiment configuration file `husky_braitenberg/simulation_config_docker-compose.json`.
+
+\section docker_compose_file docker-compose file
+
+The docker-compose file `docker-compose-nest-gazebo.yaml` defines 5 services:
+
+- `nest-service`, which spawns the container named `nrp-nest-simulator` from the official NEST Docker image `docker-registry.ebrains.eu/nest/nest-simulator:3.2` and runs the nest-server inside it.
+- `gazebo-service`, which spawns the container named `nrp-gazebo` from one of the NRP images `${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-ubuntu20${NRP_CORE_TAG}` and launches Gazebo server inside it. Note, that launching of the Gazebo is done by the script `/usr/xvfb-run-gazebo-runcmd.bash`, which belongs to the Docker image. This script uses the environment variables for the proper server configuration, like `GAZEBO_WORLD_FILE`, which defines the path to the Gazebo world file. This file should be available inside the container. For this purpose, the experiment folder is mounted in the container `${NRPCORE_EXPERIMENT_DIR}:/experiment`. The environment variable `NRPCORE_EXPERIMENT_DIR`, pointing to the experiment folder on the host, should be set before running docker-compose.
+- `nrp-core-service`, which spawns the container named `nrp-core` from one of the NRP images `${NRP_DOCKER_REGISTRY}nrp-corenrp-gazebo-nest-ubuntu20${NRP_CORE_TAG}` and launches NRP-core inside it. The NRP-core in this image is built to have client parts of NEST and Gazebo Engines, so that it could communicate with the Engines running in the separate containers. The Data Transfer Engine will be spawned by the NRP-core inside the same container. Note, that experiment foledr is mounted in this container the same way as in `gazebo-service`. The NRP-core launch command refers this mount afterwards. Moreover, the  `nrp-core-service` depends on other services, meaning that it will be launched after the mentioned dependencies have started.
+- `mqtt-broker-service` spawns the container with the MQTT broker for communication with the Data Transfer Engine. This service uses the official Mosquitto image.
+- `mqtt-client-service` spawns the container with the MQTT client for listening the topics on the MQTT broker.
+
+Note, that in case `NRP_DOCKER_REGISTRY` and `NRP_CORE_TAG` are not set, then the local Docker image, i.e. `nrp-core/nrp-gazebo-ubuntu20`, will be used, thus, make sure that the images are built locally. Otherwise, you should specify the Docker registry name containing the pre-built images in order to be able to pull them from this registry.
+
+\section docker_compose_script Launching script
+
+The bash launching script `examples/run_docker-compose_example.sh` is needed only as an example for setting the needed environment variables and running docker-compose. It defines the experiment folder `NRPCORE_EXPERIMENT_DIR` as well as the tag and the registry to use. Then `docker-compose up` command is called.
+
+\section docker_compose_config Experiment configuration file
+
+The file `examples/husky_braitenberg/simulation_config_docker-compose.json` is used as the experiment configuration file in this example. It sets the same experiment as `examples/husky_braitenberg/simulation_config_data_transfer.json`, but have some modifications.
+This file is used by NRP-core component to connect with the servers, it is not used to launch the servers in the detached containers. The launching of the detached servers should be configured manually in the docker-compose file, but in accordance with the experiment configuration files (the ports, the containers' names, etc.).
+
+Those Engines, which are supposed to be run in the separate containers (NEST and Gazebo) have an `"EmptyLaunchCommand"` as an `"EngineLaunchCommand"`, because the launching is handled by the docker-compose start.
+
+\code{.json}
+    {
+      "EngineType": ...,
+      "EngineName": ...,
+      ...
+      "EngineLaunchCommand": {
+        "LaunchType": "EmptyLaunchCommand"
+      }
+    }
+\endcode
+
+The addresses of the servers are set with the names of the containers where they run, i.e. because the containers can communicate with each other inside Docker network by their names. This allows NRP-core to reach the Engines' servers without knowing their exact IP.
+
+The IP-address of the Data Transfer Engine, which runs in the same container as NRP-core, is set to `0.0.0.0`.
+
+You can note, that the server ports of the Gazebo and NEST Engines are the same. That's possible in the current configuration, because they are running in the separate containers, which have different IPs, so there is no conflict. The Gazebo is running in the container `nrp-gazebo` at the port 9000, and NEST is running in the container `nrp-nest-simulator` at the port 9000. The access to these servers is done by their container name, which is resolved to Docker's corresponding internal IP address.
+
+*/

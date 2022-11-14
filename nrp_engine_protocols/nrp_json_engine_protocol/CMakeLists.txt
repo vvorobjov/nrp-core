@@ -41,6 +41,7 @@ set(TEST_SRC_FILES
     tests/engine_json_server.cpp
     tests/engine_json_nrp_client.cpp
     tests/json_converter.cpp
+    tests/test_registration_server.cpp
 )
 
 

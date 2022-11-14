@@ -27,7 +27,7 @@
 struct TestEngineConfigConst
 {
     static constexpr char EngineType[] = "test_engine";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_base.json#EngineBase";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_base.json#EngineBase";
 };
 
 class TestEngine
@@ -48,9 +48,6 @@ class TestEngine
         {}
 
         virtual const std::vector<std::string> engineProcStartParams() const override
-        { return std::vector<std::string>(); }
-
-        virtual const std::vector<std::string> engineProcEnvParams() const override
         { return std::vector<std::string>(); }
 
         virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override

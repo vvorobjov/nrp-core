@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Get the root directory of the repo
+# Get the root directory of the script
 
-repo_root=$(git rev-parse --show-toplevel)
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-cd "$repo_root"/build || exit 1;
+cd "$SCRIPT_DIR"/../build || exit 1;
 
 # Set up the environment
 

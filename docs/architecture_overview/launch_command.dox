@@ -1,0 +1,156 @@
+/*! \page launch_command Launch Commands
+
+\ref process_launcher relies on launch commands to implement the actual launching behavior. 
+All Launch Commands are derived from LaunchCommand class.
+LaunchCommand is a templated class with a single parameter `LAUNCH_COMMAND` of type `const char*`. 
+This parameter allows process launchers to infer the right LaunchCommand to use from the Engine configuration.
+See the section \ref configuration_schema below for more details.
+
+Currently, there are three launch commands available for launching engine processes:
+
+- EmptyLaunchCommand : Dummy launch command. Leaves the actual launching of the engine to the user
+- BasicFork (default): launches the engine server in an independent process
+- DockerLauncher: launches the engine server in a (possibly remote) docker container. Since this case is more complex than the previous ones and requires additional configuration, a section below is devoted to describing its functioning and behavior: \ref docker_launcher
+
+\section configuration_schema Configuration Schema
+
+In the experiment configuration file, the LaunchCommand that will be used to launch each of the engines in the experiment, can be specified.
+This is done by setting the parameter `EngineLaunchCommand` in the Engine configuration (see \ref engine_base_schema "here" for more details about Engines configuration schema), which is a JSON object defining which launch command will be used to launch the Engine process and required parameters, if any.
+
+The only required parameter in `EngineLaunchCommand` JSON object is `LaunchType` which allows ProcessLauncher to decide which LaunchCommand to use as described above in this page.
+
+The default value for `EngineLaunchCommand` is `{"LaunchType":"BasicFork"}`.
+
+When adding a new LaunchCommand to nrp-core, developers must create a schema specifying its LaunchType and its parameters; the created schema has to be referred by and listed in the \ref engine_base_schema_schema "EngineBase Schema" "EngineLaunchCommand" OneOf field. 
+The format for additional LaunchCommand schemas is the following:
+\code{.json}
+{
+  "<command_name>" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "...",
+    "description": "...",
+    "$id": "#<command_id>",
+    "properties" : {
+      "LaunchType":{
+        "type": "string",
+        "const": "<LAUNCH_COMMAND template parameter used in the implemented LaunchCommand class>"
+      },
+      <other properties>
+    },
+	"required" : ["LaunchType"]
+  }
+}
+\endcode
+The required property `"LaunchType"` is a const string value that uniquely defines the new LaunchCommand type.
+
+\section docker_launcher DockerLauncher
+
+The DockerLauncher launch command launches an Engine inside of a docker container. It connects to a docker daemon running on a (possibly remote) host.
+The IP used to connect to the docker daemon is specified in the launch command configuration.
+
+For more details about the components involved in launching Engines in docker containers see \ref fti_lifecycle_components_docker "this diagram".
+
+\subsection docker_launcher_engine_param Remote Engine configuration
+
+Due to the distributed nature of the experiments when using a DockerLauncher, some Engine parameters that can be usually left with their default values, must be set properly.
+These usually involve IP addresses. 
+For example, in the case of a PythonJSONEngine, the following parameters should be taken care of:
+
+- `"DockerDaemonAddress"` is the IP address of the remote docker daemon.
+- `"ServerAddress"` is the IP address of engine running inside of the docker container (in the remote host)
+- `"RegistrationServerAddress"` is the IP address of NRPCore
+
+If `"ServerAddress"` and `"RegistrationServerAddress"` are left unset, docker daemon and NRP-Core are assumed to be running in the same host.
+If the Engine process will be run in a remote host, `"ServerAddress"` and `"RegistrationServerAddress"` must be set properly.
+
+In conclusion, when running Engines in remote hosts their configuration parameters should be carefully reviewed.
+
+\subsection docker_launcher_schema Schema
+
+Below are listed the parameters required to configure DockerLauncher:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>LaunchType<td>The type of LaunchCommand<td>const string<td>DockerLauncher<td>X<td>
+<tr><td>DockerDaemonAddress<td>The IP address of manager host to connect<td>string<td>unix:///var/run/docker.sock<td><td>
+<tr><td>ImageName<td>The name of docker image to be used<td>string<td><td>X<td>
+<tr><td>UploadFolder<td>The name of the folder containing experiment data to be uploaded to the Docker container<td>string<td>""<td><td>
+<tr><td>PrintLogs<td>If true, prints the console output from the Docker container when shutting down the process<td>boolean<td>true<td><td>
+</table>
+
+The complete schema is listed below:
+
+\include config_schemas/launch_commands/docker_launcher_cmd.json
+
+\subsection docker_launcher_engines Usage
+
+The preconditions for using DockerLauncher to run Engines are:
+1. Docker daemon is properly setup in the the (remote) host (see this \ref configuring_docker_daemon "guide" for more information)
+2. There is an nrp-core docker image available in the host containing the Engine itself and its dependencies (e.g. the simulator and its requirements). See this \ref docker_compose "guide" for information about building nrp-core docker images
+
+Provided that, DockerLauncher can then be employed by setting up the experiment configuration as explained in the sections above.
+
+The page \ref running_example_docker_exp contains more details and examples on the use of DockerLauncher.
+
+
+
+\section docker_compose_launch Launching experiments with docker-compose
+
+Another mechanism for the launching of the different Engines in the different Docker containers on the single host is the usage of the docker-compose file. This file determines the properties and the order of the containers which should be started, as well as the commands for launching the NRP and the Engines. The DockerLauncher launcher is not used in this case, and the orchestration is performed by the Docker built-in tools. This feature can be used, in particular, for the launching of the experiment with the Engines having conflicting dependencies, or for a quick scaling of the experiment over the set of hosts.
+
+
+\subsection docker_compose_file docker-compose file
+
+The general structure of the docker-compose file can be found on the official Docker website https://docs.docker.com/compose/
+
+Shortly, this file describes services, each of them spawns a Docker container. In order to run the NRP experiment, one of the services should spawn a container with the running NRP-core (with all the needed clients but can be without Engines' servers), the other services may run the detached Engines or other instruments (like MQTT broker). The data sharing is done with the mounting of the shared volume(s) in the different containers.
+
+The user can use any Docker images for the services, for example, the nest-simulator can be spawn from the official NEST Docker image docker-registry.ebrains.eu/nest/nest-simulator:latest.
+
+The page \ref running_example_docker_compose contains the description of the example which can be started with docker-compose.
+
+
+\subsection docker_compose_file Experiment configuration file for launching with docker-compose
+
+There are some changes in the experiment configuration file are needed for a proper usage of the docker-compose launching mechanism.
+
+Those Engines, which are supposed to be run in the separate containers (separate from the NRP-core) should have an `"EmptyLaunchCommand"` as an `"EngineLaunchCommand"`, because the launching is handled by the docker-compose now (not by the NRP-core). Those Engines, which are supposed to be run in the same container as the NRP-core, should be configured as usual. As a result, the NRP-core expects the Engines in the separate containers are running without its participation, and it tries to launch the Engines in the container, which is used by itself. 
+
+\code{.json}
+    {
+      "EngineType": ...,
+      "EngineName": ...,
+      ...
+      "EngineLaunchCommand": {
+        "LaunchType": "EmptyLaunchCommand"
+      }
+    }
+\endcode
+
+In Linux systems the Docker containers are available by their names within the network created by the docker-compose. Thus, the addresses of the Engines, which are supposed to be run in the separate containers, should be setup correspondingly, so that NRP-core could connect with them. For example, if the MQTT broker is running in the container with the name `mqtt-broker` at the port 1883, then the corresponding address in the \ref datatransfer_engine should look like `"mqtt-broker:1883"`
+
+\code{.json}
+    {
+      "EngineType": "datatransfer_grpc_engine",
+      "EngineName": "datatransfer_engine",
+      ...
+      "MQTTBroker": "mqtt-broker:1883"
+    }
+\endcode
+
+The last but not least, when the "localhost" of the container should be involved as an address, the IP-address `0.0.0.0` should be used instead of `127.0.01` or `localhost`. This is the default Docker configuration. For example, if the \ref datatransfer_engine is launched in the same container as NRP-core itself at the port 9004, then its `"ServerAddress"` should be set as `"0.0.0.0:9004"`
+
+\code{.json}
+    {
+      "EngineType": "datatransfer_grpc_engine",
+      "EngineName": "datatransfer_engine",
+      "ServerAddress": "0.0.0.0:9004",
+      ...
+      "MQTTBroker": "mqtt-broker:1883"
+    }
+\endcode
+
+The page \ref running_example_docker_compose contains the description of the example which can be started with docker-compose.
+
+
+*/

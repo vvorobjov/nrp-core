@@ -1,0 +1,199 @@
+#!groovy
+// Parallel jobs configuration
+def jobs = [
+    [
+        name: "Nest+Gazebo Examples",
+        image: "nrp-gazebo-nest-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/nest-gazebo.cmake",
+        build: false,
+        cmakeProj: "./examples/"
+    ],
+    [
+        name: "Nest+Gazebo -ROS-MQTT Build+Examples",
+        image: "nrp-gazebo-nest-ubuntu20-env",
+        cmakeconf: ".ci/cmake_cache/nest-gazebo-nomqtt-noros.cmake",
+        build: true,
+        cmakeProj: ""
+    ],
+    [
+        name: "Vanilla_NRP Build+Examples",
+        image: "nrp-vanilla-ubuntu20-env",
+        cmakeconf: ".ci/cmake_cache/vanilla.cmake",
+        build: true,
+        cmakeProj: ""
+    ],
+    [
+        name: "Vanilla_NRP -ROS-MQTT Build+Examples",
+        image: "nrp-vanilla-ubuntu20-env",
+        cmakeconf: ".ci/cmake_cache/vanilla-nomqtt-noros.cmake",
+        build: true,
+        cmakeProj: ""
+    ],
+    [
+        name: "Vanilla_NRP CUDA Examples",
+        image: "nrp-nvidia-cuda-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/nrp-nvidia-cuda.cmake",
+        build: false,
+        cmakeProj: "./examples/"
+    ],
+    [
+        name: "Opensim Examples",
+        image: "nrp-opensim-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/opensim.cmake",
+        build: false,
+        cmakeProj: "./examples/"
+    ],
+    [
+        name: "Opensim+TVB Examples",
+        image: "nrp-opensim-tvb-ubuntu20",
+        cmakeconf: ".ci/cmake_cache/opensim-tvb-tests.cmake",
+        build: false,
+        cmakeProj: "./examples/"
+    ]
+]
+
+
+def parallelStagesMap = jobs.collectEntries {
+    ["${it.name}" : generateStage(it)]
+}
+def generateStage(job) {
+    return {
+        stage("${job.name}")
+        {
+            node('ci_label') {
+                docker.withRegistry("https://${DockerRegistryUrl}", 'nexusadmin') {
+                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").pull()
+                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").inside {
+                        checkout scm
+                        sh 'git submodule update --init'
+                        echo "This is ${job.name}."
+                        sh "export CMAKE_CACHE_FILE=${job.cmakeconf}; export NRP_CMAKE_PROJECT=${job.cmakeProj}; bash .ci/11-prepare-build.sh"
+                        script
+                        {
+                            if (job.build)
+                            {
+                                sh 'bash .ci/20-build.sh'
+                            }
+                        }                        
+                        lock("${NODE_NAME}-nrp-core-unit-tests") {
+                            sh 'bash .ci/30-run-tests.sh'
+                        }
+                        // sh 'bash .ci/40-run-cppcheck.sh'
+                        xunit (
+                            thresholds: [
+                                skipped(unstableNewThreshold: '0'),
+                                failed(failureThreshold: '1', unstableThreshold: '0')
+                            ],
+                            tools: [CTest(
+                                pattern: 'build/Testing/**/*.xml',
+                                deleteOutputFiles: true,
+                                failIfNotNew: false,
+                                skipNoTestFiles: false,
+                                stopProcessingIfError: true
+                                ),
+                                JUnit(
+                                pattern: 'build/xml/*.xml',
+                                deleteOutputFiles: true,
+                                failIfNotNew: false,
+                                skipNoTestFiles: true,
+                                stopProcessingIfError: true
+                            )]
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Pipeline for the nrp-core images build
+pipeline {
+    environment {
+        DockerRegistryUrl = "${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}"
+    }
+    agent none
+    options {
+        // Abort a build on timeout
+        timeout(time: 12, unit: 'HOURS') 
+    }
+    parameters {
+        string(defaultValue: 'latest', name: 'IMAGE_TAG', description: 'The tag name for the built images', trim: true)
+    }
+
+    stages {
+
+        stage('Build images') {
+            agent {
+                label 'cd_label'
+            }
+            steps {
+                sh 'git submodule update --init'
+                sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml build; docker-compose -f docker-compose-nrp.yaml build --parallel"
+                withCredentials([usernamePassword(credentialsId: 'nexusadmin', usernameVariable: 'USER', passwordVariable: 'PASSWORD')])
+                {
+                    sh 'docker login -u $USER -p $PASSWORD ${DockerRegistryUrl}'
+                    sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml push; docker-compose -f docker-compose-nrp.yaml push"
+                }
+                sh "docker logout ${DockerRegistryUrl}"
+            }
+            post {
+                aborted {
+                    script{
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
+                            slackSend(
+                                channel: "${env.NRP_CORE_SLACK_CHANNEL}",
+                                color: "warning",
+                                message: "NRP-core Docker images build aborted!\nBranch: ${env.BRANCH_NAME}\nLink: ${BUILD_URL}\n\n")
+                    }
+                }
+                failure {
+                    script{
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
+                            slackSend(
+                                channel: "${env.NRP_CORE_SLACK_CHANNEL}",
+                                color: "danger",
+                                message: "NRP-core Docker images build failed!\nBranch: ${env.BRANCH_NAME}\nLink: ${BUILD_URL}\n\n")
+                    }
+                }
+                success{
+                    script{
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
+                            slackSend(
+                                channel: "${env.NRP_CORE_SLACK_CHANNEL}",
+                                color: "good",
+                                message: "NRP-core Docker images build and push succeeded!\nBranch: ${env.BRANCH_NAME}\nLink: ${BUILD_URL}\n\n")
+                    }
+                } 
+            }
+        }
+
+        stage('Build and Test'){
+            steps
+            {
+                script{
+                    parallel parallelStagesMap
+                }
+            }
+            post {
+                aborted {
+                    script{
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
+                            slackSend(
+                                channel: "${env.NRP_CORE_SLACK_CHANNEL}",
+                                color: "warning",
+                                message: "NRP-core Docker images tests aborted!\nBranch: ${env.BRANCH_NAME}\nLink: ${BUILD_URL}\n\n")
+                    }
+                }
+                failure {
+                    script{
+                        if (env.BRANCH_NAME ==~ /(origin\/)?((development)|(master))/)
+                            slackSend(
+                                channel: "${env.NRP_CORE_SLACK_CHANNEL}",
+                                color: "danger",
+                                message: "NRP-core Docker images tests failed!\nBranch: ${env.BRANCH_NAME}\nLink: ${BUILD_URL}\n\n")
+                    }
+                }
+            }
+        }
+    }
+}

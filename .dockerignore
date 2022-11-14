@@ -1,1 +1,11 @@
 build
+.vscode
+.pytest_cache
+generatedJUnitFiles
+.git
+
+Jenkinsfile
+docker-compose.yaml
+.ci/Jenkinsfile
+
+dockerfiles

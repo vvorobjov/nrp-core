@@ -98,6 +98,48 @@
     * [Pull request #104](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/104)
     
     
-    
+## NRPCore 1.3.0 (2022-11-14)
+
+1. Added support for launching NRPCore experiments and Engines in Docker containers. A new DockerLauncher has been implemented which allows to launch Engine servers in Docker containers. NRPCore Python client has been extended to allow to launch NRPCore experiments in Docker containers
+    * [Pull request #71](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/71)
+    * [Pull request #115](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/115)
+    * [Pull request #113](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/113)
+    * [Pull request #126](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/126)
+    * [Pull request #71](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/71)
+
+2. Introduced Modular Dockerfiles for NRPCore. A set of Dockerfiles were added which allows to compose NRPCore images in a modular way with different combinations of Engines and theirs respective dependencies
+    * [Pull request #111](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/111)
+    * [Pull request #116](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/116)
+    * [Pull request #118](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/118)
+
+3. Several improvements around the Datatransfer Engine
+    * [Pull request #67](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/67)
+    * [Pull request #131](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/131)
+    * [Pull request #141](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/141)
+    * [Pull request #129](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/129)
+
+4. NRPCore msg definitions were moved to a separate repository and used as a submodule
+    * [Pull request #110](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/110)
+
+5. Added a generic, GRPC based Unity Engine client which allows to connect to Engine servers running within Unity 3D apps
+    * [Pull request #112](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/112)
+
+6. Added support for data exchange between the NRPCore Python client and Engines running in an experiment. This feature enables sending actions and retrieving observations at runtime, thus adding support for executing Reinforcement Learning algorithms with NRPCore using the Python client
+    * [Pull request #123](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/123)
+    * [Pull request #119](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/119)
+    * [Pull request #127](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/127)
+    * [Pull request #134](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/134)
+
+7. Several fixes and improvements related to Engine servers
+    * [Pull request #128](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/128)
+    * [Pull request #130](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/130)
+    * [Pull request #136](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/136)
+    * [Pull request #135](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/135)
+
+8. All example experiments are run as part of the NRPCore test suite
+    * [Pull request #124](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/124)
+
+9. Add support for declaring multiple datapacks from a single decorator in TFs
+    * [Pull request #114](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/114)
     
     

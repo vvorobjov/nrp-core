@@ -30,14 +30,14 @@
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
-#define MQTT_WELCOME "nrp/welcome"
+#define MQTT_BASE "nrp/"
 #endif /*MQTT_ON*/
 
 class DataTransferGrpcServer
     : public EngineGrpcServer
 {
     public:
-        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName, const std::string &registrationAddress);
+        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName);
         ~DataTransferGrpcServer() = default;
 
         /*!
@@ -119,11 +119,21 @@ class DataTransferGrpcServer
          */
         std::string _engineName;
 
+        /*!
+         * \brief The list of the names of the associated DataPacks
+         */
+        std::vector< std::string > _dataPacksNames;
+
 #ifdef MQTT_ON
         /*!
          * \brief MQTT client
          */
         std::shared_ptr< NRPMQTTClient > _mqttClient;
+
+        /*!
+         * \brief mpqtt topics name base
+         */
+        std::string _mqttBase;
 
 public:
         /*!

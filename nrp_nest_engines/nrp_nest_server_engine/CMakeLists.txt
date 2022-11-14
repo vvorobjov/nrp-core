@@ -32,12 +32,16 @@ set(PYTHON_MODULE_SRC_FILES
 )
 
 # List executable build files
-set(EXEC_SRC_FILES
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(EXEC_SRC_FILES
+    )
+endif()
 
 # List testing build files
-set(TEST_SRC_FILES
-)
+if(BUILD_NEST_ENGINE_SERVER)
+    set(TEST_SRC_FILES
+    )
+endif()
 
 
 ##########################################
@@ -48,13 +52,10 @@ set(TEST_SRC_FILES
 
 # General Nest Header defines
 set(NEST_CMAKE_HEADER_CONFIG_FILE "nrp_nest_server_engine/config/cmake_constants.h.in")
-set(NEST_CMAKE_INSTALL_BINDIR "${NEST_INSTALL_DIR}/${CMAKE_INSTALL_BINDIR}")
-set(NEST_CMAKE_INSTALL_PYNEST "${NEST_INSTALL_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 configure_file(${NEST_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
 # Python module dependencies
 configure_file("nrp_nest_server_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 
 ##########################################
 # NRPNestDataPackInterface
@@ -116,7 +117,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 
 ##########################################
 ## Tests
-if(ENABLE_NEST STREQUAL FULL AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+if(BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 
     # Create testing executable
     enable_testing()
@@ -172,8 +173,10 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 )
 
 # Patch nest-server to use package manager's uwsgi plugin system
-install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
-    WORKING_DIRECTORY '${NEST_CMAKE_INSTALL_BINDIR}')")
+if(BUILD_NEST_ENGINE_SERVER)
+    install(CODE "execute_process(COMMAND sed -i 's/uwsgi --module nest\.server:app/ uwsgi --plugin python --module nest.server:app/' nest-server
+        WORKING_DIRECTORY '${NEST_CMAKE_INSTALL_BINDIR}')")
+endif()
 
 # Install python module
 if(TARGET ${PYTHON_MODULE_NAME})

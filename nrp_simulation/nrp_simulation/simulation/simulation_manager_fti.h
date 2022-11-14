@@ -49,6 +49,7 @@ class FTILoopSimManager
          */
         ~FTILoopSimManager();
 
+        const std::string & getStatus() override;
 
     private:
 
@@ -57,7 +58,7 @@ class FTILoopSimManager
         bool resetCB() override;
         void stopCB() override;
         bool runUntilTimeOutCB() override;
-        bool runCB(unsigned numIterations) override;
+        bool runCB(unsigned numIterations, const nlohmann::json & json) override;
         void shutdownCB() override;
 
         /*! \brief engineLauncherManager */
@@ -79,14 +80,15 @@ class FTILoopSimManager
         /*!
          * \brief Run the Simulation Loop for one timestep
          */
-        void runSimulationOnce();
+        void runSimulationOnce(const nlohmann::json & json);
 
         /*!
          * \brief Run the Simulation Loop until condition becomes true
          * \param condition function evaluating the stop condition
+         * \param clientData Extra data coming from the NRP Client, will be passed to status function
          * \return true if condition was met, false otherwise
          */
-        bool runSimulationUntilCondition(std::function<bool ()> condition);
+        bool runSimulationUntilCondition(std::function<bool ()> condition, const nlohmann::json & clientData);
 
         /*!
          * \brief Checks whether simulation has timed out. If simTimeout <=0, always returns false

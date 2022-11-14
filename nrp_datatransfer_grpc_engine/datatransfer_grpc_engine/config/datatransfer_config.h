@@ -4,7 +4,7 @@
 struct DataTransferGrpcConfigConst
 {
     static constexpr char EngineType[] = "datatransfer_grpc_engine";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_datatransfer.json#/engine_datatransfer_base";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_datatransfer.json#/engine_datatransfer_base";
 };
 
 #endif // DATATRANSFER_CONFIG_H

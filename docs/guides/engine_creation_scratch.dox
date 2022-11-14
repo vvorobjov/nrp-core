@@ -112,7 +112,7 @@ are validated using <a href="https://json-schema.org/">JSON schemas</a>. This \r
 
 Every new engine configuration schema should be based on the provided basic configuration schema:
 
-    https://neurorobotics.net/engines/engine_base.json#/EngineBase
+    json://nrp-core/engines/engine_base.json#/EngineBase
 
 The new engine schema can be afterwards placed into a separate JSON file in <i>config_schemas/engines/</i> folder, so it can be found at run time.
 
@@ -131,7 +131,7 @@ as template argument to the base class of your new engine:
 
 \code
 class ExampleEngineClient
-        : public EngineClient<ExampleEngineClient, "https://neurorobotics.net/engines/engine_example.json#/EngineExample">
+        : public EngineClient<ExampleEngineClient, "json://nrp-core/engines/engine_example.json#/EngineExample">
 \endcode
 
 A further explanation of how schema URIs are structured can be found in the section \ref schema_reference.
@@ -192,10 +192,6 @@ These methods are used by the process launcher.
 
 - EngineClientInterface::engineProcStartParams() - should return all startup parameters of the simulation process.
 Related to \ref engine_proc_start_params "EngineProcStartParams" config parameter.
-
-- EngineClientInterface::engineProcEnvParams() - should return any extra environment variables needed to run the simulation process.
-Related to \ref engine_env_params "EngineEnvParams" config parameter.
-
 
 \subsection tutorial_engine_creation_engine_client_example Example
 

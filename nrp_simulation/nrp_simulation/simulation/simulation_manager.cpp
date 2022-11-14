@@ -23,10 +23,11 @@
 #include "nrp_simulation/simulation/simulation_manager.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
+#include "nrp_general_library/utils/time_utils.h"
 
 void SimulationManager::validateConfig(jsonSharedPtr &config)
 {
-    json_utils::validateJson(*config, "https://neurorobotics.net/simulation.json#Simulation");
+    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
 
     // Set default values
     json_utils::setDefault<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());
@@ -54,12 +55,12 @@ SimulationManager::RequestResult SimulationManager::initializeSimulation()
                           "initialized");
 }
 
-SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations)
+SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations, const nlohmann::json & clientData)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     return processRequest([&]() {
                               changeState(SimState::Running);
-                              if(!this->runCB(numIterations))
+                              if(!this->runCB(numIterations, clientData))
                                   NRPLogger::debug("Simulation has been stopped before running the specified number of iterations");
                               changeState(SimState::Stopped);
                           },
@@ -122,6 +123,7 @@ SimulationManager::RequestResult SimulationManager::processRequest(
         std::function<void ()> action, std::vector<SimState> validSourceStates,
         std::string actionMsg1, std::string actionMsg2, bool lockMutex)
 {
+    NRP_LOG_TIME_BLOCK_WITH_COMMENT("experiment_stats", actionMsg1 + " Simulation");
     NRPLogger::info(actionMsg1 + " Simulation");
     checkTransitionConstraints(std::move(validSourceStates), actionMsg2);
 

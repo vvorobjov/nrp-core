@@ -1,0 +1,16 @@
+cython
+libgsl-dev
+libltdl-dev
+libncurses-dev
+libreadline-dev
+python3-all-dev
+python3-numpy
+python3-scipy
+python3-matplotlib
+python3-nose
+python3-junitparser
+python3-mpi4py
+python3-pip
+openmpi-bin
+libopenmpi-dev
+uwsgi-plugin-python3

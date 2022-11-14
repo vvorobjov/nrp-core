@@ -48,6 +48,11 @@ class EventLoopSimManager
 
         ~EventLoopSimManager() = default;
 
+        const std::string & getStatus() override
+        {
+            return _status;
+        }
+
     private:
 
         // Callback functions for the different simulation control requests.
@@ -55,7 +60,7 @@ class EventLoopSimManager
         bool resetCB() override;
         void stopCB() override;
         bool runUntilTimeOutCB() override;
-        bool runCB(unsigned numIterations) override;
+        bool runCB(unsigned numIterations, const nlohmann::json & clientData) override;
         void shutdownCB() override;
 
         bool runUntilMilliseconds(const std::chrono::milliseconds& eTout);
@@ -69,6 +74,8 @@ class EventLoopSimManager
 
         /*! \brief Simulation loop */
         std::shared_ptr<EventLoop> _loop;
+
+        std::string _status = "";
 
         std::chrono::milliseconds _timeout;
         std::chrono::milliseconds _timestep;

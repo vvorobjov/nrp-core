@@ -22,6 +22,8 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
+#include "nrp_general_library/utils/time_utils.h"
+
 #include <iomanip>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -224,13 +226,7 @@ void NRPLogger::registerDefaultLogger()
     // Append current date and time to filename
     try
     {
-        const auto t = std::time(nullptr);
-        const auto tm = *std::localtime(&t);
-
-        std::ostringstream oss;
-        oss << std::put_time(&tm, "-%Y%m%d-%H%M%S-") << getpid() << ".log";
-
-        _baseFilename = oss.str();
+        _baseFilename = "-" + getTimestamp() +  ".log";
     }
     catch(std::exception &e)
     {

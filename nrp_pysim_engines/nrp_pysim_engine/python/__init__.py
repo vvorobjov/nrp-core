@@ -21,11 +21,12 @@
 from nrp_core.engines.python_json import EngineScript
 from .SimManager import *
 
+
 class PySimEngineScript(EngineScript):
 
     @property
     def sim_manager(self):
-        if not hasattr(self,'_sim_manager'):
+        if not hasattr(self, '_sim_manager'):
             self._sim_manager = SimulatorManager(self._config)
 
         return self._sim_manager

@@ -1,0 +1,15 @@
+{
+  "basicfork_cmd" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "BasicFork Launcher Command",
+    "description": "BasicFork Launcher configuration parameters",
+    "$id": "#BasicForkParams",
+    "properties" : {
+      "LaunchType":{
+        "type": "string",
+        "const": "BasicFork"
+      }
+    },
+    "required" : ["LaunchType"]
+  }
+}

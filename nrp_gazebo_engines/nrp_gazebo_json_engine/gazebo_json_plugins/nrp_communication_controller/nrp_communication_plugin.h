@@ -48,6 +48,16 @@ namespace gazebo
              * \brief Server URL, read from program opts
              */
             std::string _serverAddress;
+
+            /*!
+             * \brief Engine name, read from program opts
+             */
+            std::string _engineName;
+            
+            /*!
+             * \brief Registration address, read from program opts
+             */
+            std::string _registrationAddress;
     };
 
     GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)

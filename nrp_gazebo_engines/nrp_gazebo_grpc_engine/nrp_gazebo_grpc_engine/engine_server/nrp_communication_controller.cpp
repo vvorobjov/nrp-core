@@ -38,16 +38,9 @@ NRPCommunicationController &NRPCommunicationController::getInstance()
     return *(NRPCommunicationController::_instance.get());
 }
 
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL)
+NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName)
 {
-    // Remove old server, start new one with given server URL
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL));
-    return NRPCommunicationController::getInstance();
-}
-
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
-{
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, registrationURL));
+    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName));
     return NRPCommunicationController::getInstance();
 }
 
@@ -136,10 +129,6 @@ void NRPCommunicationController::shutdown(const json&)
     // Do nothing
 }
 
-NRPCommunicationController::NRPCommunicationController(const std::string &address)
-    : EngineGrpcServer(address)
-{}
-
-NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
-    : EngineGrpcServer(serverURL, engineName, registrationURL)
+NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName)
+    : EngineGrpcServer(serverURL, engineName)
 {}

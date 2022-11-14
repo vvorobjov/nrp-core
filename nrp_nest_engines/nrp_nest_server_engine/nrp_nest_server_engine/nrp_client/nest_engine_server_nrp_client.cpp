@@ -227,6 +227,10 @@ namespace
 NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
     : EngineClient(config, std::move(launcher))
 {
+    // Disable RestrictedPython
+    this->engineConfig().at("EngineEnvParams").get<std::vector<std::string>>().emplace_back("NEST_SERVER_RESTRICTION_OFF=1");
+
+    // set engine command
     int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
     if(n_mpi <= 1)
         setDefaultProperty<std::string>("EngineProcCmd", NRP_NEST_SERVER_EXECUTABLE_PATH);
@@ -235,9 +239,9 @@ NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, Pro
         setDefaultProperty<std::string>("EngineProcCmd", mpi_cmd);
     }
 
-
+    // address
     if(!this->engineConfig().contains("NestServerPort"))
-        setDefaultProperty<int>("NestServerPort", findUnboundPort(this->PortSearchStart));
+        setDefaultProperty<int>("NestServerPort", getFreePort(this->engineConfig().at("NestServerHost").get<std::string>()));
 
     RestClientSetup::ensureInstance();
 
@@ -340,40 +344,11 @@ void NestEngineServerNRPClient::shutdown()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    int n_mpi = this->engineConfig().at("MPIProcs").get<int>();
-
-    if(n_mpi <= 1) {
-        // The `nest-server start` spawns uwsgi server, which runs in a separate (from the launching shell) process.
-        // When the forked process is closed, the uwsgi remains alive.
-        // The `nest-server stop` command kills this uwgsi procees by matching it in process list.
-        // Thus, the parameters after `stop` should coincide with the uwsgi process parameters.
-        // After spawning it looks like 
-        // `uwsgi --plugin python3 --module nest.server:app --http-socket localhost:5002 --uid <username>`
-        // Where `--plugin python3` is used by default when -o parameter is used at start,
-        // but it should be passed at stop.
-        // See NRP_NEST_SERVER_EXECUTABLE_PATH script for understanding.
-
-        std::vector<std::string> stopParams;
-
-        int port = this->engineConfig().at("NestServerPort");
-        
-        stopParams.push_back("stop");
-        stopParams.push_back("-h");
-        stopParams.push_back(this->engineConfig().at("NestServerHost"));
-        stopParams.push_back("-p");
-        stopParams.push_back(std::to_string(port));
-        stopParams.push_back("-P");
-        stopParams.push_back("python3");
-
-        nlohmann::json stopConfig;
-        stopConfig["ProcCmd"] = NRP_NEST_SERVER_EXECUTABLE_PATH;
-        stopConfig["ProcEnvParams"] = this->engineProcEnvParams();
-        stopConfig["ProcStartParams"] = stopParams;
-
-        NRPLogger::debug("Using parameters for stopping nest server:\n{}", stopConfig.dump(4));
-
-        this->_process->launchProcess(stopConfig);
-    }
+    // Empty
+    // Revert https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/96 changes
+    // When nest-server is launched separately with EmptyLaunchCommand, then this "hacked" shutdown gives an error
+    // The proper shutdown of the server instances should be handled correctly by the launcher,
+    // which knows how it was started
 }
 
 const std::string & NestEngineServerNRPClient::getDataPackIdList(const std::string & datapackName) const
@@ -466,24 +441,6 @@ SimulationTime NestEngineServerNRPClient::runLoopStepCallback(SimulationTime tim
 std::string NestEngineServerNRPClient::serverAddress() const
 {
     return this->_serverAddress;
-}
-
-const std::vector<std::string> NestEngineServerNRPClient::engineProcEnvParams() const
-{
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    std::vector<std::string> envVars = this->engineConfig().at("EngineEnvParams");
-
-    // Add NRP library path
-    envVars.push_back("LD_LIBRARY_PATH=" NRP_LIB_INSTALL_DIR ":$LD_LIBRARY_PATH");
-
-    // Add NEST python packages to PYTHONPATH
-    envVars.push_back("PYTHONPATH=" NRP_PYNEST_PATH ":$PYTHONPATH");
-
-    // Disable RestrictedPython
-    envVars.push_back("NEST_SERVER_RESTRICTION_OFF=1");
-
-    return envVars;
 }
 
 const std::vector<std::string> NestEngineServerNRPClient::engineProcStartParams() const

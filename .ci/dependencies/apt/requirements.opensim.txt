@@ -1,0 +1,15 @@
+doxygen
+git
+pip
+openjdk-8-jdk
+python3-dev
+wget
+build-essential
+libtool
+autoconf
+pkg-config
+gfortran
+libopenblas-dev
+freeglut3-dev
+libxi-dev
+libxmu-dev

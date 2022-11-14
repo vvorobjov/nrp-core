@@ -28,9 +28,17 @@
       "description": "Engine Process Environment Parameters"
     },
     "EngineLaunchCommand" : {
-      "type" : "string",
-      "default": "BasicFork",
-      "description": "LaunchCommand type that will be used to launch the engine process"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Engine Launch Command",
+      "description": "LaunchCommand that will be used to launch the engine process",
+      "$id": "#EngineLaunchCommand",
+      "type":"object",
+      "oneOf":[
+        { "$ref": "json://nrp-core/launch_commands/empty_launch_cmd.json#/empty_launch_cmd" },
+        { "$ref": "json://nrp-core/launch_commands/basicfork_cmd.json#/basicfork_cmd" },
+        { "$ref": "json://nrp-core/launch_commands/docker_launcher_cmd.json#/docker_launcher_cmd" }
+      ],
+      "default":{"LaunchType":"BasicFork"}
     },
     "EngineTimestep" : {
       "type" : "number",

@@ -29,7 +29,7 @@
 struct NestConfigConst
 {
     static constexpr char EngineType[] = "nest_json";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engines_nest.json#/engine_nest_json";
+    static constexpr char EngineSchema[] = "json://nrp-core/engines/engines_nest.json#/engine_nest_json";
 
     /*!
      * \brief Python Path to Nest. Automatically generated via cmake on installation

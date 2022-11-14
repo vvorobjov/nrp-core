@@ -42,6 +42,8 @@ cxxopts::Options SimulationParams::createStartParamParser()
              cxxopts::value<SimulationParams::ParamFileLogLevelT>()->default_value("off"))
             (SimulationParams::ParamLogOutputLong.data(), SimulationParams::ParamLogOutputDesc.data(),
              cxxopts::value<SimulationParams::ParamLogOutputT>())
+            (SimulationParams::ParamLogFilenameLong.data(), SimulationParams::ParamLogFilenameDesc.data(),
+             cxxopts::value<SimulationParams::ParamFilenameT>()->default_value(".console_output.log"))
             (SimulationParams::ParamLogDirLong.data(), SimulationParams::ParamLogDirDesc.data(),
              cxxopts::value<SimulationParams::ParamLogDirT>()->default_value("logs"))
             (SimulationParams::ParamModeLong.data(), SimulationParams::ParamModeDesc.data(),

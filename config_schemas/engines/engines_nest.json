@@ -22,7 +22,7 @@
     "description": "Nest Json Engine",
     "$id": "#NestJSONEngine",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       { "$ref": "#/engine_nest_base" },
       {
         "properties": {
@@ -37,7 +37,7 @@
     "description": "Nest Server Engine",
     "$id": "#NestServerEngine",
     "allOf": [
-      { "$ref": "https://neurorobotics.net/engines/engine_base.json#EngineBase" },
+      { "$ref": "json://nrp-core/engines/engine_base.json#EngineBase" },
       { "$ref": "#/engine_nest_base" },
       {
         "properties": {
