@@ -87,6 +87,7 @@
     </spherical_coordinates>
     <model name='youbot'>
       <plugin name="link_youbot" filename="NRPGazeboGrpcLinkControllerPlugin.so" />
+      <plugin name="model_youbot" filename="NRPGazeboGrpcModelControllerPlugin.so" />
       <pose>0.106072 -0.040675 0.09 0 -0 0</pose>
       <link name='base_footprint'>
         <pose>0 0 0 0 -0 0</pose>

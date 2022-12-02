@@ -34,9 +34,20 @@ To use the Gazebo engine in an experiment, set `EngineType` to <b>"gazebo_grpc"<
 <table>
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>GazeboWorldFile<td>Path to Gazebo SDF World file<td>string<td><td>X<td>
+<tr><td>GazeboSDFModels<td>Additional models to be spawn in the Gazebo simulation. The elements of this array should be of type \ref gazebo_sdf_model_table "GazeboSDFModel", described below<td>\ref gazebo_sdf_model_table "GazeboSDFModel"<td>[]<td><td>X
 <tr><td>GazeboPlugins<td>Additional system plugins that should be loaded on startup<td>string<td>[]<td><td>X
 <tr><td>GazeboRNGSeed<td>Seed parameters passed to gzserver start command<td>integer<td>0<td><td>
 <tr><td>WorldLoadTime<td>Maximum time (in seconds) to wait for the NRPCommunicationPlugin to load the world sdf file. 0 means it will wait indefinitely<td>integer<td>20<td><td>
+</table>
+
+\anchor gazebo_sdf_model_table
+- Parameters of GazeboSDFModel:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>Name<td>Name of the model<td>string<td><td>X<td>
+<tr><td>File<td>Path to Gazebo SDF file describing the model<td>string<td><td>X<td>
+<tr><td>InitPose<td>Array of six elements describing the model initial pose as a space separated 6-tuple: x y z roll pitch yaw<td>string<td>"0 0 0 0 0 0"<td><td>
 </table>
 
 \section engine_gazebo_schema Schema

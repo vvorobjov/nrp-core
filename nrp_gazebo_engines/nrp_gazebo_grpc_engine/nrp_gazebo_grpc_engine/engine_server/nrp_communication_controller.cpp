@@ -81,8 +81,8 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
     // Allow datapacks to register
     lock.unlock();
 
-    // Wait until world plugin loads and forces a load of all other plugins
-    while(this->_stepController == nullptr ? 1 : !this->_stepController->finishWorldLoading())
+    // Wait until world plugin loads
+    while(this->_stepController == nullptr)
     {
         // Wait for 100ms before retrying
         waitTime -= 0.1;
@@ -98,6 +98,38 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
             throw std::runtime_error(errMsg);
         }
     }
+
+    // Spawn additional models
+    if(data.contains("GazeboSDFModels")) {
+        for (const auto &model: data.at("GazeboSDFModels")) {
+            // Parse pose
+            std::istringstream poseStr(model.at("InitPose").get<std::string>());
+            std::vector<std::string> poseArgs(std::istream_iterator<std::string>{poseStr},
+                                             std::istream_iterator<std::string>());
+            if(poseArgs.size() != 6)
+                throw NRPException::logCreate("Error while parsing SDF model" + model.at("Name").get<std::string>()
+                        + ". Pose array must contain 6 elements, contains " + std::to_string(poseArgs.size()));
+
+            // Parse args
+            std::vector<std::string> args = {"gz", "model", "--spawn-file=" + model.at("File").get<std::string>(),
+                                             "--model-name=" + model.at("Name").get<std::string>(), "-x", poseArgs[0],
+                                             "-y", poseArgs[1], "-z", poseArgs[2], "-R", poseArgs[3], "-P", poseArgs[4],
+                                             "-Y", poseArgs[5]};
+
+            std::string argsStr;
+            for (auto& a : args)
+                argsStr += a + " ";
+
+            // Exec cmd
+            NRPLogger::info("Spawning model \"" + model.at("Name").get<std::string>() + "\" with command: " + argsStr);
+            auto status = system(argsStr.c_str());
+            if(!WIFEXITED(status) || WEXITSTATUS(status) != EXIT_SUCCESS)
+                throw NRPException::logCreate("Spawning model \"" + model.at("Name").get<std::string>() + "\" failed");
+        }
+    }
+
+    // Forces plugins to load
+    this->_stepController->finishWorldLoading();
 
     lock.lock();
 }

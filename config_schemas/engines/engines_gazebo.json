@@ -1,4 +1,26 @@
-{"engine_gazebo_base" : {
+{ "gazebo_sdf_model" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Gazebo SDF Model",
+    "description": "Additional gazebo models to be spawn in a gazebo simulation",
+    "$id": "#GazeboSDFModel",
+    "properties" : {
+      "Name": {
+        "type": "string",
+        "description": "Name of the model"
+      },
+      "File": {
+        "type": "string",
+        "description": "Path to Gazebo SDF file describing the model"
+      },
+      "InitPose": {
+        "type": "string",
+        "description": "Array of six elements describing the model initial pose as a space separated 6-tuple: x y z roll pitch yaw.",
+        "default": "0 0 0 0 0 0"
+      }
+    },
+    "required": ["Name", "File"]
+  },
+  "engine_gazebo_base" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Gazebo Base",
     "description": "Gazebo Base Engine configuration schema. Configuration for all gazebo engine implementations inherit from this one",
@@ -7,6 +29,11 @@
       "GazeboWorldFile": {
         "type": "string",
         "description": "Path to Gazebo SDF World file"
+      },
+      "GazeboSDFModels": {
+        "type": "array",
+        "items": {"$ref": "#/gazebo_sdf_model"},
+        "description": "Additional models to be spawn in the Gazebo simulation"
       },
       "GazeboPlugins": {
         "type": "array",

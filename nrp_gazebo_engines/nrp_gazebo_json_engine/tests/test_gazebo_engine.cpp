@@ -50,8 +50,8 @@ TEST(TestGazeboJSONEngine, Start)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_ANY_THROW(engine->initialize());
+    sleep(1);
 }
 
 TEST(TestGazeboJSONEngine, WorldPlugin)
@@ -69,8 +69,9 @@ TEST(TestGazeboJSONEngine, WorldPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
+
     ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
     ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
     ASSERT_NO_THROW(engine->reset());
@@ -93,8 +94,8 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // The data is updated asynchronously, on every new frame. It may happen that on first
     // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
@@ -105,7 +106,7 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("nrp_camera::camera", engine->engineName(), JsonDataPack::getType())});
+        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), JsonDataPack::getType())});
         ASSERT_EQ(datapacks->size(), 1);
     }
     while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
@@ -128,6 +129,7 @@ TEST(TestGazeboJSONEngine, JointPlugin)
     config["EngineName"] = "engine";
     config["EngineType"] = "gazebo_json";
     config["GazeboWorldFile"] = TEST_JOINT_PLUGIN_FILE;
+    config["GazeboSDFModels"] = {{{"Name", "youbot"}, {"File", TEST_YOUBOT_FILE}, {"InitPose", "0 0 1 0 0 0"}}};
     config["GazeboRNGSeed"] = 12345;
     std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
     config["EngineEnvParams"] = env_params;
@@ -138,8 +140,8 @@ TEST(TestGazeboJSONEngine, JointPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // Test datapack data getting
     auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
@@ -173,11 +175,11 @@ TEST(TestGazeboJSONEngine, LinkPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("link_youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
+    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
     ASSERT_EQ(datapacks.size(), 1);
 
     const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());

@@ -95,15 +95,13 @@ class NRPCommunicationController
         };
 
         /*!
-         * \brief Create datapack name from the given plugin and sensor/joint/link
-         * \tparam T Plugin Type
-         * \param plugin Controller Plugin
+         * \brief Create datapack name from the given model and sensor/joint/link
+         * \param modelName Name of the parent model of the controlled object
          * \param objectName Name of the controlled object (sensor, joint, link, ...)
          * \return Returns datapack name
          */
-        template<class T>
-        static std::string createDataPackName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
-        {   return plugin.GetHandle() + "::" + objectName;  }
+        static std::string createDataPackName(const std::string &modelName, const std::string &objectName)
+        {   return modelName + "::" + objectName;  }
 
     private:
 

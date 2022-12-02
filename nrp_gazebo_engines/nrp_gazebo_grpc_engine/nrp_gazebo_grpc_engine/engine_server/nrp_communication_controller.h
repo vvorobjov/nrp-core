@@ -37,7 +37,7 @@
 #include <memory>
 
 /*!
- * \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
+ * \brief Manages communication with the NRP. Uses a GRPC server to send/receive data
  */
 class NRPCommunicationController
         : public EngineGrpcServer
@@ -99,14 +99,12 @@ class NRPCommunicationController
 
         /*!
          * \brief Create datapack name from the given plugin and sensor/joint/link
-         * \tparam T Plugin Type
-         * \param plugin Controller Plugin
+         * \param modelName Name of the parent model of the controlled object
          * \param objectName Name of the controlled object (sensor, joint, link, ...)
          * \return Returns datapack name
          */
-        template<class T>
-        static std::string createDataPackName(const gazebo::PluginT<T> &plugin, const std::string &objectName)
-        {   return plugin.GetHandle() + "::" + objectName;  }
+        static std::string createDataPackName(const std::string &modelName, const std::string &objectName)
+        {   return modelName + "::" + objectName;  }
 
     private:
 

@@ -23,12 +23,12 @@ def transceiver_function(left_voltage_msg, right_voltage_msg):
     right_voltage = right_voltage_msg["voltages"][0]["voltage"]
 
     forward_vel = 20.0 * min(left_voltage, right_voltage)
-    rot_vel = 70.0 * (right_voltage - left_voltage)
+    rot_vel = 100.0 * (right_voltage - left_voltage)
 
-    back_left_j.data.velocity = (forward_vel - rot_vel) * 10
-    back_right_j.data.velocity = (forward_vel + rot_vel) * 10
-    front_left_j.data.velocity = (forward_vel - rot_vel) * 10
-    front_right_j.data.velocity = (forward_vel + rot_vel) * 10
+    back_left_j.data.velocity = (forward_vel - rot_vel * 0.275) * 7
+    back_right_j.data.velocity = (forward_vel + rot_vel * 0.275) * 7
+    front_left_j.data.velocity = (forward_vel - rot_vel * 0.275) * 7
+    front_right_j.data.velocity = (forward_vel + rot_vel * 0.275) * 7
 
     # print("------------------")
     # print(f"Left voltage:  {left_voltage}")

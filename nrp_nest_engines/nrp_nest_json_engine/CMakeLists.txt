@@ -202,6 +202,8 @@ if(TARGET ${PYTHON_MODULE_NAME})
 
     install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_nest_json_engine/python/numpy_json_serializer.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_nest_json_engine/python/brain_devices.py"
+            DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 endif()
 
 # Install executable files

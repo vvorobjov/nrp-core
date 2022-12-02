@@ -6,7 +6,7 @@ import time
 import cv2
 
 
-@EngineDataPack(keyword='camera', id=DataPackIdentifier('husky_camera::camera', 'gazebo'))
+@EngineDataPack(keyword='camera', id=DataPackIdentifier('husky::eye_vision_camera::camera', 'gazebo'))
 @PreprocessingFunction("gazebo")
 def detect_red(camera):
     """
