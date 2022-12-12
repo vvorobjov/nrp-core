@@ -84,7 +84,7 @@ void StreamDataPackController::initFileLogger()
 {
     std::string filename = this->_baseDir + "/" + _datapackName + "-" + std::to_string(this->_rstCnt) + ".data";
     _fileLogger = spdlog::rotating_logger_mt(_datapackName, filename, NRP_MAX_LOG_FILE_SIZE, NRP_MAX_LOG_FILE_N);
-    _fileLogger->set_pattern("%T.%e,%v");
+    _fileLogger->set_pattern("%v");
     _fileLogger->flush_on(spdlog::level::info);
     NRPLogger::debug("DataPack {} is streaming into the file {}", this->_datapackName, filename);
 }
@@ -177,30 +177,32 @@ void StreamDataPackController::streamToFile(const google::protobuf::Message &dat
     else
         data_str = (this->*fmtCallback)(data);
 
-    _fileLogger->info(
-        "{},{}",
-        fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime),
-        data_str
-    );
+    _fileLogger->info(data_str);
 }
 
 std::string StreamDataPackController::fmtMessage(const google::protobuf::Message &data){
 
     std::stringstream m_data;
 
+    if(!this->_initialized)
+        m_data << "sim_time" << ",";
+    else
+        m_data << fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime) << ",";
+
     auto n = data.GetDescriptor()->field_count();
     for(int i = 0; i < n; ++i)
         if(!this->_initialized)
-            m_data << data.GetDescriptor()->field(i)->name() << " ";
+            m_data << data.GetDescriptor()->field(i)->name() << ",";
         else
-            m_data << proto_field_ops::GetScalarFieldAsString(data, data.GetDescriptor()->field(i)) << " ";
+            m_data << proto_field_ops::GetScalarFieldAsString(data, data.GetDescriptor()->field(i)) << ",";
 
-    return m_data.str();
+    return m_data.str().substr(0, m_data.str().size()-1);
 }
 
 std::string StreamDataPackController::fmtString(const google::protobuf::Message &data){
     const auto& dump = dynamic_cast<const Dump::String &>(data);
-    return  dump.string_stream();
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+            + "," + dump.string_stream();
 }
 
 std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &data){
@@ -224,7 +226,9 @@ std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &
             }
         }
     }
-    return msg;
+
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+            + "," + msg;
 }
 
 std::string StreamDataPackController::fmtDummy(const google::protobuf::Message &data){
