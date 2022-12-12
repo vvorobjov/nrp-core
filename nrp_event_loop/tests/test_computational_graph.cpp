@@ -82,6 +82,13 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH)
     ASSERT_TRUE(TestNode::compOrder.at(4) == "4" || TestNode::compOrder.at(4) == "5");
     ASSERT_EQ(TestNode::compOrder.at(5),"6");
 
+    // Cycle Start event callback (only called for output nodes)
+    ASSERT_TRUE(nodes.at(0)->cycle_calls.size() == 1 && nodes.at(0)->cycle_calls[0] == "compute");
+    ASSERT_TRUE(nodes.at(1)->cycle_calls.size() == 1 && nodes.at(1)->cycle_calls[0] == "compute");
+    ASSERT_TRUE(nodes.at(5)->cycle_calls.size() == 2 &&
+                        nodes.at(5)->cycle_calls[0] == "graphCycleStartCB" &&
+                        nodes.at(5)->cycle_calls[1] == "compute");
+
     // Loop detection
     cg.clear();
     cg.insert_edge(nodes.at(1).get(), nodes.at(2).get());
@@ -125,6 +132,58 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH)
     ASSERT_EQ(cg.getState(),ComputationalGraph::READY);
 
     cg.clear();
+
+    // Execution modes
+    nodes.push_back(std::make_shared<TestNode>("7", ComputationalNode::Output));
+
+    ASSERT_EQ(cg.getExecMode(), ComputationalGraph::ALL_NODES);
+    cg.setExecMode(ComputationalGraph::OUTPUT_DRIVEN);
+    ASSERT_EQ(cg.getExecMode(), ComputationalGraph::OUTPUT_DRIVEN);
+
+    cg.insert_edge(nodes.at(0).get(), nodes.at(2).get());
+    cg.insert_edge(nodes.at(1).get(), nodes.at(3).get());
+    cg.insert_edge(nodes.at(1).get(), nodes.at(4).get());
+    cg.insert_edge(nodes.at(2).get(), nodes.at(4).get());
+    cg.insert_edge(nodes.at(3).get(), nodes.at(5).get());
+    cg.insert_edge(nodes.at(4).get(), nodes.at(6).get());
+
+    cg.configure();
+
+    nodes.at(5).get()->setDoCompute(false);
+    nodes.at(6).get()->setDoCompute(false);
+
+    TestNode::compOrder.clear();
+    cg.compute();
+
+    ASSERT_TRUE(TestNode::compOrder.size() == 1 && TestNode::compOrder.at(0) == "1");
+
+    nodes.at(5).get()->setDoCompute(true);
+
+    TestNode::compOrder.clear();
+    cg.compute();
+
+    ASSERT_TRUE(TestNode::compOrder.size() == 4);
+    ASSERT_EQ(TestNode::compOrder.at(1), "2");
+    ASSERT_EQ(TestNode::compOrder.at(2), "4");
+    ASSERT_EQ(TestNode::compOrder.at(3), "6");
+
+    nodes.at(5).get()->setDoCompute(false);
+    nodes.at(6).get()->setDoCompute(true);
+
+    TestNode::compOrder.clear();
+    cg.compute();
+
+    ASSERT_TRUE(TestNode::compOrder.size() == 5);
+    ASSERT_TRUE(TestNode::compOrder.at(1) == "2" || TestNode::compOrder.at(1) == "3");
+    ASSERT_EQ(TestNode::compOrder.at(3), "5");
+    ASSERT_EQ(TestNode::compOrder.at(4), "7");
+
+    for(auto& node : nodes)
+        if(node->type() != ComputationalNode::Input) {
+            ASSERT_FALSE(node->doCompute());
+        }
+
+    cg.clear();
 }
 
 TEST(ComputationalGraph, COMPUTATIONAL_GRAPH_MANAGER)
@@ -165,7 +224,8 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH_MANAGER)
     // normal case
     std::shared_ptr<ComputationalNode> n10(new TestInputNode("input_2", InputNodePolicies::MsgPublishPolicy::LAST,
                                                              InputNodePolicies::MsgCachePolicy::KEEP_CACHE, 1));
-    std::shared_ptr<ComputationalNode> n11(new TestOutputNode("output_2", OutputNodePolicies::MsgPublishPolicy::SERIES, 1));
+    std::shared_ptr<ComputationalNode> n11(new TestOutputNode("output_2", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                                                              false, 1, 1));
 
     cgm.registerNode(n10);
     cgm.registerNode(n11);

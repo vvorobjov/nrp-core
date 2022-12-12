@@ -49,6 +49,9 @@ public:
             _address(address)
     {}
 
+
+protected:
+
     void configure() override
     {
         // Set msg conversion function
@@ -91,9 +94,6 @@ public:
         _msgTemp.reserve(InputNode<MSG_TYPE>::_queueSize);
         _msgStore.reserve(InputNode<MSG_TYPE>::_queueSize);
     }
-
-
-protected:
 
     /*!
      * \brief callback function used in the MQTT subscriber

@@ -38,8 +38,10 @@ public:
     /*!
      * \brief Constructor
      */
-    OutputSpinnakerNode(const std::string &id, const std::string &label) :
-            OutputNode(id),
+    OutputSpinnakerNode(const std::string &id, const std::string &label,
+                        bool publishFromCache = false,
+                        unsigned int computePeriod = 1) :
+            OutputNode(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod),
             _label(label)
     { }
 
@@ -89,15 +91,18 @@ class OutputSpinnakerEdge : public SimpleOutputEdge<nlohmann::json, OutputSpinna
 
 public:
 
-    OutputSpinnakerEdge(const std::string &keyword, const std::string &label) :
-            SimpleOutputEdge<nlohmann::json, OutputSpinnakerNode>(keyword, label+"_output", label),
+    OutputSpinnakerEdge(const std::string &keyword, const std::string &label,
+                        bool publishFromCache = false,
+                        unsigned int computePeriod = 1) :
+            SimpleOutputEdge<nlohmann::json, OutputSpinnakerNode>(keyword, label+"_output", label,
+                                                                  publishFromCache, computePeriod),
             _label(label)
     {}
 
 protected:
 
     OutputSpinnakerNode* makeNewNode() override
-    { return new OutputSpinnakerNode(this->_id, _label); }
+    { return new OutputSpinnakerNode(this->_id, _label, this->_publishFromCache, this->_computePeriod); }
 
 private:
 

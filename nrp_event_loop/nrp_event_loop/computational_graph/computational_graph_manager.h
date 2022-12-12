@@ -139,6 +139,12 @@ public:
         _nodes.clear();
     }
 
+    void setExecMode(ComputationalGraph::ExecMode mode)
+    { _graph.setExecMode(mode); }
+
+    ComputationalGraph::ExecMode getExecMode()
+    { return _graph.getExecMode(); }
+
 private:
 
     ComputationalGraphManager() = default;

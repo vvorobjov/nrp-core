@@ -43,8 +43,10 @@ public:
     /*!
      * \brief Constructor
      */
-    OutputROSNode(const std::string &id) :
-            OutputNode<MSG_TYPE>(id)
+    OutputROSNode(const std::string &id,
+                  bool publishFromCache = false,
+                  unsigned int computePeriod = 1) :
+            OutputNode<MSG_TYPE>(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod)
     { }
 
 protected:
@@ -76,14 +78,17 @@ class OutputROSEdge : public SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>
 
 public:
 
-    OutputROSEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>(keyword, address, address)
+    OutputROSEdge(const std::string &keyword, const std::string &address,
+                  bool publishFromCache = false,
+                  unsigned int computePeriod = 1) :
+            SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>(keyword, address, address,
+                    publishFromCache, computePeriod)
     {}
 
 protected:
 
     OutputROSNode<MSG_TYPE>* makeNewNode() override
-    { return new OutputROSNode<MSG_TYPE>(this->_id); }
+    { return new OutputROSNode<MSG_TYPE>(this->_id, this->_publishFromCache, this->_computePeriod); }
 };
 
 

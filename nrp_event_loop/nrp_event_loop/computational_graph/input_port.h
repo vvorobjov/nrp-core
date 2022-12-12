@@ -75,6 +75,12 @@ public:
     size_t subscriptionsSize() override
     { return _nSubs; }
 
+    /*!
+     * \brief Return the number ports this port is subscribed to
+     */
+    size_t subscriptionsMax()
+    { return _maxSubs == 0 ? SIZE_MAX : _maxSubs; }
+
 private:
 
     /*!

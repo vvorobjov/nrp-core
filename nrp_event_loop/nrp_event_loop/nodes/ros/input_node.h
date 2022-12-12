@@ -48,6 +48,9 @@ public:
             InputNode<MSG_TYPE>(id)
     {}
 
+
+protected:
+
     void configure() override
     {
         // creates ROS subscriber
@@ -58,15 +61,12 @@ public:
             rosProxy->subscribe(this->id(), callback);
         else
             NRPLogger::warn("From InputROSNode \"" + this->id() +
-            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Check your experiment configuration");
+                            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Check your experiment configuration");
 
         // reserves memory space for storing incoming msgs
         _msgTemp.reserve(InputNode<MSG_TYPE>::_queueSize);
         _msgStore.reserve(InputNode<MSG_TYPE>::_queueSize);
     }
-
-
-protected:
 
     /*!
      * \brief callback function used in the ROS subscriber

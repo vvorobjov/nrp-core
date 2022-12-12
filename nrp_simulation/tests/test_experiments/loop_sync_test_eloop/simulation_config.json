@@ -1,0 +1,11 @@
+{
+	"SimulationName": "cg_test",
+	"SimulationDescription": "test for the execution behavior of a cg in output driven mode with output nodes executing at different freqs, i.e. with different execution periods",
+	"SimulationTimeout": 1,
+	"SimulationLoop": "EventLoop",
+	"EventLoop": {
+		"ExecutionMode": "OutputDriven"
+	},
+	"ComputationalGraph":
+	["cg.py"]
+}

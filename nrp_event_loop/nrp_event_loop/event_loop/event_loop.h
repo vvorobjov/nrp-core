@@ -48,7 +48,9 @@ class EventLoop
         /*!
          * \brief Constructor
          */
-        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, bool ownGIL = true, bool spinROS = false);
+        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep,
+                  ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
+                  bool ownGIL = true, bool spinROS = false);
 
         /*!
          * \brief Run a single loop
@@ -98,6 +100,8 @@ class EventLoop
         nlohmann::json _graph_config;
         /*! \brief timestep of the event loop  */
         std::chrono::milliseconds _timestep;
+        /*! \brief Execution mode the event loop will use */
+        ComputationalGraph::ExecMode _execMode;
         /*! \brief boolean variable used to step the event loop from parent thread */
         std::atomic<bool> _doRun;
         /*! \brief true if the EventLoop is assumed to always owns the GIL, false if it is shared with other threads  */

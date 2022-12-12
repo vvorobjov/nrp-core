@@ -46,7 +46,7 @@ TEST(EventLoop, EVENT_LOOP) {
     std::stringstream py_file;
     py_file << TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH << "/test_decorators.py";
     graph_config.push_back(py_file.str());
-    EventLoop e_l(graph_config, timestep, true, false);
+    EventLoop e_l(graph_config, timestep, ComputationalGraph::ALL_NODES, true, false);
 
     // run loop once
     auto now = std::chrono::steady_clock::now();

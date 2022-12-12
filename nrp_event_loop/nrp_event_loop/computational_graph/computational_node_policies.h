@@ -45,8 +45,9 @@ namespace FunctionalNodePolicies {
 }
 
 namespace OutputNodePolicies {
+
     /*! \brief Defines how output nodes send stored msgs */
-    enum MsgPublishPolicy {
+    enum PublishFormatPolicy {
         SERIES, /*!< sends received msgs one by one */
         BATCH /*!< sends all msgs received in a single batch  */
     };

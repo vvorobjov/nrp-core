@@ -29,9 +29,11 @@
 
 #include "nrp_event_loop/utils/graph_utils.h"
 
-EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, bool ownGIL, bool spinROS) :
+EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep,
+                     ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
     _graph_config(graph_config),
     _timestep(timestep),
+    _execMode(execMode),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
 {
@@ -95,7 +97,7 @@ void EventLoop::initialize()
         _pyGILState = PyGILState_Ensure();
 
     boost::python::dict globalDict;
-    createPythonGraphFromConfig(_graph_config, globalDict);
+    createPythonGraphFromConfig(_graph_config, _execMode, globalDict);
 
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);

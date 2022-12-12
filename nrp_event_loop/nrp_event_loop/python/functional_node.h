@@ -75,45 +75,6 @@ public:
     }
 
     /*!
-     * \brief Configure this node
-     */
-    void configure() override
-    {
-        // Create edges to other functional nodes
-        for (auto& [port_id, address]: _f2fEdges) {
-            std::string name, property;
-            std::tie(name, property) = extractNodePortFromAddress(address);
-
-            // Get ports
-            PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
-            if(!node)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                "'. A Functional node with name '" + name + "' could not be found in the computational graph. Be sure that the edge"
-                                                            " address is correctly formatted and the connected node exists.");
-
-            OutputPort<bpy::object>* o_port = node->getOutput(property);
-            if(!o_port)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                                              "'. Functional node '" + name + "' doesn't have a declared output '"+ property +"'. Be sure that the edge"
-                                                                                          " address is correctly formatted and the specified output exists.");
-
-            InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
-
-            // Register edge
-            ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
-        }
-
-        // check unbound inputs and print warning
-        for(size_t i=0; i < _iPortIds.size(); ++i)
-            if(!getInputByIndex(i)) {
-                std::stringstream s;
-                s << "In python functional node \"" << this->id() << "\". Input argument \"" << _iPortIds[i] <<
-                  "\" is not connected" << std::endl;
-                NRPLogger::info(s.str());
-            }
-    }
-
-    /*!
      * \brief Setup this node with a python callable object and registers it to ComputationalGraphManager
      *
      * After calling this function the object is moved into a shared pointer which is returned by the function.
@@ -216,6 +177,49 @@ public:
      */
     void registerF2FEdge(const std::string& i_port, const std::string& address)
     { _f2fEdges[i_port] = address; }
+
+protected:
+
+    /*!
+     * \brief Configure this node
+     */
+    void configure() override
+    {
+        // Create edges to other functional nodes
+        for (auto& [port_id, address]: _f2fEdges) {
+            std::string name, property;
+            std::tie(name, property) = extractNodePortFromAddress(address);
+
+            // Get ports
+            PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
+            if(!node)
+                throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                              "'. A Functional node with name '" + name + "' could not be found in the computational graph. Be sure that the edge"
+                                                                                          " address is correctly formatted and the connected node exists.");
+
+            OutputPort<bpy::object>* o_port = node->getOutput(property);
+            if(!o_port)
+                throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                              "'. Functional node '" + name + "' doesn't have a declared output '"+ property +"'. Be sure that the edge"
+                                                                                                                              " address is correctly formatted and the specified output exists.");
+
+            InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
+
+            // Register edge
+            ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
+        }
+
+        // check unbound inputs and print warning
+        for(size_t i=0; i < _iPortIds.size(); ++i)
+            if(!getInputByIndex(i)) {
+                std::stringstream s;
+                s << "In python functional node \"" << this->id() << "\". Input argument \"" << _iPortIds[i] <<
+                  "\" is not connected" << std::endl;
+                NRPLogger::info(s.str());
+            }
+    }
+
+    friend class ComputationalGraphPythonNodes_PYTHON_FUNCTIONAL_NODE_Test;
 
 private:
 

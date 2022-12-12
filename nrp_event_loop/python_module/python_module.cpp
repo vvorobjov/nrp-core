@@ -65,9 +65,9 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
         {
             bpy::scope output_policies_scope =  bpy::class_<node_policies_ns::output_node_ns>("output_node");
 
-            bpy::enum_<OutputNodePolicies::MsgPublishPolicy>("msg_publish")
-                    .value("series", OutputNodePolicies::MsgPublishPolicy::SERIES)
-                    .value("batch", OutputNodePolicies::MsgPublishPolicy::BATCH)
+            bpy::enum_<OutputNodePolicies::PublishFormatPolicy>("publish_format")
+                    .value("series", OutputNodePolicies::PublishFormatPolicy::SERIES)
+                    .value("batch", OutputNodePolicies::PublishFormatPolicy::BATCH)
                     .export_values();
         }
     }
@@ -86,7 +86,11 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
     bpy::class_< InputDummyEdge >("InputDummy", bpy::init<const std::string &, const std::string &, boost::python::object>((bpy::arg("keyword"), bpy::arg("address"), bpy::arg("value")) ))
             .def("__call__", &InputDummyEdge::pySetup);
 
-    bpy::class_< OutputDummyEdge >("OutputDummy", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
+    bpy::class_< OutputDummyEdge >("OutputDummy", bpy::init<const std::string &, const std::string &,
+                                   bool, unsigned int>(
+                                           (bpy::arg("keyword"), bpy::arg("address"),
+                                                   bpy::arg("publish_from_cache") = false,
+                                                   bpy::arg("compute_period") = 1) ))
             .def("__call__", &OutputDummyEdge::pySetup);
 
     bpy::register_ptr_to_python<std::shared_ptr<PythonFunctionalNode> >();
@@ -108,7 +112,12 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
                                                   bpy::arg("cache_policy") =  InputNodePolicies::KEEP_CACHE) ))
             .def("__call__", &RosEdgeFactory::pySetupSelector);
 
-    bpy::class_< RosEdgeFactoryOutput >("RosPublisher", bpy::init<const std::string &, const std::string &, const bpy::object &>((bpy::arg("keyword"), bpy::arg("address"), bpy::arg("type")) ))
+    bpy::class_< RosEdgeFactoryOutput >("RosPublisher", bpy::init<const std::string &, const std::string &,
+                                        const bpy::object &, bool, unsigned int>(
+                                                (bpy::arg("keyword"), bpy::arg("address"),
+                                                        bpy::arg("type"),
+                                                        bpy::arg("publish_from_cache") = false,
+                                                        bpy::arg("compute_period") = 1) ))
             .def("__call__", &RosEdgeFactoryOutput::pySetupSelector);
 #endif
 
@@ -120,7 +129,12 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
                     bpy::arg("cache_policy") =  InputNodePolicies::KEEP_CACHE) ))
             .def("__call__", &MqttEdgeFactory::pySetupSelector);
 
-    bpy::class_< MqttEdgeFactoryOutput >("MQTTPublisher", bpy::init<const std::string &, const std::string &, const bpy::object &>((bpy::arg("keyword"), bpy::arg("address"), bpy::arg("type")) ))
+    bpy::class_< MqttEdgeFactoryOutput >("MQTTPublisher", bpy::init<const std::string &, const std::string &,
+                                         const bpy::object &, bool, unsigned int>(
+                                                 (bpy::arg("keyword"), bpy::arg("address"),
+                                                         bpy::arg("type"),
+                                                         bpy::arg("publish_from_cache") = false,
+                                                         bpy::arg("compute_period") = 1) ))
             .def("__call__", &MqttEdgeFactoryOutput::pySetupSelector);
 #endif
 
@@ -132,7 +146,11 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
                             bpy::arg("cache_policy") =  InputNodePolicies::KEEP_CACHE) ))
             .def("__call__", &InputSpinnakerEdge::pySetup);
 
-    bpy::class_< OutputSpinnakerEdge >("ToSpinnaker", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
+    bpy::class_< OutputSpinnakerEdge >("ToSpinnaker", bpy::init<const std::string &, const std::string &,
+                                       bool, unsigned int>(
+                                               (bpy::arg("keyword"), bpy::arg("address"),
+                                                       bpy::arg("publish_from_cache") = false,
+                                                       bpy::arg("compute_period") = 1) ))
             .def("__call__", &OutputSpinnakerEdge::pySetup);
 #endif
 }

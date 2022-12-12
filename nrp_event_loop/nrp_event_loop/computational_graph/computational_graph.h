@@ -59,6 +59,8 @@ public:
 
     enum GraphState {EMPTY, CONFIGURING, READY, COMPUTING};
 
+    enum ExecMode {ALL_NODES, OUTPUT_DRIVEN};
+
     /*!
      * \brief Insert edge
      */
@@ -147,24 +149,38 @@ public:
      */
     void compute()
     {
-        if(this->_state < GraphState::READY)
+        if (this->_state < GraphState::READY)
             throw NRPException::logCreate("Graph is not configured. Please (re-)build the graph by calling 'configure()'");
-        else if(this->_state == GraphState::COMPUTING)
+        else if (this->_state == GraphState::COMPUTING)
             throw NRPException::logCreate("'compute' can't be called while graph is already computing");
 
         this->_state = GraphState::COMPUTING;
 
+        // Inform OutputNodes that it is a new execution cycle, currently they are the only type of nodes using this
+        // information
+        sendCycleStartEvent();
+        
         try {
             // TODO: each of these loops could be possibly parallelized
+
+            // Input nodes are always executed, regardless of the execution mode
             for (auto &node: _inputLayer)
                 node->compute();
 
+            // Functional nodes and output nodes are executed if they have been marked for execution or the CG is
+            // being run in input controlled execution mode
             for (auto &layer: _compLayers)
                 for (auto &node: layer)
-                    node->compute();
+                    if (this->_execMode == ExecMode::ALL_NODES || node->doCompute()) {
+                        node->compute();
+                        node->setDoCompute(false);
+                    }
 
             for (auto &node: _outputLayer)
-                node->compute();
+                if (this->_execMode == ExecMode::ALL_NODES || node->doCompute()) {
+                    node->compute();
+                    node->setDoCompute(false);
+                }
 
             this->_state = GraphState::READY;
         }
@@ -180,7 +196,41 @@ public:
     GraphState getState() const
     { return this->_state; }
 
+    void setExecMode(ExecMode mode)
+    {
+        if( this->_state == GraphState::COMPUTING)
+            throw NRPException::logCreate("Graph execution mode can't be changed while computing");
+
+        _execMode = mode;
+    }
+
+    ExecMode getExecMode()
+    { return _execMode; }
+
 private:
+
+    void sendCycleStartEvent()
+    {
+        // Inform OutputNodes that it is a new execution cycle, currently they are the only type of nodes using this
+        // information
+        for (auto &node: _outputLayer) {
+            node->graphCycleStartCB();
+            // In OUTPUT_DRIVEN mode, Output nodes that will execute this cycle propagates the "execution signal" back 
+            // in the graph
+            if(this->_execMode == ExecMode::OUTPUT_DRIVEN && node->doCompute())
+                propagateExecSignalBack(node);
+        }
+    }
+
+    void propagateExecSignalBack(const ComputationalGraph::vertex& v)
+    {
+        for(auto &node : this->in_neighbors(v))
+            // If the node is already marked for execution it means it has already been processed
+            if(!node->doCompute()) {
+                node->setDoCompute(true);
+                propagateExecSignalBack(node);
+            }
+    }
 
     /*!
      * \brief Clear graph structures
@@ -281,6 +331,10 @@ private:
     std::vector<comp_layer> _compLayers;
 
     GraphState _state = GraphState::EMPTY;
+
+    ExecMode _execMode = ExecMode::ALL_NODES;
+
+
 };
 
 

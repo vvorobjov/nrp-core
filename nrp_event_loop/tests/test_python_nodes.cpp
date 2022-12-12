@@ -253,14 +253,36 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     // F2F Edge
     ComputationalGraphManager::getInstance().getNode("function3")->compute();
     auto odummy_p2 = dynamic_cast<OutputDummy*>(ComputationalGraphManager::getInstance().getNode("odummy2"));
+    odummy_p2->graphCycleStartCB();
     odummy_p2->compute();
     ASSERT_EQ(bpy::extract<int>(*(odummy_p2->lastData)), 10);
 
+    // execution period
+    ASSERT_EQ(odummy_p->getComputePeriod(), 1);
+    ASSERT_EQ(odummy_p2->getComputePeriod(), 2);
+    odummy_p2->call_count = 0;
+    int n = 0;
+    while(n++ < 4)
+        ComputationalGraphManager::getInstance().compute();
+    ASSERT_EQ(odummy_p2->call_count, 2); // Called 2 times
+
+    // 'publish from cache' policy
+    ASSERT_EQ(odummy_p->publishFromCache(), true);
+    ASSERT_EQ(odummy_p2->publishFromCache(), false);
+
     //// Failing cases
+    ComputationalGraphManager::getInstance().clear();
     ASSERT_THROW(bpy::import("wrong_i_port"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
     ASSERT_THROW(bpy::import("wrong_o_port"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
     ASSERT_THROW(bpy::import("input_no_node"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
     ASSERT_THROW(bpy::import("output_no_node"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_period_connections"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_from_cache_connections"), boost::python::error_already_set);
 }
 
 TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
@@ -323,6 +345,9 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     ASSERT_EQ(output_p_clear->getDataPacks().size(),1);
     ComputationalGraphManager::getInstance().compute();
     ASSERT_EQ(output_p_clear->getDataPacks().size(),0);
+
+    // check that execution period was set correctly, always 1 for output Engine nodes
+    ASSERT_EQ(output_p->getComputePeriod(), 1);
 }
 
 // EOF

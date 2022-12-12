@@ -42,8 +42,12 @@ public:
     /*!
      * \brief Constructor
      */
-    SimpleOutputEdge(std::string keyword, std::string id, std::string port) :
-            _keyword(std::move(keyword)), _id(std::move(id)), _port(std::move(port))
+    SimpleOutputEdge(std::string keyword, std::string id, std::string port,
+                     bool publishFromCache,
+                     unsigned int computePeriod) :
+            _keyword(std::move(keyword)), _id(std::move(id)), _port(std::move(port)),
+            _publishFromCache(publishFromCache),
+            _computePeriod(computePeriod)
     {}
 
     /*!
@@ -59,7 +63,8 @@ public:
         ComputationalGraphManager::getInstance().registerNode(node);
         OUTPUT_CLASS* o_node = dynamic_cast<OUTPUT_CLASS*>(node.get());
         if(!o_node)
-            throw NRPException::logCreate("When creating OutputEdge: node with the same name ("+node->id()+") already registered with a different type");
+            throw NRPException::logCreate("When creating output node "+node->id()+": a node with the same name "
+                                                                                         "was already registered with a different type");
 
         // Register edge
         try {
@@ -67,11 +72,26 @@ public:
                     obj);
             InputPort<boost::python::object, T_OUT> *i_port = o_node->template getOrRegisterInput<boost::python::object>(
                     _port);
+
+            // Check that the edge can be created before trying
+            if(i_port && i_port->subscriptionsSize() == i_port->subscriptionsMax()) {
+                std::string error_info = "the maximum limit of connections for this port has been reached";
+                if(o_node->getComputePeriod() != 1)
+                    error_info= "the node has been configured with a compute period different than one and can only have one connection per port";
+                else if(o_node->publishFromCache())
+                    error_info = "the node has been configured to publish from cache and can only have one connection per port";
+
+                std::string msg = "When creating graph edge to output node " + o_node->id()
+                        + ": " + error_info + ". Check your graph definition.";
+
+                throw NRPException::logCreate(msg);
+            }
+
             ComputationalGraphManager::getInstance().registerEdge<boost::python::object, T_OUT>(
                     f->getOutput(_keyword), i_port);
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating OutputEdge. Check that Functional Node definition is correct");
+            NRPLogger::error("An error occurred while creating graph edge to output node " + o_node->id() + ". Check that Functional Node definition is correct");
             PyErr_Print();
             boost::python::throw_error_already_set();
         }
@@ -92,6 +112,8 @@ protected:
     std::string _keyword;
     std::string _id;
     std::string _port;
+    bool _publishFromCache;
+    unsigned int _computePeriod;
 };
 
 

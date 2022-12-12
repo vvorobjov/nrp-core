@@ -74,19 +74,20 @@ public:
         }
     }
 
+protected:
+
     void configure() override
     {
         for(auto& [id, port] : _portMap)
             _dataIds.insert(DataPackIdentifier(id, _engineName, ""));
     }
 
-protected:
-
     bool updatePortData(const std::string& id) override
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
-        // move temp datapack to store without copying shared pointer and update pointer
+        // move temp datapack to store without copying shared pointer and update pointer,
+        // only if there is no dapatapack 'id' stored already or the new one is not empty
         auto d = _dataTemp.find(id);
         if(d != _dataTemp.end() && (!_dataStore.count(id) || !_dataTemp.at(id)->isEmpty())) {
             _portMap.at(id).clear();

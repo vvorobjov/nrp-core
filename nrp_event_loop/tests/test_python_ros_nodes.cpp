@@ -35,6 +35,8 @@
 
 #include "nrp_event_loop/computational_graph/input_port.h"
 
+#include "nrp_event_loop/nodes/ros/output_node.h"
+
 #include "nrp_event_loop/config/cmake_constants.h"
 
 #include "nrp_general_library/utils/utils.h"
@@ -70,6 +72,11 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         boost::function<void (const boost::shared_ptr<nrp_ros_msgs::Test const>&)> callback =
                 [&](const boost::shared_ptr<nrp_ros_msgs::Test const>& a) { msg_got = std::move(a); };
         NRPROSProxy::getInstance().subscribe("/test_pub/test", callback);
+
+        boost::shared_ptr<nrp_ros_msgs::Test const> msg_got_2;
+        boost::function<void (const boost::shared_ptr<nrp_ros_msgs::Test const>&)> callback_2 =
+                [&](const boost::shared_ptr<nrp_ros_msgs::Test const>& a) { msg_got_2 = std::move(a); };
+        NRPROSProxy::getInstance().subscribe("/test_pub/test_2", callback);
 
         nrp_ros_msgs::Test msg_sent;
         msg_sent.string_msg = "first";
@@ -109,6 +116,14 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         kill(pid,SIGTERM);
         int status;
         waitpid(pid, &status, 0);
+
+        // check compute period and publish from cache
+        auto output_p = dynamic_cast<OutputROSNode<nrp_ros_msgs::Test>*>(ComputationalGraphManager::getInstance().getNode("/test_pub/test"));
+        ASSERT_EQ(output_p->getComputePeriod(), 1);
+        ASSERT_EQ(output_p->publishFromCache(), true);
+        auto output_p2 = dynamic_cast<OutputROSNode<nrp_ros_msgs::Test>*>(ComputationalGraphManager::getInstance().getNode("/test_pub/test_2"));
+        ASSERT_EQ(output_p2->getComputePeriod(), 2);
+        ASSERT_EQ(output_p2->publishFromCache(), false);
     }
 
     // ROS decorator with an incorrect msg type

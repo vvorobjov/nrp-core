@@ -19,13 +19,13 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef COMPUTATION_NODE_H
-#define COMPUTATION_NODE_H
+#ifndef COMPUTATIONAL_NODE_H
+#define COMPUTATIONAL_NODE_H
 
 #include <string>
 
 /*!
- * \brief Base class implementing a node in the computation graph
+ * \brief Base class implementing a node in the computational graph
  */
 class ComputationalNode {
 public:
@@ -49,18 +49,6 @@ public:
     { }
 
     /*!
-     * \brief Returns true if the node has been marked as visited, false otherwise
-     */
-    bool isVisited() const
-    { return this->_visited; }
-
-    /*!
-     * \brief Sets a value for the node 'visited' property
-     */
-    void setVisited(bool visited)
-    { this->_visited = visited; }
-
-    /*!
      * \brief Returns the node 'id'
      */
     const std::string& id() const
@@ -73,6 +61,35 @@ public:
     { return this->_type; }
 
     /*!
+     * \brief Sets a value for the node 'visited' property, used for graph traversing
+     */
+    void setVisited(bool visited)
+    { this->_visited = visited; }
+
+    /*!
+     * \brief Returns true if the node has been marked as visited, false otherwise
+     */
+    bool isVisited() const
+    { return this->_visited; }
+
+    /*!
+     * \brief Sets a value for the node 'doCompute' property, used in some graph execution modes
+     */
+    void setDoCompute(bool doCompute)
+    { _doCompute = doCompute; }
+
+    /*!
+     * \brief Tells if this node should be executed in this graph execution cycle, used in some graph execution modes
+     *
+     * ComputationalNode returns the value of its 'doCompute' property. Subclasses of ComputationalNode can
+     * implement further logic that can override this value
+     */
+    virtual bool doCompute() const
+    { return _doCompute; }
+
+protected:
+
+    /*!
      * \brief Configures the node making it ready to execute 'compute'
      */
     virtual void configure() = 0;
@@ -82,6 +99,15 @@ public:
      */
     virtual void compute() = 0;
 
+    /*!
+     * \brief Function called by the Computational Graph at the beginning of a new execution cycle
+     */
+    virtual void graphCycleStartCB()
+    { }
+
+    friend class ComputationalGraph;
+    friend class ComputationalGraphPythonNodes_PYTHON_DECORATORS_BASIC_Test;
+
 private:
 
     /*! \brief Node unique identifier */
@@ -90,6 +116,8 @@ private:
     NodeType _type;
     /*! \brief Visited */
     bool _visited = false;
+    /*! \brief Flag storing whether this node should be executed this cycle */
+    bool _doCompute = false;
 };
 
-#endif //COMPUTATION_NODE_H
+#endif //COMPUTATIONAL_NODE_H

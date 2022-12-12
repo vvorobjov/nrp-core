@@ -38,10 +38,10 @@ public:
             _value(std::move(value))
     {}
 
+protected:
+
     void configure() override
     {}
-
-protected:
 
     bool updatePortData(const std::string& id) override
     {

@@ -65,7 +65,9 @@ struct ComputationalGraphHandle : public DataPackProcessor {
         // Load Computation Graph
         if(!_slaveMode) {
             boost::python::dict globalDict;
-            createPythonGraphFromConfig(simConfig->at("ComputationalGraph"), globalDict);
+            // When controlling the graph set output driven mode to optimize on graph node execution
+            createPythonGraphFromConfig(simConfig->at("ComputationalGraph"),
+                                        ComputationalGraph::ExecMode::OUTPUT_DRIVEN, globalDict);
         }
 
         ComputationalGraphManager& gm = ComputationalGraphManager::getInstance();
@@ -78,8 +80,13 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             if(gm.getNode(input_id) && dynamic_cast<InputEngineNode *>(gm.getNode(input_id)))
                 _inputs[engine->engineName()] = dynamic_cast<InputEngineNode *>(gm.getNode(input_id));
 
-            if(gm.getNode(output_id) && dynamic_cast<OutputEngineNode *>(gm.getNode(output_id)))
-                _outputs[engine->engineName()] = dynamic_cast<OutputEngineNode *>(gm.getNode(output_id));
+            if(gm.getNode(output_id) && dynamic_cast<OutputEngineNode *>(gm.getNode(output_id))) {
+                auto o_node = dynamic_cast<OutputEngineNode *>(gm.getNode(output_id));
+                // setting computePeriod to 0 so node is only executed when linked Engine is synced
+                if(!_slaveMode)
+                    o_node->setComputePeriod(0);
+                _outputs[engine->engineName()] = o_node;
+            }
         }
     }
 
@@ -106,13 +113,17 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             PyGILState_Release(_pyGILState);
     }
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/, const nlohmann::json & /*json*/) override
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> & engines, const nlohmann::json & /*json*/) override
     {
         if(!_slaveMode) {
 #ifdef ROS_ON
             if(_spinROS)
                 ros::spinOnce();
 #endif
+            for(auto &engine : engines)
+                if(_outputs.count(engine->engineName()))
+                    _outputs[engine->engineName()]->setDoCompute(true);
+
             ComputationalGraphManager::getInstance().compute();
         }
     }

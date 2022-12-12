@@ -26,11 +26,13 @@
 
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 
-inline void createPythonGraphFromConfig(const nlohmann::json &config, const boost::python::dict &globalDict)
+inline void createPythonGraphFromConfig(const nlohmann::json &config, const ComputationalGraph::ExecMode& execMode,
+                                        const boost::python::dict &globalDict)
 {
     // Load Computation Graph
     ComputationalGraphManager::resetInstance();
     ComputationalGraphManager& gm = ComputationalGraphManager::getInstance();
+    gm.setExecMode(execMode);
 
     for(const auto &fn : config) {
         auto fileName = fn.get<std::string>();
@@ -39,7 +41,7 @@ inline void createPythonGraphFromConfig(const nlohmann::json &config, const boos
             boost::python::exec_file(fileName.c_str(), globalDict, globalDict);
         }
         catch(boost::python::error_already_set &) {
-            const auto err = NRPException::logCreate(
+            throw NRPException::logCreate(
                     "Loading of computation graph file \"" + fileName + "\" failed: " + handle_pyerror());
         }
 

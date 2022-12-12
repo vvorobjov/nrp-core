@@ -24,7 +24,7 @@
       "type" : "string",
       "enum" :  ["tf", "cg"],
       "default": "tf",
-      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg)"
+      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computational Graph (cg)"
     },
     "ProcessLauncherType" : {
       "type" : "string",
@@ -52,17 +52,30 @@
       "description": "Status Function that will be used in the experiment"
     },
     "ComputationalGraph" : {
-      "type" : "array",
+      "type": "array",
       "items": "string",
-      "description": "List of filenames defining the ComputationalGraph that will be used in the experiment"
+      "description": "List of filenames defining the CG nodes and connections"
     },
-    "EventLoopTimeout" : {
-      "type" : "number",
-      "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
-    },
-    "EventLoopTimestep" : {
-      "type" : "number",
-      "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
+    "EventLoop" : {
+      "type": "object",
+      "description": "Event Loop configuration parameters",
+      "default": {"ExecutionMode": "InputDriven"},
+      "properties" : {
+        "ExecutionMode": {
+          "type": "string",
+          "enum": ["InputDriven", "OutputDriven"],
+          "description": "Execution Mode that will be used when running the Event Loop"
+        },
+        "Timeout" : {
+          "type" : "number",
+          "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
+        },
+        "Timestep" : {
+          "type" : "number",
+          "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
+        }
+      },
+      "required": ["ExecutionMode"]
     },
     "ConnectROS" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/ROSNode",

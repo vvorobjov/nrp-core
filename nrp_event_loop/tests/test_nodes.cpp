@@ -42,11 +42,21 @@
 
 TEST(ComputationalNodes, COMPUTATIONAL_NODE) {
     TestNode n1("node", ComputationalNode::Functional);
-    n1.setVisited(true);
 
     ASSERT_EQ(n1.id(), "node");
-    ASSERT_EQ(n1.isVisited(), true);
     ASSERT_EQ(n1.type(), ComputationalNode::Functional);
+
+    ASSERT_EQ(n1.isVisited(), false);
+    n1.setVisited(true);
+    ASSERT_EQ(n1.isVisited(), true);
+    n1.setVisited(false);
+    ASSERT_EQ(n1.isVisited(), false);
+
+    ASSERT_EQ(n1.doCompute(), false);
+    n1.setDoCompute(true);
+    ASSERT_EQ(n1.doCompute(), true);
+    n1.setDoCompute(false);
+    ASSERT_EQ(n1.doCompute(), false);
 }
 
 //// INPUT NODE
@@ -235,7 +245,8 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     TestMsg msg_send;
 
     //// getOrRegisterInput
-    TestOutputNode n_o("output", OutputNodePolicies::MsgPublishPolicy::SERIES, 1);
+    TestOutputNode n_o("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                       false, 1, 1);
     auto i_p1 = n_o.getOrRegisterInput<TestMsg>("input");
     auto i_p2 = n_o.getOrRegisterInput<TestMsg>("input");
 
@@ -267,7 +278,8 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     ASSERT_EQ(n_o.sent_msgs.at(0), &msg_send);
 
     //// compute, BATCH
-    TestOutputNode n_o2("output", OutputNodePolicies::MsgPublishPolicy::BATCH, 1);
+    TestOutputNode n_o2("output", OutputNodePolicies::PublishFormatPolicy::BATCH,
+                        false, 1, 1);
     n_o2.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
     n_o2.configure();
 
@@ -283,6 +295,85 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     ASSERT_EQ(n_o2.sendBatchMsgCalled, true);
     ASSERT_EQ(n_o2.sent_msgs.size(), 1);
     ASSERT_EQ(n_o2.sent_msgs.at(0), &msg_send);
+
+    //// compute period
+    ASSERT_EQ(n_o.getComputePeriod(), 1);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), true);
+    n_o.setComputePeriod(2);
+    ASSERT_EQ(n_o.getComputePeriod(), 2);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), true);
+    n_o.setComputePeriod(0);
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.setDoCompute(true);
+    ASSERT_EQ(n_o.doCompute(), true);
+
+    //// compute period and publish from cache constraints
+    TestOutputNode n_o3("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        true, 2, 1);
+
+    ASSERT_EQ(n_o3._maxPortConnections, 1);
+
+    TestOutputNode n_o4("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        false, 2, 2);
+
+    ASSERT_EQ(n_o4._maxPortConnections, 1);
+
+    TestOutputNode n_o5("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        false, 2, 1);
+    n_o5.setComputePeriod(2);
+
+    ASSERT_EQ(n_o5._maxPortConnections, 2);
+    ASSERT_EQ(n_o5.getComputePeriod(), 1);
+
+    //// compute "publish from cache"
+    n_o.resetCalls();
+    n_o3.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
+    n_o3.configure();
+
+    o_p.publish(&msg_send);
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 1);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 1);
+
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 1);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 2);
+
+    o_p.publish(&msg_send);
+    o_p.publish(&msg_send);
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 2);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 3);
+
+    //// compute period
+    n_o4.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
+    n_o4.configure();
+
+    o_p.publish(&msg_send);
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 0);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 1);
+    o_p.publish(&msg_send);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 1);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 2);
 }
 
 //// FUNCTIONAL NODE

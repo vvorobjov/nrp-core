@@ -44,8 +44,10 @@ public:
     /*!
      * Constructor
      */
-    OutputEngineNode(const std::string &id, const std::string &engineName) :
-            OutputNode(id, OutputNodePolicies::SERIES, 1),
+    OutputEngineNode(const std::string &id, const std::string &engineName,
+                     bool publishFromCache = false,
+                     unsigned int computePeriod = 1) :
+            OutputNode(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 1, computePeriod),
             _engineName(engineName)
     { }
 
@@ -106,7 +108,8 @@ class OutputEngineEdge : public SimpleOutputEdge<DataPackInterface*, OutputEngin
 public:
 
     OutputEngineEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge(keyword, extractNodePortFromAddress(address).first+"_output", extractNodePortFromAddress(address).second),
+            SimpleOutputEdge(keyword, extractNodePortFromAddress(address).first+"_output",
+                             extractNodePortFromAddress(address).second, false, 1),
             _engineName(extractNodePortFromAddress(address).first)
     {}
 

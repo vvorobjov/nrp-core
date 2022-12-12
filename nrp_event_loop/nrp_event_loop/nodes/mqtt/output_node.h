@@ -44,8 +44,10 @@ public:
     /*!
      * \brief Constructor
      */
-    OutputMQTTNode(const std::string &id, const std::string &address) :
-            OutputNode<MSG_TYPE>(id),
+    OutputMQTTNode(const std::string &id, const std::string &address,
+                   bool publishFromCache = false,
+                   unsigned int computePeriod = 1) :
+            OutputNode<MSG_TYPE>(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod),
             _address(address)
     { }
 
@@ -94,15 +96,18 @@ class OutputMQTTEdge : public SimpleOutputEdge<MSG_TYPE, OutputMQTTNode<MSG_TYPE
 
 public:
 
-    OutputMQTTEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge<MSG_TYPE, OutputMQTTNode<MSG_TYPE>>(keyword, address+"_output", address),
+    OutputMQTTEdge(const std::string &keyword, const std::string &address,
+                   bool publishFromCache = false,
+                   unsigned int computePeriod = 1) :
+            SimpleOutputEdge<MSG_TYPE, OutputMQTTNode<MSG_TYPE>>(keyword, address+"_output", address,
+                    publishFromCache, computePeriod),
             _address(address)
     {}
 
 protected:
 
     OutputMQTTNode<MSG_TYPE>* makeNewNode() override
-    { return new OutputMQTTNode<MSG_TYPE>(this->_id, _address); }
+    { return new OutputMQTTNode<MSG_TYPE>(this->_id, _address, this->_publishFromCache, this->_computePeriod); }
 
     std::string _address;
 };

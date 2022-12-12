@@ -54,6 +54,9 @@ public:
         }
     }
 
+
+protected:
+
     void configure() override
     {
         NRPSpinnakerProxy* spProxy = &(NRPSpinnakerProxy::getInstance());
@@ -69,9 +72,6 @@ public:
 //        _msgTemp.reserve(InputNode::_queueSize);
 //        _msgStore.reserve(InputNode::_queueSize);
     }
-
-
-protected:
 
     /*!
      * \brief Called when raw UDP data is received

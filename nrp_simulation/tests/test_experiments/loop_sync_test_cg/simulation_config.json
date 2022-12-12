@@ -1,0 +1,35 @@
+{
+	"SimulationName": "tf_exchange",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 1,
+	"DataPackProcessor": "cg",
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_1",
+			"EngineTimestep": 0.01,
+			"PythonFileName": "engine_1.py"
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_2",
+			"EngineTimestep": 0.02,
+			"PythonFileName": "engine_2.py"
+		},
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"EngineTimestep": 0.04,
+			"NestInitFileName": "nest_empty_brain.py"
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_3",
+			"EngineTimestep": 0.08,
+			"PythonFileName": "engine_3.py"
+		}
+	],
+	"ComputationalGraph":
+	["tf_1.py","tf_2.py", "tf_3.py", "tf_4.py", "tf_join.py"]
+}

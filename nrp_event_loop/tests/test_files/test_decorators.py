@@ -18,14 +18,14 @@ def f_node(input1):
 
 
 @InputDummy('input1', 'idummy1', 10)
-@OutputDummy('output1', 'odummy1')
+@OutputDummy('output1', 'odummy1', publish_from_cache=True)
 @FunctionalNode(name='function2', outputs=["output1"])
 def f_node_connected(input1):
     return [input1]
     
 
 @FromFunctionalNode('input1', '/function2/output1')
-@OutputDummy('output1', 'odummy2')
+@OutputDummy('output1', 'odummy2', compute_period=2)
 @FunctionalNode(name='function3', outputs=["output1"])
 def f_node_f2f(input1):
     return [input1]

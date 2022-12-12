@@ -5,7 +5,8 @@ from nrp_core.data.nrp_ros.nrp_ros_msgs import Test
 @RosSubscriber(keyword="input1", address="/test_sub/test", type=Test,
                publish_policy=node_policies.input_node.msg_publish.last,
                cache_policy=node_policies.input_node.msg_cache.keep)
-@RosPublisher(keyword="output1", address="/test_pub/test", type=Test)
+@RosPublisher(keyword="output1", address="/test_pub/test", type=Test, publish_from_cache=True)
+@RosPublisher(keyword="output1", address="/test_pub/test_2", type=Test, compute_period=2)
 @FunctionalNode(name='function_last', outputs=["output1"], exec_policy=node_policies.functional_node.exec_policy.always)
 def f_node(input1):
     return [input1]

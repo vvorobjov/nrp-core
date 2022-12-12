@@ -44,24 +44,30 @@ EventLoopSimManager::EventLoopSimManager(const jsonSharedPtr &simulationConfig, 
 void EventLoopSimManager::initializeCB()
 {
     if(this->_loop == nullptr) {
+        auto ELoopConf = (*(this->_simConfig))["EventLoop"].get<nlohmann::json>();
         // Compute time step and timeout
         int eTstep;
-        if(this->_simConfig->contains("EventLoopTimestep"))
-            eTstep = 1000 * this->_simConfig->at("EventLoopTimestep").get<float>();
+        if(ELoopConf.contains("Timestep"))
+            eTstep = 1000 * ELoopConf.at("Timestep").get<float>();
         else
             eTstep = 1000 * this->_simConfig->at("SimulationTimestep").get<float>();
 
         int eTout;
-        if(this->_simConfig->contains("EventLoopTimeout"))
-            eTout = 1000 * this->_simConfig->at("EventLoopTimeout").get<float>();
+        if(ELoopConf.contains("Timeout"))
+            eTout = 1000 * ELoopConf.at("Timeout").get<float>();
         else
             eTout = 1000 * this->_simConfig->at("SimulationTimeout").get<float>();
 
         _timestep = std::chrono::milliseconds(eTstep);
         _timeout = std::chrono::milliseconds(eTout);
 
+        // Execution Mode
+        auto execMode = ComputationalGraph::ExecMode::ALL_NODES;
+        if(ELoopConf.contains("ExecutionMode") && ELoopConf.at("ExecutionMode") == "OutputDriven")
+            execMode = ComputationalGraph::ExecMode::OUTPUT_DRIVEN;
+
         // Create and initialize EventLoop
-        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep,
+        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, execMode,
                                         false, this->_simConfig->contains("ConnectROS")));
 
         // If there are engines in the configuration, an FTILoop has to be run as well

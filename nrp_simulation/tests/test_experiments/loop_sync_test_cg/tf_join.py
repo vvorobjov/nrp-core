@@ -1,5 +1,6 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
+from nrp_core.event_loop import *
 
 # Engine time from the last transceiver function call
 engine_times = [0, 0, 0, 0]
@@ -14,12 +15,16 @@ with open('expected_results.txt', 'r') as fd:
     expected_results = fd.readlines()
 
 
-@EngineDataPack(keyword='datapack_python1', id=DataPackIdentifier('datapack1', 'python_1'))
-@EngineDataPack(keyword='datapack_python2', id=DataPackIdentifier('datapack2', 'python_2'))
-@EngineDataPack(keyword='datapack_python3', id=DataPackIdentifier('datapack3', 'python_3'))
-@EngineDataPack(keyword='nest_kernel', id=DataPackIdentifier('kernel', 'nest'))
-@TransceiverFunction("python_1")
-def transceiver_function(datapack_python1, datapack_python2, datapack_python3, nest_kernel):
+@FromEngine(keyword='datapack_python1', address='/python_1/datapack1')
+@FromEngine(keyword='datapack_python2', address='/python_2/datapack2')
+@FromEngine(keyword='datapack_python3', address='/python_3/datapack3')
+@FromEngine(keyword='nest_kernel', address='/nest/kernel')
+# Only to make this node to be executed when python_1 is synced
+@ToEngine(keyword="dummy", address="/python_1/dummy")
+# Only to ensure that this FN is executed after all the rest at every cycle
+@FromFunctionalNode(keyword='dummy2', address='/tf_1/dummy')
+@FunctionalNode(name="tf_join", outputs=["dummy"])
+def transceiver_function(datapack_python1, datapack_python2, datapack_python3, nest_kernel, dummy2):
     """The main transceiver function of the test, performs the actual testing
 
     There are 4 engines in the test. Every engine is running with a timestep
@@ -28,17 +33,12 @@ def transceiver_function(datapack_python1, datapack_python2, datapack_python3, n
     Moreover, every engine has a transceiver function associated with it.
     The test will check if the transceiver functions are called at the same frequency
     as the engines they are bound to.
-
-    NOTE: the value of 'num_iterations' when it is read by this function to compose 'tested_values' will depend on the
-    order in which tfs are executed within a loop step. Therefore, 'expected_values' assume a concrete order. If the
-    order of execution change, which will not affect the synchronization behavior, the test will fail.
     """
     global num_iterations
     global engine_times
 
-    # Get the expected values for this iteration before num_iterations is incremented
-
-    expected_values = expected_results[num_iterations[0]].split()
+    # Get the expected values for this iteration
+    expected_values = expected_results[num_iterations[0]-1].split()
 
     # Update engine times for all engines
     # This must be done in the fastest-running transceiver function in order to check
@@ -62,11 +62,8 @@ def transceiver_function(datapack_python1, datapack_python2, datapack_python3, n
     for i, exp_value in enumerate(expected_values):
         if int(exp_value) != tested_values[i]:
             raise ValueError(
-                f"Tested value {tested_values[i]} doesn't match the expected value {int(exp_value)}, at line {num_iterations[0]}")
+                f"Tested value {tested_values[i]} doesn't match the expected value {int(exp_value)}, at line {num_iterations[0]} column {i}")
 
-    # Update iteration counter for this transceiver function
-    num_iterations[0] += 1
-
-    return []
+    return [JsonDataPack("dummy", "python_1")]
 
 # EOF

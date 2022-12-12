@@ -7,8 +7,10 @@ The sections below explain how to configure an NRP-core experiment to use the Ev
 
 Below are commented the relevant configuration parameters in the experiment configuration file (see \ref simulation_configuration "here" for more details on configuring experiments in NRP-core):
 - SimulationLoop: this parameter can be set to two values: "FTILoop", "EventLoop". By default "FTILoop" is used. If set to "EventLoop", at startup time, an EventLoop is created and run at a fixed frequency.
-- EventLoopTimestep: this parameter sets the frequency at which the Event Loop is run. By default is set to 10 ms.
-- EventLoopTimeout: time in seconds the Event Loop will run before shutting down automatically. If set to 0 no timeout is used.
+- EventLoop: Event Loop configuration parameters, only used if "EventLoop" is set for the "SimulationLoop" parameter described above. It is a json object with the next parameters:
+    - ExecutionMode: \ref graph_exec_modes "Execution Mode" that will be used when running the Event Loop.
+    - Timestep: this parameter sets the frequency at which the Event Loop is run.
+    - Timeout: time in seconds the Event Loop will run before shutting down automatically. If set to 0 no timeout is used.
 - ComputationalGraph: this is an array of strings containing the filenames of the Python scripts defining the Computational Graph that will be loaded and executed by the EventLoop.
 - ConnectROS: if this parameter is present in the configuration, a ROS node will be started along with the experiment. This is needed when using \ref ros_nodes in the Computational Graph.
 - ConnectMQTT: if this parameter is present, an MQTT client will be instantiated an connected to an MQTT broker. This is needed when using \ref mqtt_nodes in the Computational Graph.
@@ -30,6 +32,12 @@ Referring to the FTILoop simulation loop steps as described in this \ref simulat
 There is also the possibility of running a Computational Graph synchronously in an FTILoop replacing Transceiver Functions.
 In this case, no EventLoop is instantiated and the Computational Graph is executed directly from the FTILoop.
 The FTILoop runs with the same behavior described in the section above, but in every simulation loop, instead of steps (4) and (5), the Computational Graph is executed.
+
+When running a Computational Graph from an FTILoop it is always executed in 'OUTPUT_DRIVEN' \ref graph_exec_modes "execution mode".
+Then, at run time, in each simulation loop step only those \ref engine_nodes "OutputEngineNodes" linked to engines which are being synchronized in that step are executed.
+This described behavior, given the functioning of the 'OUTPUT_DRIVEN' mode, is analogous to the \ref transceiver_function_synchronization "synchronization behavior of TFs", which are executed only when their linked Engine is being synchronized.
+In the case of the Computational Graph, only those functional nodes connected, directly or indirectly, with output engine nodes which are being executed in a simulation loop are in turn executed.
+
 
 To use a Computational Graph instead of Transceiver Functions in the FTILoop set parameter `SimulationLoop` to "FTILoop" and `DataPackProcessor` to "cg" in the experiment configuration file.
 

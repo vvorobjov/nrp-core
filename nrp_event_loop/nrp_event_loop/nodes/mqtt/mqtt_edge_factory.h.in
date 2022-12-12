@@ -28,12 +28,16 @@ public:
     MqttEdgeFactory(const std::string& keyword, const std::string& address, const bpy::object& msgType,
                    InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
                    InputNodePolicies::MsgCachePolicy msgCachePolicy,
-                   bool isInput = true) :
+                   bool isInput = true,
+                   bool publishFromCache = false,
+                   unsigned int computePeriod = 1) :
         _keyword(keyword),
         _address(address),
         _msgPublishPolicy(msgPublishPolicy),
         _msgCachePolicy(msgCachePolicy),
-        _isInput(isInput)
+        _isInput(isInput),
+        _publishFromCache(publishFromCache),
+        _computePeriod(computePeriod)
     {
         _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
         _moduleName = boost::python::extract<std::string>(msgType.attr("__module__"))();
@@ -55,7 +59,7 @@ public:
     template<class MSG_TYPE>
     boost::python::object pySetupOutput(const boost::python::object& obj)
     {
-        auto mqttEdge = OutputMQTTEdge<MSG_TYPE>(_keyword, _address);
+        auto mqttEdge = OutputMQTTEdge<MSG_TYPE>(_keyword, _address, _publishFromCache, _computePeriod);
         return mqttEdge.pySetup(obj);
     }
 
@@ -109,6 +113,8 @@ private:
     InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     InputNodePolicies::MsgCachePolicy _msgCachePolicy;
     bool _isInput;
+    bool _publishFromCache;
+    unsigned int _computePeriod;
 };
 
 class MqttEdgeFactoryOutput
@@ -116,7 +122,10 @@ class MqttEdgeFactoryOutput
 {
 public:
 
-    MqttEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType) :
-            MqttEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false)
+    MqttEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType,
+                          bool publishFromCache = false,
+                          unsigned int computePeriod = 1) :
+            MqttEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false,
+                            publishFromCache, computePeriod)
     {}
 };
