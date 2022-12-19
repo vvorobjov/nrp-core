@@ -48,7 +48,7 @@
             "enum": ["py_sim"]
           },
           "Simulator": {
-            "enum": ["Opensim","OpenAI","Mujoco"],
+            "enum": ["Opensim","OpenAI","Mujoco","Bullet"],
             "description": "The simulators that are supported"
           },
           "WorldFileName": {

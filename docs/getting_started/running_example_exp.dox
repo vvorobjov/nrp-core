@@ -96,6 +96,16 @@ Here is a short description of all files that are located in the example directo
 - from_gym.py - transceiver function which converts feedback observation data from OpenAI
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
 
+\subsection pysim_bullet Example for Bullet simulation
+
+This experiment implements a dummy python controller for a model of a car in Bullet.
+
+Here is a short description of all files that are located in the example directory "bullet_control":
+- bullet_simulator.py - contains the setup of the Bullet simulation, including initialize, runLoop, reset, and shutdown
+- controller.py - transceiver function which receives car position and feedbacks response action
+- simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
+
+
 \subsection pysim_mujoco Example for Mujoco simulation
 
 This experiment implements a dummy python controller for an easy Mujoco model of a swing pole.

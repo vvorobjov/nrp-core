@@ -7,8 +7,7 @@
 
 from mujoco_py import load_model_from_path, MjSim, MjViewer
 import glfw
-import math
-import sys
+
 
 class MujocoInterface(object):
 	def __init__(self, model_name, start_visualizer, time_step):
@@ -21,9 +20,7 @@ class MujocoInterface(object):
 		self.basic_timestep = self.model.opt.timestep
 		self.step_size = int(time_step/self.basic_timestep)
 		if self.step_size == 0:
-			print("\033[1;31m [ERROR]\033[0m",end=" ")
-			print("The minimal timestep of mujoco is {0}".format(basic_timestep))
-			sys.exit()
+			raise ValueError(f"The minimal timestep of Mujoco is {self.basic_timestep}")
 
 		self.start_visualizer = start_visualizer
 		self.viewer = None
@@ -41,6 +38,7 @@ class MujocoInterface(object):
 
 	def reset(self):
 		self.sim.reset()
+		return 0
 
 	def shutdown(self):
 		glfw.destroy_window(self.viewer.window)
@@ -49,29 +47,23 @@ class MujocoInterface(object):
 		try:
 			return getattr(self.sim.model, f'{p_type}_names')
 		except AttributeError as e:
-			print("\033[1;31m [ERROR]\033[0m",end=" ")
-			print(f'Property type {p_type} is not supported with error {str(e)}.')
 			glfw.destroy_window(self.viewer.window)
-			sys.exit()
+			raise ValueError(f'Property type {p_type} is not supported with error {str(e)}.')
 
 	def get_model_property(self, p_name, p_type):
 		try:
 			p_func = getattr(self.sim.data, f'get_{p_type}')
 			return p_func(p_name)
 		except AttributeError as e:
-			print("\033[1;31m [ERROR]\033[0m",end=" ")
-			print(f"Fail on data.{p_type}({p_name}) with error {str(e)}.")
 			glfw.destroy_window(self.viewer.window)
-			sys.exit()
+			raise ValueError(f'Fail on data. {p_type} is not supported with error {str(e)}.')
 
 	def get_model_all_properties(self, p_type):
 		try:
 			return getattr(self.sim.data, p_type)
 		except AttributeError as e:
-			print("\033[1;31m [ERROR]\033[0m",end=" ")
-			print(f'Property type {p_type} is not supported with error {str(e)}.')
 			glfw.destroy_window(self.viewer.window)
-			sys.exit()
+			raise ValueError(f'Property type {p_type} is not supported with error {str(e)}.')
 
 	def get_sim_time(self):
-		return sim.data.time
+		return self.sim.data.time

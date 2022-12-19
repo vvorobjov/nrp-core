@@ -25,6 +25,7 @@ class OpensimInterface(object):
 
         self.model.addController(self.brain)
         self.state = self.model.initSystem()
+        self.manager = None
         self.reset()
 
         self.joint_set = self.model.getJointSet()
@@ -47,8 +48,14 @@ class OpensimInterface(object):
         self.state.setTime(0)
         self.n_step = 0
 
-        self.reset_manager()
+        self._reset_manager()
         self.model.realizeDynamics(self.state)
+        return 0
+
+    def _reset_manager(self):
+        self.manager = osim.Manager(self.model)
+        self.manager.setIntegratorAccuracy(self.integrator_accuracy)
+        self.manager.initialize(self.state)
 
     def shutdown(self):
         pass
@@ -72,8 +79,7 @@ class OpensimInterface(object):
         elif p_type == "Force":
             return [force.getName() for force in self.force_set]
         else:
-            print(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
-            return []
+            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
 
     # Obtain the value of one datapack by the datapack name
     def get_model_property(self, p_name, p_type):
@@ -86,8 +92,7 @@ class OpensimInterface(object):
                 return []
             return [force.getRecordValues(self.state).getAsVec3()[i] for i in range(3)]  # SimTK::Vec3 doesn't support slicing
         else:
-            print(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
-            return []
+            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
 
     def get_model_all_properties(self, p_type):
         if p_type == "Joint":
@@ -98,13 +103,8 @@ class OpensimInterface(object):
             return {applied_force.getName():[applied_force.getRecordValues(self.state).getAsVec3()[i] for i in range(3)]
                     for applied_force in [force for force in self.force_set if force.get_appliesForce()]}
         else:
-            print(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
-            return {}
-
+            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
+    
     def get_sim_time(self):
         return self.state.getTime()
 
-    def reset_manager(self):
-        self.manager = osim.Manager(self.model)
-        self.manager.setIntegratorAccuracy(self.integrator_accuracy)
-        self.manager.initialize(self.state)

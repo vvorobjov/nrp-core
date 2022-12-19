@@ -1,0 +1,23 @@
+{
+	"SimulationName": "test_bullet",
+	"SimulationDescription": "Launch a py_sim engine to run Bullet simulation and a python engine to control the simulation",
+	"SimulationTimeout": 30,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "py_sim",
+			"EngineName": "bullet_simulator",
+			"PythonFileName": "bullet_simulator.py",
+			"WorldFileName":"model/racecar.urdf",
+			"Simulator":"Bullet",
+			"Visualizer":true
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "controller",
+			"FileName": "controller.py"
+		}
+	]
+}

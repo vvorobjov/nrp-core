@@ -170,6 +170,8 @@ install(FILES "nrp_pysim_engine/python/OpenAIGymLib.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 install(FILES "nrp_pysim_engine/python/MujocoLib.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+install(FILES "nrp_pysim_engine/python/BulletLib.py"
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})

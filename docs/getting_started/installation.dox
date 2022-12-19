@@ -109,6 +109,14 @@ For OpenAI installation (complete instructions at <a href="https://gym.openai.co
 pip install gym pygame
 \endcode
 
+\subsection installation_sim_bullet Bullet installation
+
+For Bullet installation (complete instructions at <a href="https://pybullet.org/wordpress/">https://pybullet.org/wordpress/</a>):
+
+\code{.sh}
+pip install pybullet
+\endcode
+
 \subsection installation_sim_mujoco Mujoco installation
 
 For Mujoco installation (complete instructions at <a href="https://mujoco.org">https://mujoco.org</a>):

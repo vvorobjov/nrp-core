@@ -26,6 +26,9 @@ class SimulatorManager(object):
         elif simulator_type == "Mujoco":
             from .MujocoLib import MujocoInterface
             self.sim_interface = MujocoInterface(world_file, start_visualizer, self.time_step)
+        elif simulator_type == "Bullet":
+            from .BulletLib import BulletInterface
+            self.sim_interface = BulletInterface(world_file, start_visualizer, self.time_step)
         else:
             raise Exception(f'Simulator {simulator_type} is not installed')
             
@@ -33,7 +36,7 @@ class SimulatorManager(object):
         """
         Reset the simulation, it is connected by the "server_callbacks.py"
         """
-        self.sim_interface.reset()
+        return self.sim_interface.reset()
 
     def shutdown(self):
         """
