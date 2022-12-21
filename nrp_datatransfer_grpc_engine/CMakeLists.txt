@@ -68,6 +68,9 @@ target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${NRP_GEN_LIB_TARGET}
         NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+        ${NRP_PROTO_BINDINGS_LIB_TARGET}
+        NRPProtobuf::ProtoDump
+
 
     PRIVATE
 )
@@ -141,6 +144,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            NRPProtobuf::ProtoEngineTest
         GTest::Main
         GTest::GTest
         gmock)

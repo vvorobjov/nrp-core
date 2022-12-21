@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_communication_controller.h"
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 

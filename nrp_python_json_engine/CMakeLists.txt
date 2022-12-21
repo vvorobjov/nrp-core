@@ -175,7 +175,7 @@ install(FILES
 
 # Install executable files
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/python_json_engine.py"
-    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # create cmake version and config files

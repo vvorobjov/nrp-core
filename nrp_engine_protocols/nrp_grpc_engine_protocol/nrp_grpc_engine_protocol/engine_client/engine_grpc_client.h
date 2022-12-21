@@ -29,13 +29,17 @@
 #include <nlohmann/json.hpp>
 
 #include "nrp_grpc_engine_protocol/config/engine_grpc_config.h"
+#include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
+#include "nrp_protobuf/config/cmake_constants.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
-#include "proto_python_bindings/proto_python_bindings.h"
-#include "nrp_protobuf/protobuf_utils.h"
 
-template<class ENGINE, const char* SCHEMA, class ...MSG_TYPES>
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
+#include "nrp_protobuf/proto_ops/proto_ops_manager.h"
+
+template<class ENGINE, const char* SCHEMA>
 class EngineGrpcClient
     : public EngineClient<ENGINE, SCHEMA>
 {
@@ -59,9 +63,11 @@ class EngineGrpcClient
         EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineClient<ENGINE, SCHEMA>(config, std::move(launcher))
         {
-            static_assert((std::is_base_of_v<google::protobuf::Message, MSG_TYPES> && ...), "Parameter MSG_TYPES must derive from protobuf::Message");
 
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+            this->template setDefaultProperty<std::vector<std::string>>("ProtobufPackages", std::vector<std::string>());
+            this->template setDefaultProperty<std::string>("ProtobufPluginsPath", NRP_PLUGIN_INSTALL_DIR);
 
             std::string serverAddress = this->engineConfig().at("ServerAddress");
 
@@ -80,6 +86,18 @@ class EngineGrpcClient
 
             _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
             _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
+
+            ProtoOpsManager::getInstance().addPluginPath(this->engineConfig().at("ProtobufPluginsPath"));
+            for(const auto& packageName : this->engineConfig().at("ProtobufPackages")) {
+                std::stringstream pluginLibName;
+                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageName.template get<std::string>() <<
+                        NRP_PROTO_OPS_LIB_SUFIX << ".so";
+                auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(pluginLibName.str());
+                if(pluginLib)
+                    _protoOps.template emplace_back(std::move(pluginLib));
+                else
+                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageName.template get<std::string>()+"\"");
+            }
         }
 
         virtual pid_t launchEngine() override
@@ -247,12 +265,21 @@ class EngineGrpcClient
             auto datapackData = reply.datapacks(i);
             DataPackInterfaceConstSharedPtr datapack;
 
-            if constexpr(sizeof...(MSG_TYPES) > 0)
-                datapack = protobuf_utils::getDataPackInterfaceFromMessageSubset<MSG_TYPES...>(this->engineName(), datapackData);
-            else
-                datapack = protobuf_utils::getDataPackInterfaceFromMessage(this->engineName(), datapackData);
+            for(auto& mod : _protoOps) {
+                try {
+                    datapack = mod->getDataPackInterfaceFromMessage(this->engineName(), datapackData);
+                }
+                catch (NRPException &) {
+                    // this just means that the module couldn't process the request, try with the next one
+                }
+            }
 
-            interfaces.insert(datapack);
+            if(datapack)
+                interfaces.insert(datapack);
+            else
+                throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" +
+                                                      datapackData.datapackid().datapackname() + "\" in engine \"" +
+                                                      this->engineName() + "\"");
         }
 
         return interfaces;
@@ -277,10 +304,19 @@ class EngineGrpcClient
                     else {
                         auto protoDataPack = request.add_datapacks();
 
-                        if constexpr(sizeof...(MSG_TYPES) > 0)
-                            protobuf_utils::setDataPackMessageFromInterfaceSubset<MSG_TYPES...>(*datapack, protoDataPack);
-                        else
-                            protobuf_utils::setDataPackMessageFromInterface(*datapack, protoDataPack);
+                        bool isSet = false;
+                        for(auto& mod : _protoOps) {
+                            try {
+                                mod->setDataPackMessageFromInterface(*datapack, protoDataPack);
+                                isSet = true;
+                            }
+                            catch (NRPException &) {
+                                // this just means that the module couldn't process the request, try with the next one
+                            }
+                        }
+
+                        if(!isSet)
+                            throw NRPException::logCreate("Failed to set DataPackMessage from DataPackInterface with name \"" + datapack->name() + "\"");
                     }
                 }
                 else
@@ -306,9 +342,17 @@ class EngineGrpcClient
             std::string name = this->engineConfig().at("EngineName");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineNameArg.data() + "=" + name);
 
-            // Add JSON Server address (will be used by EngineGrpcServer)
+            // Add Server address (will be used by EngineGrpcServer)
             std::string address = this->engineConfig().at("ServerAddress");
             startParams.push_back(std::string("--") + EngineGRPCConfigConst::EngineServerAddrArg.data() + "=" + address);
+
+            // Information needed to load protobuf plugins
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::ProtobufPluginsPathArg.data() + "=" +
+                                    this->engineConfig().at("ProtobufPluginsPath").template get<std::string>());
+
+            startParams.push_back(std::string("--") + EngineGRPCConfigConst::ProtobufPluginsArg.data() + "=" +
+                                  this->engineConfig().at("ProtobufPackages").dump());
+
 
             return startParams;
         }
@@ -328,6 +372,8 @@ class EngineGrpcClient
 
         SimulationTime _prevEngineTime = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();
+
+    std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> _protoOps;
 };
 
 

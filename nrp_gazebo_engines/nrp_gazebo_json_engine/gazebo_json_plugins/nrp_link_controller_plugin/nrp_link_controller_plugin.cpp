@@ -22,7 +22,7 @@
 
 #include "nrp_link_controller_plugin/nrp_link_controller_plugin.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/nrp_communication_controller.h"
 
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/Link.hh>

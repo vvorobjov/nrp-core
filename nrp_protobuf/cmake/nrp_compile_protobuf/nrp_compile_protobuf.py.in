@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+from shutil import copyfileobj, rmtree
+
+nrp_install_dir = "@CMAKE_INSTALL_PREFIX@"
+
+# Parse arguments
+parser = argparse.ArgumentParser(description="Script which compiles protobuf files so they can be used with nrp-core")
+parser.add_argument('--proto_files_path', type=str,
+                    help='Path to the .proto files to be compiled. If not present, '
+                         'the are assumed to be located in the current directory')
+parser.add_argument('--install_dir', type=str,
+                    help='Installation directory, NRPCore installation directory by default')
+
+args = parser.parse_args()
+
+# Prepare cmake command
+install_path = args.install_dir if args.install_dir else nrp_install_dir
+cmake_cmd = "cmake -DCMAKE_INSTALL_PREFIX={install_path} {proto_files_path} ..".format(
+    install_path=install_path,
+    proto_files_path="-DPROTO_FILES_PATH={}".format(args.proto_files_path) if args.proto_files_path else ""
+)
+
+# Warn user that build folder and CMakeLists.txt will be erased
+prompt = f'Ready to compile .proto files from "{args.proto_files_path}". '
+if os.path.isfile("CMakeLists.txt"):
+    prompt += 'If proceeding "CMakeLists.txt" will be overwritten. Any changes will be lost. '
+prompt += ' Proceed? (Y/n) '
+ans = input(prompt)
+if ans != "" and ans not in ['Yes', 'yes', 'Y', 'y']:
+    print('Abort')
+    exit(0)
+
+# Create build directory, configure, build and install
+with open("CMakeLists.txt", 'w') as output, \
+        open(nrp_install_dir + "/@CMAKE_INSTALL_INCLUDEDIR@/@HEADER_DIRECTORY@/cmake/NRPProtoCMakeLists.txt", 'r') as input:
+    copyfileobj(input, output)
+
+build_dir = 'build'
+if os.path.exists(build_dir):
+    rmtree(build_dir)
+os.makedirs(build_dir)
+os.chdir(build_dir)
+os.system(cmake_cmd)
+os.system('make')
+os.system('make install')

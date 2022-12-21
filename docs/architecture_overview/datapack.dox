@@ -298,7 +298,9 @@ There are some known limitations with respect to the original Protobuf Python AP
 4. Only basic Enum support. To set or get *Enum* fields only *int* can be used. *Enum constants* can't be accessed from python <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#enum">ref</a>
 5. The *Message* Python wrapper only supports a subset of the methods listed <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html">here</a>. These are: 'Clear', 'ClearField', 'HasField', 'IsInitialized' and 'WhichOneof'.
 
-Finally, these Python wrappers are automatically generated in the NRP-core build process. See this \ref tutorial_add_proto_definition "guide" to know how to add custom message definitions so they become afterwards available to Engines and TFs.
+Finally, these Python wrappers are automatically generated in the NRP-core build process for Protobuf message definitions used by Engines shipped with NRPCore.
+These can be found in the folder *nrp-core-msgs/protobuf/engine_proto_defs*.
+See this \ref tutorial_add_proto_definition "guide" to know how to compile additional messages so they become afterwards available to Engines and TFs.
 
 \subsection datapacks_rosmsg ROS msg datapacks
 

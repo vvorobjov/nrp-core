@@ -26,6 +26,7 @@
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
@@ -50,7 +51,8 @@ class StreamDataPackController
          * \param[in] engineName The engine name
          */
         StreamDataPackController(const std::string & datapackName,
-                                 const std::string & engineName);
+                                 const std::string & engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps);
 
 #ifdef MQTT_ON
         /*!
@@ -64,6 +66,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::string &baseDir,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                  const std::string &mqttBaseTopic);
@@ -78,6 +81,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                  const std::string &mqttBaseTopic);
 #endif
@@ -91,6 +95,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::string &baseDir);
 
         /*!
@@ -242,6 +247,8 @@ class StreamDataPackController
          * \brief the max number of the rotating stream files (0 - not restricted)
          */
         const unsigned int NRP_MAX_LOG_FILE_N = std::numeric_limits<unsigned int>::max();
+
+        const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& _protoOps;
 };
 
 #endif // STREAM_DATATRANSFER_GRPC_DATAPACK_CONTROLLER_SERVER_H

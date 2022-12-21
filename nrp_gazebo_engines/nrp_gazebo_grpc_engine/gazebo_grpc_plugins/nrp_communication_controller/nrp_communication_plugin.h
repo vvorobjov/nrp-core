@@ -24,6 +24,7 @@
 
 #include <gazebo/gazebo.hh>
 #include <string_view>
+#include <nlohmann/json.hpp>
 
 namespace gazebo
 {
@@ -53,6 +54,16 @@ namespace gazebo
              * \brief Engine name, read from program opts
              */
             std::string _engineName;
+
+        /*!
+         * \brief Path to Protobuf Plugins, read from program opts
+         */
+        std::string _protobufPluginsPath;
+
+        /*!
+         * \brief List of Protobuf Plugins, read from program opts
+         */
+        nlohmann::json _protobufPlugins;
     };
 
     GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)

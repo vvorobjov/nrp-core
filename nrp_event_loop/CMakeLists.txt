@@ -127,6 +127,7 @@ endif()
 if(ENABLE_MQTT)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" PROTO_MSG_TYPES_INCLUDE)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" NRP_PROTO_MSG_TYPES)
+    string(REPLACE "," ";" NRP_PROTO_MSG_TYPES ${NRP_PROTO_MSG_TYPES})
     set(PROTO_MSG_TYPES_CHECK "")
     foreach(MSG ${NRP_PROTO_MSG_TYPES})
         string(REPLACE "::" "" PYTHON_MSG "${MSG}")
@@ -218,6 +219,9 @@ if(ENABLE_MQTT)
             ${NAMESPACE_NAME}::${LIBRARY_NAME}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_MQTT_PROXY_TARGET}
+            NRPProtobuf::ProtoDump
+            NRPProtobuf::ProtoGazebo
+            NRPProtobuf::ProtoEngineTest
             )
 endif()
 
@@ -271,7 +275,6 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
     target_link_libraries(${PYTHON_MODULE_NAME}
         PUBLIC
             ${NAMESPACE_NAME}::${LIBRARY_NAME}
-            ${NRP_PROTO_LIB_TARGET}
     )
 
     if(ENABLE_ROS)

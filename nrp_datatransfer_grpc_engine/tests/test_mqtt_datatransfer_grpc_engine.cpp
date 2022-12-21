@@ -29,6 +29,7 @@
 #include "datatransfer_grpc_engine/config/cmake_constants.h"
 #include "datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.h"
 
+#include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 
 #include "tests/test_env_cmake.h"
@@ -48,7 +49,8 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "connected" status
@@ -94,7 +96,8 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "disconnected" status
@@ -127,7 +130,8 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
+    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
     EngineGrpcServer::lock_t datapackLock;
 
     // We can try connection to non-existent real broker, but it may fail if broker exists

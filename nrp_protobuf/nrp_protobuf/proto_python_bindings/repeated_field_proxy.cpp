@@ -19,7 +19,7 @@
 // Framework Programme for Research and Innovation under the Specific Grant
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
-#include "proto_python_bindings/repeated_field_proxy.h"
+#include "nrp_protobuf/proto_python_bindings/repeated_field_proxy.h"
 
 Py_ssize_t ExtractIndices(PyObject* indices, Py_ssize_t& from, Py_ssize_t& to, Py_ssize_t& step, Py_ssize_t length)
 {

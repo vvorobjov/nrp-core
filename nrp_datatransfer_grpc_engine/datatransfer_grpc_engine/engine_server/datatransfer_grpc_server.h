@@ -37,7 +37,9 @@ class DataTransferGrpcServer
     : public EngineGrpcServer
 {
     public:
-        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName);
+        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName,
+                               const std::string &protobufPluginsPath,
+                               const nlohmann::json &protobufPlugins);
         ~DataTransferGrpcServer() = default;
 
         /*!

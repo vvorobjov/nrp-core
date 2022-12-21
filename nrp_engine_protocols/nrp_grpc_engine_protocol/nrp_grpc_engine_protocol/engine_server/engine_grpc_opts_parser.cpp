@@ -34,7 +34,9 @@ cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised
 
     options.add_options()
             (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
-            (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+            (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""))
+            (EngineGRPCConfigConst::ProtobufPluginsPathArg.data(), "Protobuf Plugins Path", cxxopts::value<std::string>())
+            (EngineGRPCConfigConst::ProtobufPluginsArg.data(), "Protobuf Plugins", cxxopts::value<std::string>());
 
     return options;
 }

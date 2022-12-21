@@ -29,8 +29,10 @@ int DataTransferGrpcServer::_iteration = 0;
 SimulationTime DataTransferGrpcServer::_simulationTime = SimulationTime::zero();
 
 DataTransferGrpcServer::DataTransferGrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName)
-    : EngineGrpcServer(serverAddress, engineName),
+                                     const std::string &engineName,
+                                     const std::string &protobufPluginsPath,
+                                     const nlohmann::json &protobufPlugins)
+    : EngineGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins),
     _engineName(engineName)
 {
     _dataPacksNames.clear();
@@ -96,14 +98,14 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         const auto netDump = dump.at("network") && mqttConnected;
         const auto fileDump = dump.at("file");
         if (fileDump && !netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir));
+            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir));
         }
 #ifdef MQTT_ON
         else if (fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir, _mqttClient, this->_mqttBase));
+            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir, _mqttClient, this->_mqttBase));
         }
         else if (!fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, _mqttClient, this->_mqttBase));
+            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, _mqttClient, this->_mqttBase));
         }
 #endif
         else {

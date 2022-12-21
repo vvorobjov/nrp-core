@@ -31,7 +31,9 @@ class ${engine_name}GrpcServer
     : public EngineGrpcServer
 {
     public:
-        ${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName);
+        ${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName,
+                                 const std::string &protobufPluginsPath,
+                                 const nlohmann::json &protobufPlugins);
         ~${engine_name}GrpcServer() = default;
 
         /*!

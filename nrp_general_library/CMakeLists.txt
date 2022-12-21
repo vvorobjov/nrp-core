@@ -155,8 +155,9 @@ pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
 ## Header configuration
 
 set(NRP_CLEAR_ENV "NRP_CLEAR_ENV")
-
 set(NRP_CONFIG_DIR "config_schemas")
+set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
+set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
 
 # General Header defines
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
@@ -181,9 +182,6 @@ add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
-set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
-set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
-
 if(NOT ${cxxopts_FOUND})
     add_dependencies(${LIBRARY_NAME} cxxopts)
 endif()
@@ -207,7 +205,7 @@ set_property(TARGET lib_restclient PROPERTY
 
 add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
 set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
-    IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
 
 add_library(lib_spdlog STATIC IMPORTED )
 set_property(TARGET lib_spdlog PROPERTY
@@ -234,6 +232,7 @@ target_link_libraries(${LIBRARY_NAME}
 target_include_directories(${LIBRARY_NAME} BEFORE
     PUBLIC
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+        "$<INSTALL_INTERFACE:${NRP_DEP_CMAKE_INSTALL_PREFIX}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
         "$<BUILD_INTERFACE:${NRP_DEP_CMAKE_INSTALL_PREFIX}/include>"

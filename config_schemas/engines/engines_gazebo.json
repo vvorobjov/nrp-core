@@ -64,7 +64,8 @@
       {
         "properties": {
           "EngineType": { "enum": ["gazebo_grpc"] },
-          "EngineProcCmd": { "default": "/usr/bin/gzserver" }
+          "EngineProcCmd": { "default": "/usr/bin/gzserver" },
+          "ProtobufPackages": { "default": ["Gazebo"]}
         }
       }
     ]

@@ -24,8 +24,10 @@
 #include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_datapack_controller.h"
 
 ${engine_name}GrpcServer::${engine_name}GrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName)
-    : EngineGrpcServer(serverAddress, engineName),
+                                     const std::string &engineName,
+                                                   const std::string &protobufPluginsPath,
+                                                   const nlohmann::json &protobufPlugins)
+    : EngineGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins),
     _engineName(engineName)
 {
 

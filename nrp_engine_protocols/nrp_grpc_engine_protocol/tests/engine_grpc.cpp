@@ -85,7 +85,7 @@ struct TestEngineGRPCConfigConst
 };
 
 class TestEngineGrpcClient
-: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema, EngineTest::TestPayload>
+: public EngineGrpcClient<TestEngineGrpcClient, TestEngineGRPCConfigConst::EngineSchema>
 {
     public:
         TestEngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher)
@@ -114,7 +114,9 @@ class TestEngineGrpcServer
     public:
 
         TestEngineGrpcServer(const std::string & serverAddress)
-            : EngineGrpcServer(serverAddress, "TestEngineGrpcServer")
+            : EngineGrpcServer(serverAddress, "TestEngineGrpcServer",
+                               NRP_PLUGIN_INSTALL_DIR,
+                               json::array({"EngineTest"}))
         {
 
         }
@@ -192,6 +194,8 @@ TEST(EngineGrpc, Connection)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -210,6 +214,8 @@ TEST(EngineGrpc, InitCommand)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -242,6 +248,8 @@ TEST(EngineGrpc, InitCommandTimeout)
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
     config["EngineCommandTimeout"] = 0.0005;
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -262,6 +270,8 @@ TEST(EngineGrpc, ShutdownCommand)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -294,6 +304,8 @@ TEST(EngineGrpc, ShutdownCommandTimeout)
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
     config["EngineCommandTimeout"] = 1;
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -319,6 +331,8 @@ TEST(EngineGrpc, RunLoopStepCommand)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -358,6 +372,8 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
     TestEngineGrpcServer server("localhost:9004");
@@ -376,6 +392,8 @@ TEST(EngineGrpc, ResetCommand)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -408,6 +426,8 @@ TEST(EngineGrpc, ResetCommandTimeout)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
     TestEngineGrpcServer server("localhost:9004");
@@ -438,6 +458,8 @@ TEST(EngineGrpc, SetDataPackData)
     nlohmann::json config;
     config["EngineName"] = engineName;
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -489,6 +511,8 @@ TEST(EngineGrpc, GetDataPackData)
     nlohmann::json config;
     config["EngineName"] = engineName;
     config["EngineType"] = "test_engine_grpc";
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
@@ -577,6 +601,8 @@ TEST(EngineGrpc, GetDataPackData2)
     nlohmann::json config;
     config["EngineName"] = engineName;
     config["EngineType"] = "test_engine_grpc";;
+    config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
+    config["ProtobufPackages"] = json::array({"EngineTest"});
 
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));

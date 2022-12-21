@@ -33,8 +33,11 @@ int main(int argc, char * argv[])
 
     const auto serverAddress = options[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
     const auto engineName    = options[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
+    const auto protobufPluginsPath = options[EngineGRPCConfigConst::ProtobufPluginsPathArg.data()].as<std::string>();
+    const auto protobufPluginsDump = options[EngineGRPCConfigConst::ProtobufPluginsArg.data()].as<std::string>();
+    const auto protobufPlugins = nlohmann::json::parse(protobufPluginsDump);
 
-    auto server = ${engine_name}GrpcServer(serverAddress, engineName);
+    auto server = ${engine_name}GrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins);
 
     // Start the server
 

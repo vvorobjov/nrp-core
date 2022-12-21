@@ -38,9 +38,11 @@ NRPCommunicationController &NRPCommunicationController::getInstance()
     return *(NRPCommunicationController::_instance.get());
 }
 
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName)
+NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName,
+                                                                      const std::string &protobufPluginsPath,
+                                                                      const nlohmann::json &protobufPlugins)
 {
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName));
+    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, protobufPluginsPath, protobufPlugins));
     return NRPCommunicationController::getInstance();
 }
 
@@ -161,6 +163,8 @@ void NRPCommunicationController::shutdown(const json&)
     // Do nothing
 }
 
-NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName)
-    : EngineGrpcServer(serverURL, engineName)
+NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName,
+                                                       const std::string &protobufPluginsPath,
+                                                       const nlohmann::json &protobufPlugins)
+    : EngineGrpcServer(serverURL, engineName, protobufPluginsPath, protobufPlugins)
 {}

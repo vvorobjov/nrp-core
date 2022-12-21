@@ -56,7 +56,8 @@
             "default": [],
             "description": "List of datapacks for transfer"
           },
-          "EngineType": { "enum": ["datatransfer_grpc_engine"] }
+          "EngineType": { "enum": ["datatransfer_grpc_engine"] },
+          "ProtobufPackages": { "default": ["Dump"]}
         }
       }
     ]

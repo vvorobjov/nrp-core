@@ -26,7 +26,6 @@ set(LIB_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-#   nrp_gazebo_grpc_engine/python/python_module.cpp
 )
 
 # List executable build files
@@ -50,7 +49,6 @@ endif()
 
 ##########################################
 ## Header configuration
-
 set(NRP_GAZEBO_COMMUNICATION_PLUGIN NRPGazeboGrpcCommunicationPlugin)
 
 # Gazebo defines
@@ -124,7 +122,7 @@ if(BUILD_GAZEBO_ENGINE_SERVER)
     ##########################################
     ## Gazebo plugins
     set(NRP_GAZEBO_LIB_TARGETS
-            "${NAMESPACE_NAME}::${LIBRARY_NAME}"
+            ${NRP_GAZEBO_GRPC_LIB}
             NRPGazeboGrpcDataPackControllers::NRPGazeboGrpcDataPackControllers)
 
     add_subdirectory(gazebo_grpc_plugins)
@@ -158,7 +156,6 @@ if(BUILD_GAZEBO_ENGINE_SERVER)
     endif()
 
 endif()
-
 
 ##########################################
 ## Installation

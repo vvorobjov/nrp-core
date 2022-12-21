@@ -22,7 +22,7 @@
 
 #include "nrp_communication_controller/nrp_communication_plugin.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/nrp_communication_controller.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 

@@ -41,7 +41,8 @@ TEST(TestDatatransferGrpcEngine, StreamDataPackController)
         .Times(1);
 
     // Launch StreamDataPackController
-    StreamDataPackController controller(dataPackName, "datatransfer_engine", nrpMQTTClientMock, "nrp/0");
+    std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> dummyOps;
+    StreamDataPackController controller(dataPackName, "datatransfer_engine", dummyOps, nrpMQTTClientMock, "nrp/0");
 
     // Create a simple DataPack load
     Dump::String data;

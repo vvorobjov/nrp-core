@@ -1,9 +1,21 @@
 @PACKAGE_INIT@
 
-find_package(PkgConfig)
-pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
-
 find_package(nlohmann_json REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
+
+add_library(lib_restclient STATIC IMPORTED )
+set_property(TARGET lib_restclient PROPERTY
+        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/librestclient-cpp.so")
+
+add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
+set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
+        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libnlohmann_json_schema_validator.so")
+
+add_library(lib_spdlog STATIC IMPORTED )
+set_property(TARGET lib_spdlog PROPERTY
+        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libspdlog.so")
 
 set(NRP_GEN_LIB_TARGET @NRP_GEN_LIB_TARGET@)
 set(NRP_PLUGIN_INSTALL_DIR @NRP_PLUGIN_INSTALL_DIR@)

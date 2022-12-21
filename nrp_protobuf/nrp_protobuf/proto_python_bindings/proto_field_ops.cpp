@@ -20,7 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
 
 namespace proto_field_ops {
 

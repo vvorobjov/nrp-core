@@ -176,7 +176,7 @@ endif()
 # Add tests based on running example experiments
 if(ENABLE_EXAMPLES_TESTING)
     add_test(
-        NAME Examples.LoopSync TF
+        NAME Examples.LoopSyncTF
         COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPPythonJSONEngine.so" 
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_experiments/loop_sync_test_tf)
     set_tests_properties(Examples.LoopSyncTF 

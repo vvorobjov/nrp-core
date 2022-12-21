@@ -70,7 +70,9 @@ class NRPCommunicationController
          * \param engineName Name of this engine
          * \return Returns reference to server instance
          */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName);
+        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName,
+                                                         const std::string &protobufPluginsPath,
+                                                         const nlohmann::json &protobufPlugins);
 
 
         /*!
@@ -152,7 +154,9 @@ class NRPCommunicationController
          * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        NRPCommunicationController(const std::string &serverURL, const std::string &engineName);
+        NRPCommunicationController(const std::string &serverURL, const std::string &engineName,
+                                   const std::string &protobufPluginsPath,
+                                   const nlohmann::json &protobufPlugins);
 };
 
 #endif

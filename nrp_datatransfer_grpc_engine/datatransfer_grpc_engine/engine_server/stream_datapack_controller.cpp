@@ -26,25 +26,28 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "nrp_general_library/utils/time_utils.h"
 
-#include "proto_python_bindings/proto_field_ops.h"
-#include "nrp_protobuf/protobuf_utils.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_ops/proto_ops_manager.h"
 
 StreamDataPackController::StreamDataPackController( const std::string & datapackName,
-                                                    const std::string & engineName)
+                                                    const std::string & engineName,
+                                                    const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps)
     : _datapackName(datapackName)
     , _engineName(engineName)
     , _netDump(false)
     , _fileDump(false)
     , _initialized(false)
     , _rstCnt(0)
+    , _protoOps(protoOps)
 {
     _fmtCallback = &StreamDataPackController::fmtDummy;
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
+                                                    const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::string &baseDir)
-    : StreamDataPackController(datapackName, engineName)
+    : StreamDataPackController(datapackName, engineName, protoOps)
 {
     _fileDump = true;
     _baseDir = baseDir;
@@ -54,9 +57,10 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
 #ifdef MQTT_ON
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
+                                                    const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                                     const std::string &mqttBaseTopic)
-    : StreamDataPackController(datapackName, engineName)
+    : StreamDataPackController(datapackName, engineName, protoOps)
 {
     _netDump = true;
     _mqttClient = mqttClient;
@@ -69,10 +73,11 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
                                                     const std::string &engineName,
+                                                    const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::string &baseDir,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                                     const std::string &mqttBaseTopic)
-    : StreamDataPackController(datapackName, engineName, mqttClient, mqttBaseTopic)
+    : StreamDataPackController(datapackName, engineName, protoOps, mqttClient, mqttBaseTopic)
 {
     _fileDump = true;
     _baseDir = baseDir;
@@ -124,9 +129,25 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
         // Check EngineGrpc.DataPackMessage case. Only relevant for file dump
         if(msg == "EngineGrpc.DataPackMessage") {
             this->_isDataPackMessage = true;
-            const auto& d = protobuf_utils::getDataFromDataPackMessage(
-                    dynamic_cast<const EngineGrpc::DataPackMessage &>(data));
-            msg = d->GetTypeName();
+            auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
+            bool isFound = false;
+            for(auto& mod : _protoOps) {
+                try {
+                    const auto& d = mod->getDataFromDataPackMessage(dataPack);
+                    msg = d->GetTypeName();
+                    isFound = true;
+                }
+                catch (NRPException &) {
+                    // this just means that the module couldn't process the request, try with the next one
+                }
+            }
+
+            // Check if the extraction operation succeeded
+            if(!isFound)
+                throw NRPException::logCreate("Unable to unpack data from DataPack '" +
+                                              dataPack.datapackid().datapackname() +
+                                              "' in engine '" +
+                                              dataPack.datapackid().enginename() + "'");
         }
 
         // Check message type case. Only relevant for file dump
@@ -170,9 +191,25 @@ void StreamDataPackController::streamToFile(const google::protobuf::Message &dat
     std::string data_str;
     if(this->_isDataPackMessage)
     {
-        const auto& d =protobuf_utils::getDataFromDataPackMessage(
-                dynamic_cast<const EngineGrpc::DataPackMessage &>(data));
-        data_str = (this->*fmtCallback)(*d);
+        auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
+        bool isFound = false;
+        for(auto& mod : _protoOps) {
+            try {
+                const auto& d = mod->getDataFromDataPackMessage(dataPack);
+                data_str = (this->*fmtCallback)(*d);
+                isFound = true;
+            }
+            catch (NRPException &) {
+                // this just means that the module couldn't process the request, try with the next one
+            }
+        }
+
+        // Check if the extraction operation succeeded
+        if(!isFound)
+            throw NRPException::logCreate("Unable to unpack data from DataPack '" +
+                                          dataPack.datapackid().datapackname() +
+                                          "' in engine '" +
+                                          dataPack.datapackid().enginename() + "'");
     }
     else
         data_str = (this->*fmtCallback)(data);

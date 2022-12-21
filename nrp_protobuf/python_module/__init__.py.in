@@ -18,7 +18,7 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from .@PYTHON_MODULE_NAME@ import *
+@PROTO_PYTHON_IMPORTS@
 
 # Protobuf don't allow to set default values for fields
 # This is a workaround using nan to let Joint DataPack Controller infer which values have been set

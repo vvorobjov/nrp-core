@@ -29,7 +29,7 @@
 #include "nrp_protobuf/test_msgs.pb.h"
 
 class ${engine_name}EngineGrpcClient
-    : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema, EngineTest::TestPayload>
+    : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema>
 {
     public:
         ${engine_name}EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);

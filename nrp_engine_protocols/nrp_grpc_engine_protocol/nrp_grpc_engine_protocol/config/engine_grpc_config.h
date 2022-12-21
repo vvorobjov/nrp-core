@@ -36,6 +36,16 @@ struct EngineGRPCConfigConst
          */
         static constexpr std::string_view EngineNameArg = "engine";
 
+    /*!
+     * \brief Parameter name that is used to pass the protobuf plugins path
+     */
+    static constexpr std::string_view ProtobufPluginsPathArg = "protobuf_plugins_path";
+
+    /*!
+         * \brief Parameter name that is used to pass the list of protobuf plugins
+         */
+    static constexpr std::string_view ProtobufPluginsArg = "protobuf_plugins";
+
         /*!
          * \brief JSON name under which the runLoopStep timeStep is saved
          */

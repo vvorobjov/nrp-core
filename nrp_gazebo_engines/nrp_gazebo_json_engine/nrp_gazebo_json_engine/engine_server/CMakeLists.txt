@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(NRPGazeboGrpcDataPackControllers VERSION ${NRP_VERSION} LANGUAGES CXX)
+project(NRPGazeboJSONDataPackControllers VERSION ${NRP_VERSION} LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -10,7 +10,6 @@ set(LIB_SRC_FILES
         camera_datapack_controller.cpp
         joint_datapack_controller.cpp
         link_datapack_controller.cpp
-        model_datapack_controller.cpp
 )
 
 
@@ -23,16 +22,16 @@ find_package(Gazebo REQUIRED)
 ## Header configuration
 
 ##########################################
-# NRPGazeboGrpcDataPackControllers
+# NRPGazeboJSONDataPackControllers
 
-add_library(NRPGazeboGrpcDataPackControllers SHARED ${LIB_SRC_FILES})
-add_library(NRPGazeboGrpcDataPackControllers::NRPGazeboGrpcDataPackControllers ALIAS NRPGazeboGrpcDataPackControllers)
-target_compile_options(NRPGazeboGrpcDataPackControllers PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+add_library(NRPGazeboJSONDataPackControllers SHARED ${LIB_SRC_FILES})
+add_library(NRPGazeboJSONDataPackControllers::NRPGazeboJSONDataPackControllers ALIAS NRPGazeboJSONDataPackControllers)
+target_compile_options(NRPGazeboJSONDataPackControllers PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 
-target_link_directories(NRPGazeboGrpcDataPackControllers PUBLIC ${GAZEBO_LIBRARY_DIRS})
-set_target_properties(NRPGazeboGrpcDataPackControllers PROPERTIES PREFIX "")
+target_link_directories(NRPGazeboJSONDataPackControllers PUBLIC ${GAZEBO_LIBRARY_DIRS})
+set_target_properties(NRPGazeboJSONDataPackControllers PROPERTIES PREFIX "")
 
-target_include_directories(NRPGazeboGrpcDataPackControllers BEFORE
+target_include_directories(NRPGazeboJSONDataPackControllers BEFORE
     PUBLIC 
         $<INSTALL_INTERFACE:include>
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
@@ -40,16 +39,16 @@ target_include_directories(NRPGazeboGrpcDataPackControllers BEFORE
         ${GAZEBO_INCLUDE_DIRS}
 
     PRIVATE
-        ${NRP_GAZEBO_GRPC_LIB}
+        ${NRP_GAZEBO_JSON_LIB}
 )
 
-target_link_libraries(NRPGazeboGrpcDataPackControllers
+target_link_libraries(NRPGazeboJSONDataPackControllers
     PUBLIC
         ${NRP_GEN_LIB_TARGET}
         ${GAZEBO_LIBRARIES}
         NRPProtobuf::ProtoGazebo
     PRIVATE
-        ${NRP_GAZEBO_GRPC_LIB}
+        ${NRP_GAZEBO_JSON_LIB}
 )
 
 
@@ -73,45 +72,45 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${LIB_SRC_FILES})
 ##########################################
 ## Installation
 
-set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/NRPGazeboGrpcDataPackControllers")
+set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/NRPGazeboJSONDataPackControllers")
 
 # Install library files
 install(TARGETS
-        NRPGazeboGrpcDataPackControllers
+        NRPGazeboJSONDataPackControllers
     EXPORT
-        NRPGazeboGrpcDataPackControllersTargets
+        NRPGazeboJSONDataPackControllersTargets
     LIBRARY DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
     ARCHIVE DESTINATION ${NRP_PLUGIN_INSTALL_DIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 # Install export target
-install(EXPORT NRPGazeboGrpcDataPackControllersTargets
+install(EXPORT NRPGazeboJSONDataPackControllersTargets
     DESTINATION
         ${INSTALL_CONFIGDIR}
     FILE
-        NRPGazeboGrpcDataPackControllersTargets.cmake
+        NRPGazeboJSONDataPackControllersTargets.cmake
     NAMESPACE
-        "NRPGazeboGrpcDataPackControllers::"
+        "NRPGazeboJSONDataPackControllers::"
 )
 
 # create cmake version and config files
 #include(CMakePackageConfigHelpers)
 #write_basic_package_version_file(
-#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
+#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboJSONDataPackControllersTargetsVersion.cmake"
 #   VERSION ${PROJECT_VERSION}
 #   COMPATIBILITY AnyNewerVersion
 #)
 #
 #configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake.in"
-#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
+#   "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboJSONDataPackControllersTargetsConfig.cmake"
 #   INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 #)
 #
 ## Install cmake version and config files
 #install(
 #   FILES
-#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsConfig.cmake"
-#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboGrpcDataPackControllersTargetsVersion.cmake"
+#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboJSONDataPackControllersTargetsConfig.cmake"
+#       "${CMAKE_CURRENT_BINARY_DIR}/NRPGazeboJSONDataPackControllersTargetsVersion.cmake"
 #   DESTINATION ${INSTALL_CONFIGDIR}
 #)

@@ -27,8 +27,8 @@
 #include <algorithm>
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
-#include "proto_python_bindings/proto_field_ops.h"
-#include "proto_python_bindings/repeated_field_proxy.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_python_bindings/repeated_field_proxy.h"
 
 
 namespace bpy = boost::python;
@@ -183,6 +183,33 @@ public:
     }
 
     /*!
+     * \brief GetFieldNames
+     */
+    static bpy::list GetFieldNames(MSG_TYPE& m)
+    {
+        bpy::list fieldNames;
+        for(auto i = 0; i < m.descriptor()->field_count(); ++i)
+            fieldNames.template append(bpy::str(m.descriptor()->field(i)->name()));
+        return fieldNames;
+    }
+
+    /*!
+     * \brief GetFieldTypeName
+     */
+    static bpy::str GetFieldTypeName(MSG_TYPE& m, char const* name)
+    {
+        const gpb::FieldDescriptor *field = m.GetDescriptor()->FindFieldByName(name);
+        if(field)
+            return bpy::str(field->type_name());
+
+        std::stringstream s;
+        s << "Unknown field " << name;
+        PyErr_SetString(PyExc_ValueError, s.str().c_str());
+        boost::python::throw_error_already_set();
+        return "";
+    }
+
+    /*!
      * \brief Creates bindings for Protobuf Message type MSG_TYPE
      */
     static bpy::class_<MSG_TYPE> create() {
@@ -199,6 +226,8 @@ public:
         binder.def("__setattr__", SetAttribute);
         binder.def("ClearField",ClearField);
         binder.def("HasField", HasField);
+        binder.def("GetFieldNames", GetFieldNames);
+        binder.def("GetFieldTypeName", GetFieldTypeName);
         binder.def("WhichOneof",WhichOneof);
         binder.def("IsInitialized", &MSG_TYPE::IsInitialized);
         binder.def("Clear", &MSG_TYPE::Clear);

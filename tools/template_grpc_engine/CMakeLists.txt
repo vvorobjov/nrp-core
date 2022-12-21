@@ -68,6 +68,7 @@ target_link_libraries($${LIBRARY_NAME}
     PUBLIC
         $${NRP_GEN_LIB_TARGET}
         NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+        NRPProtobuf::ProtoEngineTest
 
     PRIVATE
 )

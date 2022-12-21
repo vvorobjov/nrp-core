@@ -25,7 +25,7 @@
 #include "google/protobuf/message.h"
 #include <boost/python.hpp>
 #include "nrp_general_library/utils/nrp_exceptions.h"
-#include "proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
 
 
 namespace bpy = boost::python;

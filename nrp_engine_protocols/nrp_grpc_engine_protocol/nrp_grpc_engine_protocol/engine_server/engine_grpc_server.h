@@ -33,8 +33,10 @@
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
-#include "proto_python_bindings/proto_field_ops.h"
-#include "nrp_protobuf/protobuf_utils.h"
+#include "nrp_protobuf/config/cmake_constants.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
+#include "nrp_protobuf/proto_ops/proto_ops_manager.h"
 
 
 using ProtoDataPackController = DataPackController<google::protobuf::Message>;
@@ -66,7 +68,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
          * \param[in] serverAddress Address of the gRPC server
          * \param[in] engineName    Name of the simulation engine
          */
-        EngineGrpcServer(const std::string serverAddress, const std::string &engineName)
+        EngineGrpcServer(const std::string serverAddress, const std::string &engineName,
+                         const std::string &protobufPluginsPath,
+                         const nlohmann::json &protobufPlugins)
                 : _loggerCfg(engineName), _engineName(engineName)
         {
             this->_serverAddress   = serverAddress;
@@ -75,6 +79,18 @@ class EngineGrpcServer : public EngineGrpcService::Service
             grpc::EnableDefaultHealthCheckService(true);
 
             NRPLogger::info("EngineGrpcServer {} has been created", engineName);
+
+            ProtoOpsManager::getInstance().addPluginPath(protobufPluginsPath);
+            for (const auto &packageName: protobufPlugins) {
+                std::stringstream pluginLibName;
+                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageName.template get<std::string>() <<
+                              NRP_PROTO_OPS_LIB_SUFIX << ".so";
+                auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(pluginLibName.str());
+                if(pluginLib)
+                    _protoOps.template emplace_back(std::move(pluginLib));
+                else
+                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageName.template get<std::string>()+"\"");
+            }
         }
 
         /*!
@@ -472,8 +488,24 @@ class EngineGrpcServer : public EngineGrpcService::Service
                         devInterface->second->handleDataPackData(dataPack);
                     else
                     {
-                        const auto data = protobuf_utils::getDataFromDataPackMessage(dataPack);
-                        devInterface->second->handleDataPackData(*data);
+                        std::unique_ptr<gpb::Message> protoMsg;
+
+                        for(auto& mod : _protoOps) {
+                            try {
+                                protoMsg = mod->getDataFromDataPackMessage(dataPack);
+                            }
+                            catch (NRPException &) {
+                                // this just means that the module couldn't process the request, try with the next one
+                            }
+                        }
+
+                        if(protoMsg)
+                            devInterface->second->handleDataPackData(*protoMsg);
+                        else
+                            throw NRPException::logCreate("Unable to unpack data from DataPack '" +
+                                                                  dataPack.datapackid().datapackname() +
+                                                                  "' in engine '" +
+                                                                  dataPack.datapackid().enginename() + "'");
                     }
                 }
                 else
@@ -502,8 +534,24 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
                     // ask controller to fetch datapack data. nullptr means there is no new data available
                     auto d = devInterface->second->getDataPackInformation();
-                    if(d != nullptr)
-                        protobuf_utils::setDataPackMessageData(*d, protoDataPack);
+                    if(d != nullptr) {
+                        bool isSet = false;
+                        for(auto& mod : _protoOps) {
+                            try {
+                                mod->setDataPackMessageData(*d, protoDataPack);
+                                isSet = true;
+                            }
+                            catch (NRPException &) {
+                                // this just means that the module couldn't process the request, try with the next one
+                            }
+                        }
+
+                        if(!isSet)
+                            throw NRPException::logCreate("Unable to pack data into DataPack '" +
+                                                                  protoDataPack->datapackid().datapackname() +
+                                                                  "' in engine '" +
+                                                                  protoDataPack->datapackid().enginename() + "'");
+                    }
                 }
                 else
                 {
@@ -532,6 +580,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
             return status;
         }
+
+    protected:
+        std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> _protoOps;
 };
 
 #endif // ENGINE_GRPC_SERVER_H
