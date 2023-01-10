@@ -48,4 +48,29 @@ or disable the timeouts:
 "ServerOptions": "{'timeout':0}"
 \endcode
 
+\section guide_troubleshooting_test_symbol_lookup_error Symbol Lookup Error in Tests While Building NRP Core
+
+It is possible that after making changes to NRP Core source code, shifting to another branch or pulling from the NRP Core git repository upstream, you see a "symbol lookup error" when building NRP Core next time.
+This happens after the signature of a function which is used in tests changes, even though tests have been updated correctly to reflex the changes in the source code.
+Concretely, the resulting error is of the form:
+
+\code
+<path>/<test library which is failing>: symbol lookup error: <path>/<test library which is failing>: undefined symbol: <some symbol>
+CMake Error at <another path>/GoogleTestAddTests.cmake:112 (message):
+  Error running test executable.
+
+    Path: '<path>/<test library which is failing>'
+    Result: 127
+    Output:
+      
+
+Call Stack (most recent call first):
+  <another path>/GoogleTestAddTests.cmake:225 (gtest_discover_tests_impl)
+\endcode
+
+The error is caused by GoogleTest looking up installed NRP Core libraries instead of the freshly built ones.
+The easiest way to overcome this error is to <b>delete the NRP Core install folder</b>.
+If you have for example installed NRPCore at "/home/${USER}/.local/nrp" as recommended, just delete this folder and build NRP Core again.
+The error should disappear.
+
 */
