@@ -67,7 +67,7 @@ public:
     /*!
      * \brief Publishes 'msg' to MQTT topic 'address'
      */
-    virtual void publish(const std::string& address, const std::string& msg);
+    virtual void publish(const std::string& address, const std::string& msg, bool retained=false);
 
     /*!
      * \brief Disconnects client from MQTT Broker
@@ -78,6 +78,11 @@ public:
      * \brief Check connection status to broker
      */
     virtual bool isConnected();
+
+    /*!
+     * \brief Clear all topics with retain messages by sending an empty msg
+     */
+    virtual void clearRetained();
 
 private:
 

@@ -68,7 +68,7 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
     _mqttDataTopic = std::string(this->_mqttBase + "/data/" + datapackName);
     _mqttTypeTopic = std::string(this->_mqttBase + "/data/" + datapackName + "/type");
     // announce topic
-    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic);
+    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic, true);
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
@@ -116,13 +116,13 @@ void StreamDataPackController::resetSinks()
 void StreamDataPackController::handleDataPackData(const google::protobuf::Message &data)
 {
     std::string msg;
-    if (!this->_initialized){
+    if (!this->_initialized) {
         msg = data.GetTypeName();
 
 #ifdef MQTT_ON
         // Stream msg type
         if (_netDump){
-            _mqttClient->publish(_mqttTypeTopic, msg);
+            _mqttClient->publish(_mqttTypeTopic, msg, true);
         }
 #endif
 

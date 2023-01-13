@@ -60,17 +60,19 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // The expected calls
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(3));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!", testing::_))
             .Times(1);
-    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!", testing::_))
             .Times(1);
     // data topics announcements from the DataPack Controller
     for (size_t i = 0; i < engine_config["dumps"].size(); i++){
         nlohmann::json dump = engine_config["dumps"].at(i);
-        EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dump["name"].get<std::string>()))
+        EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dump["name"].get<std::string>(), testing::_))
                 .Times(1);
     }
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
+            .Times(1);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
             .Times(1);
 
     // The expected calls (above) are in these operations
@@ -107,9 +109,11 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     // The expected calls (we do not expect anything to be published)
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(2));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_, testing::_))
             .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
+            .Times(0);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
             .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
@@ -140,9 +144,11 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     // The expected calls as for disconnected client
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(2));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_, testing::_))
             .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
+            .Times(0);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
             .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));

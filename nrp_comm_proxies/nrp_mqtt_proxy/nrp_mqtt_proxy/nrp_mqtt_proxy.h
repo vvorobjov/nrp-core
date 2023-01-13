@@ -55,12 +55,17 @@ public:
     /*!
      * \brief Publishes 'msg' to MQTT topic 'address'
      */
-    void publish(const std::string& address, const std::string& msg);
+    void publish(const std::string& address, const std::string& msg, bool retained=false);
 
     /*!
      * \brief Disconnects client from MQTT Broker
      */
     void disconnect();
+
+    /*!
+     * \brief Clear all topics with retain messages by sending an empty msg
+     */
+    void clearRetained();
 
 private:
 

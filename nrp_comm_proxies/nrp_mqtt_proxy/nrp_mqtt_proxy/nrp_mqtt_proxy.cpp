@@ -34,8 +34,8 @@ NRPMQTTProxy &NRPMQTTProxy::resetInstance(const nlohmann::json& clientParams)
     return NRPMQTTProxy::getInstance();
 }
 
-void NRPMQTTProxy::publish(const std::string& address, const std::string& msg)
-{ _mqttClient->publish(address, msg); }
+void NRPMQTTProxy::publish(const std::string& address, const std::string& msg, bool retained)
+{ _mqttClient->publish(address, msg, retained); }
 
 void NRPMQTTProxy::subscribe(const std::string& address, const std::function<void (const std::string&)>& callback)
 { _mqttClient->subscribe(address, callback); }
@@ -53,3 +53,6 @@ void NRPMQTTProxy::disconnect()
         this->publish("nrp/welcome", "Bye! NRP-core is disconnecting!");
     _mqttClient->disconnect();
 }
+
+void NRPMQTTProxy::clearRetained()
+{ _mqttClient->clearRetained(); }

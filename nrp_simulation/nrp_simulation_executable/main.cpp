@@ -344,8 +344,10 @@ int main(int argc, char *argv[])
 
 #ifdef MQTT_ON
     NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
-    if(mqttProxy)
+    if(mqttProxy) {
+        mqttProxy->clearRetained();
         mqttProxy->disconnect();
+    }
 #endif
 
     if(enginesFD >= 0)

@@ -40,12 +40,13 @@ class NRPMQTTClientFake : public NRPMQTTClient {
 
 public:
 
-    NRPMQTTClientFake(bool conn) : _isConnected(conn) {};
-    NRPMQTTClientFake() : _isConnected(false) {};
+    NRPMQTTClientFake(bool conn) : _isConnected(conn) {}
+    NRPMQTTClientFake() : _isConnected(false) {}
 
-    void publish(const std::string& , const std::string& ) override {};
-    void disconnect() override {_isConnected = false;};
+    void publish(const std::string& , const std::string& , bool /*retained*/ = false) override {}
+    void disconnect() override {_isConnected = false;}
     bool isConnected() override {return _isConnected;}
+    void clearRetained() override {}
 
 private:
 
@@ -66,19 +67,21 @@ public:
 
     NRPMQTTClientMock(bool conn) : NRPMQTTClient(),  fake_(conn) {};
 
-    MOCK_METHOD(void, publish, (const std::string& address, const std::string& msg), (override));
+    MOCK_METHOD(void, publish, (const std::string& address, const std::string& msg, bool retained), (override));
     MOCK_METHOD(void, disconnect, (), (override));
-
     MOCK_METHOD(bool, isConnected, (), (override));
+    MOCK_METHOD(void, clearRetained, (), (override));
 
     void DelegateToFake()
     {
-        ON_CALL(*this, publish).WillByDefault([this](const std::string &address, const std::string &msg)
-                                              { fake_.publish(address, msg); });
+        ON_CALL(*this, publish).WillByDefault([this](const std::string &address, const std::string &msg, bool retained = false)
+                                              { fake_.publish(address, msg, retained); });
         ON_CALL(*this, disconnect).WillByDefault([this]()
                                                  { fake_.disconnect(); });
         ON_CALL(*this, isConnected).WillByDefault([this]()
                                                   { return fake_.isConnected(); });
+        ON_CALL(*this, clearRetained()).WillByDefault([this]()
+                                                 { fake_.clearRetained(); });
     }
 
 private:

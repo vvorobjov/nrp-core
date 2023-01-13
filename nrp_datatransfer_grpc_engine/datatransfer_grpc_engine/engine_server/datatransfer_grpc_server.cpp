@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// This project has received funding from the European Unionâ€™s Horizon 2020
+// This project has received funding from the European Union’s Horizon 2020
 // Framework Programme for Research and Innovation under the Specific Grant
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
@@ -81,7 +81,7 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");
     }
     else {      
-        _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!");  
+        _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!", true);
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -125,7 +125,8 @@ void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
 #ifdef MQTT_ON
     try{
         if (_mqttClient->isConnected()){
-            _mqttClient->publish(this->_mqttBase + "/welcome", "Bye! NRP-core is disconnecting!");
+            _mqttClient->publish(this->_mqttBase + "/welcome", "Bye! NRP-core is disconnecting!", true);
+            _mqttClient->clearRetained();
             _mqttClient->disconnect();
         }
     }

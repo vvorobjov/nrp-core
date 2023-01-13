@@ -37,7 +37,7 @@ TEST(TestDatatransferGrpcEngine, StreamDataPackController)
     std::string dataPackName = "datapack1";
     
     // Expected to announce the topic data address in StreamDataPackController constructor
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dataPackName))
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dataPackName, testing::_))
         .Times(1);
 
     // Launch StreamDataPackController
@@ -49,9 +49,9 @@ TEST(TestDatatransferGrpcEngine, StreamDataPackController)
     data.set_string_stream("test");
 
     // The expected behavior is to send message and type to corresponding topics
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName, testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName, testing::_, testing::_))
         .Times(1);
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName + "/type", "Dump.String"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName + "/type", "Dump.String", testing::_))
         .Times(1);
 
     ASSERT_NO_THROW(controller.handleDataPackData(data));

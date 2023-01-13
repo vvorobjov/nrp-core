@@ -35,13 +35,19 @@ bool NRPMQTTClient::isConnected()
     }
 }
 
-void NRPMQTTClient::publish(const std::string& address, const std::string& msg)
+void NRPMQTTClient::publish(const std::string& address, const std::string& msg, bool retained)
 {
     if(!isConnected())
         return;
 
     if(!_topics.count(address))
-        _topics.emplace(address, mqtt::topic(*_mqttClient, address, QOS));
+        _topics.emplace(address, mqtt::topic(*_mqttClient, address, QOS, retained));
+
+    if(_topics.at(address).get_retained() != retained) {
+        std::string p1 = retained ? "" : "non ";
+        std::string p2 = retained ? "non " : "";
+        NRPLogger::warn("Attempt to publish a {}retained message to topic \"{}\", but this topic publishes {}retained messages", p1, address, p2);
+    }
 
     _topics.at(address).publish(msg);
 }
@@ -98,6 +104,17 @@ void NRPMQTTClient::disconnect()
     catch(std::exception &e)
     {
         NRPLogger::error("Couldn't gracefully disconnect from MQTT broker.");
+    }
+}
+
+void NRPMQTTClient::clearRetained()
+{
+    if(!isConnected())
+        return;
+
+    for (auto & [address, topic] : _topics) {
+        if(topic.get_retained())
+            topic.publish("");
     }
 }
 
