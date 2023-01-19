@@ -26,7 +26,7 @@
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "unity_grpc_engine/config/unity_config.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
 class UnityEngineGrpcClient
     : public EngineGrpcClient<UnityEngineGrpcClient, UnityGrpcConfigConst::EngineSchema>

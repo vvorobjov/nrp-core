@@ -26,7 +26,7 @@
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"

@@ -25,7 +25,7 @@
 
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
 class ${engine_name}GrpcDataPackController
     : public DataPackController<google::protobuf::Message>

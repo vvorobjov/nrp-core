@@ -27,7 +27,7 @@
 #include "datatransfer_grpc_engine/config/datatransfer_config.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
 
 class DataTransferEngineGrpcClient
     : public EngineGrpcClient<DataTransferEngineGrpcClient, DataTransferGrpcConfigConst::EngineSchema>

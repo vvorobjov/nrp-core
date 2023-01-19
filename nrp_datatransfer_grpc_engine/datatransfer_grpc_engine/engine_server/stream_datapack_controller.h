@@ -25,7 +25,7 @@
 
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
 #include "nrp_protobuf/proto_ops/protobuf_ops.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"

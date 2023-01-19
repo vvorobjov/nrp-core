@@ -26,7 +26,7 @@
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "${engine_name_lowercase}_grpc_engine/config/${engine_name_lowercase}_config.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
 class ${engine_name}EngineGrpcClient
     : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema>

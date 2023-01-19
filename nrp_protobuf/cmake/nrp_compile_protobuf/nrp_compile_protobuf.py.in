@@ -24,7 +24,8 @@ cmake_cmd = "cmake -DCMAKE_INSTALL_PREFIX={install_path} {proto_files_path} ..".
 )
 
 # Warn user that build folder and CMakeLists.txt will be erased
-prompt = f'Ready to compile .proto files from "{args.proto_files_path}". '
+proto_files_path_str = f'"{args.proto_files_path}"' if args.proto_files_path else 'the current folder'
+prompt = f'Ready to compile .proto files from {proto_files_path_str}. '
 if os.path.isfile("CMakeLists.txt"):
     prompt += 'If proceeding "CMakeLists.txt" will be overwritten. Any changes will be lost. '
 prompt += ' Proceed? (Y/n) '

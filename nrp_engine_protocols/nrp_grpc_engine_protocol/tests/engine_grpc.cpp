@@ -29,7 +29,7 @@
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
 
 
