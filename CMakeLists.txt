@@ -248,6 +248,7 @@ endif()
 
 ## Python Engine
 add_subdirectory(nrp_python_json_engine)
+add_subdirectory(nrp_python_grpc_engine)
 
 ## Unity gRPC engine
 add_subdirectory(nrp_unity_grpc_engine)
@@ -336,6 +337,7 @@ endif()
 set(DOXYGEN_EXAMPLE_PATH
         ${DOXYGEN_EXAMPLE_PATH}
         "docs/example_engine"
+        "docs/example_add_proto"
         "examples"
         "config_schemas"
         "nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
@@ -396,6 +398,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/pysim/pysim_engine.dox"
         "docs/engines/tvb/tvb_engine.dox"
         "docs/engines/datatransfer/datatransfer_engine.dox"
+        "docs/engines/python_grpc/python_grpc_engine.dox"
 
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"

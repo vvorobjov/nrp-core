@@ -1,0 +1,76 @@
+/*! \page python_grpc_engine Python GRPC Engine
+
+This versatile Python-based engine is well suited for integrating components with a Python API, and in particular, in the cases where efficient data transmission is required.
+To this end, this engine employs protobuf messages over GRPC as a communication mechanism. The engine server is defined as a Python class based on <b>GrpcEngineScript</b> (as in the example listed below).
+
+For a complete example of an nrp-core experiment using the Python GRPC Engine see *examples/tf_exchange/simulation_config_grpc.json*.
+
+\section python_grpc_engine_script GrpcEngineScript
+
+`GrpcEngineScript` provides a base class from which custom Engines must inherit. The derived class must implement methods:
+
+- `initialize()`: initialize the engine and registers required DataPacks with a protobuf message type.
+- `runLoop(timestep_ns)`: advance required simulation and communicate with other engines via TransceiverFunctions.
+- `shutdown()`: executed when the engine is requested to shutdown.
+
+Besides, `GrpcEngineScript` provides the following ready-to-use methods and properties to handle datapack communication:
+
+- `_time_ns`: returns the internal simulation time of the Engine in nanoseconds.
+- `_registerDataPack(datapack_name, protobuf_type)`: registers a datapack to the engine with the name `datapack_name`. Registered datapacks are stored in a python dictionary and can be accessed with `_setDataPack` and `_getDataPack`. protobuf_type must a Python Protobuf message type and is the expected type of the data stored in this datapack. The stored data will be updated, under the hood, from datapacks returned by TransceiverFunctions at every loop.
+- `_getDataPack(datapack_name)`: returns "datapack_name" datapack data, as a protobuf message.
+- `_setDataPack(datapack_name, data)`:  sets "datapack_name" datapack data. "data" is always protobuf a message of type the registered for "datapack_name".
+
+Below is an example of a class inheriting from `GrpcEngineScript`. The example is taken from the `examples/tf_exchange` experiment.
+
+\include tf_exchange/engine_grpc_1.py
+
+\section python_grpc_datapacks DataPacks
+
+The Python GRPC engine supports \ref datapacks_protobuf, which can be used to transfer information between the engine and TFs.
+
+Any of the Protobuf message definitions compiled with nrp-core can be used in the Python GRPC Engine.
+These can be found in the folder *nrp-core-msgs/protobuf/engine_proto_defs*.
+Also it is possible to compile your own Protobuf message definitions from .proto files and use them with this Engine.
+See \ref tutorial_add_proto_definition_example "here" for a full example showing how to compile .proto files and using the new message types in an NRPCore experiment including a Python GRPC Engine.
+
+\section python_grpc_configuration Engine Configuration Parameters
+
+This engined is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from the \ref engine_grpc "EngineGRPC" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+<tr><td>ProtobufPluginsPath<td>Path were to search for specified ProtobufPlugin libraries<td>string<td><td><td>
+<tr><td>ProtobufPackages<td>Protobuf Packages containing protobuf msg types that will be exchanged by this Engine. It is assumed that these packages have been compiled with NRPCore<td>string<td>[]<td><td>X
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>PythonFileName<td>Path to the Python script containing the engine definition<td>string<td><td>X<td>
+</table>
+
+\section python_grpc_schema Schema
+
+As explained above, the schema used by the PythonGrpc engine inherits from \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
+
+\include engines/engine_python.json
+
+*/

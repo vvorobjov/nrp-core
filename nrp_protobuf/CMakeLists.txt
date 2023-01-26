@@ -174,6 +174,9 @@ generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto
 generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
+
+generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES)
+generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES)
 generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
 

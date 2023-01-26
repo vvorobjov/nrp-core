@@ -1,4 +1,4 @@
-/*! \page datatransfer_engine NRP DataTransfer Engine
+/*! \page datatransfer_engine DataTransfer Engine
 
 The DataTransfer Engine brings data logging and streaming capabilities to NRP-core.
 It enables users to log experiment data to file for further offline anaylisis or to stream it over the network for, e.g., remote data visualization and experiment monitoring.
@@ -38,10 +38,16 @@ The DataTransfer Engine processes every incoming datapack and tries to save its 
 Protobuf message types that have *repeated* fields cannot be logged to files, but can still be streamed.
 
 Additionally, two Protobuf message types are provided with special formatting support for logging into the file: *Dump.String* and *Dump.ArrayFloat*.
-*Dump.String* has a single field *string_stream* of string type.
-*Dump.ArrayFloat* can be used to transfer arrays as explained below.
+See below for more details
 
-\subsection dump_array_float Logging arrays with Dump.ArrayFloat
+\subsection dump_proto Dump Protobuf message types
+
+\include dump_msgs.proto
+
+- *Dump.String* has a single field *string_stream* of string type.
+- *Dump.ArrayFloat* can be used to transfer arrays as explained below.
+
+\subsubsection dump_array_float Logging arrays with Dump.ArrayFloat
 
 The *Dump.ArrayFloat* Protobuf message contains two fields:
 - float_stream: repeated float field containing the array data.

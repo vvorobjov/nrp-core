@@ -184,6 +184,8 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
             PRIVATE
             )
 
+    add_dependencies(${PROTO_OPS_LIB_NAME} ${NRP_PROTO_LIB_TARGET})
+
     # Python bindings library
     add_library(${PROTO_PYTHON_MODULE_NAME} SHARED "${CMAKE_CURRENT_BINARY_DIR}/src/${PACKAGE_SHORT_NAME}/python_module.cpp")
     add_library(${NAMESPACE_NAME}::${PROTO_PYTHON_MODULE_NAME} ALIAS ${PROTO_PYTHON_MODULE_NAME})
