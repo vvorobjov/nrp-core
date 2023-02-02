@@ -27,6 +27,7 @@
 #include "nrp_general_library/datapack_interface/datapack.h"
 
 typedef DataPack<nlohmann::json> JsonDataPack;
+typedef RawData<nlohmann::json> JsonRawData;
 
 #endif // JSON_DATAPACK_H
 

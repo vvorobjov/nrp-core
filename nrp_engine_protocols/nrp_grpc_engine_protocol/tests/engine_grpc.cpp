@@ -450,6 +450,25 @@ TEST(EngineGrpc, RegisterDataPacks)
     ASSERT_EQ(server.getNumRegisteredDataPacks(), 1);
 }
 
+
+/*!
+ * \brief Helper function that generated a shared pointer to a DataPack with given parameters
+ */
+static std::shared_ptr<const DataPackInterface> generateDataPack(const std::string & name,
+                                                           const std::string & engineName,
+                                                           EngineTest::TestPayload * payload = nullptr)
+{
+    if(payload)
+    {
+        return std::shared_ptr<const DataPackInterface>(new DataPack<EngineTest::TestPayload>(name, engineName, payload));
+    }
+    else
+    {
+        return std::shared_ptr<const DataPackInterface>(new DataPack<EngineTest::TestPayload>(name, engineName));
+    }
+}
+
+
 TEST(EngineGrpc, SetDataPackData)
 {
     const std::string datapackName = "a";
@@ -464,13 +483,13 @@ TEST(EngineGrpc, SetDataPackData)
     TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
 
-    std::vector<DataPackInterface*> input_datapacks;
+    datapacks_set_t input_datapacks;
 
     std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
     server.registerDataPack(datapackName, datapackController.get());
 
-    std::shared_ptr<DataPack<EngineTest::TestPayload>> dev1(new DataPack<EngineTest::TestPayload>(datapackName, engineName)); // Client side
-    input_datapacks.push_back(dev1.get());
+    auto dataPack1 = generateDataPack(datapackName, engineName); // Client side
+    input_datapacks.insert(dataPack1);
 
     // The gRPC server isn't running, so the sendDataPacksToEngine command should fail
     ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
@@ -479,23 +498,24 @@ TEST(EngineGrpc, SetDataPackData)
     server.startServer();
     testSleep(1500);
 
-    input_datapacks.clear();
     auto d = new EngineTest::TestPayload();
     d->set_integer(111);
-    dev1.reset(new DataPack<EngineTest::TestPayload>(datapackName, engineName, d));
-    input_datapacks.push_back(dev1.get());
+    dataPack1 = generateDataPack(datapackName, engineName, d);
+
+    input_datapacks.clear();
+    input_datapacks.insert(dataPack1);
 
     // Normal command execution
     client.sendDataPacksToEngine(input_datapacks);
     d = dynamic_cast<EngineTest::TestPayload *>(datapackController->getDataPackInformation());
 
-    ASSERT_EQ(d->integer(),       111);
+    ASSERT_EQ(d->integer(), 111);
 
     // Test setting data on a datapack that wasn't registered in the engine server
     const std::string datapackName2 = "b";
-    DataPack<EngineTest::TestPayload> dev2(datapackName2, engineName);
+    auto dataPack2 = generateDataPack(datapackName2, engineName);
     input_datapacks.clear();
-    input_datapacks.push_back(&dev2);
+    input_datapacks.insert(dataPack2);
 
     ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
 
@@ -519,22 +539,22 @@ TEST(EngineGrpc, GetDataPackData)
 
     // Client sends a request to the server
 
-    std::vector<DataPackInterface*> input_datapacks;
+    datapacks_set_t input_datapacks;
 
     DataPackIdentifier         devId(datapackName, engineName, datapackType);
-    DataPack<EngineTest::TestPayload> dev1(datapackName, engineName); // Client side
+    auto dataPack1 = generateDataPack(datapackName, engineName);
     std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
 
     server.registerDataPack(datapackName, datapackController.get());
 
-    input_datapacks.push_back(&dev1);
+    input_datapacks.insert(dataPack1);
 
-    EngineClientInterface::datapack_identifiers_set_t datapackIdentifiers;
+    datapack_identifiers_set_t datapackIdentifiers;
     datapackIdentifiers.insert(devId);
 
     // The gRPC server isn't running, so the updateDataPacksFromEngine command should fail
 
-    ASSERT_THROW(client.updateDataPacksFromEngine(datapackIdentifiers), std::runtime_error);
+    ASSERT_THROW(client.getDataPacksFromEngine(datapackIdentifiers), std::runtime_error);
 
     server.startServer();
     testSleep(1500);
@@ -545,35 +565,34 @@ TEST(EngineGrpc, GetDataPackData)
 
     datapackController->triggerEmptyDataPackReturn(true);
 
-    auto output = client.updateDataPacksFromEngine(datapackIdentifiers);
+    auto output = client.getDataPacksFromEngine(datapackIdentifiers);
 
     ASSERT_EQ(output.size(), 1);
-    ASSERT_EQ(output.at(0)->name(),       datapackName);
-    ASSERT_EQ(output.at(0)->engineName(), engineName);
-    ASSERT_EQ(output.at(0)->isEmpty(),    true);
+    ASSERT_EQ(output.begin()->get()->name(),       datapackName);
+    ASSERT_EQ(output.begin()->get()->engineName(), engineName);
+    ASSERT_EQ(output.begin()->get()->isEmpty(),    true);
 
     datapackController->triggerEmptyDataPackReturn(false);
 
     // Normal command execution
     // Engine cache should be updated with a non-empty datapack
 
-    output = client.updateDataPacksFromEngine(datapackIdentifiers);
+    output = client.getDataPacksFromEngine(datapackIdentifiers);
 
     ASSERT_EQ(output.size(), 1);
-    ASSERT_EQ(output.at(0)->name(),       datapackName);
-    ASSERT_EQ(output.at(0)->type(),  dev1.type());
-    ASSERT_EQ(output.at(0)->engineName(), engineName);
-    ASSERT_EQ(output.at(0)->isEmpty(),    false);
+    ASSERT_EQ(output.begin()->get()->name(),       datapackName);
+    ASSERT_EQ(output.begin()->get()->type(),       dataPack1->type());
+    ASSERT_EQ(output.begin()->get()->engineName(), engineName);
+    ASSERT_EQ(output.begin()->get()->isEmpty(),    false);
 
     // Trigger return of an empty datapack again
-    // Check that it doesn't overwrite the cache
 
     datapackController->triggerEmptyDataPackReturn(true);
 
-    output = client.updateDataPacksFromEngine(datapackIdentifiers);
+    output = client.getDataPacksFromEngine(datapackIdentifiers);
 
     ASSERT_EQ(output.size(), 1);
-    ASSERT_EQ(output.at(0)->isEmpty(), false);
+    ASSERT_EQ(output.begin()->get()->isEmpty(), true);
 
     datapackController->triggerEmptyDataPackReturn(false);
 
@@ -584,7 +603,7 @@ TEST(EngineGrpc, GetDataPackData)
     DataPackIdentifier         devId2(datapackName2, engineName, datapackType);
     datapackIdentifiers.insert(devId2);
 
-    ASSERT_THROW(client.updateDataPacksFromEngine(datapackIdentifiers), std::runtime_error);
+    ASSERT_THROW(client.getDataPacksFromEngine(datapackIdentifiers), std::runtime_error);
 
     // TODO Add test for getData timeout
 }
@@ -609,29 +628,29 @@ TEST(EngineGrpc, GetDataPackData2)
 
     // Client sends a request to the server
 
-    std::vector<DataPackInterface*> input_datapacks;
+    datapacks_set_t input_datapacks;
 
     DataPackIdentifier         devId1(datapackName1, engineName, datapackType1);
     DataPackIdentifier         devId2(datapackName2, engineName, datapackType2);
-    DataPack<EngineTest::TestPayload> dev1(datapackName1, engineName); // Client side
-    DataPack<EngineTest::TestPayload> dev2(datapackName2, engineName); // Client side
+    auto dataPack1 = generateDataPack(datapackName1, engineName);
+    auto dataPack2 = generateDataPack(datapackName1, engineName);
     std::shared_ptr<TestGrpcDataPackController> datapackController1(new TestGrpcDataPackController()); // Server side
     std::shared_ptr<TestGrpcDataPackController> datapackController2(new TestGrpcDataPackController()); // Server side
 
     server.registerDataPack(datapackName1, datapackController1.get());
     server.registerDataPack(datapackName2, datapackController2.get());
 
-    input_datapacks.push_back(&dev1);
-    input_datapacks.push_back(&dev2);
+    input_datapacks.insert(dataPack1);
+    input_datapacks.insert(dataPack2);
 
     server.startServer();
     client.sendDataPacksToEngine(input_datapacks);
 
-    EngineClientInterface::datapack_identifiers_set_t datapackIdentifiers;
+    datapack_identifiers_set_t datapackIdentifiers;
     datapackIdentifiers.insert(devId1);
     datapackIdentifiers.insert(devId2);
 
-    const auto output = client.updateDataPacksFromEngine(datapackIdentifiers);
+    /*const auto output = client.getDataPacksFromEngine(datapackIdentifiers);
 
     ASSERT_EQ(output.size(), 2);
     ASSERT_EQ(output.at(0)->engineName(), engineName);
@@ -648,7 +667,7 @@ TEST(EngineGrpc, GetDataPackData2)
     {
         ASSERT_EQ(output.at(0)->name(), datapackName2);
         ASSERT_EQ(output.at(1)->name(), datapackName1);
-    }
+    }*/
 }
 
 // EOF

@@ -82,12 +82,12 @@ class StatusFunction
          * \param kwargs Python keywords
          * \return Result of status function execution
          */
-        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
     protected:
-        EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+        datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-        EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const override;
+        datapack_identifiers_set_t updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const override;
 
     private:
 

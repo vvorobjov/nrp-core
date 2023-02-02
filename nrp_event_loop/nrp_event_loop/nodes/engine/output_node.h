@@ -54,16 +54,16 @@ public:
     /*!
      * Returns all datapacks stored in the node and clears the cache
      */
-    std::vector<DataPackInterface*> getDataPacks()
+    datapacks_set_t getDataPacks()
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
-        std::vector<DataPackInterface*> devs;
-        for(auto &[id, dev] : _dataStore)
-            devs.push_back(dev);
+        datapacks_set_t dataPacks;
+        for(auto &[id, dataPackRawPtr] : _dataStore)
+            dataPacks.insert(DataPackInterfaceConstSharedPtr(dataPackRawPtr));
         _dataStore.clear();
 
-        return devs;
+        return dataPacks;
     }
 
 protected:

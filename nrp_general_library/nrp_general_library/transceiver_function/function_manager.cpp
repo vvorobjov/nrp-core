@@ -29,30 +29,17 @@
 
 FunctionData::FunctionData(const std::string &name,
                            const TransceiverDataPackInterface::shared_ptr &function,
-                           const EngineClientInterface::datapack_identifiers_set_t &datapackIDs)
+                           const datapack_identifiers_set_t &datapackIDs)
     : Name(name),
       Function(function),
       DataPackIDs(datapackIDs)
 {}
 
-void DataPackFunctionResult::extractDataPacks()
-{
-    // Extract pointers to retrieved datapacks
-    const auto devListLength = boost::python::len(this->DataPackList);
-    this->DataPacks.reserve(devListLength);
-    for(unsigned int i = 0; i < devListLength; ++i)
-    {
-        this->DataPacks.push_back(boost::python::extract<DataPackInterface*>(this->DataPackList[i]));
-    }
-}
-
-DataPackFunctionResult::DataPackFunctionResult(datapack_list_t &&_datapackList)
-    : DataPackList(_datapackList)
-{}
 
 FunctionManager::FunctionManager()
     : FunctionManager(static_cast<boost::python::dict>(boost::python::import("__main__").attr("__dict__")))
 {}
+
 
 FunctionManager::FunctionManager(const boost::python::dict &tfGlobals)
     : _globalDict(tfGlobals)
@@ -70,27 +57,30 @@ FunctionManager::function_datas_t::const_iterator FunctionManager::findDataPackF
     return this->_dataPackFunctions.end();
 }
 
-EngineClientInterface::datapack_identifiers_set_t FunctionManager::updateRequestedDataPackIDs() const
+
+datapack_identifiers_set_t FunctionManager::getRequestedDataPackIDs() const
 {
-    EngineClientInterface::datapack_identifiers_set_t devIDs;
+    datapack_identifiers_set_t requestedIDs;
 
     // Scan all transceiver functions for requested datapacks
 
     for(const auto &curData : this->_dataPackFunctions)
     {
         auto newDevIDs = curData.second.Function->updateRequestedDataPackIDs();
-        devIDs.insert(newDevIDs.begin(), newDevIDs.end());
+        requestedIDs.insert(newDevIDs.begin(), newDevIDs.end());
     }
 
-    return devIDs;
+    if(this->_statusFunction != nullptr)
+    {
+        auto newDevIDs = this->_statusFunction->Function->updateRequestedDataPackIDs();
+        requestedIDs.insert(newDevIDs.begin(), newDevIDs.end());
+    }
+
+    return requestedIDs;
 }
 
-void FunctionManager::setEngineDataPacks(FunctionManager::engines_datapacks_t &&engineDataPacks)
-{
-    this->_engineDataPacks = std::move(engineDataPacks);
-}
 
-boost::python::object FunctionManager::runDataPackFunction(const std::string &tfName)
+std::vector<std::shared_ptr<DataPackInterface>> FunctionManager::runDataPackFunction(const std::string &tfName, datapacks_set_t dataPacks)
 {
     // Find associated TF
     auto tfDataIterator = this->findDataPackFunction(tfName);
@@ -99,12 +89,14 @@ boost::python::object FunctionManager::runDataPackFunction(const std::string &tf
     if(tfDataIterator == this->_dataPackFunctions.end())
         throw NRPException::logCreate("TF with name " + tfName + " not loaded");
 
+    boost::python::object results;
+
     try
     {
         boost::python::tuple args;
         boost::python::dict kwargs;
 
-        return tfDataIterator->second.Function->runTf(args, kwargs);
+        results = tfDataIterator->second.Function->runTf(args, kwargs, dataPacks);
     }
     catch(boost::python::error_already_set &)
     {
@@ -115,16 +107,47 @@ boost::python::object FunctionManager::runDataPackFunction(const std::string &tf
         std::string function_type = tfDataIterator->second.Function->isPreprocessing() ? "Preprocessing" : "Transceiver";
         throw NRPException::logCreate("Error occurred during execution of " + function_type + " Function \"" + tfDataIterator->second.Name + "\": " + e.what());
     }
+
+    // Extract the results
+
+    std::vector<std::shared_ptr<DataPackInterface>> dataPackList;
+
+    try
+    {
+        boost::python::list resultsListDataPacks(results);
+
+        // We extract shared pointers from the results
+        // boost::python takes care of incrementing the reference count in the python object when we do this
+        // Easy way to test it is to print the reference count with:
+        // Py_REFCNT(boost::python::object(resultsListDataPacks[i]).ptr())
+        // before and after the extraction
+
+        for(int i = 0; i < boost::python::len(resultsListDataPacks); i++)
+        {
+            std::shared_ptr<DataPackInterface> ptr = boost::python::extract<std::shared_ptr<DataPackInterface>>(resultsListDataPacks[i]);
+            dataPackList.push_back(std::move(ptr));
+        }
+    }
+    catch(boost::python::error_already_set &)
+    {
+        std::string function_type = tfDataIterator->second.Function->isPreprocessing() ? "Preprocessing" : "Transceiver";
+        throw NRPException::logCreate("Python error occurred during extraction of results from " + function_type + " Function '" +
+                                      tfDataIterator->second.Name + "': " +
+                                      handle_pyerror() +
+                                      "\nPlease make sure that the function returns a (possibly empty) list of DataPacks");
+    }
+
+    return dataPackList;
 }
 
 
-FunctionManager::status_function_results_t FunctionManager::executeStatusFunction(const nlohmann::json & clientData)
+FunctionManager::status_function_results_t FunctionManager::executeStatusFunction(datapacks_set_t dataPacks)
 {
     // Early return in case status function is not registered
 
     if(this->_statusFunction == nullptr)
     {
-        return std::make_tuple(nullptr, FunctionManager::tf_results_t());
+        return std::make_tuple(false, datapacks_vector_t());
     }
 
     // Run the status function
@@ -136,9 +159,7 @@ FunctionManager::status_function_results_t FunctionManager::executeStatusFunctio
         boost::python::tuple args;
         boost::python::dict kwargs;
 
-        kwargs["client_data"] = boost::ref(clientData);
-
-        results = this->_statusFunction->Function->runTf(args, kwargs);
+        results = this->_statusFunction->Function->runTf(args, kwargs, dataPacks);
     }
     catch(boost::python::error_already_set &)
     {
@@ -146,10 +167,11 @@ FunctionManager::status_function_results_t FunctionManager::executeStatusFunctio
                                       this->_statusFunction->Name + "': " + handle_pyerror());
     }
 
-    // Extract the results - a single nlohmann::json object should be returned by the status function
+    // Extract the results - the function should return a tuple with a boolean flag (the 'done' flag)
+    // and a list of DataPacks (observations)
 
-    std::unique_ptr<nlohmann::json> retval;
-    FunctionManager::tf_results_t dataPacks;
+    bool doneFlag;
+    datapacks_vector_t dataPackList;
 
     try
     {
@@ -163,30 +185,36 @@ FunctionManager::status_function_results_t FunctionManager::executeStatusFunctio
                                           "and a (possibly empty) list of DataPacks");
         }
 
-        // The first element in the tuple should be a JSON status object
+        // The first element in the tuple should be the 'done' flag
 
-        retval.reset(boost::python::extract<nlohmann::json *>(resultsTuple[0]));
+        doneFlag = boost::python::extract<bool>(resultsTuple[0]);
 
-        // The second element should be a list of DataPacks (it can be empty)
+        // The second element should be a list of observations - DataPacks (it can be empty)
 
         boost::python::list resultsListDataPacks(resultsTuple[1]);
-        DataPackFunctionResult resultDataPacks(std::move(resultsListDataPacks));
 
-        // Extract pointers to retrieved datapacks
-        resultDataPacks.extractDataPacks();
+        // We extract shared pointers from the results
+        // boost::python takes care of incrementing the reference count in the python object when we do this
+        // Easy way to test it is to print the reference count with:
+        // Py_REFCNT(boost::python::object(resultsListDataPacks[i]).ptr())
+        // before and after the extraction
 
-        dataPacks.push_back(resultDataPacks);
+        for(int i = 0; i < boost::python::len(resultsListDataPacks); i++)
+        {
+            std::shared_ptr<DataPackInterface> ptr = boost::python::extract<std::shared_ptr<DataPackInterface>>(resultsListDataPacks[i]);
+            dataPackList.push_back(std::move(ptr));
+        }
     }
     catch(boost::python::error_already_set &)
     {
         throw NRPException::logCreate("Python error occurred during extraction of results from Status Function '" +
                                       this->_statusFunction->Name + "': " +
                                       handle_pyerror() +
-                                      "\nPlease make sure that the function returns a tuple with two elements: a SimulationStatus object,"
+                                      "\nPlease make sure that the function returns a tuple with two elements: the 'done' flag (boolean),"
                                       "and a (possibly empty) list of DataPacks");
     }
 
-    return std::make_tuple(std::move(retval), std::move(dataPacks));
+    return std::make_tuple(doneFlag, dataPackList);
 }
 
 
@@ -236,7 +264,7 @@ void FunctionManager::loadStatusFunction(const std::string & statusFunctionName,
 
     // Set other status function params
 
-    this->_statusFunction->DataPackIDs = this->_statusFunction->Function->updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t());
+    this->_statusFunction->DataPackIDs = this->_statusFunction->Function->updateRequestedDataPackIDs(datapack_identifiers_set_t());
     this->_statusFunction->Name        = statusFunctionName;
 }
 
@@ -297,7 +325,7 @@ void FunctionManager::loadDataPackFunction(const std::string & functionName,
 
     // Update transfer function params
 
-    this->_newDataPackFunctionIt->second.DataPackIDs = this->_newDataPackFunctionIt->second.Function->updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t());
+    this->_newDataPackFunctionIt->second.DataPackIDs = this->_newDataPackFunctionIt->second.Function->updateRequestedDataPackIDs(datapack_identifiers_set_t());
     this->_newDataPackFunctionIt->second.Name        = functionName;
 
     // Mark the transceiver function as loaded
@@ -322,9 +350,11 @@ TransceiverDataPackInterfaceSharedPtr *FunctionManager::registerNewStatusFunctio
     return &this->_statusFunction->Function;
 }
 
-FunctionManager::tf_results_t FunctionManager::executeDataPackFunctions(const std::string &engineName, const bool preprocessing)
+datapacks_vector_t FunctionManager::executeDataPackFunctions(const std::string &engineName,
+                                                             datapacks_set_t    dataPacks,
+                                                             const bool         preprocessing)
 {
-    tf_results_t tfResults;
+    datapacks_vector_t results;
 
     const auto linkedTFRange = this->getDataPackFunctions(engineName);
 
@@ -332,27 +362,45 @@ FunctionManager::tf_results_t FunctionManager::executeDataPackFunctions(const st
     {
         if(curTFIt->second.Function->isPreprocessing() == preprocessing)
         {
-            // Get datapack outputs from transceiver function
-            DataPackFunctionResult::datapack_list_t pyResult(this->runDataPackFunction(curTFIt->second.Name));
-            DataPackFunctionResult result(std::move(pyResult));
+            auto functionResults = this->runDataPackFunction(curTFIt->second.Name, dataPacks);
 
-            // Extract pointers to retrieved datapacks
-            result.extractDataPacks();
-            tfResults.push_back(result);
+            results.insert(results.end(),
+                           functionResults.begin(),
+                           functionResults.end());
         }
     }
 
-    return tfResults;
+    return results;
 }
 
-FunctionManager::tf_results_t FunctionManager::executePreprocessingFunctions(const std::string &engineName)
+datapacks_vector_t FunctionManager::executePreprocessingFunctions(const std::string &engineName, datapacks_set_t dataPacks)
 {
-    return executeDataPackFunctions(engineName, true);
+    return executeDataPackFunctions(engineName, dataPacks, true);
 }
 
-FunctionManager::tf_results_t FunctionManager::executeTransceiverFunctions(const std::string &engineName)
+datapacks_vector_t FunctionManager::executeTransceiverFunctions(const std::string &engineName, datapacks_set_t dataPacks)
 {
-    return executeDataPackFunctions(engineName, false);
+    return executeDataPackFunctions(engineName, dataPacks, false);
+}
+
+void FunctionManager::setSimulationTime(SimulationTime simulationTime)
+{
+    this->_simulationTime = simulationTime;
+}
+
+const SimulationTime & FunctionManager::getSimulationTime() const
+{
+    return this->_simulationTime;
+}
+
+void FunctionManager::setSimulationIteration(unsigned long simulationIteration)
+{
+    this->_simulationIteration = simulationIteration;
+}
+
+unsigned long FunctionManager::getSimulationIteration() const
+{
+    return this->_simulationIteration;
 }
 
 // EOF

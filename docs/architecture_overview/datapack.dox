@@ -55,12 +55,30 @@ Attempting to retrieve the data from an empty DataPack will result in an excepti
 A method "isEmpty" is provided to check whether a DataPack is empty or not before attempting to access its data:
 
 \code{.py}
-if(not datapack.isEmpty()):
+if not datapack.isEmpty():
 	# It's safe to get the data
 	print(datapack.data)
 else:
 	# This will raise an exception
 	print(datapack.data)
+\endcode
+
+
+\section stale_datapacks Checking if a DataPack contains the most recent data
+
+It may happen that certain DataPacks that are available to Preprocessing and Transceiver functions will not be updated on every simulation iteration.
+For example, this will be the case whenever the engines that take part in the simulation run at different frequencies.
+It may be wasteful to perform processing of the same data multiple times.
+The DataPack objects have a flag, called `isUpdated` that allows to check if they contain the most recent data.
+It will be set to true only on the simulation iteration (as defined by the \ref simulation_schema "SimulationTimestep" configuration parameter),
+on which the DataPack has been created (for example returned from a Preprocessing Function) or received (for example from an Engine).
+The flag can be accessed from Preprocessing, Transceiver, and Status Functions in the following way:
+
+\code{.py}
+if datapack.isUpdated():
+	# Perform some operations, because the DataPack has just been updated
+else:
+	# The DataPack is 'stale', i.e. it was updated in one of the previous simulation iterations
 \endcode
 
 

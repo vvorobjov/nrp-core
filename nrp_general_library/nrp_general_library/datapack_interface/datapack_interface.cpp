@@ -81,4 +81,14 @@ void DataPackInterface::setIsEmpty(bool value)
     this->_isEmpty = value;
 }
 
+bool DataPackInterface::isUpdated() const
+{
+    return this->_isUpdated;
+}
+
+void DataPackInterface::resetIsUpdated() const
+{
+    this->_isUpdated = false;
+}
+
 // EOF

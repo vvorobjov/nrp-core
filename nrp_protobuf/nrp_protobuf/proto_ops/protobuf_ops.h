@@ -26,6 +26,7 @@
 #include "google/protobuf/message.h"
 
 #include "nrp_protobuf/engine_grpc.pb.h"
+#include "nrp_protobuf/nrp_server.pb.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
@@ -181,6 +182,37 @@ namespace protobuf_ops {
     }
 
 
+    /*!
+     * @brief Sets the data field of a datapack protobuf message from a datapack interface
+     *
+     * @tparam MSG_TYPE template param containing the list of protobuf types that will be check in the conversion
+     * @tparam REMAINING_MSG_TYPES
+     * @param from input datapack containing data
+     * @param to protobuf msg pointer which data field will be set to 'from'
+     */
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    void setTrajectoryMessageFromInterfaceSubset(const DataPackInterface & from, NrpCore::TrajectoryMessage * to)
+    {
+        try
+        {
+            const auto& message = dynamic_cast<const DataPack<MSG_TYPE> &>(from);
+            to->mutable_data()->PackFrom(message.getData());
+            return;
+        }
+        catch(const std::bad_cast& e)
+        {
+            // Do not process the exception.
+            // Bad casts aren't 'bad' in this case, they simply mean that
+            // we haven't found the right message type yet.
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return setTrajectoryMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(from, to);
+        else
+            throw NRPException::logCreate("DataPack \"" + from.name() + "\" is not supported by engine '" + from.engineName() + "'");
+    }
+
+
     // Interface containing conversion operations between protobuf messages and datapacks
     class NRPProtobufOpsIface {
     public:
@@ -193,6 +225,8 @@ namespace protobuf_ops {
         virtual std::unique_ptr<gpb::Message> getDataFromDataPackMessage(const EngineGrpc::DataPackMessage &from) = 0;
 
         virtual void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) = 0;
+
+        virtual void setTrajectoryMessageFromInterface(const DataPackInterface & from, NrpCore::TrajectoryMessage * to) = 0;
     };
 
     // Template class implementing NRPProtobufOpsIface
@@ -210,6 +244,11 @@ namespace protobuf_ops {
 
         void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) override
         { setDataPackMessageDataSubset<MSG_TYPES...>(from, to); }
+
+        void setTrajectoryMessageFromInterface(const DataPackInterface & from, NrpCore::TrajectoryMessage * to) override
+        {
+            setTrajectoryMessageFromInterfaceSubset<MSG_TYPES...>(from, to);
+        }
     };
 }
 

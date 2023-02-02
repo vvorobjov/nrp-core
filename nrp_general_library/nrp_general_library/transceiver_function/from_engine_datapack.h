@@ -34,9 +34,9 @@ class EngineDataPack
         EngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed);
         virtual ~EngineDataPack() override = default;
 
-        EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+        datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
     private:
 
@@ -55,9 +55,9 @@ public:
     EngineDataPacks(const std::string &keyword, const boost::python::list &datapackListNames, const std::string &engineName, bool isPreprocessed);
     virtual ~EngineDataPacks() override = default;
 
-    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+    datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
 private:
 

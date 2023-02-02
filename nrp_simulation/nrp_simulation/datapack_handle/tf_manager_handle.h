@@ -23,7 +23,6 @@
 #define TF_MANAGER_HANDLE_H
 
 #include "nrp_general_library/transceiver_function/function_manager.h"
-#include "nrp_general_library/transceiver_function/transceiver_function_sorted_results.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
 
@@ -35,13 +34,19 @@ class TFManagerHandle : public DataPackProcessor {
 
 public:
 
+    TFManagerHandle(SimulationDataManager * simulationDataManager):
+        DataPackProcessor(simulationDataManager)
+        {}
+
     void init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines) override;
 
     void updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & clientData) override;
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
 
     void sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override;
+
+private:
 
     /*!
      * \brief Execute PreprocessingFunctions for each engine and place output datapacks in its cache
@@ -49,8 +54,9 @@ public:
      * \param functionManager function manager
      * \param engines Engines that are been synchronize in the current loop
      */
-    static void executePreprocessingFunctions(FunctionManager &functionManager,
-                                              const std::vector<EngineClientInterfaceSharedPtr> &engines);
+    void executePreprocessingFunctions(FunctionManager &functionManager,
+                                       const std::vector<EngineClientInterfaceSharedPtr> &engines,
+                                       datapacks_set_t dataPacks);
 
     /*!
      * \brief Execute TransceiverFunctions for each engine
@@ -58,10 +64,9 @@ public:
      * \param functionManager tfManager
      * \param engines Engines that are been synchronize in the current loop
      */
-    static TransceiverFunctionSortedResults executeTransceiverFunctions(FunctionManager &functionManager,
-                                                                        const std::vector<EngineClientInterfaceSharedPtr> &engines);
-
-private:
+    void executeTransceiverFunctions(FunctionManager &functionManager,
+                                     const std::vector<EngineClientInterfaceSharedPtr> &engines,
+                                     datapacks_set_t dataPacks);
 
     /*!
      * \brief Loads all DataPack Processing Functions defined in the config
@@ -75,8 +80,6 @@ private:
 
     /*! \brief  FunctionManager handling datapack operations */
     FunctionManager _functionManager;
-    /*! \brief  tf results */
-    TransceiverFunctionSortedResults _tf_results;
 };
 
 #endif // TF_MANAGER_HANDLE_H

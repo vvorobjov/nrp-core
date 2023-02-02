@@ -232,7 +232,7 @@ class EngineGrpcClient
             return engineTime;
         }
 
-    virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
+    virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &requestedDataPackIds) override
     {
         NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -240,15 +240,15 @@ class EngineGrpcClient
         EngineGrpc::GetDataPacksReply   reply;
         grpc::ClientContext             context;
 
-        for(const auto &devID : datapackIdentifiers)
+        for(const auto & requestedId: requestedDataPackIds)
         {
-            if(this->engineName().compare(devID.EngineName) == 0)
+            if(this->engineName().compare(requestedId.EngineName) == 0)
             {
                 auto dataPackId = request.add_datapackids();
 
-                dataPackId->set_datapackname(devID.Name);
-                dataPackId->set_datapacktype(devID.Type);
-                dataPackId->set_enginename(devID.EngineName);
+                dataPackId->set_datapackname(requestedId.Name);
+                dataPackId->set_datapacktype(requestedId.Type);
+                dataPackId->set_enginename(requestedId.EngineName);
             }
         }
 
@@ -260,7 +260,7 @@ class EngineGrpcClient
             throw std::runtime_error(errMsg);
         }
 
-        typename EngineClientInterface::datapacks_set_t interfaces;
+        datapacks_vector_t interfaces;
         for(int i = 0; i < reply.datapacks_size(); i++) {
             auto datapackData = reply.datapacks(i);
             DataPackInterfaceConstSharedPtr datapack;
@@ -275,7 +275,7 @@ class EngineGrpcClient
             }
 
             if(datapack)
-                interfaces.insert(datapack);
+                interfaces.push_back(datapack);
             else
                 throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" +
                                                       datapackData.datapackid().datapackname() + "\" in engine \"" +
@@ -285,7 +285,7 @@ class EngineGrpcClient
         return interfaces;
     }
 
-        virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
+        virtual void sendDataPacksToEngine(const datapacks_set_t &dataPacks) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -295,33 +295,29 @@ class EngineGrpcClient
 
             prepareRpcContext(&context);
 
-            for(const auto &datapack : datapacksArray)
+            for(const auto &datapack : dataPacks)
             {
-                if(datapack->engineName().compare(this->engineName()) == 0)
-                {
-                    if(datapack->isEmpty())
-                        throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
-                    else {
-                        auto protoDataPack = request.add_datapacks();
+                assert(datapack->engineName() == this->engineName());
 
-                        bool isSet = false;
-                        for(auto& mod : _protoOps) {
-                            try {
-                                mod->setDataPackMessageFromInterface(*datapack, protoDataPack);
-                                isSet = true;
-                            }
-                            catch (NRPException &) {
-                                // this just means that the module couldn't process the request, try with the next one
-                            }
+                if(datapack->isEmpty())
+                    throw NRPException::logCreate("Attempt to send empty datapack " + datapack->name() + " to Engine " + this->engineName());
+                else {
+                    auto protoDataPack = request.add_datapacks();
+
+                    bool isSet = false;
+                    for(auto& mod : _protoOps) {
+                        try {
+                            mod->setDataPackMessageFromInterface(*datapack, protoDataPack);
+                            isSet = true;
                         }
-
-                        if(!isSet)
-                            throw NRPException::logCreate("Failed to set DataPackMessage from DataPackInterface with name \"" + datapack->name() + "\"");
+                        catch (NRPException &) {
+                            // this just means that the module couldn't process the request, try with the next one
+                        }
                     }
+
+                    if(!isSet)
+                        throw NRPException::logCreate("Failed to set DataPackMessage from DataPackInterface with name \"" + datapack->name() + "\"");
                 }
-                else
-                    NRPLogger::warn("Attempting to send DataPack \"" + datapack->name() + "\" linked to engine \"" + datapack->engineName() +
-                    "\" to Engine \"" + this->engineName() + "\". It won't be sent.");
             }
 
             grpc::Status status = _stub->setDataPacks(&context, request, &reply);

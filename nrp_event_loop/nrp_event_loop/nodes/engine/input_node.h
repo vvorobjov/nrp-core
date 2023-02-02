@@ -59,18 +59,18 @@ public:
     /*!
      * Set datapacks to be published into the graph in the next call to 'compute'
      */
-    void setDataPacks(EngineClientInterface::datapacks_set_t dpacks)
+    void setDataPacks(datapacks_vector_t dpacks)
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
         // TODO: in order to use MsgPublishPolicy::ALL policy with this type of node a vector of datapacks should be
         //  store, not just one which is being overwritten
         // move datapacks into temporary storage without copying the shared pointer
-        while(!dpacks.empty()) {
-            auto n = dpacks.extract(dpacks.begin());
-            if(this->_portMap.count(n.value()->name()) &&
-               (!_dataTemp.count(n.value()->name()) || !n.value()->isEmpty()))
-                _dataTemp[n.value()->name()] = std::move(n.value());
+        for(auto dpack: dpacks) {
+            auto name = dpack->name();
+            if(this->_portMap.count(name) && 
+               (!_dataTemp.count(name) || !dpack->isEmpty()))
+                _dataTemp[name] = std::move(dpack);
         }
     }
 

@@ -60,6 +60,8 @@ message(STATUS "Compiling .proto files: ${ENGINE_PROTO_FILES}")
 set(PROTO_PYTHON_MODULES "")
 set(PROTO_INCLUDE_STRS "")
 set(PROTO_MSG_TYPES_ALL "")
+set(PROTO_PYTHON_FILES "")
+set(PROTO_OPS_LIBS "")
 
 foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
 
@@ -93,6 +95,7 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
             # Add msg name to associated variables
             string(APPEND PROTO_BINDING_DEFS "    proto_python_bindings<${PACKAGE_CPP_NAME}::${msg_name}>::create();\n")
             string(APPEND PROTO_BINDING_DEFS "    DataPack<${PACKAGE_CPP_NAME}::${msg_name}>::create_python(\"${PACKAGE_SHORT_NAME}${msg_name}DataPack\");\n\n")
+            string(APPEND PROTO_BINDING_DEFS "    RawData<${PACKAGE_CPP_NAME}::${msg_name}>::create_python(\"${PACKAGE_SHORT_NAME}${msg_name}RawData\");\n\n")
             string(APPEND PROTO_MSG_TYPES ",${PACKAGE_CPP_NAME}::${msg_name}")
         endif()
     endforeach()
@@ -125,6 +128,7 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
     # generate python code
     set(PROTO_PYTHON_FILE "")
     generate_proto_python("${TEMP_PROTO_DIR}/${PACKAGE_FILE_NAME}.proto" PROTO_PYTHON_FILE)
+    list(APPEND PROTO_PYTHON_FILES ${PROTO_PYTHON_FILE})
 
     # Configure files
     configure_file("${NRP_PROTO_CMAKE_DIR}/python_module.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/${PACKAGE_SHORT_NAME}/python_module.cpp" @ONLY)
@@ -163,6 +167,7 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
 
     # Protobuf Operations library
     set(PROTO_OPS_LIB_NAME "${NRP_PROTO_OPS_LIB_PREFIX}${PACKAGE_SHORT_NAME}${NRP_PROTO_OPS_LIB_SUFIX}")
+    list(APPEND PROTO_OPS_LIBS "lib${PROTO_OPS_LIB_NAME}.so")
     add_library("${PROTO_OPS_LIB_NAME}" SHARED "${CMAKE_CURRENT_BINARY_DIR}/src/${PACKAGE_SHORT_NAME}/protobuf_ops.cpp")
     add_library(${NAMESPACE_NAME}::${PROTO_OPS_LIB_NAME} ALIAS ${PROTO_OPS_LIB_NAME})
     target_compile_options(${PROTO_OPS_LIB_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
@@ -237,3 +242,19 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
             DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")
 
 endforeach()
+
+# Generate a comma-separated list of strings of names of all user-defined proto files
+
+set(PROTO_MODULES_LIST, "")
+foreach(PROTO_FILE ${PROTO_PYTHON_FILES})
+    get_filename_component(PROTO_FILE_BASENAME ${PROTO_FILE} NAME_WE)
+    string(APPEND PROTO_MODULES_LIST "\"nrp_core.data.nrp_protobuf.${PROTO_FILE_BASENAME}\",\n")
+endforeach()
+
+# Store the list generated above in a python module
+
+configure_file("python/proto_modules.py.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" @ONLY)
+configure_file("cmake/proto_libraries.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" DESTINATION "${PYTHON_INSTALL_DIR_REL}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY})

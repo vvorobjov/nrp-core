@@ -315,15 +315,15 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     ASSERT_EQ(req_devs.begin()->Name, "my_data_pack");
     ASSERT_EQ(req_devs.begin()->EngineName, "fake_engine");
 
-    EngineClientInterface::datapacks_set_t dpacks_sent;
-    dpacks_sent.insert(DataPackInterfaceSharedPtr(new DataPackInterface(*(req_devs.begin()))));
+    datapacks_vector_t dpacks_sent;
+    dpacks_sent.push_back(DataPackInterfaceSharedPtr(new DataPackInterface(*(req_devs.begin()))));
     input_p->setDataPacks(dpacks_sent);
 
     ComputationalGraphManager::getInstance().compute();
     auto dpacks_received = output_p->getDataPacks();
     ASSERT_EQ(dpacks_received.size(),1);
-    ASSERT_EQ(dpacks_received[0]->name(), "my_data_pack");
-    ASSERT_EQ(dpacks_received[0]->engineName(), "fake_engine");
+    ASSERT_EQ(dpacks_received.begin()->get()->name(), "my_data_pack");
+    ASSERT_EQ(dpacks_received.begin()->get()->engineName(), "fake_engine");
 
     // cache policy 'keep'
     ComputationalGraphManager::getInstance().compute();
@@ -337,8 +337,8 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     auto input_p_clear = dynamic_cast<InputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_input"));
     auto output_p_clear = dynamic_cast<OutputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_output"));
 
-    EngineClientInterface::datapacks_set_t dpacks_sent_clear;
-    dpacks_sent_clear.insert(DataPackInterfaceSharedPtr(new DataPackInterface(*(input_p_clear->requestedDataPacks().begin()))));
+    datapacks_vector_t dpacks_sent_clear;
+    dpacks_sent_clear.push_back(DataPackInterfaceSharedPtr(new DataPackInterface(*(input_p_clear->requestedDataPacks().begin()))));
     input_p_clear->setDataPacks(dpacks_sent_clear);
 
     ComputationalGraphManager::getInstance().compute();

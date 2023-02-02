@@ -73,8 +73,6 @@ void NestEngineJSONNRPClient::reset()
         throw NRPException::logCreate("Engine \"" + this->engineName() + "\" reset failed: " + msg);
     }
 
-    this->_datapackCache.clear();
-
     this->resetEngineTime();
     
     NRPLogger::debug("NestEngineJSONNRPClient::reset() engine time: {}", this->getEngineTime().count());

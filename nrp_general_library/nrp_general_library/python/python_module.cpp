@@ -35,8 +35,6 @@
 
 namespace python = boost::python;
 
-using DataPackIdentifiers = EngineClientInterface::datapack_identifiers_set_t;
-
 /*!
  * \brief Dummy alias class for EngineDataPack, mapped to PreprocessedDataPack python decorator
  *
@@ -71,36 +69,6 @@ class PreprocessingFunction
     using TransceiverFunction::TransceiverFunction;
 };
 
-struct TransceiverDataPackInterfaceWrapper
-        : TransceiverDataPackInterface, python::wrapper<TransceiverDataPackInterface>
-{
-    python::object runTf(python::tuple &args, python::dict &kwargs) override
-    {
-        if(python::override runTf = this->get_override("runTf"))
-            return runTf(*args, **kwargs);
-
-        return TransceiverDataPackInterface::runTf(args, kwargs);
-    }
-
-    python::object defaultRunTf(python::tuple &args, python::dict &kwargs)
-    {
-        return TransceiverDataPackInterface::runTf(args, kwargs);
-    }
-
-    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
-    {
-        if(python::override getReqIDs = this->get_override("_getRequestedDataPackIDs"))
-            return getReqIDs();
-
-        return TransceiverDataPackInterface::getRequestedDataPackIDs();
-    }
-
-    EngineClientInterface::datapack_identifiers_set_t defaultGetRequestedDataPackIDs() const
-    {
-        return TransceiverDataPackInterface::getRequestedDataPackIDs();
-    }
-};
-
 inline std::shared_ptr<DataPackIdentifier> genDevID(const std::string &name, const std::string &engineName)
 {
     return std::shared_ptr<DataPackIdentifier>(new DataPackIdentifier(name, engineName, ""));
@@ -111,11 +79,40 @@ inline std::shared_ptr<DataPackInterface> genDevInterface(const std::string &nam
     return std::shared_ptr<DataPackInterface>(new DataPackInterface(name, engineName, ""));
 }
 
+/*!
+ * \brief Returns simulation time in nanoseconds currently stored in the Function Manager
+ */
+static int64_t getSimulationTime()
+{
+    if(TransceiverDataPackInterface::getFunctionManager() != nullptr)
+    {
+        return TransceiverDataPackInterface::getFunctionManager()->getSimulationTime().count();
+    }
+
+    return 0;
+}
+
+/*!
+ * \brief Returns simulation iteration number currently stored in the Function Manager
+ */
+static unsigned long getSimulationIteration()
+{
+    if(TransceiverDataPackInterface::getFunctionManager() != nullptr)
+    {
+        return TransceiverDataPackInterface::getFunctionManager()->getSimulationIteration();
+    }
+
+    return 0;
+}
+
 using namespace boost::python;
 
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 {
+    def("getSimulationTime", getSimulationTime);
+    def("getSimulationIteration", getSimulationIteration);
+
     // DataPackIdentifier
     class_<DataPackIdentifier>("DataPackIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
             .def("__init__", make_constructor(&genDevID))
@@ -131,6 +128,7 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
     class_<DataPackInterface>("DataPackInterface", init<const std::string &, const std::string&, const std::string&>())
             .def("__init__", make_constructor(&genDevInterface))
             .def("isEmpty", &DataPackInterface::isEmpty)
+            .def("isUpdated", &DataPackInterface::isUpdated)
             .add_property("name", make_function(&DataPackInterface::name, return_value_policy<copy_const_reference>()), &DataPackInterface::setName)
             .add_property("type", make_function(&DataPackInterface::type, return_value_policy<copy_const_reference>()), &DataPackInterface::setType)
             .add_property("engine_name", make_function(&DataPackInterface::engineName, return_value_policy<copy_const_reference>()), &DataPackInterface::setEngineName)
@@ -141,10 +139,8 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 
 
     // TransceiverDataPackInterface
-    class_<TransceiverDataPackInterfaceWrapper, boost::noncopyable>("TransceiverDataPackInterface", init<>())
-            .def("__call__", &TransceiverDataPackInterface::pySetup<TransceiverDataPackInterface>)
-            .def("runTf", &TransceiverDataPackInterface::runTf, &TransceiverDataPackInterfaceWrapper::defaultRunTf)
-            .def("getRequestedDataPackIDs", &TransceiverDataPackInterface::getRequestedDataPackIDs, &TransceiverDataPackInterfaceWrapper::defaultGetRequestedDataPackIDs);
+    class_<TransceiverDataPackInterface, boost::noncopyable>("TransceiverDataPackInterface", init<>())
+            .def("__call__", &TransceiverDataPackInterface::pySetup<TransceiverDataPackInterface>);
 
     register_ptr_to_python<TransceiverDataPackInterface::shared_ptr>();
     register_ptr_to_python<TransceiverDataPackInterface::const_shared_ptr>();
@@ -162,27 +158,23 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
     class_<PreprocessedDataPack, bases<EngineDataPack> >("PreprocessedDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = true) ))
             .def("__call__", &TransceiverDataPackInterface::pySetup<PreprocessedDataPack>);
 
-
     // TransceiverFunction
     class_<TransceiverFunction, bases<TransceiverDataPackInterface> >("TransceiverFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = false) ))
-            .def("__call__", &TransceiverFunction::pySetup)
-            .def("runTf", &TransceiverFunction::runTf);
+            .def("__call__", &TransceiverFunction::pySetup);
 
     register_ptr_to_python<PtrTemplates<TransceiverFunction>::shared_ptr>();
     register_ptr_to_python<PtrTemplates<TransceiverFunction>::const_shared_ptr>();
 
     // PreprocessingFunction
     class_<PreprocessingFunction, bases<TransceiverDataPackInterface> >("PreprocessingFunction", init<std::string, bool>( (arg("engineName"), arg("isPreprocessing") = true) ))
-            .def("__call__", &PreprocessingFunction::pySetup)
-            .def("runTf", &PreprocessingFunction::runTf);
+            .def("__call__", &PreprocessingFunction::pySetup);
 
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::shared_ptr>();
     register_ptr_to_python<PtrTemplates<PreprocessingFunction>::const_shared_ptr>();
 
     // StatusFunction
     class_<StatusFunction, bases<TransceiverDataPackInterface> >("StatusFunction", init<>())
-            .def("__call__", &StatusFunction::pySetup)
-            .def("runTf", &StatusFunction::runTf);
+            .def("__call__", &StatusFunction::pySetup);
 
     register_ptr_to_python<PtrTemplates<StatusFunction>::shared_ptr>();
     register_ptr_to_python<PtrTemplates<StatusFunction>::const_shared_ptr>();

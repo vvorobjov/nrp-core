@@ -99,25 +99,25 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
     // The data is updated asynchronously, on every new frame. It may happen that on first
     // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-    const EngineClientInterface::datapacks_t * datapacks;
+    datapacks_vector_t datapacks;
     int trial = 0;
 
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), "irrelevant_type")});
-        ASSERT_EQ(datapacks->size(), 1);
+        datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), "irrelevant_type")});
+        ASSERT_EQ(datapacks.size(), 1);
     }
-    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
+    while(datapacks.begin()->get()->isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
     ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    const DataPack<Gazebo::Camera>& camDat = dynamic_cast<const DataPack<Gazebo::Camera>&>(*(datapacks->at(0)));
+    const DataPack<Gazebo::Camera> * camDat = dynamic_cast<const DataPack<Gazebo::Camera>*>(datapacks.begin()->get());
 
-    ASSERT_EQ(camDat.getData().imageheight(), 240);
-    ASSERT_EQ(camDat.getData().imagewidth(),  320);
-    ASSERT_EQ(camDat.getData().imagedepth(),  3);
-    ASSERT_EQ(camDat.getData().imagedata().size(), 320*240*3);
+    ASSERT_EQ(camDat->getData().imageheight(), 240);
+    ASSERT_EQ(camDat->getData().imagewidth(),  320);
+    ASSERT_EQ(camDat->getData().imagedepth(),  3);
+    ASSERT_EQ(camDat->getData().imagedata().size(), 320*240*3);
 }
 
 
@@ -143,7 +143,7 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint",
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint",
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(datapacks.size(), 1);
 
@@ -158,9 +158,15 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     newJointDev->set_effort(NAN);
     newJointDev->set_velocity(NAN);
     newJointDev->set_position(newTargetPos);
-    DataPack<Gazebo::Joint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
+    std::shared_ptr<DataPackInterface> newJointDataPack =
+        std::shared_ptr<DataPackInterface>(new DataPack<Gazebo::Joint>("youbot::base_footprint_joint",
+                                                                       engine->engineName(),
+                                                                       newJointDev));
 
-    ASSERT_NO_THROW(engine->sendDataPacksToEngine({&dev}));
+    datapacks_set_t outputDataPacks;
+    outputDataPacks.insert(newJointDataPack);
+
+    ASSERT_NO_THROW(engine->sendDataPacksToEngine(outputDataPacks));
 }
 
 TEST(TestGazeboGrpcEngine, LinkAndModelPlugin)
@@ -184,19 +190,20 @@ TEST(TestGazeboGrpcEngine, LinkAndModelPlugin)
     sleep(1);
 
     // Test link datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint",
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint",
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const auto *pLinkDev = dynamic_cast<const DataPack<Gazebo::Link> *>(datapacks[0].get());
+    const auto *pLinkDev = dynamic_cast<const DataPack<Gazebo::Link> *>(datapacks.begin()->get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // Test model datapack data getting
-    datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot",
-                                                                           engine->engineName(), "irrelevant_type")});
-    ASSERT_EQ(datapacks.size(), 2);
+    datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot",
+                                                                   engine->engineName(),
+                                                                   "irrelevant_type")});
+    ASSERT_EQ(datapacks.size(), 1);
 
-    const auto *pModelDev = dynamic_cast<const DataPack<Gazebo::Model> *>(datapacks[0].get());
+    const auto *pModelDev = dynamic_cast<const DataPack<Gazebo::Model> *>(datapacks.begin()->get());
     ASSERT_NE(pModelDev, nullptr);
 
     // TODO: Check that link and model state are correct

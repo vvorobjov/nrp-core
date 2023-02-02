@@ -1,9 +1,11 @@
 from nrp_core.client import NrpCore
+from nrp_core.data.nrp_protobuf.enginetest_pb2 import TestPayload
 
 import sys
 import os
 import unittest
 from threading import Thread
+import json
 
 
 class TestNrpServer(unittest.TestCase):
@@ -12,7 +14,7 @@ class TestNrpServer(unittest.TestCase):
     def setUp(self) -> None:
         """Test fixture setup method, spawns an instance of NRP Core client."""
         address = "localhost:50051"
-        config_file = "simulation_config_status.json"
+        config_file = "simulation_config.json"
 
         self.nrp_core = NrpCore(address, config_file=config_file)
 
@@ -33,7 +35,7 @@ class TestNrpServer(unittest.TestCase):
         self.nrp_core.initialize()
         self.assertEqual(self.nrp_core.current_state(), 'Initialized')
 
-        self.nrp_core.run_loop(5)
+        self.nrp_core.run_loop(4)
         self.assertEqual(self.nrp_core.current_state(), 'Stopped')
 
         self.nrp_core.reset()
@@ -77,41 +79,205 @@ class TestNrpServer(unittest.TestCase):
             NrpCore("localhost:50051", config_file="wrong_file", server_timeout=1)
 
 
-    def test_runloop_status(self):
+    def test_done_flag(self):
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_done_flag.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
         self.nrp_core.initialize()
 
-        # On first iteration run_loop should return a list of integer
-
-        status = self.nrp_core.run_loop(1)
-        expected_dict = {"integers": [0, 1, 2]}
-        self.assertDictEqual(status, expected_dict)
-
-        # On second iteration run_loop should return a list of booleans
-
-        status = self.nrp_core.run_loop(1)
-        expected_dict = {"flags": [True, False]}
-        self.assertDictEqual(status, expected_dict)
-
-        # On third iteration run_loop should return an empty status message
-
-        status = self.nrp_core.run_loop(1)
-        self.assertEqual(status, None)
+        done_flag, trajectory = self.nrp_core.run_loop(1)
+        self.assertTrue(done_flag)
+        done_flag, trajectory = self.nrp_core.run_loop(1)
+        self.assertFalse(done_flag)
 
 
-    def test_runloop_status_multiple_steps(self):
+    def test_set_proto_datapack(self):
+
+        # Prepare test payload
+
+        data = TestPayload()
+        data.integer = 555
+
+        # Store the payload in the buffer
+
+        self.assertEqual(len(self.nrp_core._proto_datapack_out_buffer), 0)
+        self.nrp_core.set_proto_datapack("test", "test", data)
+        self.assertEqual(len(self.nrp_core._proto_datapack_out_buffer), 1)
+
+        # Send the payload to NRP Core with run_loop()
+        # The buffer should be empty after the call
+
+        self.nrp_core.initialize()
+        self.nrp_core.run_loop(1)
+        self.assertEqual(len(self.nrp_core._proto_datapack_out_buffer), 0)
+
+        # The buffer should be cleared after a reset
+
+        self.nrp_core.set_proto_datapack("test", "test", data)
+        self.assertEqual(len(self.nrp_core._proto_datapack_out_buffer), 1)
+        self.nrp_core.reset()
+        self.assertEqual(len(self.nrp_core._proto_datapack_out_buffer), 0)
+
+
+    def test_set_json_datapack(self):
+
+        # Prepare test payload
+
+        data = {}
+        data["test_data"] = 888
+
+        # Store the payload in the buffer
+
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 0)
+        self.nrp_core.set_json_datapack("actions", "python_1", data)
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 1)
+
+        # Send the payload to NRP Core with run_loop()
+        # The buffer should be empty after the call
+
+        self.nrp_core.initialize()
+        self.nrp_core.run_loop(1)
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 0)
+
+        # The buffer should be cleared after a reset
+
+        self.nrp_core.set_json_datapack("actions", "python_1", data)
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 1)
+        self.nrp_core.reset()
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 0)
+
+
+    def test_loopback_json_datapacks(self):
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_loopback.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
+        data = {}
+        data["test_data"] = 888
+        self.nrp_core.set_json_datapack("actions", "python_1", data)
+
+        self.nrp_core.initialize()
+        done_flag, trajectory = self.nrp_core.run_loop(1)
+
+        self.assertEqual(len(trajectory), 1)
+        self.assertEqual(trajectory[0]["test_data"], 0)
+
+        done_flag, trajectory = self.nrp_core.run_loop(1)
+
+        self.assertEqual(len(trajectory), 1)
+        self.assertEqual(trajectory[0]["test_data"], 888)
+
+
+    def test_trajectory_json(self):
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_trajectory_json.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
         self.nrp_core.initialize()
 
-        # Skip the first iteration
-        # On the second iteration run_loop should return a list of booleans
+        done_flag, timeout_flag, trajectory = self.nrp_core.run_until_timeout()
 
-        status = self.nrp_core.run_loop(2)
-        expected_dict = {"flags": [True, False]}
-        self.assertDictEqual(status, expected_dict)
+        self.assertTrue(done_flag)
+        self.assertFalse(timeout_flag)
+        self.assertEqual(len(trajectory), 4)
 
-        # On third iteration run_loop should return an empty status message
+        for i, datapack in enumerate(trajectory):
+            self.assertEqual(datapack["iteration"], i)
 
-        status = self.nrp_core.run_loop(1)
-        self.assertEqual(status, None)
+
+    def test_trajectory_until_timeout(self):
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_trajectory_timeout.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
+        self.nrp_core.initialize()
+
+        done_flag, timeout_flag, trajectory = self.nrp_core.run_until_timeout()
+
+        self.assertFalse(done_flag)
+        self.assertTrue(timeout_flag)
+        self.assertEqual(len(trajectory), 4)
+
+        for i, datapack in enumerate(trajectory):
+            self.assertEqual(datapack["iteration"], i + 1)
+
+
+    def test_trajectory_proto(self):
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_trajectory_proto.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
+        self.nrp_core.initialize()
+
+        # The done flag should be False, which means that we should not receive
+        # any trajectory data after running the run_loop
+
+        done_flag, timeout_flag, trajectory = self.nrp_core.run_until_timeout()
+
+        self.assertTrue(done_flag)
+        self.assertFalse(timeout_flag)
+        self.assertEqual(len(trajectory), 8)
+
+        # The trajectory should contain alternating Dump.String and
+        # EngineTest.TestPayload proto messages
+        # The order of messages coming from the Status Function should be preserved
+        for i, data in enumerate(trajectory):
+            if i % 2:  # 1, 3, 5...
+                self.assertEqual(data.integer, i // 2)
+            else:  # 0, 2, 4...
+                json_data = json.loads(data.string_stream)
+                self.assertEqual(json_data["int"], i // 2)
+
+
+    def test_trajectory_mixed(self):
+        """
+        Tests trajectories with mixed JSON and proto messages
+        """
+
+        self.tearDown()
+
+        address = "localhost:50051"
+        config_file = "simulation_config_trajectory_mixed.json"
+
+        self.nrp_core = NrpCore(address, config_file=config_file)
+
+        self.nrp_core.initialize()
+
+        done_flag, timeout_flag, trajectory = self.nrp_core.run_until_timeout()
+
+        self.assertTrue(done_flag)
+        self.assertFalse(timeout_flag)
+        self.assertEqual(len(trajectory), 8)
+
+        # The trajectory should contain alternating JSON objects and
+        # EngineTest.TestPayload proto messages
+        # The order of messages coming from the Status Function should be preserved
+        for i, data in enumerate(trajectory):
+            if i % 2:  # 1, 3, 5...
+                self.assertEqual(data.integer, i // 2)
+            else:  # 0, 2, 4...
+                self.assertEqual(data["int"], i // 2)
 
 
     def test_runloop_no_init(self):
@@ -144,7 +310,7 @@ class TestNrpServer(unittest.TestCase):
 
 
 # Change directory to the experiment's directory
-os.chdir(sys.argv[4])
+os.chdir(sys.argv[2])
 
 if __name__ == '__main__':
     unittest.main(argv=['first-arg-is-ignored'])

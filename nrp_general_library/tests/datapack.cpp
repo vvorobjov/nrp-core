@@ -53,9 +53,4 @@ TEST(DataDataPackTest, GetData)
 
     dev.getData();
     ASSERT_FALSE(dev.isEmpty());
-
-    auto i2 = dev.releaseData();
-    ASSERT_TRUE(dev.isEmpty());
-    ASSERT_THROW(dev.getData(), NRPException::exception);
-    delete i2;
 }

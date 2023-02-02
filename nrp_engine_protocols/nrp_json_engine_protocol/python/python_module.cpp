@@ -275,6 +275,7 @@ BOOST_PYTHON_MODULE(JSON_PYTHON_MODULE_NAME)
     boost::python::scope().attr("SimulationStatus") = boost::python::scope().attr("NlohmannJson");
 
     JsonDataPack::create_python("JsonDataPack");
+    JsonRawData::create_python("JsonRawData");
 }
 
 // EOF

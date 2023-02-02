@@ -27,6 +27,7 @@ set(LIB_SRC_FILES
     nrp_simulation/simulation/simulation_parameters.cpp
     nrp_simulation/datapack_handle/datapack_handle.cpp
     nrp_simulation/datapack_handle/tf_manager_handle.cpp
+    nrp_simulation/datapack_handle/simulation_data_manager.cpp
     nrp_simulation/datapack_handle/computational_graph_handle.cpp
 )
 
@@ -41,6 +42,7 @@ set(TEST_SRC_FILES
     tests/simulation_parameters.cpp
     tests/simulation_manager.cpp
     tests/fti_simulation_manager.cpp
+    tests/test_simulation_data_manager.cpp
 )
 
 
@@ -81,10 +83,12 @@ target_link_libraries(${LIBRARY_NAME}
     ${NRP_PROTO_LIB_TARGET}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
+    ProtoDump
+    NRPJSONEngineProtocol::NRPJSONEngineProtocol
     ${NRP_ELE_LIB_TARGET}
-        ${NRP_ROS_PROXY_TARGET}
-        ${NRP_MQTT_PROXY_TARGET}
-        ${catkin_LIBRARIES}
+    ${NRP_ROS_PROXY_TARGET}
+    ${NRP_MQTT_PROXY_TARGET}
+    ${catkin_LIBRARIES}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
@@ -163,14 +167,6 @@ if(BUILD_GAZEBO_ENGINE_SERVER AND BUILD_NEST_ENGINE_SERVER AND ${ENABLE_TESTING}
     gtest_discover_tests(${TEST_NAME}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
         EXTRA_ARGS -VV)
-
-    # Add python tests for NRP Server
-    find_package(Python3 COMPONENTS Interpreter)
-    if(Python3_Interpreter_FOUND)
-        add_test(NAME NrpServer COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" server.py "${CMAKE_SOURCE_DIR}/examples/tf_exchange" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-        set_property(TEST NrpServer PROPERTY ENVIRONMENT
-            "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
-    endif()
 endif()
 
 # Add tests based on running example experiments
@@ -198,6 +194,13 @@ if(ENABLE_EXAMPLES_TESTING)
             DISABLED $<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>)
 endif()
 
+# Add python tests for NRP Server
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME NrpServer COMMAND py.test server.py "${CMAKE_SOURCE_DIR}/examples/status_function_test" --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    set_property(TEST NrpServer PROPERTY ENVIRONMENT
+        "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
+endif()
 
 ##########################################
 ## Installation

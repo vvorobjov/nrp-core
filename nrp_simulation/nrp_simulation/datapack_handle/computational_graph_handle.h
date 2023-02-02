@@ -41,7 +41,8 @@
  */
 struct ComputationalGraphHandle : public DataPackProcessor {
 
-    ComputationalGraphHandle(bool slaveMode = false, bool spinROS = false) :
+    ComputationalGraphHandle(SimulationDataManager * simulationDataManager, bool slaveMode = false, bool spinROS = false) :
+        DataPackProcessor(simulationDataManager),
         _slaveMode(slaveMode),
         _spinROS(spinROS)
     {}
@@ -113,7 +114,7 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             PyGILState_Release(_pyGILState);
     }
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> & engines, const nlohmann::json & /*json*/) override
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> & engines) override
     {
         if(!_slaveMode) {
 #ifdef ROS_ON
@@ -138,8 +139,6 @@ struct ComputationalGraphHandle : public DataPackProcessor {
                 try {
                     auto devs = _outputs[engine->engineName()]->getDataPacks();
                     engine->sendDataPacksToEngine(devs);
-                    for(auto d : devs)
-                        delete d;
                 }
                 catch (std::exception &e) {
                     throw NRPException::logCreate(e,

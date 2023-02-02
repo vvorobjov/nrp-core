@@ -46,11 +46,12 @@ TEST(FTILoopTest, Constructor)
 
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
     json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+    SimulationDataManager simulationDataManager;
 
     EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
     EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
-    ASSERT_NO_THROW(FTILoop simLoop(config, {brain, physics}));
+    ASSERT_NO_THROW(FTILoop simLoop(config, {brain, physics}, &simulationDataManager));
 }
 
 TEST(FTILoopTest, RunLoop)
@@ -63,6 +64,7 @@ TEST(FTILoopTest, RunLoop)
 
     const char *procName = "test";
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));
+    SimulationDataManager simulationDataManager;
 
     const SimulationTime timestep(10);
     const float timeStepFloat = 0.01f;
@@ -86,15 +88,15 @@ TEST(FTILoopTest, RunLoop)
     // TODO Without the sleeps between calls, gRPC seems to fail in weird ways...
     std::this_thread::sleep_for(100ms);
 
-    FTILoop simLoop(config, {brain, physics});
+    FTILoop simLoop(config, {brain, physics}, &simulationDataManager);
 
     ASSERT_NO_THROW(simLoop.initLoop());
 
     ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
-    ASSERT_NO_THROW(simLoop.runLoop(timestep, nlohmann::json()));
+    ASSERT_NO_THROW(simLoop.runLoop(timestep));
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(simLoop.getSimTime(), timestep);
-    ASSERT_NO_THROW(simLoop.runLoop(timestep, nlohmann::json()));
+    ASSERT_NO_THROW(simLoop.runLoop(timestep));
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
 }

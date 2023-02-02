@@ -50,7 +50,7 @@ class TestEngine
         virtual const std::vector<std::string> engineProcStartParams() const override
         { return std::vector<std::string>(); }
 
-        virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
+        virtual void sendDataPacksToEngine(const datapacks_set_t & /*dataPacks*/) override
         {}
 
         SimulationTime runLoopStepCallback(SimulationTime /*timeStep*/) override
@@ -58,12 +58,12 @@ class TestEngine
             return SimulationTime::zero();
         }
 
-        virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
+        virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
         {
-            datapacks_set_t retVal;
+            datapacks_vector_t retVal;
             for(const auto &devID : datapackIdentifiers)
             {
-                retVal.emplace(new DataPackInterface(devID));
+                retVal.push_back(std::shared_ptr<DataPackInterface>(new DataPackInterface(devID)));
             }
 
             return retVal;

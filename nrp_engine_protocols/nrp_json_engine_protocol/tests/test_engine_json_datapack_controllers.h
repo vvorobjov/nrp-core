@@ -45,17 +45,8 @@ struct TestJSONDataPackController
 
         nlohmann::json *getDataPackInformation() override
         {
-            return this->_returnEmptyDataPack ? nullptr : &this->_data;
+            return &this->_data;
         }
-
-        void triggerEmptyDataPackReturn(bool value)
-        {
-            this->_returnEmptyDataPack = value;
-        }
-
-    private:
-
-        bool _returnEmptyDataPack = false;
 };
 
 

@@ -29,6 +29,7 @@
 
 #include "nrp_protobuf/nrp_server.grpc.pb.h"
 #include "nrp_simulation/simulation/simulation_manager.h"
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
 
 /*!
  * \brief NRP Server class, responsible for handling simulation control requests coming from the client application or script
@@ -107,8 +108,7 @@ private:
      *
      * \param result Result of the processed request
      */
-    void markRequestAsProcessed(const SimulationManager::RequestResult & result,
-                                const std::string & data);
+    void markRequestAsProcessed(const SimulationManager::RequestResult & result);
 
     //// Request processing methods
 
@@ -125,9 +125,25 @@ private:
     grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::Response * returnMessage);
 
     /*!
+     * \brief Populates the RunLoopResponse with trajectory data from the Status Function
+     *
+     * The function fetches the trajectory data (a vector of DataPacks) from the SimulationDataManager.
+     * This data is then serialized into proper protobuf messages and included in the response message.
+     * Since the observations that are parts of the full trajectory may be of different types
+     * (JSON, protobuf), they are included in different fields (lists) in the response message.
+     * These lists will be assembled back into a single trajectory by the client, based on the
+     * message indices assigned to each of the observations.
+     *
+     * \param returnMessage Message that should be populated with the trajectory data
+     */
+    void prepareTrajectory(NrpCore::RunLoopResponse * returnMessage);
+
+    /*!
      * \brief Set content in rpc return message from SimulationManager RequestResult
      */
     void setReturnMessageContent(const SimulationManager::RequestResult& res, NrpCore::SimStateMessage * returnMessage);
+
+    std::vector<std::shared_ptr<const DataPackInterface>> extractExternalDataPacks(const NrpCore::RunLoopMessage * message);
 
     /*!
      * \brief Callback for the initialization request coming from the client
@@ -137,12 +153,12 @@ private:
     /*!
      * \brief Callback for the run loop request coming from the client
      */
-    grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::Response * status) override;
+    grpc::Status runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::RunLoopResponse * status) override;
 
     /*!
      * \brief Callback for the run until timeout loop request coming from the client
      */
-    grpc::Status runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
+    grpc::Status runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::RunLoopResponse * returnMessage) override;
 
     /*!
      * \brief Callback for the stop request coming from the client
@@ -184,14 +200,14 @@ private:
     /*! \brief Number of iterations of runLoop requested by the client */
     unsigned _numIterations = 0;
 
-    nlohmann::json _clientData;
-
     /*! \brief Request status and error messages */
     SimulationManager::RequestResult _requestResult;
-    std::string _jsonData = "";
 
     /*! \brief SimulationManager which actually perform actions from requests */
     std::shared_ptr<SimulationManager> _manager;
+
+    /*! \brief Vector of protobuf converters */
+    std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> _protoOps;
 
 };
 

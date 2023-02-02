@@ -37,7 +37,7 @@ class FTILoop
     public:
 
         FTILoop() = default;
-        FTILoop(jsonSharedPtr config, DataPackProcessor::engine_interfaces_t engines);
+        FTILoop(jsonSharedPtr config, DataPackProcessor::engine_interfaces_t engines, SimulationDataManager * simulationDataManager);
 
         /*!
          * \brief Initialize engines before running loop
@@ -62,9 +62,8 @@ class FTILoop
         /*!
          * \brief Runs simulation for a total of runLoopTime (in s)
          * \param runLoopTime Time (in s) to run simulation. At end, will run TransceiverFunctions
-         * \param clientData Extra data coming from the NRP Client, will be passed to the status function
          */
-        void runLoop(SimulationTime runLoopTime, const nlohmann::json & clientData);
+        void runLoop(SimulationTime runLoopTime);
 
         /*!
          * \brief Get Simulation Time (in seconds)
@@ -72,12 +71,6 @@ class FTILoop
          */
         inline SimulationTime getSimTime() const
         {   return this->_simTime;  }
-
-
-        const std::string & getStatus()
-        {
-            return _devHandler->getStatus();
-        }
 
     private:
         /*!
@@ -101,6 +94,8 @@ class FTILoop
          * \brief Simulated time (in seconds)
          */
         SimulationTime _simTime = SimulationTime::zero();
+
+        unsigned long _simIteration = 0;
 
         /*!
          * \brief Used to handle datapack operations in engines

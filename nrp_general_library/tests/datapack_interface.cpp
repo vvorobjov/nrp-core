@@ -100,3 +100,14 @@ TEST(DataPackInterfaceTest, Constructor)
 
     ASSERT_EQ(interface.id(), id1);
 }
+
+TEST(DataPackInterfaceTest, IsUpdated)
+{
+    DataPackInterface interface("test", "test", "test");
+
+    ASSERT_EQ(interface.isUpdated(), true);
+    interface.resetIsUpdated();
+    ASSERT_EQ(interface.isUpdated(), false);
+}
+
+// EOF

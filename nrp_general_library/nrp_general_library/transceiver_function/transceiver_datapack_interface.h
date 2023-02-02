@@ -81,31 +81,35 @@ class TransceiverDataPackInterface
          * \param kwargs Keyword arguments for execution. Can be altered by any TransceiverDataPackInterfaces. Base class will only pass them along
          * \return Returns result of TransceiverFunction execution.
          */
-        virtual boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs);
+        virtual boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks);
 
         /*!
          *  \brief Appends its own datapack requests onto datapackIDs. Uses getRequestedDataPackIDs to check which IDs are requested by this datapack
          *  \param datapackIDs Container with datapack IDs that gets expanded
          *  \return Returns datapackIDs, with own datapackIDs appended
          */
-        virtual EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs = EngineClientInterface::datapack_identifiers_set_t()) const;
+        virtual datapack_identifiers_set_t updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs = datapack_identifiers_set_t()) const;
 
         /*!
          * \brief Returns datapack IDs of this DataPack that should be requested from the engines. TODO: Make protected
          */
-        virtual EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const;
+        virtual datapack_identifiers_set_t getRequestedDataPackIDs() const;
 
         /*!
          * \brief Set global TF Interpreter. All Transceiver Functions will register themselves with it upon creation
          * \param interpreter Interpreter to use
          */
         static void setTFInterpreter(FunctionManager *interpreter);
+        static const FunctionManager * getFunctionManager()
+        {
+            return TransceiverDataPackInterface::_functionManager;
+        }
 
     protected:
         /*!
          * \brief Pointer to TF Interpreter. Will be used to register a new TF function
          */
-        static FunctionManager *TFInterpreter;
+        static FunctionManager *_functionManager;
 
         template<class TRANSCEIVER_DATAPACK>
         typename PtrTemplates<TRANSCEIVER_DATAPACK>::shared_ptr moveToSharedPtr()
@@ -115,8 +119,8 @@ class TransceiverDataPackInterface
         }
 
         /*!
-         * \brief Gets address of ptr under which the TFInterpreter has registered this TF. Mainly used during setup
-         * \return Returns address of ptr under which the TFInterpreter has registered this TF
+         * \brief Gets address of ptr under which the _functionManager has registered this TF. Mainly used during setup
+         * \return Returns address of ptr under which the _functionManager has registered this TF
          */
         virtual TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry();
 

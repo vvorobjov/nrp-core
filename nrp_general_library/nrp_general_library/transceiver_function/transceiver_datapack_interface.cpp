@@ -22,7 +22,7 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
-FunctionManager *TransceiverDataPackInterface::TFInterpreter = nullptr;
+FunctionManager *TransceiverDataPackInterface::_functionManager = nullptr;
 
 const std::string &TransceiverDataPackInterface::linkedEngineName() const
 {
@@ -34,12 +34,12 @@ bool TransceiverDataPackInterface::isPreprocessing() const
     return this->_nextDecorator->isPreprocessing();
 }
 
-boost::python::object TransceiverDataPackInterface::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
+boost::python::object TransceiverDataPackInterface::runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks)
 {
-    return this->_nextDecorator->runTf(args, kwargs);
+    return this->_nextDecorator->runTf(args, kwargs, dataPacks);
 }
 
-EngineClientInterface::datapack_identifiers_set_t TransceiverDataPackInterface::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
+datapack_identifiers_set_t TransceiverDataPackInterface::updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const
 {
     auto subDataPackIDs = this->_nextDecorator->updateRequestedDataPackIDs(std::move(datapackIDs));
     auto newDataPackIDs = this->getRequestedDataPackIDs();
@@ -49,14 +49,14 @@ EngineClientInterface::datapack_identifiers_set_t TransceiverDataPackInterface::
     return subDataPackIDs;
 }
 
-EngineClientInterface::datapack_identifiers_set_t TransceiverDataPackInterface::getRequestedDataPackIDs() const
+datapack_identifiers_set_t TransceiverDataPackInterface::getRequestedDataPackIDs() const
 {
-    return EngineClientInterface::datapack_identifiers_set_t();
+    return datapack_identifiers_set_t();
 }
 
 void TransceiverDataPackInterface::setTFInterpreter(FunctionManager *interpreter)
 {
-    TransceiverDataPackInterface::TFInterpreter = interpreter;
+    TransceiverDataPackInterface::_functionManager = interpreter;
 }
 
 TransceiverDataPackInterface::shared_ptr *TransceiverDataPackInterface::getTFInterpreterRegistry()

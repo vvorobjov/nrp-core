@@ -40,38 +40,6 @@ pid_t EngineClientInterface::launchEngine()
     return this->_process->launchProcess(procConf);
 }
 
-const EngineClientInterface::datapacks_t &EngineClientInterface::updateDataPacksFromEngine(const EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers)
-{
-    // Merge cached datapacks into new list
-    this->updateCachedDataPacks(this->getDataPacksFromEngine(datapackIdentifiers));
-
-    return this->_datapackCache;
-}
-
-inline const int &setCmp(int &ref, int val)
-{   return ref=val; }
-
-void EngineClientInterface::updateCachedDataPacks(EngineClientInterface::datapacks_set_t &&devs)
-{
-    size_t i = 0;
-    for(const auto &dev : devs)
-    {
-        int cmp = -1;
-        while(i < this->_datapackCache.size() && setCmp(cmp, this->_datapackCache[i]->name().compare(dev->name())) < 0)
-            ++i;
-
-        // If there's no datapack with the name in the cache - insert it
-        // It there already is one - replace it, but only with a non-empty datapack
-
-        if(cmp != 0)
-            this->_datapackCache.insert(this->_datapackCache.begin()+i, dev);
-        else if(!dev->isEmpty())
-            this->_datapackCache[i] = dev;
-
-        ++i;
-    }
-}
-
 EngineLauncherInterface::EngineLauncherInterface(const EngineLauncherInterface::engine_type_t &engineType)
     : _engineType(engineType)
 {}

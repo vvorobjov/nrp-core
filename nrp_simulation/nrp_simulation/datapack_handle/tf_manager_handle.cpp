@@ -67,19 +67,9 @@ void TFManagerHandle::loadStatusFunction(const jsonSharedPtr &simConfig)
 }
 
 
-void TFManagerHandle::init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines)
+void TFManagerHandle::init(const jsonSharedPtr &simConfig, const engine_interfaces_t &/*engines*/)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
-    // Setup engine datapacks and interpreter
-    FunctionManager::engines_datapacks_t engineDevs;
-    for(const auto &engine : engines)
-    {
-        NRPLogger::debug("Adding {} to FunctionManager", engine->engineName());
-        engineDevs.emplace(engine->engineName(), &(engine->getCachedDataPacks()));
-    }
-
-    this->_functionManager.setEngineDataPacks(std::move(engineDevs));
 
     TransceiverDataPackInterface::setTFInterpreter(&(this->_functionManager));
 
@@ -91,39 +81,41 @@ void TFManagerHandle::updateDataPacksFromEngines(const std::vector<EngineClientI
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    const auto requestedDataPackIDs = this->_functionManager.updateRequestedDataPackIDs();
-    try
+    const auto requestedDataPackIDs = this->_functionManager.getRequestedDataPackIDs();
+
+    for(auto &engine : engines)
     {
-        for(auto &engine : engines)
+        try
         {
-            engine->updateDataPacksFromEngine(requestedDataPackIDs);
+            auto dataPacks = engine->getDataPacksFromEngine(requestedDataPackIDs);
+            this->_simulationDataManager->updateEnginePool(dataPacks);
         }
-    }
-    catch(std::exception &)
-    {
-        // TODO: Handle failure on datapack retrieval
-        throw;
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Failed to get datapacks from engine \"" + engine->engineName() + "\"");
+        }
     }
 }
 
-void TFManagerHandle::compute(const std::vector<EngineClientInterfaceSharedPtr> &engines, const nlohmann::json & clientData)
+void TFManagerHandle::compute(const std::vector<EngineClientInterfaceSharedPtr> &engines)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    executePreprocessingFunctions(this->_functionManager, engines);
-    this->_tf_results = executeTransceiverFunctions(this->_functionManager, engines);
+    this->_functionManager.setSimulationTime(this->_simulationTime);
+    this->_functionManager.setSimulationIteration(this->_simulationIteration);
 
-    auto statusTuple = this->_functionManager.executeStatusFunction(clientData);
+    executePreprocessingFunctions(this->_functionManager, engines, this->_simulationDataManager->getPreprocessingDataPacks());
+    executeTransceiverFunctions  (this->_functionManager, engines, this->_simulationDataManager->getTransceiverDataPacks());
 
-    // Extract the JSON status object from the returned tuple
+    auto statusTuple = this->_functionManager.executeStatusFunction(this->_simulationDataManager->getStatusDataPacks());
 
-    auto statusJson = std::move(std::get<0>(statusTuple));
+    // Extract the 'done' flag from the returned tuple
 
-    // Extract DataPacks from the status function
+    this->_simulationDataManager->setDoneFlag(std::get<0>(statusTuple));
 
-    this->_tf_results.addResults(std::move(std::get<1>(statusTuple)));
+    // Extract the vector of DataPack proxy objects and push them to the trajectory manager
 
-    this->_status = statusJson ? statusJson->dump() : "";
+    this->_simulationDataManager->pushToTrajectory(std::get<1>(statusTuple));
 }
 
 void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines)
@@ -134,10 +126,8 @@ void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInter
     {
         try
         {
-            // Find corresponding datapacks
-            const auto interfaceResultIterator = this->_tf_results.find(engine->engineName());
-            if(interfaceResultIterator != this->_tf_results.end())
-                engine->sendDataPacksToEngine(interfaceResultIterator->second);
+            auto dataPacks = this->_simulationDataManager->getEngineDataPacks(engine->engineName());    
+            engine->sendDataPacksToEngine(dataPacks);
         }
         catch(std::exception &e)
         {
@@ -146,58 +136,26 @@ void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInter
     }
 }
 
-void TFManagerHandle::executePreprocessingFunctions(FunctionManager &tfManager, const std::vector<EngineClientInterfaceSharedPtr> &engines)
+void TFManagerHandle::executePreprocessingFunctions(FunctionManager &tfManager,
+                                                    const std::vector<EngineClientInterfaceSharedPtr> &engines,
+                                                    datapacks_set_t dataPacks)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    for (auto &engine : engines) {
-        // Execute all preprocessing functions for this engine
-
-        auto results = tfManager.executePreprocessingFunctions(engine->engineName());
-
-        // Extract datapacks from the function results
-        // The datapacks are stack objects, but we want to store pointers to them in engines cache
-        // We have to convert them into heap-allocated objects
-
-        EngineClientInterface::datapacks_set_t datapacksHeap;
-        for (const auto &result : results) {
-            for (const auto &datapack : result.DataPacks) {
-                datapacksHeap.emplace(datapack->moveToSharedPtr());
-            }
-        }
-
-        // Store pointers to datapacks from preprocessing functions in the engines cache
-
-        engine->updateCachedDataPacks(std::move(datapacksHeap));
+    for(auto &engine : engines)
+    {
+        auto results = tfManager.executePreprocessingFunctions(engine->engineName(), dataPacks);
+        this->_simulationDataManager->updatePreprocessingPool(results);
     }
 }
 
-TransceiverFunctionSortedResults TFManagerHandle::executeTransceiverFunctions(FunctionManager &tfManager, const std::vector<EngineClientInterfaceSharedPtr> &engines)
+void TFManagerHandle::executeTransceiverFunctions(FunctionManager &tfManager,
+                                                  const std::vector<EngineClientInterfaceSharedPtr> &engines,
+                                                  datapacks_set_t dataPacks)
 {
-    TransceiverFunctionSortedResults results;
-    for (const auto &engine : engines) {
-        auto curResults = tfManager.executeTransceiverFunctions(engine->engineName());
-        results.addResults(curResults);
-
-        // Extract datapacks from the function results
-        // The datapacks are stack objects, but we want to store pointers to them in engines cache
-        // We have to convert them into heap-allocated objects
-
-        // TODO Review as part of NRRPLT-8589
-        /*EngineClientInterface::datapacks_set_t datapacksHeap;
-        for (const auto &result : curResults) {
-            for (const auto &datapack : result.DataPacks) {
-                // moveToSharedPtr 'steals' the data stored in the DataPack.
-                // We have to clone it so that the data can still be sent to the engine.
-                auto clonedDatapack = datapack->clone();
-                datapacksHeap.emplace(clonedDatapack->moveToSharedPtr());
-            }
-        }
-
-        // Store pointers to datapacks from preprocessing functions in the engines cache
-
-        engine->updateCachedDataPacks(std::move(datapacksHeap));*/
+    for(const auto &engine : engines)
+    {
+        auto results = tfManager.executeTransceiverFunctions(engine->engineName(), dataPacks);
+        this->_simulationDataManager->updateTransceiverPool(results);
     }
-
-    return results;
 }

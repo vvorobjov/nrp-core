@@ -31,6 +31,11 @@
 
 using JsonDataPack = DataPack<nlohmann::json>;
 
+const JsonDataPack * castToJsonDataPack(std::shared_ptr<const DataPackInterface> dataPack)
+{
+    return dynamic_cast<const JsonDataPack *>(dataPack.get());
+}
+
 using namespace boost;
 
 /*!
@@ -58,8 +63,7 @@ class FunctionManagerTest : public testing::Test {
 
             TransceiverDataPackInterface::setTFInterpreter(functionManager.get());
 
-            devs.clear();
-            functionManager->setEngineDataPacks({{this->engineName, &this->devs}});
+            dataPacks.clear();
         }
 
         void TearDown() override
@@ -69,18 +73,22 @@ class FunctionManagerTest : public testing::Test {
 
         void prepareInputDataPack(const std::string & name, int testValue)
         {
-            std::shared_ptr<TestOutputDataPack> dev(new TestOutputDataPack(TestOutputDataPack::ID(name)));
-            dev->TestValue = testValue;
+            std::shared_ptr<TestOutputDataPack> dataPack(new TestOutputDataPack(TestOutputDataPack::ID(name)));
+            dataPack->TestValue = testValue;
 
-            devs.push_back(dev);
-            // TODO devs are passed by rvalue reference to the functionManager, not sure if that's safe...
+            dataPacks.insert(dataPack);
+        }
+
+        void insertInputDataPack(const DataPackInterface * dataPack)
+        {
+            this->dataPacks.insert(DataPackInterfaceConstSharedPtr(dataPack));
         }
 
         inline static const std::string engineName = "engine";
 
         python::dict globals;
         FunctionManagerSharedPtr functionManager;
-        EngineClientInterface::datapacks_t devs;
+        datapacks_set_t dataPacks;
 };
 
 /*
@@ -99,11 +107,11 @@ TEST_F(FunctionManagerTest, TestTransceiverFunction)
     // Load and execute simple python function
     functionManager->loadDataPackFunction(tfName, tfFilename);
 
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
     ASSERT_EQ(reqIDs.size(), 1);
     ASSERT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
-    auto results = functionManager->executeTransceiverFunctions(this->engineName);
+    auto results = functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks);
 
     // Test execution result
     // Results are a list of DataPackFunctionResult objects
@@ -111,7 +119,7 @@ TEST_F(FunctionManagerTest, TestTransceiverFunction)
     ASSERT_EQ(results.size(), 1);
 
     // TODO Why is this using InputDataPack?
-    const auto resultDataPack = dynamic_cast<const TestInputDataPack *>(results.begin()->DataPacks.at(0));
+    const auto resultDataPack = dynamic_cast<const TestInputDataPack *>(results.at(0).get());
     ASSERT_EQ(resultDataPack->id(), TestInputDataPack::ID());
     ASSERT_EQ(testValue, std::stoi(resultDataPack->TestValue));
 }
@@ -129,7 +137,7 @@ TEST_F(FunctionManagerTest, TestTransceiverFunctionUnregistered)
 
     // Try to run a TF without any TFs registered in the functionManager
 
-    auto results = functionManager->executeTransceiverFunctions(this->engineName);
+    auto results = functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks);
     ASSERT_EQ(results.size(), 0);
 }
 
@@ -181,7 +189,7 @@ TEST_F(FunctionManagerTest, TestTransceiverFunctionInvalid)
     const std::string tfFilename = TEST_INVALID_TRANSCEIVER_FCN_FILE_NAME;
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
-    ASSERT_THROW(functionManager->executeTransceiverFunctions(this->engineName), NRPException);
+    ASSERT_THROW(functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks), NRPException);
 }
 
 
@@ -200,21 +208,21 @@ TEST_F(FunctionManagerTest, TestPreprocessingFunction)
     // Load simple preprocessing function
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     ASSERT_EQ(reqIDs.size(), 1);
     ASSERT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
     // Run the preprocessing funtion
 
-    auto results = functionManager->executePreprocessingFunctions(this->engineName);
+    auto results = functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks);
 
     // Test execution result
     // Results are a list of DataPackFunctionResult objects
 
     ASSERT_EQ(results.size(), 1);
 
-    const auto resultDataPack = dynamic_cast<const JsonDataPack *>(results.begin()->DataPacks.at(0));
+    auto resultDataPack = castToJsonDataPack(results.at(0));
     ASSERT_EQ("6", resultDataPack->getData()["test_value"]);
 }
 
@@ -231,7 +239,7 @@ TEST_F(FunctionManagerTest, TestPreprocessingFunctionUnregistered)
 
     // Try to run a PF without any PFs registered in the functionManager
 
-    auto results = functionManager->executePreprocessingFunctions(this->engineName);
+    auto results = functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks);
     ASSERT_EQ(results.size(), 0);
 }
 
@@ -254,7 +262,7 @@ TEST_F(FunctionManagerTest, TestPreprocessingFunctionMultipleDataPacks)
     // Load the preprocessing function
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     // 3 datapacks should be requested by the preprocessing function from the engine
 
@@ -265,7 +273,7 @@ TEST_F(FunctionManagerTest, TestPreprocessingFunctionMultipleDataPacks)
 
     // Run the preprocessing funtion
 
-    auto results = functionManager->executePreprocessingFunctions(this->engineName);
+    auto results = functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks);
 
     // Test execution result
 
@@ -306,14 +314,14 @@ TEST_F(FunctionManagerTest, TestPreprocessingFunctionWrongOutputDataPack)
     // Load simple preprocessing function
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     EXPECT_EQ(reqIDs.size(), 1);
     EXPECT_EQ(*(reqIDs.begin()), TestOutputDataPack::ID(devName));
 
     // Run the preprocessing funtion and fail
 
-    ASSERT_THROW(functionManager->executePreprocessingFunctions(this->engineName), NRPException);
+    ASSERT_THROW(functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks), NRPException);
 }
 
 /*
@@ -344,7 +352,7 @@ TEST_F(FunctionManagerTest, TestFunctionChain)
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
     functionManager->loadDataPackFunction(pfName, pfFilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     // There shoud be two datapacks requested by the function from the engine
 
@@ -352,52 +360,50 @@ TEST_F(FunctionManagerTest, TestFunctionChain)
 
     // Run the preprocessing funtion
 
-    auto resultsPf = functionManager->executePreprocessingFunctions(this->engineName);
+    auto resultsPf = functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks);
 
     // Test execution result
     // Results are a list of DataPackFunctionResult objects
 
     ASSERT_EQ(resultsPf.size(), 1);
 
-    auto resultDataPack = dynamic_cast<JsonDataPack *>(resultsPf.begin()->DataPacks.at(0));
+    auto resultDataPack = castToJsonDataPack(resultsPf.at(0));
     ASSERT_EQ("5", resultDataPack->getData()["test_value"]);
 
     // Inject the returned datapack to the pool of datapacks, so that it's accesible by the transceiver function
 
-    this->devs.push_back(resultDataPack->moveToSharedPtr());
+    this->insertInputDataPack(resultDataPack);
 
     // Run the transceiver function
 
-    auto resultsTf = functionManager->executeTransceiverFunctions(this->engineName);
+    auto resultsTf = functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks);
 
     // Test the results
 
-    resultDataPack = dynamic_cast<JsonDataPack *>(resultsTf.begin()->DataPacks.at(0));
+    resultDataPack = castToJsonDataPack(resultsTf.at(0));
 
     ASSERT_EQ(resultDataPack->getData()["test_value1"], "10");
     ASSERT_EQ(resultDataPack->getData()["test_value2"], "5");
 
     // Inject the returned datapack to the pool of datapacks, so that it's accesible by the status function
 
-    this->devs.push_back(resultDataPack->moveToSharedPtr());
+    this->insertInputDataPack(resultDataPack);
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    auto results = functionManager->executeStatusFunction(nlohmann::json());
+    auto results = functionManager->executeStatusFunction(this->dataPacks);
 
-    const auto resultsJson = std::move(std::get<0>(results));
+    bool doneFlag = std::get<0>(results);
+    ASSERT_TRUE(doneFlag);
 
-    ASSERT_EQ((*resultsJson)["test_value1"], "10");
-    ASSERT_EQ((*resultsJson)["test_value2"], "5");
-    ASSERT_EQ((*resultsJson)["test_value3"], "10");
+    auto dataPacks = std::get<1>(results);
+    const auto resultsJson = castToJsonDataPack(dataPacks.at(0));
+    ASSERT_EQ((*resultsJson).getData()["test_value1"], "10");
+    ASSERT_EQ((*resultsJson).getData()["test_value2"], "5");
+    ASSERT_EQ((*resultsJson).getData()["test_value3"], "10");
 }
 
 
-/*
- * Setup:
- * - Try to load and run a basic status function that accepts a single datapack
- * - Everything should work without errors
- */
-TEST_F(FunctionManagerTest, TestStatusFunction)
+TEST_F(FunctionManagerTest, TestStatusFunctionDoneFlag)
 {
     const std::string statusFuntionName     = "testTF";
     const std::string statusFuntionFilename = TEST_STATUS_FCN_FILE_NAME;
@@ -407,14 +413,77 @@ TEST_F(FunctionManagerTest, TestStatusFunction)
     this->prepareInputDataPack(devName, testValue);
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    auto results = functionManager->executeStatusFunction({{"test", 999}});
+    auto requestedIds = functionManager->getRequestedDataPackIDs();
+    ASSERT_EQ(requestedIds.size(), 1);
+    ASSERT_EQ(requestedIds.begin()->Name, devName);
+    auto results = functionManager->executeStatusFunction(this->dataPacks);
 
-    const auto resultsJson = std::move(std::get<0>(results));
+    bool doneFlag = std::get<0>(results);
+    ASSERT_TRUE(doneFlag);
 
-    ASSERT_EQ((*resultsJson)["test_int"], 456);
-    ASSERT_EQ((*resultsJson)["actions"], 999);
-    ASSERT_TRUE((*resultsJson)["test_flags"][0]);
-    ASSERT_FALSE((*resultsJson)["test_flags"][1]);
+    this->dataPacks.begin()->get()->resetIsUpdated();
+
+    results = functionManager->executeStatusFunction(this->dataPacks);
+
+    doneFlag = std::get<0>(results);
+    ASSERT_FALSE(doneFlag);
+}
+
+
+TEST_F(FunctionManagerTest, TestStatusFunctionData)
+{
+    const std::string statusFuntionName     = "testTF";
+    const std::string statusFuntionFilename = TEST_STATUS_FCN_DATA_FILE_NAME;
+
+    functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
+
+    // First execution - there should be no DataPacks in the results
+
+    auto results = functionManager->executeStatusFunction(this->dataPacks);
+    datapacks_vector_t dataPacks = std::get<1>(results);
+    ASSERT_EQ(dataPacks.size(), 0);
+
+    // Second execution - there should be a single DataPack in the results
+
+    results = functionManager->executeStatusFunction(this->dataPacks);
+    dataPacks = std::get<1>(results);
+    ASSERT_EQ(dataPacks.size(), 1);
+
+    // Third execution - there should be two DataPacks in the results
+
+    results = functionManager->executeStatusFunction(this->dataPacks);
+    dataPacks = std::get<1>(results);
+    ASSERT_EQ(dataPacks.size(), 2);
+}
+
+
+TEST_F(FunctionManagerTest, TestSimulationTimeAndIter)
+{
+    const std::string statusFuntionName     = "testTF";
+    const std::string statusFuntionFilename = TEST_SIM_TIME_FILE_NAME;
+
+    functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
+
+    // First execution - test what happens when the time was never set
+
+    auto results = functionManager->executeStatusFunction(this->dataPacks);
+    datapacks_vector_t dataPacks = std::get<1>(results);
+    ASSERT_EQ(dataPacks.size(), 1);
+    ASSERT_EQ(castToJsonDataPack(dataPacks.at(0))->getData()["sim_time"], 0);
+    ASSERT_EQ(castToJsonDataPack(dataPacks.at(0))->getData()["sim_iter"], 0);
+
+    // Second execution - set the time to 1s, set the iteration to 1
+    // The Status Function should call proper python functions and retrieve these values,
+    // then put them into a DataPack
+
+    functionManager->setSimulationTime(toSimulationTime<int, std::ratio<1>>(1));
+    functionManager->setSimulationIteration(1);
+
+    results = functionManager->executeStatusFunction(this->dataPacks);
+    dataPacks = std::get<1>(results);
+    ASSERT_EQ(dataPacks.size(), 1);
+    ASSERT_EQ(castToJsonDataPack(dataPacks.at(0))->getData()["sim_time"], 1000000000);
+    ASSERT_EQ(castToJsonDataPack(dataPacks.at(0))->getData()["sim_iter"], 1);
 }
 
 
@@ -448,7 +517,7 @@ TEST_F(FunctionManagerTest, TestStatusFunctionInvalid)
     const std::string statusFuntionFilename = TEST_INVALID_STATUS_FCN_FILE_NAME;
 
     functionManager->loadStatusFunction(statusFuntionName, statusFuntionFilename);
-    ASSERT_THROW(functionManager->executeStatusFunction(nlohmann::json()), NRPException);
+    ASSERT_THROW(functionManager->executeStatusFunction(this->dataPacks), NRPException);
 }
 
 
@@ -473,10 +542,10 @@ TEST_F(FunctionManagerTest, TestStatusFunctionNoFile)
  */
 TEST_F(FunctionManagerTest, TestStatusFunctionUndefined)
 {
-    auto results = functionManager->executeStatusFunction(nlohmann::json());
-    const auto resultsJson = std::move(std::get<0>(results));
+    auto results = functionManager->executeStatusFunction(this->dataPacks);
+    bool doneFlag = std::get<0>(results);
 
-    ASSERT_EQ(resultsJson, nullptr);
+    ASSERT_EQ(doneFlag, false);
 }
 
 
@@ -497,7 +566,7 @@ TEST_F(FunctionManagerTest, TestMultiDataPacksTf)
     // Load simple transceiver function
 
     functionManager->loadDataPackFunction(tfName, tfFilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     // There shoud be two datapacks requested by the function from the engine
 
@@ -506,13 +575,13 @@ TEST_F(FunctionManagerTest, TestMultiDataPacksTf)
     // Test execution result
     // Results are a list of DataPackFunctionResult objects
 
-    auto results = functionManager->executeTransceiverFunctions(this->engineName);
+    auto results = functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks);
 
     ASSERT_EQ(results.size(), 1);
 
     // Test the results
     // TODO Add a helper function for unpacking DataPacks
-    const auto resultDataPack = dynamic_cast<const JsonDataPack *>(results.begin()->DataPacks.at(0));
+    const auto resultDataPack = castToJsonDataPack(results.at(0));
 
     ASSERT_EQ(resultDataPack->name(),"return_datapack");
     ASSERT_EQ(resultDataPack->getData()["test_value1"], "10");
@@ -528,24 +597,23 @@ TEST_F(FunctionManagerTest, TestMultiDataPacksTf)
  */
 TEST_F(FunctionManagerTest, TestMultiDataPacksTfInvalid)
 {
-const std::string tfName     = "testTF";
-const std::string tfFilename = TEST_TRANSCEIVER_FCN3_FILE_NAME;
+    const std::string tfName     = "testTF";
+    const std::string tfFilename = TEST_TRANSCEIVER_FCN3_FILE_NAME;
 
-this->prepareInputDataPack("datapack1", 4);
-this->prepareInputDataPack("datapack3", 10);
+    this->prepareInputDataPack("datapack1", 4);
+    this->prepareInputDataPack("datapack3", 10);
 
-// Load simple transceiver function
+    // Load simple transceiver function
 
-functionManager->loadDataPackFunction(tfName, tfFilename);
-const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    functionManager->loadDataPackFunction(tfName, tfFilename);
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
-// There shoud be two datapacks requested by the function from the engine
+    // There shoud be two datapacks requested by the function from the engine
 
-ASSERT_EQ(reqIDs.size(), 2);
+    ASSERT_EQ(reqIDs.size(), 2);
 
-// Test execution result
-ASSERT_THROW(functionManager->executeTransceiverFunctions(this->engineName), NRPException);
-
+    // Test execution result
+    ASSERT_THROW(functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks), NRPException);
 }
 
 /*
@@ -571,7 +639,7 @@ TEST_F(FunctionManagerTest, TestFunctionChainMultiDataPacks)
 
     functionManager->loadDataPackFunction(pfName, pfFilename);
     functionManager->loadDataPackFunction(tfName, tffilename);
-    const auto &reqIDs = functionManager->updateRequestedDataPackIDs();
+    const auto &reqIDs = functionManager->getRequestedDataPackIDs();
 
     // There shoud be two datapacks requested by the function from the engine
 
@@ -579,27 +647,27 @@ TEST_F(FunctionManagerTest, TestFunctionChainMultiDataPacks)
 
     // Run the preprocessing function
 
-    auto resultsPf = functionManager->executePreprocessingFunctions(this->engineName);
+    auto resultsPf = functionManager->executePreprocessingFunctions(this->engineName, this->dataPacks);
 
     // Test execution result
     // Results are a list of DataPackFunctionResult objects
 
     ASSERT_EQ(resultsPf.size(), 1);
 
-    auto resultDataPack = dynamic_cast<JsonDataPack *>(resultsPf.begin()->DataPacks.at(0));
+    auto resultDataPack = castToJsonDataPack(resultsPf.at(0));
     ASSERT_EQ("5", resultDataPack->getData()["test_value"]);
 
     // Inject the returned datapack to the pool of datapacks, so that it's accesible by the transceiver function
 
-    this->devs.push_back(resultDataPack->moveToSharedPtr());
+    this->insertInputDataPack(resultDataPack);
 
     // Run the transceiver function
 
-    auto resultsTf = functionManager->executeTransceiverFunctions(this->engineName);
+    auto resultsTf = functionManager->executeTransceiverFunctions(this->engineName, this->dataPacks);
 
     // Test the results
 
-    resultDataPack = dynamic_cast<JsonDataPack *>(resultsTf.begin()->DataPacks.at(0));
+    resultDataPack = castToJsonDataPack(resultsTf.at(0));
 
     ASSERT_EQ(resultDataPack->name(),"return_datapack");
     ASSERT_EQ(resultDataPack->getData()["test_value1"], "15");

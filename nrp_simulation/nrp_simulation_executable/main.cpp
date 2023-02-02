@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
     {
         auto res = manager->initializeSimulation();
         if(res.currentState != SimulationManager::SimState::Failed)
-            manager->runSimulationUntilTimeout();
+            manager->runSimulationUntilDoneOrTimeout();
 
         manager->shutdownSimulation();
     }

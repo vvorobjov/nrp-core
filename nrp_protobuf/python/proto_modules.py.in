@@ -1,0 +1,5 @@
+proto_modules = [
+    @PROTO_MODULES_LIST@
+]
+
+# EOF

@@ -44,8 +44,8 @@ class ExampleEngineClient
          */
         void shutdown() override;
 
-        void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) override;
-        datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
+        void sendDataPacksToEngine(const datapacks_set_t &dataPacks) override;
+        datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
 
         /*!
          * \brief Returns start parameters that should be passed to the engine server

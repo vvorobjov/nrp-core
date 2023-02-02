@@ -20,11 +20,46 @@
  */
 
 #include "nrp_simulation/simulation/nrp_core_server.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include "nrp_protobuf/dump.pb.h"
+#include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
+#include "nrp_protobuf/proto_ops/proto_ops_manager.h"
+#include "nrp_protobuf/proto_libraries.h"
 
 NrpCoreServer::NrpCoreServer(const std::string & address, std::shared_ptr<SimulationManager> && manager)
     : _lock(_mutex, std::defer_lock_t()),
     _manager(std::move(manager))
 {
+
+    ProtoOpsManager::getInstance().addPluginPath(NRP_PLUGIN_INSTALL_DIR);
+
+    // Split semicolon-delimited string into a vector of string with library names
+
+    std::vector<std::string> libs;
+    std::string str(nrp_protobuf::PROTO_LIBRARIES);
+    std::string delimiter = ";";
+    size_t pos = 0;
+    std::string token;
+    while((pos = str.find(delimiter)) != std::string::npos)
+    {
+        token = str.substr(0, pos);
+        libs.push_back(token);
+        str.erase(0, pos + delimiter.length());
+    }
+    libs.push_back(str);
+
+    // Load the libraries with protobuf conversion operations
+
+    for(const auto & packageName : libs)
+    {
+        auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(packageName);
+        if(pluginLib)
+            _protoOps.template emplace_back(std::move(pluginLib));
+        else
+            throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageName+"\"");
+    }
+
+
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address, grpc::InsecureServerCredentials());
     builder.RegisterService(this);
@@ -40,7 +75,7 @@ void NrpCoreServer::runServerLoop()
     {
         this->waitForRequest();
         SimulationManager::RequestResult result;
-        std::string data("");
+
         // Check the request type and handle it accordingly
         try
         {
@@ -50,11 +85,10 @@ void NrpCoreServer::runServerLoop()
                     result = _manager->initializeSimulation();
                     break;
                 case NrpCoreServer::RequestType::RunLoop:
-                    result = _manager->runSimulation(this->getRequestNumIterations(), this->_clientData);
-                    data   = _manager->getStatus();
+                    result = _manager->runSimulation(this->getRequestNumIterations());
                     break;
                 case NrpCoreServer::RequestType::RunUntilTimeout:
-                    result = _manager->runSimulationUntilTimeout();
+                    result = _manager->runSimulationUntilDoneOrTimeout();
                     break;
                 case NrpCoreServer::RequestType::StopLoop:
                     result = _manager->stopSimulation();
@@ -84,7 +118,7 @@ void NrpCoreServer::runServerLoop()
             result.errorMessage = e.what();
         }
 
-        this->markRequestAsProcessed(result, data);
+        this->markRequestAsProcessed(result);
 
         // Break out of the loop, if shutdown was requested
         if(isShutdown)
@@ -115,11 +149,9 @@ void NrpCoreServer::waitForRequest()
     this->_consumerConditionalVar.wait(_lock, [this]{ return this->isRequestPending(); });
 }
 
-void NrpCoreServer::markRequestAsProcessed(const SimulationManager::RequestResult & result,
-                                           const std::string                      & data)
+void NrpCoreServer::markRequestAsProcessed(const SimulationManager::RequestResult & result)
 {
     this->_requestResult = result;
-    this->_jsonData = data;
     this->resetRequest();
     this->_producerConditionalVar.notify_one();
     this->_lock.unlock();
@@ -146,7 +178,7 @@ grpc::Status NrpCoreServer::requestHelper(std::unique_lock<std::mutex> & lock, R
 
     this->_consumerConditionalVar.notify_one();
 
-    // Wait for the main thread to finish processing of the new event
+    // Wait for the main thread to finish processing of the latest event
 
     this->_producerConditionalVar.wait(lock, [this] { return !this->isRequestPending(); });
 
@@ -158,12 +190,6 @@ grpc::Status NrpCoreServer::requestHelper(std::unique_lock<std::mutex> & lock, R
         // Set simulation state after processing the request
         setReturnMessageContent(this->_requestResult, returnMessage->mutable_simstate());
 
-        // Set the JSON data field if there's anything pending in the _jsonData string
-
-        if(!this->_jsonData.empty())
-        {
-            returnMessage->set_json(this->_jsonData);
-        }
         return grpc::Status::OK;
     }
 }
@@ -180,19 +206,182 @@ grpc::Status NrpCoreServer::initialize(grpc::ServerContext * , const NrpCore::Em
     return requestHelper(lock, RequestType::Initialize, returnMessage);
 }
 
-grpc::Status NrpCoreServer::runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::Response * status)
-{
-    std::unique_lock<std::mutex> lock(this->_mutex);
 
-    this->_numIterations = message->numiterations();
-    this->_clientData = nlohmann::json::parse(message->json());
-    return requestHelper(lock, RequestType::RunLoop, status);
+void NrpCoreServer::prepareTrajectory(NrpCore::RunLoopResponse * returnMessage)
+{
+    auto & trajectoryVector = this->_manager->getSimulationDataManager().getTrajectory();
+
+    unsigned trajectoryIndex = 0;
+    for(auto trajectoryElement = trajectoryVector.begin(); trajectoryElement != trajectoryVector.end(); trajectoryElement++)
+    {
+        if((**trajectoryElement).type() == JsonDataPack::getType())
+        {
+            NrpCore::TrajectoryMessage * trajectoryMessage = returnMessage->add_jsontrajectorymessages();
+            const nlohmann::json & data = (dynamic_cast<const JsonDataPack *>((*trajectoryElement).get()))->getData();
+            Dump::String strdata;
+            strdata.set_string_stream(data.dump());
+
+            trajectoryMessage->set_dataindex(trajectoryIndex);
+            trajectoryMessage->mutable_data()->PackFrom(strdata);
+        }
+        else
+        {
+            // We assume that it's a proto DataPack
+            NrpCore::TrajectoryMessage * trajectoryMessage = returnMessage->add_prototrajectorymessages();
+
+            for(auto& mod : _protoOps) {
+                try {
+                    mod->setTrajectoryMessageFromInterface(*((*trajectoryElement).get()), trajectoryMessage);
+                }
+                catch (NRPException &) {
+                    // this just means that the module couldn't process the request, try with the next one
+                }
+            }
+
+            // TODO How to check for failure in message packing?
+
+            trajectoryMessage->set_dataindex(trajectoryIndex);
+        }
+
+        trajectoryIndex++;
+    }
+
+    this->_manager->getSimulationDataManager().clearTrajectory();
 }
 
-grpc::Status NrpCoreServer::runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)
+
+std::vector<std::shared_ptr<const DataPackInterface>> NrpCoreServer::extractExternalDataPacks(const NrpCore::RunLoopMessage * message)
+{
+    std::vector<std::shared_ptr<const DataPackInterface>> externalDataPacks;
+
+    // Extract all JSON DataPacks
+
+    for(int i = 0; i < message->jsondatapacks_size(); i++)
+    {
+        auto datapackData = message->jsondatapacks(i);
+        DataPackInterface::shared_ptr datapack;
+
+        Dump::String data;
+        message->jsondatapacks(i).data().UnpackTo(&data);
+        nlohmann::json * data_json = new nlohmann::json(nlohmann::json::parse(data.string_stream()));
+        datapack = DataPackInterface::shared_ptr(new JsonDataPack(message->jsondatapacks(i).datapackid().datapackname(),
+                                                                  message->jsondatapacks(i).datapackid().enginename(),
+                                                                  data_json));
+
+        externalDataPacks.push_back(datapack);
+    }
+
+    // Extract all proto DataPacks
+
+    for(int i = 0; i < message->protodatapacks_size(); i++)
+    {
+        auto datapackData = message->protodatapacks(i);
+        DataPackInterface::const_shared_ptr datapack;
+
+        for(auto& mod : _protoOps) {
+            try
+            {
+                datapack = mod->getDataPackInterfaceFromMessage(message->protodatapacks(i).datapackid().enginename(), datapackData);
+
+                if(datapack)
+                    break;
+            }
+            catch (NRPException &)
+            {
+                // this just means that the module couldn't process the request, try with the next one
+            }
+        }
+
+        if(!datapack)
+        {
+            NRPException::logCreate("Failed to unpack External DataPack '" +
+                                    message->protodatapacks(i).datapackid().datapackname() + "' for engine '" +
+                                    message->protodatapacks(i).datapackid().enginename() + "'");
+        }
+
+        externalDataPacks.push_back(datapack);
+    }
+
+    return externalDataPacks;
+}
+
+
+grpc::Status NrpCoreServer::runLoop(grpc::ServerContext * , const NrpCore::RunLoopMessage * message, NrpCore::RunLoopResponse * returnMessage)
 {
     std::unique_lock<std::mutex> lock(this->_mutex);
-    return requestHelper(lock, RequestType::RunUntilTimeout, returnMessage);
+
+    this->_manager->getSimulationDataManager().updateExternalPool(extractExternalDataPacks(message));
+
+    this->_numIterations = message->numiterations();
+
+    // Set the event type
+
+    this->_requestType = RequestType::RunLoop;
+
+    // Notify the main thread that a new event is pending
+
+    this->_consumerConditionalVar.notify_one();
+
+    // Wait for the main thread to finish processing of the latest event
+
+    this->_producerConditionalVar.wait(lock, [this] { return !this->isRequestPending(); });
+
+    // In case of a failure during request processing, send back the error message and status
+    if(this->_requestResult.currentState == SimulationManager::SimState::NotSet) {
+        return grpc::Status(grpc::StatusCode::CANCELLED, this->_requestResult.errorMessage);
+    }
+    else {
+        // Set simulation state after processing the request
+        setReturnMessageContent(this->_requestResult, returnMessage->mutable_simstate());
+
+        const bool done_flag = this->_manager->getSimulationDataManager().getDoneFlag();
+
+        returnMessage->set_doneflag(done_flag);
+        // TODO Implement
+        returnMessage->set_timeoutflag(false);
+
+        if(done_flag)
+        {
+            this->prepareTrajectory(returnMessage);
+        }
+
+        return grpc::Status::OK;
+    }
+}
+
+grpc::Status NrpCoreServer::runUntilTimeout(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::RunLoopResponse * returnMessage)
+{
+    std::unique_lock<std::mutex> lock(this->_mutex);
+
+    // Set the event type
+
+    this->_requestType = RequestType::RunUntilTimeout;
+
+    // Notify the main thread that a new event is pending
+
+    this->_consumerConditionalVar.notify_one();
+
+    // Wait for the main thread to finish processing of the latest event
+
+    this->_producerConditionalVar.wait(lock, [this] { return !this->isRequestPending(); });
+
+    // In case of a failure during request processing, send back the error message and status
+    if(this->_requestResult.currentState == SimulationManager::SimState::NotSet) {
+        return grpc::Status(grpc::StatusCode::CANCELLED, this->_requestResult.errorMessage);
+    }
+    else {
+        // Set simulation state after processing the request
+        setReturnMessageContent(this->_requestResult, returnMessage->mutable_simstate());
+
+        const bool done_flag = this->_manager->getSimulationDataManager().getDoneFlag();
+
+        returnMessage->set_doneflag(done_flag);
+        returnMessage->set_timeoutflag(this->_manager->hasSimulationTimedOut());
+
+        this->prepareTrajectory(returnMessage);
+
+        return grpc::Status::OK;
+    }
 }
 
 grpc::Status NrpCoreServer::shutdown(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage)

@@ -26,7 +26,6 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include <boost/python.hpp>
 
-
 /*!
  * \brief Base datapack class
  *
@@ -93,23 +92,6 @@ public:
     }
 
     /*!
-     * \brief Releases ownership of the data stored in the object and returns a raw pointer to the data
-     *
-     * The caller is responsible for destruction of the released data.
-     *
-     * \return Raw pointer to the data stored in the object
-     */
-    DATA_TYPE* releaseData()
-    {
-        if(this->isEmpty())
-            throw NRPException::logCreate("Attempt to get data from empty DataPack " + this->name());
-        else {
-            this->setIsEmpty(true);
-            return data.release();
-        }
-    }
-
-    /*!
      * \brief Returns a python string representation of this object content
      *
      * \return Python string
@@ -131,17 +113,40 @@ public:
         binder.def("getType", &DataPack<DATA_TYPE>::getType).staticmethod("getType");
     }
 
-    DataPackInterfaceConstSharedPtr moveToSharedPtr() final
-    {
-        return typename PtrTemplates<DataPack<DATA_TYPE>>::const_shared_ptr(new DataPack<DATA_TYPE>(this->name(), this->engineName(), this->releaseData()));
-    }
-
     DataPackInterface* clone() const override
     { return new DataPack<DATA_TYPE>(this->name(), this->engineName(), new DATA_TYPE(*data)); }
 
 private:
 
     std::unique_ptr<DATA_TYPE> data;
+};
+
+
+/*!
+ * \brief Wrapper class for DataPacks with no name and no engine association
+ *
+ * Technically it's possible to alias the DataPack class with two different Python names,
+ * for example JsonDataPack and JsonRawData, but in that case boost::python will complain about
+ * duplicated converter functions. Having this thin wrapper/alias class prevents that.
+ */
+template< class DATA_TYPE>
+class RawData : public DataPack<DATA_TYPE>
+{
+public:
+
+    RawData()
+    : DataPack<DATA_TYPE>("", "")
+    {}
+
+    static void create_python(const std::string &name)
+    {
+        using namespace boost::python;
+        class_< RawData<DATA_TYPE>, RawData<DATA_TYPE> *, bases<DataPack<DATA_TYPE>>, boost::noncopyable>
+            binder(name.data(), init<>());
+        binder.add_property("data", make_function(&RawData<DATA_TYPE>::getData, return_internal_reference<>()));
+        binder.def("__str__", &RawData<DATA_TYPE>::toPythonString);
+        binder.def("getType", &RawData<DATA_TYPE>::getType).staticmethod("getType");
+    }
 };
 
 #endif // DATA_DATAPACK_H

@@ -44,7 +44,7 @@ TEST(SimulationManagerTest, StateTransitions)
             .WillRepeatedly(Return(true));
     EXPECT_CALL(manager, stopCB).Times(1);
     EXPECT_CALL(manager, runCB).Times(1).WillRepeatedly(Return(true));;
-    EXPECT_CALL(manager, runUntilTimeOutCB).Times(1).WillRepeatedly(Return(true));
+    EXPECT_CALL(manager, runUntilDoneOrTimeoutCB).Times(1).WillRepeatedly(Return(true));
     EXPECT_CALL(manager, shutdownCB).Times(2);
 
     //// FAILED
@@ -53,8 +53,8 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.resetSimulation(), std::logic_error);
     ASSERT_THROW(manager.stopSimulation(), std::logic_error);
-    ASSERT_THROW(manager.runSimulation(1, nlohmann::json()), std::logic_error);
-    ASSERT_THROW(manager.runSimulationUntilTimeout(), std::logic_error);
+    ASSERT_THROW(manager.runSimulation(1), std::logic_error);
+    ASSERT_THROW(manager.runSimulationUntilDoneOrTimeout(), std::logic_error);
     ASSERT_THROW(manager.initializeSimulation(), std::logic_error);
     // Current state
     ASSERT_EQ(manager.currentState(), SimulationManager::SimState::Failed);
@@ -67,8 +67,8 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.resetSimulation(), std::logic_error);
     ASSERT_THROW(manager.stopSimulation(), std::logic_error);
-    ASSERT_THROW(manager.runSimulation(1, nlohmann::json()), std::logic_error);
-    ASSERT_THROW(manager.runSimulationUntilTimeout(), std::logic_error);
+    ASSERT_THROW(manager.runSimulation(1), std::logic_error);
+    ASSERT_THROW(manager.runSimulationUntilDoneOrTimeout(), std::logic_error);
     ASSERT_THROW(manager.shutdownSimulation(), std::logic_error);
     // Current state
     ASSERT_EQ(manager.currentState(), SimulationManager::SimState::Created);
@@ -81,8 +81,8 @@ TEST(SimulationManagerTest, StateTransitions)
     // Invalid actions
     ASSERT_THROW(manager.initializeSimulation(), std::logic_error);
     // Valid actions
-    ASSERT_NO_THROW(manager.runSimulation(1, nlohmann::json()));
-    ASSERT_NO_THROW(manager.runSimulationUntilTimeout());
+    ASSERT_NO_THROW(manager.runSimulation(1));
+    ASSERT_NO_THROW(manager.runSimulationUntilDoneOrTimeout());
     ASSERT_NO_THROW(manager.stopSimulation());
     ASSERT_NO_THROW(manager.resetSimulation());
     ASSERT_EQ(manager.currentState(), SimulationManager::SimState::Stopped);

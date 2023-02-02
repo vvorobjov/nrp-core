@@ -100,25 +100,25 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
     // The data is updated asynchronously, on every new frame. It may happen that on first
     // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-    const EngineClientInterface::datapacks_t * datapacks;
+    datapacks_vector_t datapacks;
     int trial = 0;
 
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), JsonDataPack::getType())});
-        ASSERT_EQ(datapacks->size(), 1);
+        datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), JsonDataPack::getType())});
+        ASSERT_EQ(datapacks.size(), 1);
     }
-    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
+    while(datapacks.begin()->get()->isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
     ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    const JsonDataPack &camDat = dynamic_cast<const JsonDataPack&>(*(datapacks->at(0)));
+    const JsonDataPack * camDat = dynamic_cast<const JsonDataPack *>(datapacks.begin()->get());
 
-    ASSERT_EQ(camDat.getData()["image_height"], 240);
-    ASSERT_EQ(camDat.getData()["image_width" ], 320);
-    ASSERT_EQ(camDat.getData()["image_depth" ], 3);
-    ASSERT_EQ(camDat.getData()["image_data"  ].size(), 320*240*3);
+    ASSERT_EQ(camDat->getData()["image_height"], 240);
+    ASSERT_EQ(camDat->getData()["image_width" ], 320);
+    ASSERT_EQ(camDat->getData()["image_depth" ], 3);
+    ASSERT_EQ(camDat->getData()["image_data"  ].size(), 320*240*3);
 }
 
 
@@ -144,18 +144,23 @@ TEST(TestGazeboJSONEngine, JointPlugin)
     sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const JsonDataPack *pJointDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
+    const JsonDataPack *pJointDev = dynamic_cast<const JsonDataPack*>(datapacks.begin()->get());
     ASSERT_EQ(pJointDev->getData()["position"], 0);
 
     // Test datapack data setting
     const auto newTargetPos = 2.0f;
 
-    JsonDataPack newJointDev(pJointDev->name(), pJointDev->engineName(), new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} }));
+    std::shared_ptr<DataPackInterface> newJointDataPack = 
+        std::shared_ptr<DataPackInterface>(new JsonDataPack(pJointDev->name(),
+                                                            pJointDev->engineName(),
+                                                            new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} })));
+    datapacks_set_t outputDataPacks;
+    outputDataPacks.insert(newJointDataPack);
 
-    ASSERT_NO_THROW(engine->sendDataPacksToEngine({&newJointDev}));
+    ASSERT_NO_THROW(engine->sendDataPacksToEngine(outputDataPacks));
 }
 
 TEST(TestGazeboJSONEngine, LinkPlugin)
@@ -179,10 +184,10 @@ TEST(TestGazeboJSONEngine, LinkPlugin)
     sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
+    const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks.begin()->get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // TODO: Check that link state is correct
