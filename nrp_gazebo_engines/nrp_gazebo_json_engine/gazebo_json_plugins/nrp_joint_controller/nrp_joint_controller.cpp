@@ -127,13 +127,19 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
         }
 
         // Create datapack
-        const auto datapackName = NRPCommunicationController::createDataPackName(model->GetName(), joint->GetName());
+        const auto datapackName = NRPJSONCommunicationController::createDataPackName(model->GetName(), joint->GetName());
 
         NRPLogger::info("Registering Joint datapack [ {} ]", datapackName);
         this->_jointDataPackControllers.push_back(JointDataPackController(joint, jointControllerPtr, jointName));
-        NRPCommunicationController::getInstance().registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+        try {
+            auto &commControl = NRPJSONCommunicationController::getInstance();
+            commControl.registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+            // Register plugin
+            commControl.registerModelPlugin(this);
+        }
+        catch(NRPException&) {
+            throw NRPException::logCreate("Failed to register Joint datapack. Ensure that this NRP JSON Joint plugin is "
+                                          "used in conjunction with a gazebo_json Engine in an NRP Core experiment.");
+        }
     }
-
-    // Register plugin
-    NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

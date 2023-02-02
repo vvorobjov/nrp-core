@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// This project has received funding from the European Union’s Horizon 2020
+// This project has received funding from the European Unionï¿½s Horizon 2020
 // Framework Programme for Research and Innovation under the Specific Grant
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
@@ -43,8 +43,18 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
     // Tell simulation to go as fast as possible
 //  world->Physics()->SetRealTimeUpdateRate(0);
 
+    // Register event callback
+    this->add_entity_connection = event::Events::ConnectAddEntity(
+            std::bind(& gazebo::NRPWorldPlugin::entityAddedCB, this, std::placeholders::_1));
+
     NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
-    NRPCommunicationController::getInstance().registerStepController(this);
+    try {
+        NRPGRPCCommunicationController::getInstance().registerStepController(this);
+    }
+    catch(NRPException&) {
+        throw NRPException::logCreate("Failed to register world controller. Ensure that this NRP gRPC world plugin is "
+                                      "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
+    }
 }
 
 void gazebo::NRPWorldPlugin::Reset()
@@ -85,15 +95,28 @@ SimulationTime gazebo::NRPWorldPlugin::runLoopStep(SimulationTime timeStep)
     return toSimulationTime<int32_t, std::ratio<1>>(simTime.sec) + toSimulationTime<int32_t, std::nano>(simTime.nsec);
 }
 
-bool gazebo::NRPWorldPlugin::finishWorldLoading()
+bool gazebo::NRPWorldPlugin::finishWorldLoading(double waitTime)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     NRPLogger::info("Finalizing gazebo loading... Time: {}",  this->_world->SimTime().Double());
+
+    // Wait until all required models have been added
+    while(!this->_requiredModels.empty()) {
+        // Wait for 100ms before retrying
+        usleep(100 * 1000);
+        waitTime -= 0.1;
+        if(waitTime <= 0)
+            throw NRPException::logCreate("Timeout happened while waiting for expected models to be added to the Gazebo"
+                                          " simulation.");
+    }
+
+    // Check that sensors are initialized, otherwise plugins are not loaded
+    while(!this->_world->SensorsInitialized())
+        usleep(100*1000);
     
     // Run a single iteration and reset the world
     // This should force all plugins to load
-
     this->startLoop(1);
     this->Reset();
 
@@ -101,6 +124,12 @@ bool gazebo::NRPWorldPlugin::finishWorldLoading()
 
     return true;
 }
+
+void gazebo::NRPWorldPlugin::entityAddedCB(const std::string &name)
+{ this->_requiredModels.erase(name); }
+
+void gazebo::NRPWorldPlugin::addRequiredModel(const std::string &modelName)
+{ this->_requiredModels.insert(modelName); }
 
 bool gazebo::NRPWorldPlugin::resetWorld()
 {

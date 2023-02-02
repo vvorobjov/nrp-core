@@ -46,9 +46,16 @@ namespace gazebo
 
             virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
 
-            bool finishWorldLoading() override;
+            bool finishWorldLoading(double waitTime) override;
 
             bool resetWorld() override;
+
+            /*!
+             * \brief adds a model name to the set of models this plugin should wait for
+             *
+             * \param modelName model name
+             */
+            void addRequiredModel(const std::string &modelName) override;
 
         private:
             /*!
@@ -65,10 +72,26 @@ namespace gazebo
             physics::WorldState _initialWorldState;
 
             /*!
+             * \brief Set of model names that this plugin should wait for
+             */
+            std::set<std::string> _requiredModels;
+
+            /*!
+             * \brief Gazebo Event Connection Handle
+             */
+            event::ConnectionPtr add_entity_connection;
+
+            /*!
              * \brief Start running the sim.
              * \param numIterations Number of iterations to run
              */
             void startLoop(unsigned int numIterations);
+
+            /*!
+             * \brief Gazebo Event Connection callback
+             * \param name entity name
+             */
+            void entityAddedCB(const std::string &name);
     };
 
     GZ_REGISTER_WORLD_PLUGIN(NRPWorldPlugin)

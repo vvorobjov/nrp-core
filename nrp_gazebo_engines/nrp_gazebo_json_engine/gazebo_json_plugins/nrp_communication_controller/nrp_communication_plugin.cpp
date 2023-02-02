@@ -45,11 +45,15 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     }
     catch(cxxopts::OptionException &e)
     {
-        throw NRPException::logCreate(e, "Failed to parse options");
+        throw NRPException::logCreate(e, "NRP Communication plugin:: Failed to parse options");
+    }
+    catch(std::domain_error &e)
+    {
+        throw NRPException::logCreate(e, "NRP Communication plugin: Failed to parse options");
     }
 
     // Create server with given URL
-    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
+    auto &newController = NRPJSONCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
 
     // Save server parameters
     this->_serverAddress = newController.serverAddress();
@@ -69,7 +73,7 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_registrationAddress);
+    auto &newController = NRPJSONCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_registrationAddress);
 
     // Start server
     newController.startServerAsync();

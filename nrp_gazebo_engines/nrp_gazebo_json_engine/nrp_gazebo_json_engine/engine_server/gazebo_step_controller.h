@@ -35,7 +35,9 @@ class GazeboStepController
 
         virtual SimulationTime runLoopStep(SimulationTime timeStep) = 0;
 
-        virtual bool finishWorldLoading() = 0;
+        virtual bool finishWorldLoading(double waitTime) = 0;
+
+        virtual void addRequiredModel(const std::string &modelName) = 0;
 
         virtual bool resetWorld() = 0;
 };

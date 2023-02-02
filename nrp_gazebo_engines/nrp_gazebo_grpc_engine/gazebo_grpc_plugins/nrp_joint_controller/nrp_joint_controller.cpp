@@ -127,13 +127,19 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
         }
 
         // Create datapack
-        const auto datapackName = NRPCommunicationController::createDataPackName(model->GetName(), joint->GetName());
+        const auto datapackName = NRPGRPCCommunicationController::createDataPackName(model->GetName(), joint->GetName());
 
         NRPLogger::info("Registering Joint datapack [ {} ]", datapackName);
         this->_jointDataPackControllers.push_back(JointGrpcDataPackController(jointName, joint, jointControllerPtr));
-        NRPCommunicationController::getInstance().registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+        try {
+            auto &commControl = NRPGRPCCommunicationController::getInstance();
+            commControl.registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+            // Register plugin in communication controller
+            commControl.registerModelPlugin(this);
+        }
+        catch(NRPException&) {
+            throw NRPException::logCreate("Failed to register Joint datapack. Ensure that this NRP gRPC Joint plugin is "
+                                          "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
+        }
     }
-
-    // Register plugin
-    NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

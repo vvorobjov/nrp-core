@@ -28,28 +28,32 @@
 
 using namespace nlohmann;
 
-std::unique_ptr<NRPCommunicationController> NRPCommunicationController::_instance = nullptr;
+std::unique_ptr<NRPJSONCommunicationController> NRPJSONCommunicationController::_instance = nullptr;
 
-NRPCommunicationController::~NRPCommunicationController()
+NRPJSONCommunicationController::~NRPJSONCommunicationController()
 {
     this->_stepController = nullptr;
 }
 
-NRPCommunicationController &NRPCommunicationController::getInstance()
+NRPJSONCommunicationController &NRPJSONCommunicationController::getInstance()
 {
-    return *(NRPCommunicationController::_instance.get());
+    if(NRPJSONCommunicationController::_instance)
+        return *(NRPJSONCommunicationController::_instance.get());
+    else
+        throw NRPException::logCreate("Attempting to access NRPJSONCommunicationController singleton, but it has to be"
+                                      " instantiated first");
 }
 
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
+NRPJSONCommunicationController &NRPJSONCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, registrationURL));
-    return NRPCommunicationController::getInstance();
+    NRPJSONCommunicationController::_instance.reset(new NRPJSONCommunicationController(serverURL, engineName, registrationURL));
+    return NRPJSONCommunicationController::getInstance();
 
 }
 
-void NRPCommunicationController::registerStepController(GazeboStepController *stepController)
+void NRPJSONCommunicationController::registerStepController(GazeboStepController *stepController)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -57,7 +61,7 @@ void NRPCommunicationController::registerStepController(GazeboStepController *st
     this->_stepController = stepController;
 }
 
-SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
+SimulationTime NRPJSONCommunicationController::runLoopStep(SimulationTime timeStep)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -75,7 +79,7 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
     }
 }
 
-json NRPCommunicationController::initialize(const json &data, EngineJSONServer::lock_t &lock)
+json NRPJSONCommunicationController::initialize(const json &data, EngineJSONServer::lock_t &lock)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -123,6 +127,7 @@ json NRPCommunicationController::initialize(const json &data, EngineJSONServer::
 
             // Exec cmd
             NRPLogger::info("Spawning model \"" + model.at("Name").get<std::string>() + "\" with command: " + argsStr);
+            this->_stepController->addRequiredModel(model.at("Name").get<std::string>());
             auto status = system(argsStr.c_str());
             if(!WIFEXITED(status) || WEXITSTATUS(status) != EXIT_SUCCESS)
                 throw NRPException::logCreate("Spawning model \"" + model.at("Name").get<std::string>() + "\" failed");
@@ -130,17 +135,15 @@ json NRPCommunicationController::initialize(const json &data, EngineJSONServer::
         }
     }
 
-    NRPLogger::info("0");
-
     // Forces plugins to load
-    this->_stepController->finishWorldLoading();
+    this->_stepController->finishWorldLoading(waitTime);
 
     lock.lock();
 
     return nlohmann::json({true});
 }
 
-json NRPCommunicationController::reset(EngineJSONServer::lock_t &lock)
+json NRPJSONCommunicationController::reset(EngineJSONServer::lock_t &lock)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -156,7 +159,7 @@ json NRPCommunicationController::reset(EngineJSONServer::lock_t &lock)
     }
     catch(const std::exception &e)
     {
-        NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
+        NRPLogger::error("NRPJSONCommunicationController::reset: failed to resetWorld()");
 
         return nlohmann::json({false});
     }
@@ -164,7 +167,7 @@ json NRPCommunicationController::reset(EngineJSONServer::lock_t &lock)
     return nlohmann::json({true});
 }
 
-json NRPCommunicationController::shutdown(const json&)
+json NRPJSONCommunicationController::shutdown(const json&)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -172,7 +175,7 @@ json NRPCommunicationController::shutdown(const json&)
 }
 
 
-NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
+NRPJSONCommunicationController::NRPJSONCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL)
     : EngineJSONServer(serverURL, engineName, registrationURL)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);

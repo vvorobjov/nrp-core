@@ -39,30 +39,30 @@
 /*!
  * \brief Manages communication with the NRP. Uses a GRPC server to send/receive data
  */
-class NRPCommunicationController
+class NRPGRPCCommunicationController
         : public EngineGrpcServer
 {
     public:
 
-        ~NRPCommunicationController() override;
+        ~NRPGRPCCommunicationController() override;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController(const NRPCommunicationController &other) = delete;
+        NRPGRPCCommunicationController(const NRPGRPCCommunicationController &other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
+        NRPGRPCCommunicationController &operator=(const NRPGRPCCommunicationController &other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController(NRPCommunicationController &&other) = delete;
+        NRPGRPCCommunicationController(NRPGRPCCommunicationController &&other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
+        NRPGRPCCommunicationController &&operator=(NRPGRPCCommunicationController &&other) = delete;
 
         /*!
          * \brief Get singleton instance
-         * \return Gets instance of NRPCommunicationController
+         * \return Gets instance of NRPGRPCCommunicationController
          */
-        static NRPCommunicationController& getInstance();
+        static NRPGRPCCommunicationController& getInstance();
 
         /*!
          * \brief Reset server with the given server URL
@@ -70,7 +70,7 @@ class NRPCommunicationController
          * \param engineName Name of this engine
          * \return Returns reference to server instance
          */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName,
+        static NRPGRPCCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName,
                                                          const std::string &protobufPluginsPath,
                                                          const nlohmann::json &protobufPlugins);
 
@@ -113,7 +113,7 @@ class NRPCommunicationController
         /*!
          * \brief Singleton instance of this class
          */
-        static std::unique_ptr<NRPCommunicationController> _instance;
+        static std::unique_ptr<NRPGRPCCommunicationController> _instance;
 
         /*!
          * \brief Controlls gazebo stepping
@@ -145,7 +145,7 @@ class NRPCommunicationController
         /*!
          * \brief Make private for singleton
          */
-        NRPCommunicationController() = delete;
+        NRPGRPCCommunicationController() = delete;
 
         /*!
          * \brief Constructor. Private for singleton
@@ -154,7 +154,7 @@ class NRPCommunicationController
          * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        NRPCommunicationController(const std::string &serverURL, const std::string &engineName,
+        NRPGRPCCommunicationController(const std::string &serverURL, const std::string &engineName,
                                    const std::string &protobufPluginsPath,
                                    const nlohmann::json &protobufPlugins);
 };

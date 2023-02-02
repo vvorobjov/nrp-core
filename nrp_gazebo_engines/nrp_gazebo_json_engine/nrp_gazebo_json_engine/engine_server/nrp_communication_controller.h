@@ -35,29 +35,29 @@
 /*!
  * \brief Manages communication with the NRP. Uses a REST server to send/receive data. Singleton class.
  */
-class NRPCommunicationController
+class NRPJSONCommunicationController
         : public EngineJSONServer
 {
     public:
-        ~NRPCommunicationController() override;
+        ~NRPJSONCommunicationController() override;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController(const NRPCommunicationController &other) = delete;
+        NRPJSONCommunicationController(const NRPJSONCommunicationController &other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController &operator=(const NRPCommunicationController &other) = delete;
+        NRPJSONCommunicationController &operator=(const NRPJSONCommunicationController &other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController(NRPCommunicationController &&other) = delete;
+        NRPJSONCommunicationController(NRPJSONCommunicationController &&other) = delete;
 
         /*! \brief Delete for singleton */
-        NRPCommunicationController &&operator=(NRPCommunicationController &&other) = delete;
+        NRPJSONCommunicationController &&operator=(NRPJSONCommunicationController &&other) = delete;
 
         /*!
          * \brief Get singleton instance
-         * \return Gets instance of NRPCommunicationController
+         * \return Gets instance of NRPJSONCommunicationController
          */
-        static NRPCommunicationController& getInstance();
+        static NRPJSONCommunicationController& getInstance();
 
 
         /*!
@@ -67,7 +67,7 @@ class NRPCommunicationController
          * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        static NRPCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        static NRPJSONCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 
 
         /*!
@@ -108,7 +108,7 @@ class NRPCommunicationController
         /*!
          * \brief Singleton instance of this class
          */
-        static std::unique_ptr<NRPCommunicationController> _instance;
+        static std::unique_ptr<NRPJSONCommunicationController> _instance;
 
         /*!
          * \brief Controlls gazebo stepping
@@ -140,7 +140,7 @@ class NRPCommunicationController
         /*!
          * \brief Make private for singleton
          */
-        NRPCommunicationController() = delete;
+        NRPJSONCommunicationController() = delete;
 
         /*!
          * \brief Constructor. Private for singleton
@@ -149,7 +149,7 @@ class NRPCommunicationController
          * \param registrationURL URL used to register this engine server's URL
          * \return Returns reference to server instance
          */
-        NRPCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
+        NRPJSONCommunicationController(const std::string &serverURL, const std::string &engineName, const std::string &registrationURL);
 };
 
 #endif

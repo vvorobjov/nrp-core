@@ -48,13 +48,19 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     }
     catch(cxxopts::OptionException &e)
     {
-        NRPLogger::error("Failed to parse options [ {} ]", e.what());
+        NRPLogger::error("NRP Communication plugin: Failed to parse Engine options");
+
+        throw;
+    }
+    catch(std::domain_error &e)
+    {
+        NRPLogger::error("NRP Communication plugin: Failed to parse Engine options");
 
         throw;
     }
 
     // Create server with given URL
-    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, protobufPluginsPath, protobufPlugins);
+    auto &newController = NRPGRPCCommunicationController::resetInstance(serverAddr, engineName, protobufPluginsPath, protobufPlugins);
 
     // Save the server parameters
     this->_serverAddress = newController.serverAddress();
@@ -75,7 +81,7 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_protobufPluginsPath, this->_protobufPlugins);
+    auto &newController = NRPGRPCCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_protobufPluginsPath, this->_protobufPlugins);
 
     // Start server
     newController.startServerAsync();

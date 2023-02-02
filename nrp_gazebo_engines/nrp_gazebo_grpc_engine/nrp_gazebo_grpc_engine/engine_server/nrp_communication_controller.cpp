@@ -26,33 +26,37 @@
 
 using namespace nlohmann;
 
-std::unique_ptr<NRPCommunicationController> NRPCommunicationController::_instance = nullptr;
+std::unique_ptr<NRPGRPCCommunicationController> NRPGRPCCommunicationController::_instance = nullptr;
 
-NRPCommunicationController::~NRPCommunicationController()
+NRPGRPCCommunicationController::~NRPGRPCCommunicationController()
 {
     this->_stepController = nullptr;
 }
 
-NRPCommunicationController &NRPCommunicationController::getInstance()
+NRPGRPCCommunicationController &NRPGRPCCommunicationController::getInstance()
 {
-    return *(NRPCommunicationController::_instance.get());
+    if(NRPGRPCCommunicationController::_instance)
+        return *(NRPGRPCCommunicationController::_instance.get());
+    else
+        throw NRPException::logCreate("Attempting to access NRPGRPCCommunicationController singleton, but it has to be"
+                                      " instantiated first");
 }
 
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName,
+NRPGRPCCommunicationController &NRPGRPCCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName,
                                                                       const std::string &protobufPluginsPath,
                                                                       const nlohmann::json &protobufPlugins)
 {
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName, protobufPluginsPath, protobufPlugins));
-    return NRPCommunicationController::getInstance();
+    NRPGRPCCommunicationController::_instance.reset(new NRPGRPCCommunicationController(serverURL, engineName, protobufPluginsPath, protobufPlugins));
+    return NRPGRPCCommunicationController::getInstance();
 }
 
-void NRPCommunicationController::registerStepController(GazeboStepController *stepController)
+void NRPGRPCCommunicationController::registerStepController(GazeboStepController *stepController)
 {
     lock_t lock(this->_datapackLock);
     this->_stepController = stepController;
 }
 
-SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
+SimulationTime NRPGRPCCommunicationController::runLoopStep(SimulationTime timeStep)
 {
     if(this->_stepController == nullptr)
     {
@@ -74,7 +78,7 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
     }
 }
 
-void NRPCommunicationController::initialize(const json &data, lock_t &lock)
+void NRPGRPCCommunicationController::initialize(const json &data, lock_t &lock)
 {
     double waitTime = data.at("WorldLoadTime");
     if(waitTime <= 0)
@@ -124,6 +128,7 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
 
             // Exec cmd
             NRPLogger::info("Spawning model \"" + model.at("Name").get<std::string>() + "\" with command: " + argsStr);
+            this->_stepController->addRequiredModel(model.at("Name").get<std::string>());
             auto status = system(argsStr.c_str());
             if(!WIFEXITED(status) || WEXITSTATUS(status) != EXIT_SUCCESS)
                 throw NRPException::logCreate("Spawning model \"" + model.at("Name").get<std::string>() + "\" failed");
@@ -131,12 +136,12 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
     }
 
     // Forces plugins to load
-    this->_stepController->finishWorldLoading();
+    this->_stepController->finishWorldLoading(waitTime);
 
     lock.lock();
 }
 
-void NRPCommunicationController::reset()
+void NRPGRPCCommunicationController::reset()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -152,18 +157,18 @@ void NRPCommunicationController::reset()
     }
     catch(const std::exception &e)
     {
-        NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
+        NRPLogger::error("NRPGRPCCommunicationController::reset: failed to resetWorld()");
 
         throw;
     }
 }
 
-void NRPCommunicationController::shutdown(const json&)
+void NRPGRPCCommunicationController::shutdown(const json&)
 {
     // Do nothing
 }
 
-NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName,
+NRPGRPCCommunicationController::NRPGRPCCommunicationController(const std::string &serverURL, const std::string &engineName,
                                                        const std::string &protobufPluginsPath,
                                                        const nlohmann::json &protobufPlugins)
     : EngineGrpcServer(serverURL, engineName, protobufPluginsPath, protobufPlugins)

@@ -31,15 +31,21 @@ void gazebo::NRPCameraController::Load(gazebo::sensors::SensorPtr sensor, sdf::E
     // Load camera plugin
     this->CameraPlugin::Load(sensor, sdf);
 
-    const auto devName = NRPCommunicationController::createDataPackName(sensor->ParentName(), sensor->Name());
+    const auto devName = NRPGRPCCommunicationController::createDataPackName(sensor->ParentName(), sensor->Name());
     NRPLogger::info("Registering Camera datapack [ {} ]", devName);
 
     // Create camera datapack and register it
     this->_cameraInterface.reset(new CameraGrpcDataPackController(devName, this->camera, sensor));
-    NRPCommunicationController::getInstance().registerDataPack(devName, this->_cameraInterface.get());
-
-    // Register plugin in communication controller
-    NRPCommunicationController::getInstance().registerSensorPlugin(this);
+    try {
+        auto &commControl = NRPGRPCCommunicationController::getInstance();
+        commControl.registerDataPack(devName, this->_cameraInterface.get());
+        // Register plugin in communication controller
+        commControl.registerSensorPlugin(this);
+    }
+    catch(NRPException&) {
+        throw NRPException::logCreate("Failed to register Camera datapack. Ensure that this NRP gRPC Camera plugin is "
+                                      "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
+    }
 }
 
 void gazebo::NRPCameraController::OnNewFrame(const unsigned char *image, unsigned int width, unsigned int height, unsigned int depth, const std::string &)

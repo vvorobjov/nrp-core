@@ -29,20 +29,26 @@
 
 void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr)
 {
-    auto &commControl = NRPCommunicationController::getInstance();
+    try {
+        auto &commControl = NRPJSONCommunicationController::getInstance();
 
-    // Register a datapack for each link
-    auto links = model->GetLinks();
-    for(const auto &link : links)
-    {
-        const auto datapackName = NRPCommunicationController::createDataPackName(model->GetName(), link->GetName());
+        // Register a datapack for each link
+        auto links = model->GetLinks();
+        for (const auto &link: links) {
+            const auto datapackName = NRPJSONCommunicationController::createDataPackName(model->GetName(),
+                                                                                         link->GetName());
 
-        NRPLogger::info("Registering Link datapack [ {} ]", datapackName);
+            NRPLogger::info("Registering Link datapack [ {} ]", datapackName);
 
-        this->_linkInterfaces.push_back(LinkDataPackController(datapackName, link));
-        commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+            this->_linkInterfaces.push_back(LinkDataPackController(datapackName, link));
+            commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+        }
+
+        // Register plugin
+        commControl.registerModelPlugin(this);
     }
-
-    // Register plugin
-    NRPCommunicationController::getInstance().registerModelPlugin(this);
+    catch (NRPException&) {
+        throw NRPException::logCreate("Failed to register Link datapack. Ensure that this NRP JSON Link plugin is "
+                                      "used in conjunction with a gazebo_json Engine in an NRP Core experiment.");
+    }
 }
