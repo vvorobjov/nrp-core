@@ -89,15 +89,20 @@ class EngineGrpcClient
 
             ProtoOpsManager::getInstance().addPluginPath(this->engineConfig().at("ProtobufPluginsPath"));
             for(const auto& packageName : this->engineConfig().at("ProtobufPackages")) {
+                auto packageNameStr = packageName.template get<std::string>();
+                _protoOpsStr += packageNameStr + ",";
                 std::stringstream pluginLibName;
-                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageName.template get<std::string>() <<
+                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageNameStr <<
                         NRP_PROTO_OPS_LIB_SUFIX << ".so";
                 auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(pluginLibName.str());
                 if(pluginLib)
                     _protoOps.template emplace_back(std::move(pluginLib));
                 else
-                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageName.template get<std::string>()+"\"");
+                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageNameStr+"\"");
             }
+
+            if(!_protoOpsStr.empty())
+                _protoOpsStr.pop_back();
         }
 
         virtual pid_t launchEngine() override
@@ -256,7 +261,7 @@ class EngineGrpcClient
 
         if(!status.ok())
         {
-            const auto errMsg = "Engine client getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+            const auto errMsg = "In Engine \"" + this->engineName() + "\", getDataPacksFromEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
             throw std::runtime_error(errMsg);
         }
 
@@ -277,9 +282,10 @@ class EngineGrpcClient
             if(datapack)
                 interfaces.push_back(datapack);
             else
-                throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" +
-                                                      datapackData.datapackid().datapackname() + "\" in engine \"" +
-                                                      this->engineName() + "\"");
+                throw NRPException::logCreate("In Engine \"" + this->engineName() + "\", unable to deserialize datapack \"" +
+                                                      datapackData.datapackid().datapackname() + "\" using any of the NRP-Core Protobuf plugins specified in the"
+                                                      " engine configuration: [" + _protoOpsStr + "]. Ensure that the parameter "
+                                                      "\"ProtobufPackages\" is properly set in the Engine configuration");
         }
 
         return interfaces;
@@ -316,7 +322,10 @@ class EngineGrpcClient
                     }
 
                     if(!isSet)
-                        throw NRPException::logCreate("Failed to set DataPackMessage from DataPackInterface with name \"" + datapack->name() + "\"");
+                        throw NRPException::logCreate("In Engine \"" + this->engineName() + "\", unable to serialize datapack \"" +
+                                                      datapack->name() + "\" using any of the NRP-Core Protobuf plugins specified in the"
+                                                      " engine configuration: [" + _protoOpsStr + "]. Ensure that the parameter "
+                                                      "\"ProtobufPackages\" is properly set in the Engine configuration");
                 }
             }
 
@@ -324,7 +333,7 @@ class EngineGrpcClient
 
             if(!status.ok())
             {
-                const auto errMsg = "Engine server sendDataPacksToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
+                const auto errMsg = "In Engine \"" + this->engineName() + "\", sendDataPacksToEngine failed: " + status.error_message() + " (" + std::to_string(status.error_code()) + ")";
                 throw std::runtime_error(errMsg);
             }
         }
@@ -370,6 +379,7 @@ class EngineGrpcClient
         SimulationTime _rpcTimeout     = SimulationTime::zero();
 
     std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> _protoOps;
+    std::string _protoOpsStr = "";
 };
 
 

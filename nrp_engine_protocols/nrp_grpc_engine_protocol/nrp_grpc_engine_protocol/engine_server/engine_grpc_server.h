@@ -82,15 +82,20 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
             ProtoOpsManager::getInstance().addPluginPath(protobufPluginsPath);
             for (const auto &packageName: protobufPlugins) {
+                auto packageNameStr = packageName.template get<std::string>();
+                _protoOpsStr += packageNameStr + ",";
                 std::stringstream pluginLibName;
-                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageName.template get<std::string>() <<
+                pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageNameStr <<
                               NRP_PROTO_OPS_LIB_SUFIX << ".so";
                 auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(pluginLibName.str());
                 if(pluginLib)
                     _protoOps.template emplace_back(std::move(pluginLib));
                 else
-                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageName.template get<std::string>()+"\"");
+                    throw NRPException::logCreate("Failed to load ProtobufPackage \""+packageNameStr+"\"");
             }
+
+            if(!_protoOpsStr.empty())
+                _protoOpsStr.pop_back();
         }
 
         /*!
@@ -502,10 +507,10 @@ class EngineGrpcServer : public EngineGrpcService::Service
                         if(protoMsg)
                             devInterface->second->handleDataPackData(*protoMsg);
                         else
-                            throw NRPException::logCreate("Unable to unpack data from DataPack '" +
-                                                                  dataPack.datapackid().datapackname() +
-                                                                  "' in engine '" +
-                                                                  dataPack.datapackid().enginename() + "'");
+                            throw NRPException::logCreate("In Engine \"" + dataPack.datapackid().enginename() + "\", unable to deserialize datapack \"" +
+                                                                  dataPack.datapackid().datapackname() + "\" using any of the NRP-Core Protobuf plugins specified in the"
+                                                                  " engine configuration: [" + _protoOpsStr + "]. Ensure that the parameter "
+                                                                  "\"ProtobufPackages\" is properly set in the Engine configuration");
                     }
                 }
                 else
@@ -547,10 +552,10 @@ class EngineGrpcServer : public EngineGrpcService::Service
                         }
 
                         if(!isSet)
-                            throw NRPException::logCreate("Unable to pack data into DataPack '" +
-                                                                  protoDataPack->datapackid().datapackname() +
-                                                                  "' in engine '" +
-                                                                  protoDataPack->datapackid().enginename() + "'");
+                            throw NRPException::logCreate("In Engine \"" + protoDataPack->datapackid().enginename() + "\", unable to serialize datapack \"" +
+                                                                  protoDataPack->datapackid().datapackname() + "\" using any of the NRP-Core Protobuf plugins specified in the"
+                                                                  " engine configuration: [" + _protoOpsStr + "]. Ensure that the parameter "
+                                                                  "\"ProtobufPackages\" is properly set in the Engine configuration");
                     }
                 }
                 else
@@ -583,6 +588,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
 
     protected:
         std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> _protoOps;
+        std::string _protoOpsStr = "";
 };
 
 #endif // ENGINE_GRPC_SERVER_H
