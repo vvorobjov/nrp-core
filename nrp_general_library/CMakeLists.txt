@@ -94,13 +94,13 @@ if(NOT ${cxxopts_FOUND})
 endif()
 
 # restclient-cpp: REST client library
-find_package(restclient-cpp QUIET)
+find_package(restclient-cpp 0.5.2 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${restclient-cpp_FOUND})
     message("Please wait. Downloading restclient-cpp...")
 
     ExternalProject_Add(restclient-cpp
             GIT_REPOSITORY https://github.com/mrtazz/restclient-cpp.git
-            GIT_TAG c140e62ecc793533ad40794c17d2982121aebc0b
+            GIT_TAG 0.5.2
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
             CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -Dwith-mpi=ON -Dwith-python=ON)
 
@@ -114,7 +114,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 find_package(nlohmann_json REQUIRED)
 
 # nlohmann_json schema validator
-find_package(nlohmann_json_schema_validator 2.1.0 QUIET)
+find_package(nlohmann_json_schema_validator 2.1.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${nlohmann_json_schema_validator_FOUND})
     message("Please wait. Downloading nlohmann_json_schema_validator...")
     ExternalProject_Add(nlohmann_json_schema_validator
@@ -129,12 +129,12 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
 endif()
 
 ## Log library
-find_package(spdlog 1.8.1 QUIET)
+find_package(spdlog 1.11.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${spdlog_FOUND})
     message("Please wait. Downloading spdlog...")
     ExternalProject_Add(spdlog
             GIT_REPOSITORY https://github.com/gabime/spdlog.git
-            GIT_TAG v1.8.1
+            GIT_TAG v1.11.0
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
             CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DSPDLOG_BUILD_SHARED=ON)
 
@@ -181,6 +181,18 @@ add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
+add_library(lib_restclient STATIC IMPORTED )
+set_property(TARGET lib_restclient PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/librestclient-cpp.so")
+
+add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
+set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
+
+add_library(lib_spdlog STATIC IMPORTED )
+set_property(TARGET lib_spdlog PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
+
 if(NOT ${cxxopts_FOUND})
     add_dependencies(${LIBRARY_NAME} cxxopts)
 endif()
@@ -196,19 +208,6 @@ endif()
 if(NOT ${spdlog_FOUND})
     add_dependencies(${LIBRARY_NAME} spdlog)
 endif()
-
-
-add_library(lib_restclient STATIC IMPORTED )
-set_property(TARGET lib_restclient PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/librestclient-cpp.so")
-
-add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
-set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
-
-add_library(lib_spdlog STATIC IMPORTED )
-set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
 
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
 target_link_libraries(${LIBRARY_NAME}

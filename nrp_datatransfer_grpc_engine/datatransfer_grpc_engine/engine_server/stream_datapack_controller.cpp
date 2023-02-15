@@ -23,7 +23,6 @@
 #include "datatransfer_grpc_engine/engine_server/stream_datapack_controller.h"
 #include "datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.h"
 
-#include "spdlog/sinks/rotating_file_sink.h"
 #include "nrp_general_library/utils/time_utils.h"
 
 #include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"

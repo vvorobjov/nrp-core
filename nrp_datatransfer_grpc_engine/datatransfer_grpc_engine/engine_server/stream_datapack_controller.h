@@ -28,6 +28,7 @@
 #include "nrp_protobuf/dump.pb.h"
 #include "nrp_protobuf/proto_ops/protobuf_ops.h"
 
+#include "spdlog/sinks/rotating_file_sink.h"
 #include "nrp_general_library/utils/nrp_logger.h"
 
 #ifdef MQTT_ON
@@ -38,7 +39,7 @@
  * \brief DataPackController class for processing streaming messages
  *
  * The instance of the class in created for every DataPack to be processed by the engine.
- * Dpending on the DataPack, the contoller instance is configured when receiving the first message.
+ * Depending on the DataPack, the controller instance is configured when receiving the first message.
  */
 class StreamDataPackController
     : public DataPackController<google::protobuf::Message>
@@ -244,9 +245,10 @@ class StreamDataPackController
         const unsigned int NRP_MAX_LOG_FILE_SIZE = 1024 * 1024 * 5;
 
         /*!
-         * \brief the max number of the rotating stream files (0 - not restricted)
+         * \brief the max number of the rotating stream files (0 - 200000)
+         * A number greater than 200000 will throw an exception
          */
-        const unsigned int NRP_MAX_LOG_FILE_N = std::numeric_limits<unsigned int>::max();
+        const unsigned int NRP_MAX_LOG_FILE_N = 200000;
 
         const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& _protoOps;
 };
