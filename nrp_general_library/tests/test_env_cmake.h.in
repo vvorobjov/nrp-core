@@ -23,6 +23,8 @@
 #define TEST_ENV_CMAKE_H
 
 #define TEST_TRANSCEIVER_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function.py"
+#define TEST_TRANSCEIVER_FCN_METHODS_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function_methods.py"
+#define TEST_TRANSCEIVER_FCN_METHODS_LIST_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/transceiver_function_methods_list.py"
 #define TEST_SIM_TIME_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/status_function_sim_time.py"
 #define TEST_STATUS_FCN_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/status_function.py"
 #define TEST_STATUS_FCN_DATA_FILE_NAME "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/status_function_data.py"

@@ -84,6 +84,12 @@
     "ConnectMQTT" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/MQTTClient",
       "description": "If this parameter is present an MQTT client is instantiated and connected"
+    },
+    "FunctionArgumentsPassingMethod" : {
+      "type" : "string",
+      "enum" :  ["value", "reference"],
+      "default": "value",
+      "description": "Method used for passing DataPacks into Preprocessing, Transceiver, and Status Functions. Passing by reference should be more performant, but extra care must be taken to not alter data used by other Functions and Engines."
     }
   },
   "required": []

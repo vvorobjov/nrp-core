@@ -112,7 +112,7 @@ class DataPackInterface
         * \brief Virtual clone method to support polymorphic copy
         */
         virtual DataPackInterface* clone() const
-        { return new DataPackInterface(this->name(), this->engineName(), this->type()); }
+        { return new DataPackInterface(this->name(), this->engineName(), this->type(), this->isUpdated()); }
 
         /*!
          * \brief Indicates if the datapack contains any data aside from datapack ID
@@ -140,6 +140,11 @@ class DataPackInterface
     protected:
 
         void setIsEmpty(bool value);
+        DataPackInterface(const std::string &name, const std::string &engineName, const std::string &type, bool isUpdated)
+        : DataPackInterface(name, engineName, type)
+        {
+            this->_isUpdated = isUpdated;
+        }
 
     private:
         /*!

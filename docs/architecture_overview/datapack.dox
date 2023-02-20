@@ -117,10 +117,9 @@ def transceiver_function(datapack1, datapack2):
 	print(datapack2.data)
 \endcode
 
-When passed as TF arguments, DataPacks behave at all effect as read-only objects.
-Even though it is possible to modify their data or to add new attributes to them inside of a TransceiverFunction,
-these changes will have no effect outside of the TransceiverFunction.
-
+By default, all input DataPacks are passed to Transceiver Functions by value, i.e. the function receives a copy of the original DataPack object.
+This is a safety measure implemented to prevent accidental modifications of DataPacks available to other Functions and Engines.
+The policy can be changed by setting the \ref simulation_schema "DataPackPassingPolicy" configuration parameter.
 
 \subsection datapacks_tfs_output DataPacks as output of transceiver functions
 

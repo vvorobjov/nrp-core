@@ -26,8 +26,6 @@ TestSimpleTransceiverDataPack::TestSimpleTransceiverDataPack(boost::python::api:
     : _fcn(fcn)
 {}
 
-TestOutputDataPack::~TestOutputDataPack() = default;
-
 TestSimpleTransceiverDataPack::~TestSimpleTransceiverDataPack()
 {   this->_tfInterpreterRegistry = nullptr; }
 
@@ -45,22 +43,4 @@ boost::python::object TestSimpleTransceiverDataPack::runTf(python::tuple &args, 
 datapack_identifiers_set_t TestSimpleTransceiverDataPack::updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const
 {   return std::move(datapackIDs);  }
 
-TestInputDataPack::~TestInputDataPack() = default;
-
-DataPackIdentifier TestOutputDataPack::ID(const std::string & name)
-{
-    return DataPackIdentifier(name, "engine", "type");
-}
-
-TestOutputDataPack::TestOutputDataPack()
-    : DataPackInterface(TestOutputDataPack::ID())
-{}
-
-DataPackIdentifier TestInputDataPack::ID()
-{
-    return DataPackIdentifier("in", "engine", "type");
-}
-
-TestInputDataPack::TestInputDataPack()
-    : DataPackInterface(TestInputDataPack::ID())
-{}
+// EOF

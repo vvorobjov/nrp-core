@@ -114,9 +114,16 @@ public:
     }
 
     DataPackInterface* clone() const override
-    { return new DataPack<DATA_TYPE>(this->name(), this->engineName(), new DATA_TYPE(*data)); }
+    { return new DataPack<DATA_TYPE>(this->name(), this->engineName(), new DATA_TYPE(*data), isUpdated()); }
 
 private:
+
+    DataPack(const std::string &name, const std::string &engineName, DATA_TYPE* data_, bool isUpdated) :
+        DataPackInterface(name, engineName, getType(), isUpdated),
+        data(data_)
+    {
+        this->setIsEmpty(false);
+    }
 
     std::unique_ptr<DATA_TYPE> data;
 };

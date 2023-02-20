@@ -280,7 +280,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Python Module for testing
     set(TEST_PYTHON_MODULE_NAME "NRPGeneralPythonTestModule")
 
-    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/python_module.cpp" "tests/test_transceiver_function_manager.cpp")
+    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/test_transceiver_function_manager.cpp")
     set_target_properties(${TEST_PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
     target_link_libraries(${TEST_PYTHON_MODULE_NAME} ${NAMESPACE_NAME}::${LIBRARY_NAME})
 

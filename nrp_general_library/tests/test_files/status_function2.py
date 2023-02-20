@@ -15,7 +15,7 @@ def transceiver_function(datapack_engine, datapack_preprocessed, datapack_tf):
     """
     # Extract test values from the input DataPacks
 
-    test_val1 = datapack_engine.test_value
+    test_val1 = datapack_engine.data["testValue"]
     test_val2 = datapack_preprocessed.data["test_value"]
     test_val3 = datapack_tf.data["test_value1"]
 

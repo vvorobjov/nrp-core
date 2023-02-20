@@ -24,6 +24,14 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
+
+enum DataPackPassingPolicy
+{
+    PASS_BY_VALUE,
+    PASS_BY_REFERENCE
+};
+
+
 /*!
  * \brief Class for input datapacks for transceiver functions, mapped to EngineDataPack python decorator
  */
@@ -43,6 +51,7 @@ class EngineDataPack
         std::string _keyword;
         DataPackIdentifier _datapackID;
         bool _isPreprocessed;
+        DataPackPassingPolicy _DataPackPassingPolicy;
 };
 
 /*!
@@ -65,6 +74,7 @@ private:
     std::vector<DataPackIdentifier> _datapacksIDs;
     std::string _engineName;
     bool _isPreprocessed;
+    DataPackPassingPolicy _DataPackPassingPolicy;
 };
 
 #endif // SINGLE_TRANSCEIVER_DATAPACK_H

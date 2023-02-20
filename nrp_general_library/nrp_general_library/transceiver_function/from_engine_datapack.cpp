@@ -30,7 +30,10 @@ EngineDataPack::EngineDataPack(const std::string &keyword, const DataPackIdentif
     : _keyword(keyword),
       _datapackID(datapackID),
       _isPreprocessed(isPreprocessed)
-{}
+{
+    assert(this->getFunctionManager() != nullptr);
+    this->_DataPackPassingPolicy = this->getFunctionManager()->getDataPackPassingPolicy();
+}
 
 datapack_identifiers_set_t EngineDataPack::getRequestedDataPackIDs() const
 {
@@ -50,7 +53,10 @@ boost::python::object EngineDataPack::runTf(boost::python::tuple &args, boost::p
 
     if(dataPack != dataPacks.end())
     {
-        kwargs[this->_keyword] = *dataPack;
+        if(this->_DataPackPassingPolicy == PASS_BY_VALUE)
+            kwargs[this->_keyword] = std::shared_ptr<DataPackInterface>((*dataPack)->clone());
+        else
+            kwargs[this->_keyword] = *dataPack;
     }
     else
     {
@@ -80,6 +86,8 @@ EngineDataPacks::EngineDataPacks(const std::string &keyword, const boost::python
         }
     }
 
+    assert(this->getFunctionManager() != nullptr);
+    this->_DataPackPassingPolicy = this->getFunctionManager()->getDataPackPassingPolicy();
 }
 
 datapack_identifiers_set_t EngineDataPacks::getRequestedDataPackIDs() const
@@ -120,7 +128,10 @@ boost::python::object EngineDataPacks::runTf(boost::python::tuple &args, boost::
         auto dataPack = engineDataPacks.find(requestedId);
         if(dataPack != engineDataPacks.end())
         {
-            dataPackDict[requestedId.Name] = *dataPack;
+            if(this->_DataPackPassingPolicy == PASS_BY_VALUE)
+                dataPackDict[requestedId.Name] = std::shared_ptr<DataPackInterface>((*dataPack)->clone());
+            else
+                dataPackDict[requestedId.Name] = *dataPack;
         }
         else
         {

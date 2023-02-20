@@ -20,15 +20,15 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from nrp_core import *
-from NRPGeneralPythonTestModule import TestInputDataPack, TestOutputDataPack
+from nrp_core.data.nrp_json import JsonDataPack
 
-@EngineDataPack(keyword='datapack', id=DataPackIdentifier('tf_input', 'engine', 'type'))
+@EngineDataPack(keyword='datapack', id=DataPackIdentifier('tf_input', 'engine'))
 @TransceiverFunction("engine")
 def transceiver_function(datapack):
-    test_val = datapack.test_value
+    test_val = datapack.data["testValue"]
     
-    ret_dev = TestInputDataPack()
-    ret_dev.test_value = str(test_val)
+    ret_dev = JsonDataPack("out", "engine")
+    ret_dev.data["testValue"] = test_val
     
     return [ret_dev]
 

@@ -49,34 +49,4 @@ struct TestSimpleTransceiverDataPack
     std::string _linkedEngine = "engine";
 };
 
-struct TestOutputDataPack
-        : public DataPackInterface
-{
-    static DataPackIdentifier ID(const std::string & name = "out");
-
-    TestOutputDataPack();
-
-    TestOutputDataPack(const DataPackIdentifier &id)
-        : DataPackInterface(id)
-    {}
-
-    virtual ~TestOutputDataPack() override;
-
-    int TestValue = 0;
-};
-
-struct TestInputDataPack
-        : public DataPackInterface
-{
-    static DataPackIdentifier ID();
-
-    TestInputDataPack();
-
-    TestInputDataPack(const DataPackIdentifier &id)
-        : DataPackInterface(id)
-    {}
-
-    virtual ~TestInputDataPack() override;
-
-    std::string TestValue;
-};
+// EOF

@@ -403,4 +403,14 @@ unsigned long FunctionManager::getSimulationIteration() const
     return this->_simulationIteration;
 }
 
+DataPackPassingPolicy FunctionManager::getDataPackPassingPolicy() const
+{
+    return this->_DataPackPassingPolicy;
+}
+
+void FunctionManager::setDataPackPassingPolicy(DataPackPassingPolicy method)
+{
+    this->_DataPackPassingPolicy = method;
+}
+
 // EOF

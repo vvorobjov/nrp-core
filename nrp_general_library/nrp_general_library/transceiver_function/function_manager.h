@@ -24,6 +24,7 @@
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
+#include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
 #include <vector>
 #include <map>
@@ -85,6 +86,10 @@ class FunctionManager
          * \return
          */
         datapack_identifiers_set_t getRequestedDataPackIDs() const;
+
+        DataPackPassingPolicy getDataPackPassingPolicy() const;
+
+        void setDataPackPassingPolicy(DataPackPassingPolicy method);
 
         /*!
          * \brief Sets simulation time that will be accessible by all Python Functions
@@ -161,15 +166,19 @@ class FunctionManager
          * \param transceiverFunction Transfer Function to register
          * \return Returns pointer to stored location. Used by TransceiverDataPackInterfaceGeneral to automatically update the registered function when an upper decorator runs pySetup
          */
+        // TODO Why does this return a pointer to pointer?
         TransceiverDataPackInterfaceSharedPtr *registerNewDataPackFunction(const std::string &linkedEngine, const TransceiverDataPackInterfaceSharedPtr &transceiverFunction);
 
         SimulationTime _simulationTime = SimulationTime::zero();
         unsigned long _simulationIteration = 0;
+        DataPackPassingPolicy _DataPackPassingPolicy;
+
         /*!
          * \brief Registers new Status Function in the manager
          * \param statusFunction Pointer to the function object
          * \return Shared pointer to the function object
          */
+        // TODO Why does this return a pointer to pointer?
         TransceiverDataPackInterfaceSharedPtr *registerNewStatusFunction(const TransceiverDataPackInterfaceSharedPtr &statusFunction);
 
         /*!

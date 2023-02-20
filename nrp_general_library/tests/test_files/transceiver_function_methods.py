@@ -1,3 +1,4 @@
+
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -21,14 +22,12 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import *
 
-@EngineDataPack(keyword='datapack', id=DataPackIdentifier('pf_input', 'another_engine'))
-@PreprocessingFunction("engine")
-def transceiver_function(datapack):
-    test_val = datapack.data["testValue"]
-    
-    ret_dev = JsonDataPack("tf_input_preprocessing", "engine")
-    ret_dev.data["test_value"] = str(test_val + 1)
-    
-    return [ret_dev]
+@EngineDataPack(keyword='engine_datapack', id=DataPackIdentifier('engine_datapack', 'engine'))
+@PreprocessedDataPack(keyword='preprocessed_datapack', id=DataPackIdentifier('preprocessed_datapack', 'engine'))
+@TransceiverFunction("engine")
+def transceiver_function(engine_datapack, preprocessed_datapack):
+    engine_datapack.data["testValue"] = engine_datapack.data["testValue"] - 1
+    preprocessed_datapack.data["testValue"] = preprocessed_datapack.data["testValue"] - 1
 
-# EOF
+    return [engine_datapack, preprocessed_datapack]
+

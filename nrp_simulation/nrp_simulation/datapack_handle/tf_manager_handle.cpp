@@ -73,6 +73,9 @@ void TFManagerHandle::init(const jsonSharedPtr &simConfig, const engine_interfac
 
     TransceiverDataPackInterface::setTFInterpreter(&(this->_functionManager));
 
+    auto DataPackPassingPolicy = ((*simConfig)["DataPackPassingPolicy"] == "value") ? PASS_BY_VALUE : PASS_BY_REFERENCE;
+    this->_functionManager.setDataPackPassingPolicy(DataPackPassingPolicy);
+
     this->loadDataPackFunctions(simConfig);
     this->loadStatusFunction(simConfig);
 }
