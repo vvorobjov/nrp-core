@@ -48,14 +48,14 @@ class EventLoop
         /*!
          * \brief Constructor
          */
-        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep,
+        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
                   ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
                   bool ownGIL = true, bool spinROS = false);
 
         /*!
          * \brief Run a single loop
          */
-        void runLoopOnce();
+        void runLoopOnce(const std::chrono::time_point<std::chrono::steady_clock>& startTime);
 
         /*!
          * \brief Run loop
@@ -100,6 +100,8 @@ class EventLoop
         nlohmann::json _graph_config;
         /*! \brief timestep of the event loop  */
         std::chrono::milliseconds _timestep;
+        /*! \brief allowed time deviation in event loop timestep execution before printing a warning message */
+        std::chrono::milliseconds _timestepThres;
         /*! \brief Execution mode the event loop will use */
         ComputationalGraph::ExecMode _execMode;
         /*! \brief boolean variable used to step the event loop from parent thread */
@@ -110,6 +112,8 @@ class EventLoop
         bool _spinROS;
         /*! \brief GIL state object used to request the GIL ownership when needed  */
         PyGILState_STATE _pyGILState;
+
+
 };
 
 

@@ -79,10 +79,12 @@ public:
             _nodes.emplace(obj->id(), obj);
         // There is a node with the same name but different type
         else if(obj->type() != _nodes[obj->id()]->type() )
-            throw NRPException::logCreate("Attempt to register Node with name \"" + obj->id() + "\". But a node with that name already exists with a different type.");
+            throw NRPException::logCreate("Duplicated node name: \"" + obj->id() + "\" in nodes with type \"" +
+            obj->typeStr() + " and \"" +
+            _nodes[obj->id()]->typeStr() + "\". This is not allowed.");
         // There is a node with the same name and type is Functional
         else if(obj->type() == ComputationalNode::Functional)
-            throw NRPException::logCreate("Attempt to register Functional Node with name \"" + obj->id() + "\". But a node with that name already exists.");
+            throw NRPException::logCreate("\"Duplicated node name: \"" + obj->id() + "\". A node with that name already exists.");
         else
             obj = _nodes[obj->id()];
     }
@@ -128,7 +130,14 @@ public:
      * \brief Configure ComputationalGraph
      */
     void configure()
-    { _graph.configure(); }
+    {
+        _graph.configure();
+
+        // Warn about disconnected nodes in the graph
+        for(const auto& node : _nodes)
+            if(!node.second->isVisited())
+                NRPLogger::warn("Graph node \"" + node.second->id() + "\" is disconnected. It will not be executed.");
+    }
 
     /*!
      * \brief Resets ComputationalGraphManager

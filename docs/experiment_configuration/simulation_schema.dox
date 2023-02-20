@@ -10,25 +10,16 @@ The simulation schema contains all the necessary information to initialize and r
 <tr><td>SimulationTimeout<td>Experiment Timeout (in seconds). It refers to simulation time<td>integer<td>0<td><td><td>
 <tr><td>SimulationTimestep<td>Time in seconds the simulation advances in each \ref simulation_loop "Simulation Loop". It refers to simulation time.<td>number<td>0.01<td><td><td>
 <tr><td>ProcessLauncherType<td>ProcessLauncher type to be used for launching engine processes<td>string<td>Basic<td><td><td>
-<tr><td>EngineConfigs<td>Engines that will be started in the experiment<td>\ref engine_base_schema "EngineBase"<td><td><td>X<td>
-<tr><td>DataPackProcessor<td>Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg)<td>enum<td>"tf"<td><td><td>"tf", "cg"
-<tr><td>DataPackProcessingFunctions<td>Transceiver and Preprocessing functions that will be used in the experiment<td>\ref transceiver_function_schema "TransceiverFunction"<td><td><td>X<td>
+<tr><td>EngineConfigs<td>Engines that will be started in the experiment<td>\ref engine_base_schema "#EngineBase"<td><td><td>X<td>
+<tr><td>DataPackProcessor<td>Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg). Only used if "SimulationLoop" parameter is set to "FTILoop" (default)<td>enum<td>"tf"<td><td><td>"tf", "cg"
+<tr><td>DataPackProcessingFunctions<td>Transceiver and Preprocessing functions that will be used in the experiment<td>\ref transceiver_function_schema "#TransceiverFunction"<td><td><td>X<td>
 <tr><td>DataPackPassingPolicy<td>Policy of passing DataPacks into Transceiver, Preprocessing, and Status Functions. When set to "value", all input DataPacks are passed by value (copied). When set to "reference", the DataPacks are passed by reference. The latter should be faster, but extra care has to be taken to not overwrite DataPacks used by other Functions or Engines.<td>string<td>"value"<td><td><td>"value", "reference"
-<tr><td>StatusFunction<td>Status Function that can be used to exchange data between NRP Python Client and Engines<td>\ref transceiver_function_schema "StatusFunction"<td><td><td><td>
+<tr><td>StatusFunction<td>Status Function that can be used to exchange data between NRP Python Client and Engines<td>\ref transceiver_function_schema "#TransceiverFunction"<td><td><td><td>
 <tr><td>ComputationalGraph<td>List of filenames defining the ComputationalGraph that will be used in the experiment<td>string<td><td><td>X<td>
-<tr><td>EventLoop(*)<td>Event Loop configuration parameters<td>object<td>{"ExecutionMode": "InputDriven"}<td><td><td>
-<tr><td>ExternalProcesses<td>Additional processes that will be started in the experiment<td>\ref process_launcher_schema "ProcessLauncher"<td><td><td>X<td>
-<tr><td>ConnectROS<td>If this parameter is present a ROS node is started by NRPCoreSim<td>\ref ros_connector_schema_parameters "ROSNode"<td><td><td><td>
-<tr><td>ConnectMQTT<td>If this parameter is present an MQTT client is instantiated and connected<td>\ref mqtt_connector_schema_parameters "MQTTClient"<td><td><td><td>
-</table>
-
-(*) The EventLoop parameter is of type json object and has in turn the next set of parameters:
-
-<table>
-<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array<th>Values
-<tr><td>ExecutionMode<td>\ref graph_exec_modes "Execution Mode" that will be used when running the Event Loop<td><td><td>X<td><td>"InputDriven", "OutputDriven"
-<tr><td>Timeout<td>Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead<td>integer<td><td><td><td>
-<tr><td>Timestep<td>Time in seconds the event loop advances in each loop. If not specified 'SimulationTimestep' is used instead<td>number<td><td><td><td>
+<tr><td>EventLoop<td>Event Loop configuration parameters. Only used if "SimulationLoop" parameter is set to "EventLoop"<td>\ref event_loop_schema "#EventLoop"<td><td><td><td>
+<tr><td>ExternalProcesses<td>Additional processes that will be started in the experiment<td>\ref process_launcher_schema "#ProcessLauncher"<td><td><td>X<td>
+<tr><td>ROSNode<td>If this parameter is present a ROS node is started by NRPCoreSim<td>\ref ros_connector_schema_parameters "#ROSNode"<td><td><td><td>
+<tr><td>MQTTNode<td>If this parameter is present an MQTT client is instantiated and connected<td>\ref mqtt_connector_schema_parameters "#MQTTClient"<td><td><td><td>
 </table>
 
 \section simulation_schema_example Example

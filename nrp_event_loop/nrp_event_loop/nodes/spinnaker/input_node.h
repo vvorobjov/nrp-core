@@ -45,6 +45,9 @@ public:
             _label(label)
     {}
 
+    std::string typeStr() const override
+    { return "FromSpinnaker"; }
+
     ~InputSpinnakerNode()
     {
         NRPSpinnakerProxy* spProxy = &(NRPSpinnakerProxy::getInstance());

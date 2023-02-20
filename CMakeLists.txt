@@ -184,7 +184,19 @@ endif()
 add_subdirectory(nrp_protobuf)
 
 # ROS
-set(NRP_CATKIN_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "Catkin packages containing msg definitions supported in nrp-core")
+if(NOT DEFINED NRP_ROS_MSGS_PACKAGES)
+    set(NRP_ROS_MSGS_PACKAGES "")
+endif()
+
+set(DEFAULT_NRP_ROS_MSGS_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "ROS Catkin packages containing msg definitions supported in nrp-core")
+foreach(PACK ${DEFAULT_NRP_ROS_MSGS_PACKAGES})
+    if(NOT PACK IN_LIST NRP_ROS_MSGS_PACKAGES)
+        list(APPEND NRP_ROS_MSGS_PACKAGES ${PACK})
+    endif()
+endforeach()
+
+message(STATUS "NRP_ROS_MSGS_PACKAGES: ${NRP_ROS_MSGS_PACKAGES}")
+
 if(ENABLE_ROS)
     message(STATUS "Building ROS msgs Python bindings")
     add_definitions(-DROS_ON)
@@ -381,6 +393,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/experiment_configuration/engine_schema.dox"
         "docs/experiment_configuration/transceiver_function_schema.dox"
         "docs/experiment_configuration/simulation_schema.dox"
+        "docs/experiment_configuration/event_loop_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
         "docs/experiment_configuration/process_launcher_schema.dox"
         "docs/experiment_configuration/nrp_connectors.dox"

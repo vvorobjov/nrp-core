@@ -24,7 +24,7 @@
       "type" : "string",
       "enum" :  ["tf", "cg"],
       "default": "tf",
-      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computational Graph (cg)"
+      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computational Graph (cg). Only used if \"SimulationLoop\" parameter is set to \"FTILoop\" (default)"
     },
     "ProcessLauncherType" : {
       "type" : "string",
@@ -57,31 +57,14 @@
       "description": "List of filenames defining the CG nodes and connections"
     },
     "EventLoop" : {
-      "type": "object",
-      "description": "Event Loop configuration parameters",
-      "default": {"ExecutionMode": "InputDriven"},
-      "properties" : {
-        "ExecutionMode": {
-          "type": "string",
-          "enum": ["InputDriven", "OutputDriven"],
-          "description": "Execution Mode that will be used when running the Event Loop"
-        },
-        "Timeout" : {
-          "type" : "number",
-          "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
-        },
-        "Timestep" : {
-          "type" : "number",
-          "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
-        }
-      },
-      "required": ["ExecutionMode"]
+      "$ref": "json://nrp-core/event_loop.json#EventLoop",
+      "description": "Event Loop configuration parameters. Only used if \"SimulationLoop\" parameter is set to \"EventLoop\""
     },
-    "ConnectROS" : {
+    "ROSNode" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/ROSNode",
       "description": "If this parameter is present a ROS node is started by NRPCoreSim"
     },
-    "ConnectMQTT" : {
+    "MQTTNode" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/MQTTClient",
       "description": "If this parameter is present an MQTT client is instantiated and connected"
     },

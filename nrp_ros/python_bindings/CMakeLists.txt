@@ -26,7 +26,7 @@ set(TEST_SRC_FILES
         )
 ##########################################
 ## Dependencies
-find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
+find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 
 find_package(Threads REQUIRED)
 find_package(Boost COMPONENTS
@@ -124,7 +124,7 @@ file(WRITE "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" "")
 ## Generate python bindings for nrp-core msg definitions
 gen_ros_package_python(nrp_ros_msgs)
 ## Generate python bindings for additional external ros packages
-foreach(PACK ${NRP_CATKIN_PACKAGES})
+foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
     gen_ros_package_python(${PACK})
 endforeach()
 

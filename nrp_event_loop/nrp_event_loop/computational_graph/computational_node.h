@@ -23,6 +23,7 @@
 #define COMPUTATIONAL_NODE_H
 
 #include <string>
+#include <map>
 
 /*!
  * \brief Base class implementing a node in the computational graph
@@ -36,6 +37,8 @@ public:
         Output, /*!< only can be target in edges  */
         Functional /*!< can be source and target, ie. can receive inputs and send outputs  */
     };
+
+    const static std::map<NodeType, std::string> nodeTypeStr;
 
     ComputationalNode() = delete;
     virtual ~ComputationalNode() = default;
@@ -59,6 +62,12 @@ public:
      */
     NodeType type() const
     { return this->_type; }
+
+    /*!
+     * \brief Returns the node 'type' as a string
+     */
+    virtual std::string typeStr() const
+    { return this->nodeTypeStr.at(this->type()); }
 
     /*!
      * \brief Sets a value for the node 'visited' property, used for graph traversing

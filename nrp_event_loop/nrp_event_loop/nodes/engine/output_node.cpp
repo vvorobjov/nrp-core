@@ -20,3 +20,5 @@
  */
 
 #include "nrp_event_loop/nodes/engine/output_node.h"
+
+size_t OutputEngineEdge::port_n = 0;

@@ -51,6 +51,9 @@ public:
             _address(address)
     { }
 
+    std::string typeStr() const override
+    { return "MQTTPublisher"; }
+
 protected:
 
     void sendSingleMsg(const std::string& /*id*/, const MSG_TYPE* data) override

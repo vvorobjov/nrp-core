@@ -272,24 +272,24 @@ int main(int argc, char *argv[])
 
     // Connect to ROS
 #ifdef ROS_ON
-    if(simConfig->contains("ConnectROS")) {
-        nlohmann::json nodeProperties = simConfig->at("ConnectROS");
+    if(simConfig->contains("ROSNode")) {
+        nlohmann::json nodeProperties = simConfig->at("ROSNode");
         ros::init(std::map<std::string, std::string>(), nodeProperties.at("NodeName"));
         NRPROSProxy::resetInstance();
     }
 #else
-    if(simConfig->contains("ConnectROS"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ConnectROS' will be ignored.");
+    if(simConfig->contains("ROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ROSNode' will be ignored.");
 #endif
 
     // Connect to MQTT
 #ifdef MQTT_ON
-    if(simConfig->contains("ConnectMQTT")) {
-        NRPMQTTProxy::resetInstance(simConfig->at("ConnectMQTT"));
+    if(simConfig->contains("MQTTNode")) {
+        NRPMQTTProxy::resetInstance(simConfig->at("MQTTNode"));
     }
 #else
-    if(simConfig->contains("ConnectMQTT"))
-        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'ConnectMQTT' will be ignored.");
+    if(simConfig->contains("MQTTNode"))
+        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'MQTTNode' will be ignored.");
 #endif
 
     // Create simulation manager

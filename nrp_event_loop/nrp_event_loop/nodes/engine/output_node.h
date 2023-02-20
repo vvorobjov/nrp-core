@@ -51,6 +51,9 @@ public:
             _engineName(engineName)
     { }
 
+    std::string typeStr() const override
+    { return "ToEngine"; }
+
     /*!
      * Returns all datapacks stored in the node and clears the cache
      */
@@ -68,16 +71,13 @@ public:
 
 protected:
 
-    void sendSingleMsg(const std::string& id, const DataPackInterfacePtr * data) override
+    void sendSingleMsg(const std::string& /*id*/, const DataPackInterfacePtr * data) override
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
         // OutputNode already checks for nullptr, but since we have a double pointer here an extra check is needed
         if(!(*data))
             return;
-        if(id != (*data)->name())
-            NRPLogger::info("In OutputEngineNode '" + this->_engineName + "'. Datapack with Id '" + (*data)->name() +
-            "' was sent to port '" + id + "' and will not be accepted due to this mismatch. Please check your graph configuration ");
         else if(_engineName != (*data)->engineName())
             NRPLogger::info("In OutputEngineNode '" + this->_engineName + "'. Received datapack with Id '" + (*data)->name() +
                             "' linked to Engine '" + (*data)->engineName() + "'. This node only accept datapacks linked to Engine '" +
@@ -108,9 +108,9 @@ class OutputEngineEdge : public SimpleOutputEdge<DataPackInterface*, OutputEngin
 public:
 
     OutputEngineEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge(keyword, extractNodePortFromAddress(address).first+"_output",
-                             extractNodePortFromAddress(address).second, false, 1),
-            _engineName(extractNodePortFromAddress(address).first)
+            SimpleOutputEdge(keyword, parseCGAddress(address, false).first+"_output",
+                             "anonymous_port"+std::to_string(port_n++), false, 1),
+            _engineName(parseCGAddress(address, false).first)
     {}
 
 protected:
@@ -121,6 +121,8 @@ protected:
 private:
 
     std::string _engineName;
+
+    static size_t port_n;
 };
 
 

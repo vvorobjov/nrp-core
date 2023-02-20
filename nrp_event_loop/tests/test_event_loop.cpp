@@ -42,15 +42,16 @@ TEST(EventLoop, EVENT_LOOP) {
     Py_Initialize();
 
     std::chrono::milliseconds timestep(10);
+    std::chrono::milliseconds timestepThres(1);
     nlohmann::json graph_config;
     std::stringstream py_file;
     py_file << TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH << "/test_decorators.py";
     graph_config.push_back(py_file.str());
-    EventLoop e_l(graph_config, timestep, ComputationalGraph::ALL_NODES, true, false);
+    EventLoop e_l(graph_config, timestep, timestepThres, ComputationalGraph::ALL_NODES, true, false);
 
     // run loop once
     auto now = std::chrono::steady_clock::now();
-    e_l.runLoopOnce();
+    e_l.runLoopOnce(now);
     auto time_lapse = std::chrono::steady_clock::now() - now;
 
     auto odummy_p = dynamic_cast<OutputDummy*>(ComputationalGraphManager::getInstance().getNode("odummy1"));

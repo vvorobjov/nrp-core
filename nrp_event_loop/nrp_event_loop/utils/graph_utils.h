@@ -22,6 +22,7 @@
 #ifndef GRAPH_UTILS_H
 #define GRAPH_UTILS_H
 
+#include <filesystem>
 #include <nlohmann/json.hpp>
 
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
@@ -36,27 +37,43 @@ inline void createPythonGraphFromConfig(const nlohmann::json &config, const Comp
 
     for(const auto &fn : config) {
         auto fileName = fn.get<std::string>();
-        try
-        {
-            boost::python::exec_file(fileName.c_str(), globalDict, globalDict);
+        if(std::filesystem::exists(fileName)) {
+            try {
+                boost::python::exec_file(fileName.c_str(), globalDict, globalDict);
+                NRPLogger::info("Loaded computation graph file \"" + fileName + "\"");
+            }
+            catch (boost::python::error_already_set &) {
+                throw NRPException::logCreate(
+                        "Loading of computation graph file \"" + fileName + "\" failed: " + handle_pyerror());
+            }
         }
-        catch(boost::python::error_already_set &) {
-            throw NRPException::logCreate(
-                    "Loading of computation graph file \"" + fileName + "\" failed: " + handle_pyerror());
-        }
-
+        else
+            throw NRPException::logCreate("Loading of computation graph file \"" + fileName + "\" failed: the file doesn't exist.");
     }
 
     gm.configure();
 }
 
-inline std::pair<std::string, std::string> extractNodePortFromAddress(const std::string& address)
+/*!
+ * \brief Parses a computational node address returning the node id and the port (if any) contained in the address
+ *
+ * \param address string containing a computational graph connection address with the format /node_id/port_id
+ * \param hasPort if the address contains a port id or just a node id
+ * \return a pair with the node and port ids parsed from 'address'
+ */
+inline std::pair<std::string, std::string> parseCGAddress(const std::string& address, bool hasPort = true)
 {
-    auto n = address.find('/',1);
-    auto name = address.substr(1, n-1);
-    auto property = address.substr(n+1, address.size());
+    if(address.at(0) != '/')
+        throw NRPException::logCreate("Error while parsing address \""+ address +"\". Computational Graph addresses must start with '/'");
 
-    return std::make_pair(name, property);
+    auto n = address.find('/',1);
+    if(n == std::string::npos && hasPort)
+        throw NRPException::logCreate("Error while parsing address \""+ address +"\". Expected format is '/node_id/port_id'");
+
+    auto node = hasPort ? address.substr(1, n-1) : address.substr(1);
+    auto port = hasPort ? address.substr(n+1, address.size()) : node;
+
+    return std::make_pair(node, port);
 }
 
 #endif //GRAPH_UTILS_H

@@ -188,7 +188,7 @@ protected:
         // Create edges to other functional nodes
         for (auto& [port_id, address]: _f2fEdges) {
             std::string name, property;
-            std::tie(name, property) = extractNodePortFromAddress(address);
+            std::tie(name, property) = parseCGAddress(address);
 
             // Get ports
             PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
@@ -209,14 +209,23 @@ protected:
             ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
         }
 
-        // check unbound inputs and print warning
+        // check unbound inputs and outputs and print warning
         for(size_t i=0; i < _iPortIds.size(); ++i)
             if(!getInputByIndex(i)) {
                 std::stringstream s;
                 s << "In python functional node \"" << this->id() << "\". Input argument \"" << _iPortIds[i] <<
                   "\" is not connected" << std::endl;
-                NRPLogger::info(s.str());
+                NRPLogger::warn(s.str());
             }
+
+        for(const auto& pId : _oPortIds) {
+            if(!getOutput(pId)->subscriptionsSize()) {
+                std::stringstream s;
+                s << "In python functional node \"" << this->id() << "\". Output \"" << pId <<
+                  "\" is not connected" << std::endl;
+                NRPLogger::warn(s.str());
+            }
+        }
     }
 
     friend class ComputationalGraphPythonNodes_PYTHON_FUNCTIONAL_NODE_Test;

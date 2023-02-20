@@ -3,7 +3,7 @@ from nrp_core.data.nrp_json import *
 from nrp_core.event_loop import *
 
 
-@ToEngine(keyword="dummy", address="/nest/dummy")
+@ToEngine(keyword="dummy", address="/nest")
 @FunctionalNode(name="tf_3", outputs=["dummy"], exec_policy=node_policies.functional_node.exec_policy.always)
 def transceiver_function(dummy):
     """Updates iteration counter for this transceiver function"""

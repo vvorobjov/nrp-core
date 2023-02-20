@@ -50,6 +50,9 @@ public:
             _engineName(engineName)
     {}
 
+    std::string typeStr() const override
+    { return "FromEngine"; }
+
     /*!
      * Get the set of DataPackInterfaces that this node requests
      */
@@ -124,9 +127,9 @@ public:
 
     InputEngineEdge(const std::string& keyword, const std::string& address,
                     InputNodePolicies::MsgCachePolicy msgCachePolicy) :
-            SimpleInputEdge(keyword, extractNodePortFromAddress(address).first+"_input", extractNodePortFromAddress(address).second,
+            SimpleInputEdge(keyword, parseCGAddress(address).first+"_input", parseCGAddress(address).second,
                             InputNodePolicies::LAST, msgCachePolicy),
-            _engineName(extractNodePortFromAddress(address).first)
+            _engineName(parseCGAddress(address).first)
     {}
 
 protected:

@@ -44,31 +44,30 @@ EventLoopSimManager::EventLoopSimManager(const jsonSharedPtr &simulationConfig, 
 void EventLoopSimManager::initializeCB()
 {
     if(this->_loop == nullptr) {
-        auto ELoopConf = (*(this->_simConfig))["EventLoop"].get<nlohmann::json>();
-        // Compute time step and timeout
-        int eTstep;
-        if(ELoopConf.contains("Timestep"))
-            eTstep = 1000 * ELoopConf.at("Timestep").get<float>();
-        else
-            eTstep = 1000 * this->_simConfig->at("SimulationTimestep").get<float>();
+        // Validate configuration
+        auto ELoopConf = this->_simConfig->contains("EventLoop") ?
+                (*(this->_simConfig))["EventLoop"].get<nlohmann::json>() : nlohmann::json::object();
+        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#EventLoop");
 
-        int eTout;
-        if(ELoopConf.contains("Timeout"))
-            eTout = 1000 * ELoopConf.at("Timeout").get<float>();
-        else
-            eTout = 1000 * this->_simConfig->at("SimulationTimeout").get<float>();
+        // Configure Event Loop
+        auto eTstep = ELoopConf.at("Timestep").get<float>();
+        auto eTout  = ELoopConf.at("Timeout").get<float>();
+        auto eTstepWarn = ELoopConf.at("TimestepWarnThreshold").get<float>();
 
-        _timestep = std::chrono::milliseconds(eTstep);
-        _timeout = std::chrono::milliseconds(eTout);
+        _timestep = std::chrono::milliseconds((int)(1000 * eTstep));
+        _timeout = std::chrono::milliseconds((int)(1000 * eTout));
+        auto timestepWarn = std::chrono::milliseconds((int)(1000 * eTstepWarn));
 
-        // Execution Mode
-        auto execMode = ComputationalGraph::ExecMode::ALL_NODES;
-        if(ELoopConf.contains("ExecutionMode") && ELoopConf.at("ExecutionMode") == "OutputDriven")
-            execMode = ComputationalGraph::ExecMode::OUTPUT_DRIVEN;
+        auto execMode = ELoopConf.at("ExecutionMode") == "OutputDriven"
+                ? ComputationalGraph::ExecMode::OUTPUT_DRIVEN : ComputationalGraph::ExecMode::ALL_NODES;
+
+        std::stringstream info_msg;
+        info_msg << "Creating Event Loop with configuration: timestep=" << _timestep.count() << "(ms), timeout=" << _timeout.count() << "(ms)";
+        NRPLogger::info(info_msg.str());
 
         // Create and initialize EventLoop
-        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, execMode,
-                                        false, this->_simConfig->contains("ConnectROS")));
+        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, timestepWarn, execMode,
+                                        false, this->_simConfig->contains("ROSNode")));
 
         // If there are engines in the configuration, an FTILoop has to be run as well
         if(this->_simConfig->at("EngineConfigs").size() > 0) {

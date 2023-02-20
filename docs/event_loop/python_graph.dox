@@ -85,10 +85,10 @@ The decorator has three arguments:
 This decorator creates an OutputEngineNode and connects it to one of the decorated Functional Node outputs.
 It works in a very similar way to the previous one.
 
-The code below extends the previous example by connecting `input_1` in `my_node` to an output `my_datapack` of an OutputEngineNode with id `my_engine`.
+The code below extends the previous example by connecting `output_1` in `my_node` to an OutputEngineNode with id `my_engine`.
 
 \code{.py}
-@ToEngine(keyword="output_1", address="/my_engine/my_datapack")
+@ToEngine(keyword="output_1", address="/my_engine")
 @FromEngine(keyword='input_1', address='/my_engine/my_datapack')
 @FunctionalNode(name="my_node", outputs=['output_1', 'output_2'])
 def my_function(input_1, input_2):
@@ -128,7 +128,7 @@ The decorator has five arguments:
 In this case, a new InputROSNode is created to subscribe to each different topic. 
 From each @RosSubscriber decorator a node with `id` `address` is created, and an OuputPort with id also `address` is added to it.
 
-The value used in the `type` argument of the decorator must be a class from `nrp_core.data.nrp_ros` Python module. These are the ROS message types supported in NRP-core. For more information about which are the message types supported by default see \ref datapacks_rosmsg "here". For information about how to compile NRP-core to support additional ROS message types see \ref tutorial_add_ros_msg_definition "here".
+The value used in the `type` argument of the decorator must be a class from `nrp_core.data.nrp_ros` Python module. These are the ROS message types supported in NRP-core. For more information about which are the message types supported by default see \ref datapacks_rosmsg "here". For information about how to compile NRP-core to support additional ROS message types see \ref guide_ros_in_nrp_core "here".
 
 \section ros_publisher_decorator @RosPublisher
 
@@ -286,7 +286,7 @@ To conclude the overview of the available Computational Graph decorators lets pu
 
 \code{.py}
 @RosSubscriber(keyword="input_2", address="/my_topic", type=nrp_core.data.nrp_ros.std_msgs.String)
-@ToEngine(keyword="output_1", address="/my_engine/my_datapack")
+@ToEngine(keyword="output_1", address="/my_engine")
 @FromEngine(keyword='input_1', address='/my_engine/my_datapack')
 @FunctionalNode(name="my_node", outputs=['output_1', 'output_2'])
 def my_function(input_1, input_2):

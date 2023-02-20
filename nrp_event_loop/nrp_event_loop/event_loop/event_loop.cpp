@@ -29,10 +29,11 @@
 
 #include "nrp_event_loop/utils/graph_utils.h"
 
-EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep,
+EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
                      ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
     _graph_config(graph_config),
     _timestep(timestep),
+    _timestepThres(timestepThres),
     _execMode(execMode),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
@@ -45,10 +46,8 @@ EventLoop::~EventLoop()
     this->shutdown();
 }
 
-void EventLoop::runLoopOnce()
+void EventLoop::runLoopOnce(const std::chrono::time_point<std::chrono::steady_clock>& startTime)
 {
-    auto now = std::chrono::steady_clock::now();
-
     if(!_ownGIL)
         _pyGILState = PyGILState_Ensure();
 
@@ -63,22 +62,40 @@ void EventLoop::runLoopOnce()
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);
 
-    std::this_thread::sleep_until(now + _timestep);
+    std::this_thread::sleep_until(startTime + _timestep);
 }
 
 void EventLoop::runLoop(std::chrono::milliseconds timeout)
 {
-    NRPLogger::debug("in loop");
+    NRPLogger::debug("Starting Event Loop");
 
     _doRun = true;
     bool useTimeout = timeout != std::chrono::milliseconds(0);
 
-    auto start = std::chrono::steady_clock::now();
+    auto startLoopTime = std::chrono::steady_clock::now();
+    auto startStepOld = startLoopTime;
+    auto startStepNew = startLoopTime;
+    auto stepDuration = startStepNew - startStepOld;
 
-    while(_doRun && (!useTimeout || std::chrono::steady_clock::now() - start < timeout))
-        runLoopOnce();
+    while(_doRun) {
+        startStepNew = std::chrono::steady_clock::now();
+        stepDuration = startStepNew - startStepOld;
 
-    NRPLogger::debug("out loop");
+        if(useTimeout && startStepNew - startLoopTime >= timeout)
+            break;
+
+        if(stepDuration > _timestep + _timestepThres) {
+            NRPLogger::warn("Event Loop can't run at the target frequency. Actual step duration: " +
+            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(stepDuration).count()) +
+            " (ms). Target step duration: " + std::to_string(_timestep.count()) + " (ms).");
+        }
+
+        runLoopOnce(startStepNew);
+
+        startStepOld = startStepNew;
+    }
+
+    NRPLogger::debug("Completed Event Loop");
 }
 
 void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)

@@ -3,10 +3,10 @@ from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 from nrp_core.event_loop import *
 
 
-@ToEngine(keyword="front_right_j", address="/gazebo/husky::front_right_joint")
-@ToEngine(keyword="front_left_j", address="/gazebo/husky::front_left_joint")
-@ToEngine(keyword="back_right_j", address="/gazebo/husky::back_right_joint")
-@ToEngine(keyword="back_left_j", address="/gazebo/husky::back_left_joint")
+@ToEngine(keyword="front_right_j", address="/gazebo")
+@ToEngine(keyword="front_left_j", address="/gazebo")
+@ToEngine(keyword="back_right_j", address="/gazebo")
+@ToEngine(keyword="back_left_j", address="/gazebo")
 @FromEngine(keyword='actors', address='/nest/actors')
 @FunctionalNode(name="robot_control", outputs=['back_left_j', 'back_right_j', 'front_left_j', 'front_right_j'])
 def robot_control(actors):

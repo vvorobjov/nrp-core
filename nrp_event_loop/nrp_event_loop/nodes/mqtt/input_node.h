@@ -49,6 +49,8 @@ public:
             _address(address)
     {}
 
+    std::string typeStr() const override
+    { return "MQTTSubscriber"; }
 
 protected:
 

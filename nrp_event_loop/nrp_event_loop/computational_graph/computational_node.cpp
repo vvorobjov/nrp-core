@@ -20,3 +20,8 @@
  */
 
 #include "nrp_event_loop/computational_graph/computational_node.h"
+
+const std::map<ComputationalNode::NodeType, std::string> ComputationalNode::nodeTypeStr = {{ComputationalNode::Input, "Input"},
+                                                                                           {ComputationalNode::Output, "Output"},
+                                                                                           {ComputationalNode::Functional, "Functional"}};
+

@@ -20,7 +20,7 @@ with open('expected_results.txt', 'r') as fd:
 @FromEngine(keyword='datapack_python3', address='/python_3/datapack3')
 @FromEngine(keyword='nest_kernel', address='/nest/kernel')
 # Only to make this node to be executed when python_1 is synced
-@ToEngine(keyword="dummy", address="/python_1/dummy")
+@ToEngine(keyword="dummy", address="/python_1")
 # Only to ensure that this FN is executed after all the rest at every cycle
 @FromFunctionalNode(keyword='dummy2', address='/tf_1/dummy')
 @FunctionalNode(name="tf_join", outputs=["dummy"])

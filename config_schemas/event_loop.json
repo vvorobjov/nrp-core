@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventLoop",
+  "description": "Event Loop configuration parameters",
+  "$id": "#EventLoop",
+  "type": "object",
+  "properties" : {
+    "ExecutionMode": {
+      "type": "string",
+      "enum": ["AllNodes", "OutputDriven"],
+      "default": "AllNodes",
+      "description": "Execution Mode that will be used when running the Event Loop"
+    },
+    "Timeout" : {
+      "type" : "number",
+      "default": 0,
+      "description": "Event loop timeout (in seconds). 0 means no timeout"
+    },
+    "Timestep" : {
+      "type" : "number",
+      "default": 0.01,
+      "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency"
+    },
+    "TimestepWarnThreshold": {
+      "type" : "number",
+      "default": 0.001,
+      "description": "Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the \"Timestep\" parameter"
+    }
+  }
+}

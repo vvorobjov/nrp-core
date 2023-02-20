@@ -49,6 +49,9 @@ public:
             OutputNode<MSG_TYPE>(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod)
     { }
 
+    std::string typeStr() const override
+    { return "RosPublisher"; }
+
 protected:
 
     void sendSingleMsg(const std::string& /*id*/, const MSG_TYPE* data) override
@@ -60,7 +63,7 @@ protected:
             rosProxy->publish(this->id(), *data);
         else
             NRPLogger::warn("From OutputROSNode \"" + this->id() +
-                            "\". NRPCoreSim is not connected to ROS and this node can't publish. Check your experiment configuration");
+                            "\". NRPCoreSim is not connected to ROS and this node can't publish. Add \"ROSNode\" parameter to  your experiment configuration");
     }
 
     // TODO: implement this node in a way that supports ROS msg types that contains a field with an array of another type.

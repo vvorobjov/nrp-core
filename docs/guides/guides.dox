@@ -6,7 +6,7 @@ For users interested in creating their own engine for an as-of-yet unsupported s
 - \subpage tutorial_engine_creation
 - \subpage engine_creation_template
 - \subpage tutorial_add_proto_definition
-- \subpage tutorial_add_ros_msg_definition
+- \subpage guide_ros_in_nrp_core
 - \subpage guide_troubleshooting
 - \subpage docker_compose
 

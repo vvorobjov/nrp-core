@@ -2,10 +2,10 @@ from nrp_core import *
 from nrp_core.data.nrp_protobuf import GazeboJointDataPack
 from nrp_core.event_loop import *
 
-@ToEngine(keyword="front_right_j", address="/gazebo/husky::front_right_joint")
-@ToEngine(keyword="front_left_j", address="/gazebo/husky::front_left_joint")
-@ToEngine(keyword="back_right_j", address="/gazebo/husky::back_right_joint")
-@ToEngine(keyword="back_left_j", address="/gazebo/husky::back_left_joint")
+@ToEngine(keyword="front_right_j", address="/gazebo")
+@ToEngine(keyword="front_left_j", address="/gazebo")
+@ToEngine(keyword="back_right_j", address="/gazebo")
+@ToEngine(keyword="back_left_j", address="/gazebo")
 @FromSpinnaker(keyword="right_voltage_msg", address="right_wheel_motor_voltage")
 @FromSpinnaker(keyword="left_voltage_msg", address="left_wheel_motor_voltage")
 @FunctionalNode(name="gazebo", outputs=['back_left_j', 'back_right_j', 'front_left_j', 'front_right_j'])

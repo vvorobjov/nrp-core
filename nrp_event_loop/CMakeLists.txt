@@ -93,7 +93,7 @@ set(ROS_TEST_SRC_FILES
 ## Dependencies
 
 if(ENABLE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
+    find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 endif()
 
 find_package(Boost COMPONENTS
