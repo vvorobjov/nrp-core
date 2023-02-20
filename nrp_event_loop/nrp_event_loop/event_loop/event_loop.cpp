@@ -56,8 +56,15 @@ void EventLoop::runLoopOnce(const std::chrono::time_point<std::chrono::steady_cl
         ros::spinOnce();
 #endif
 
-    ComputationalGraphManager::getInstance().compute();
+    try {
+        ComputationalGraphManager::getInstance().compute();
+    }
+    catch (std::exception& e) {
+        if(!_ownGIL)
+            PyGILState_Release(_pyGILState);
 
+        throw;
+    }
 
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);
@@ -113,8 +120,16 @@ void EventLoop::initialize()
     if(!_ownGIL)
         _pyGILState = PyGILState_Ensure();
 
-    boost::python::dict globalDict;
-    createPythonGraphFromConfig(_graph_config, _execMode, globalDict);
+    try {
+        boost::python::dict globalDict;
+        createPythonGraphFromConfig(_graph_config, _execMode, globalDict);
+    }
+    catch (std::exception& e) {
+        if(!_ownGIL)
+            PyGILState_Release(_pyGILState);
+
+        throw;
+    }
 
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);

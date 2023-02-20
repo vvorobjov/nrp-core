@@ -83,9 +83,11 @@ public:
                         i_node->getListPort(_port), f->getOrRegisterInput<std::vector<const T_IN*>>(_keyword));
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
+        }
+        catch (const NRPException&) {
+            throw NRPException::logCreate("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
         }
 
         // Returns FunctionalNode

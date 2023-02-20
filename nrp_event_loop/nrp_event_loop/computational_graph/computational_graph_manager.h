@@ -84,7 +84,7 @@ public:
             _nodes[obj->id()]->typeStr() + "\". This is not allowed.");
         // There is a node with the same name and type is Functional
         else if(obj->type() == ComputationalNode::Functional)
-            throw NRPException::logCreate("\"Duplicated node name: \"" + obj->id() + "\". A node with that name already exists.");
+            throw NRPException::logCreate("Duplicated Node Name: Attempt to register Functional Node with name \"" + obj->id() + "\". But a node with that name already exists.");
         else
             obj = _nodes[obj->id()];
     }

@@ -91,9 +91,13 @@ public:
                     f->getOutput(_keyword), i_port);
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating graph edge to output node " + o_node->id() + ". Check that Functional Node definition is correct");
+            std::string error_msg = "An error occurred while creating graph edge to output node " + o_node->id() + ". Check that Functional Node definition is correct";
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
+        }
+        catch (const NRPException&) {
+            std::string error_msg = "An error occurred while creating graph edge to output node " + o_node->id() + ". Check that Functional Node definition is correct";
+            throw NRPException::logCreate(error_msg);
         }
 
         // Returns FunctionalNode

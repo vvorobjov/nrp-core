@@ -154,7 +154,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
     std::shared_ptr<PythonFunctionalNode> fn_p2 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn2.pySetup(wrong_type_f));
 
-    ASSERT_THROW(fn_p2->compute(), boost::python::error_already_set);
+    ASSERT_THROW(fn_p2->compute(), NRPException);
 
     // python function returns less than declared outputs
     bpy::object less_f = test_module_dict["test_less_elements"];
@@ -178,7 +178,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
     std::shared_ptr<PythonFunctionalNode> fn_p5 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn5.pySetup(broken_f));
 
-    ASSERT_THROW(fn_p5->compute(), boost::python::error_already_set);
+    ASSERT_THROW(fn_p5->compute(), NRPException);
 
     //// register F2F edge
     // wrong node
@@ -279,17 +279,17 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
 
     //// Failing cases
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("wrong_i_port"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("wrong_i_port"), bpy::error_already_set);
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("wrong_o_port"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("wrong_o_port"), bpy::error_already_set);
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("input_no_node"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("input_no_node"), bpy::error_already_set);
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("output_no_node"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("output_no_node"), bpy::error_already_set);
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("wrong_period_connections"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("wrong_period_connections"), bpy::error_already_set);
     ComputationalGraphManager::getInstance().clear();
-    ASSERT_THROW(bpy::import("wrong_from_cache_connections"), boost::python::error_already_set);
+    ASSERT_THROW(bpy::import("wrong_from_cache_connections"), bpy::error_already_set);
 }
 
 TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
@@ -305,7 +305,7 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     try {
         bpy::import("test_engine_nodes");
     }
-    catch (const boost::python::error_already_set &) {
+    catch (const NRPException &) {
         NRPLogger::error("Test failed when loading test_engine_nodes.py");
         PyErr_Print();
         boost::python::throw_error_already_set();

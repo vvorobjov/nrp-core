@@ -259,7 +259,7 @@ private:
             std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\"";
             NRPLogger::error(error_msg);
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
 
         try {
@@ -278,9 +278,8 @@ private:
         }
         catch (const boost::python::error_already_set&) {
             std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\". It is expected to return an object of type list or None";
-            NRPLogger::error(error_msg);
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
 
         return true;
@@ -346,10 +345,10 @@ public:
             f->registerF2FEdge(_keyword, _address);
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating the F2FEdge '" + _address +
-            "'. Check that Functional Node definition is correct");
+            std::string error_msg = "An error occurred while creating the F2FEdge '" + _address +
+            "'. Check that Functional Node definition is correct";
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
 
         // Returns FunctionalNode

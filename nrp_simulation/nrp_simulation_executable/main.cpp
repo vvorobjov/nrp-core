@@ -326,6 +326,17 @@ int main(int argc, char *argv[])
     else if(mode == "standalone")
     {
         auto res = manager->initializeSimulation();
+
+        shutdown_handler = [&] (int) {
+            if(manager->currentState() == SimulationManager::SimState::Running) {
+                NRPLogger::info("Interruption Signal received. Stopping the simulation");
+                manager->stopSimulation();
+            }
+            else
+                NRPLogger::warn("Interruption Signal received. But the simulation is not running, signal will be ignored");
+        };
+        signal(SIGINT, signal_handler);
+
         if(res.currentState != SimulationManager::SimState::Failed)
             manager->runSimulationUntilDoneOrTimeout();
 
