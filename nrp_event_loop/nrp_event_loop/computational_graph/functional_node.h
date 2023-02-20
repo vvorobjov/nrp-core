@@ -42,6 +42,8 @@ class FunctionalNode;
  *
  * It stores an std::function object, '_function' which is called in the node 'compute' method and which inputs and
  * outputs can be connected to input and output ports respectively
+ *
+ * _function return value is bool, which is used to decide whether to send outputs or not
  */
 template<typename... INPUT_TYPES, typename... OUTPUT_TYPES>
 class FunctionalNode<std::tuple<INPUT_TYPES...>, std::tuple<OUTPUT_TYPES...> > : public ComputationalNode {
@@ -228,8 +230,9 @@ protected:
     void compute() override final
     {
         if(_execPolicy == FunctionalNodePolicies::ExecutionPolicy::ALWAYS || _hasNew) {
-            _function(_params);
-            sendOutputs();
+            // Execute _function and send outputs if _function returns true
+            if(_function(_params))
+                sendOutputs();
         }
 
         _hasNew = false;
@@ -238,7 +241,7 @@ protected:
     /*!
      * \brief Constructor
      */
-    FunctionalNode(const std::string &id, std::function<void(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
+    FunctionalNode(const std::string &id, std::function<bool(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
             ComputationalNode(id, ComputationalNode::Functional),
             _function(f),
             _execPolicy(policy)
@@ -303,7 +306,7 @@ protected:
     /*! \brief function performing main computation in this node */
     params_t _params;
     /*! \brief function performing main computation in this node. It sets the output part of _params from its input part */
-    std::function<void(params_t&)> _function;
+    std::function<bool(params_t&)> _function;
 
     friend class FunctionalNodeFactory;
     friend class ComputationalNodes_FUNCTIONAL_NODE_Test;

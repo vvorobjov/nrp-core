@@ -68,7 +68,7 @@ public:
      * \brief Constructor
      */
     PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
-        FunctionalNode(id, [] (params_t&) {}, policy)
+        FunctionalNode(id, [] (params_t&) { return true; }, policy)
     {
         bpy::stl_input_iterator<std::string> begin(o_ports), end;
         _oPortIds.insert(_oPortIds.begin(), begin, end);
@@ -226,10 +226,11 @@ private:
     /*!
      * \brief Set the wrapped python function arguments, calls it with them and set _outputs
      */
-    void pythonCallback(params_t&)
+    bool pythonCallback(params_t&)
     {
         boost::python::tuple args;
         boost::python::dict kwargs;
+        boost::python::object o_output;
 
         for(size_t i=0; i < _iPortIds.size(); ++i) {
             const bpy::object* in = nullptr;
@@ -239,13 +240,26 @@ private:
         }
 
         try {
-            boost::python::list l_output = boost::python::extract<boost::python::list>(
-                    _pythonF(*args, **kwargs));
+            o_output = _pythonF(*args, **kwargs);
 
+            // Check None case
+            if (o_output.is_none())
+                return false;
+        }
+        catch (const boost::python::error_already_set&) {
+            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\"";
+            NRPLogger::error(error_msg);
+            PyErr_Print();
+            boost::python::throw_error_already_set();
+        }
+
+        try {
+            // Otherwise a list is expected
+            boost::python::list l_output = boost::python::extract<boost::python::list>(o_output);
             if(_oPortIds.size() != (size_t)boost::python::len(l_output)) {
                 std::stringstream error_msg;
                 error_msg << "Functional Node with id \"" << this->id() << "\" has " << _oPortIds.size() <<
-                          " declared outputs, but its Python function returns " << boost::python::len(l_output) << " elements.";
+                          " declared outputs, but returns " << boost::python::len(l_output) << " elements.";
                 throw NRPException::logCreate(error_msg.str());
             }
 
@@ -254,11 +268,13 @@ private:
                 *_outputs[i] = l_output[i];
         }
         catch (const boost::python::error_already_set&) {
-            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\"";
+            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\". It is expected to return an object of type list or None";
             NRPLogger::error(error_msg);
             PyErr_Print();
             boost::python::throw_error_already_set();
         }
+
+        return true;
     }
 
     /*!

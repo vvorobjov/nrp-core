@@ -31,8 +31,10 @@ The decorator has three arguments:
 Each of the declared outputs can be connected to other nodes using decorators.
 Each of the input arguments of the function can be connected to other nodes too.
 
-The decorated Python function must always return a list with the length equal to the number of declared outputs in the Functional Node decorator.
-Otherwise a runtime error will be triggered.
+The decorated Python function can return either *None* or a list with length equal to the number of declared outputs in the Functional Node decorator.
+Otherwise a runtime error is triggered.
+
+Returning *None* can be used in cases when the function can't produce valid outputs.
 
 \section from_functional_node_decorator @FromFunctionalNode
 

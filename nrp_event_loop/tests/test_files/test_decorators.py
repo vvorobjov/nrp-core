@@ -1,10 +1,19 @@
 from nrp_core.event_loop import *
 
 msgs = []
+return_none = False
+
+
+def set_return_none(val):
+    global return_none
+    return_none = val
 
 
 @FunctionalNode(name='function', outputs=["output1"], exec_policy=node_policies.functional_node.exec_policy.on_new_message)
 def f_node(input1):
+    if return_none:
+        return
+
     global msgs
     msgs.append(input1)
     return [input1]

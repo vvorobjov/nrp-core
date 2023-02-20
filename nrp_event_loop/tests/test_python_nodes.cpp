@@ -238,6 +238,13 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     fn_p->compute();
     ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 1);
 
+    // return None case
+    msg_got = nullptr;
+    test_module_dict["set_return_none"](bpy::object(true));
+    o_p.publish(&msg_send);
+    ASSERT_NO_THROW(fn_p->compute());
+    ASSERT_EQ(msg_got, nullptr);
+
     // 'always' policy
     auto fn_p_always = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode("function_always"));
     fn_p_always->compute();

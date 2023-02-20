@@ -392,14 +392,18 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
     InputPort<int, int> i_p("input_port", &n2, f);
 
     int nCalledF = 0;
-    std::function<void(const int*, int&)> f1 = [&](const int*i1, int&o1) {
+    bool returnF = true;
+    std::function<bool(const int*, int&)> f1 = [&](const int*i1, int&o1) {
         if(i1 != nullptr)
             o1 = *i1;
         nCalledF++;
+        return returnF;
     };
 
     // Instantiating FunctionalNode directly, only for testing, usually this is done via FunctionalNodeFactory::create
-    auto f_wrap = [f1](std::tuple<const int*, int> &p) { std::apply(f1, p); };
+    auto f_wrap = [f1](std::tuple<const int*, int> &p) {
+        return std::apply(f1, p);
+    };
     FunctionalNode<std::tuple<int>, std::tuple<int>> f_n("f_node", f_wrap, FunctionalNodePolicies::ON_NEW_INPUT);
 
     //// Register and get input / output
@@ -467,6 +471,13 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
     f_n.compute();
     ASSERT_EQ(nCalledP, 3);
     ASSERT_EQ(nCalledF, 3);
+
+    // case FN function returns false
+    returnF = false;
+    f_n.compute();
+    ASSERT_EQ(nCalledP, 3);
+    ASSERT_EQ(nCalledF, 4);
+
 }
 
 
@@ -476,9 +487,11 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE_FACTORY)
     // template arguments or function signature the code just won't compile, so just calling the
     // function.
 
-    std::function<void(const int*, int&)> f1 = [](const int*i1, int&o1) {
+    std::function<bool(const int*, int&)> f1 = [](const int*i1, int&o1) {
         if(i1 != nullptr)
             o1 = *i1;
+
+        return true;
     };
 
     FunctionalNode<std::tuple<int>, std::tuple<int>> f_n = FunctionalNodeFactory::create<1, 1, const int*, int&>("f_node", f1);

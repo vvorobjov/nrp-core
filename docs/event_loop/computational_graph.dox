@@ -320,7 +320,8 @@ This means that if the node is not executed it won't publish any new pointers, b
 Output Nodes have a single execution policy, with the name `PublishFormatPolicy`. It tells how the node publishes out cached messages.
 If set to `SERIES`, the node publishes each message individually and sequentially. If set to 'BATCH', it publishes all cached messages as a batch in a single message.
 
-Output Nodes always consume their cached messages every loop cycle. That is, they publish all messages cached in each loop cycle and clear their cache afterwards.
+Output Nodes can be configured to publish only new messages arrived in the current cycle or to cache the last message and re-publish it in next cycles if no new message arrives. 
+This option is described in more detail above in this /ref output_node "section".
 
 \section graph_fsm Computational Graph Lifecycle
 
