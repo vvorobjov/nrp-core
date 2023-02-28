@@ -1,6 +1,6 @@
 {
 	"SimulationName": "test_sim",
-	"SimDescription": "This experiment launches Nest and uses a TF to access and modify the status of several simulation objects",
+	"SimulationDescription": "This experiment launches Nest and uses a TF to access and modify the status of several simulation objects",
 	"SimulationTimeout": 2,
 	"EngineConfigs": [
 		{

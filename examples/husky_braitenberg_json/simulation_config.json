@@ -1,6 +1,6 @@
 {
 	"SimulationName": "husky_simulation_json",
-	"SimDescription": "Adaptation of the example `husky_braitenberg` using the gazebo_json engine.",
+	"SimulationDescription": "Adaptation of the example `husky_braitenberg` using the gazebo_json engine.",
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{

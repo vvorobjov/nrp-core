@@ -26,7 +26,7 @@ Below is listed an example experiment configuration using ProcessLauncher to lau
 \code{.py}
 {
 	"SimulationName": "test_sim",
-	"SimDescription": "Just writting a greetings message from a forked process using an environment variable",
+	"SimulationDescription": "Just writting a greetings message from a forked process using an environment variable",
 	"SimulationTimeout": 1,
 	"ExternalProcesses" : [
 		{

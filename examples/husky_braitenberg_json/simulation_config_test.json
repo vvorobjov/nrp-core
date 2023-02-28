@@ -1,6 +1,6 @@
 {
 	"SimulationName": "husky_simulation_json",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the gazebo_json engine.",
+	"SimulationDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the gazebo_json engine.",
 	"SimulationTimeout": 1,
 	"EngineConfigs": [
 		{
