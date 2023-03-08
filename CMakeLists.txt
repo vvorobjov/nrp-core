@@ -503,3 +503,12 @@ file(COPY
         FILE_PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         )
+
+# Install xvfb-run-nrp. A customized xvfb-run that handle signals correctly (so to be launched by BasicFork).
+file(COPY
+        "${CMAKE_SOURCE_DIR}/.ci/xvfb-run-nrp"
+        DESTINATION
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}"
+        FILE_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )

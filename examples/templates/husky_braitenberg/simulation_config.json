@@ -7,7 +7,7 @@
 			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
 			"ServerAddress": "localhost:9017",
-			"EngineProcCmd": "xvfb-run /usr/bin/gzserver",
+			"EngineProcCmd": "xvfb-run-nrp /usr/bin/gzserver",
 			"GazeboWorldFile": "husky_world.sdf",
 			"EngineProcStartParams": ["--verbose"]
 		},
