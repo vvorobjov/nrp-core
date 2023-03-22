@@ -29,7 +29,7 @@ Below is listed an example experiment configuration connecting to both ROS and M
 \code{.py}
 {
 	"SimulationName": "test_sim",
-	"SimDescription": "Just connecting to ROS and MQTT",
+	"SimulationDescription": "Just connecting to ROS and MQTT",
 	"SimulationTimeout": 1,
 	"MQTTNode": {"ClientName": "myMQTTclient"},
 	"ROSNode": {"NodeName": "myROSnode"}

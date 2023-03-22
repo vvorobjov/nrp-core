@@ -1,6 +1,6 @@
 {
 	"SimulationName": "husky_braitenberg_cg",
-	"SimDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between Engines.",
+	"SimulationDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between Engines.",
 	"SimulationTimeout": 10,
 	"DataPackProcessor": "cg",
 	"SimulationLoop": "EventLoop",

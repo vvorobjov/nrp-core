@@ -1,6 +1,6 @@
 {
 	"SimulationName": "example_experiment",
-	"SimDescription": "This experiment launches the ${engine_name_lowercase} gRPC engine and passes some data from the engine to the transceiver function",
+	"SimulationDescription": "This experiment launches the ${engine_name_lowercase} gRPC engine and passes some data from the engine to the transceiver function",
 	"SimulationTimeout": 1,
 	"EngineConfigs": [
 		{

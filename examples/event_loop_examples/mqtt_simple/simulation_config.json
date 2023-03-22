@@ -1,6 +1,6 @@
 {
   "SimulationName": "test_sim",
-  "SimDescription": "MQTT test experiment",
+  "SimulationDescription": "MQTT test experiment",
   "SimulationTimeout": 30,
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",

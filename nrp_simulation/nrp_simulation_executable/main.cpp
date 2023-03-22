@@ -308,12 +308,11 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-
         NrpCoreServer server(serverAddress, std::move(manager));
 
-        // In slave mode ignore SIGINT, otherwise shut the server down nicely
+        // In server mode ignore SIGINT, otherwise shut the server down nicely
         if(isSlave)
-            signal(SIGINT, [] (int) {  });
+            signal(SIGINT, SIG_IGN);
         else {
             shutdown_handler = [&] (int) {
                 server.stopServerLoop();

@@ -76,6 +76,10 @@ pid_t BasicFork::launchProcess(const nlohmann::json &/*launcherConfig*/, const s
             exit(-1);
         }
 
+        // clear signals block mask
+        sigset_t valid_signals;
+        sigfillset( &valid_signals );
+        sigprocmask( SIG_UNBLOCK, &valid_signals, NULL);
 
         // Setup environment variables in a char* vector. See definition of execvpe() for details
 
@@ -154,11 +158,11 @@ pid_t BasicFork::stopProcess(unsigned int killWait)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    NRPLogger::debug("BasicFork::stopProcess(...): The process with PID {} is to be killed", this->_PID);
+    NRPLogger::debug("BasicFork::stopProcess(...): The process with PID {} is to be terminated", this->_PID);
 
     if(this->_PID > 0)
     {
-        // Send SIGTERM to gracefully stop Nest process
+        // Send SIGTERM to gracefully stop the process
         kill(this->_PID, SIGTERM);
 
         // Set to maximum wait time if time is set to 0
@@ -178,8 +182,8 @@ pid_t BasicFork::stopProcess(unsigned int killWait)
                 break;
             }
 
-            // Sleep for 10ms between checks
-            usleep(10*1000);
+            // Sleep for 500ms between checks
+            usleep(500*1000);
         }
         while(std::chrono::system_clock::now() < end);
 

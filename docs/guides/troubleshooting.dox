@@ -24,6 +24,9 @@ To run an experiment using Xvfb:
 xvfb-run NRPCoreSim -c simulation_config.json
 \endcode
 
+\note When, in an experiment run in a headless environment (e.g. a docker container), a gazebo Engine is launched by the (default) BasicFork launcher,
+a customized version of `xvfb-run`, named `xvfb-run-nrp`, shall be used.
+It takes care of correctly stopping the launched processes.
 
 \section guide_troubleshooting_gunicorn_timeout Worker timeout when using Python JSON Engine
 

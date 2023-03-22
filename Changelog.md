@@ -143,3 +143,11 @@
     * [Pull request #114](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/114)
     
     
+## NRPCore 1.3.1 (2023-02-28)
+
+1. [NRRPLT-8168] Compatibility with the other NRP components for the v4.0.
+    * Unmasked signals in engine servers launched by BasicFork. SIGTERM (shutdown command), SIGINT, SIGHUP (parent has died) are expected to be received so be sure they are unblocked. Increased forked processes polling time to 500ms.
+    * The template experiments are added: examples/templates.
+    * Renamed configuration atribute from "SimDescription" to "SimulationDescripion" in experiments.
+    * The templates are added to the NRP-Core Docker images.
+

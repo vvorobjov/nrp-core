@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.3.0)
+set(NRP_VERSION 1.3.1)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -514,6 +514,15 @@ file(COPY
 # Install nrp-run.bash, meant mainly to run nrp-core related commands with a correct environment
 file(COPY
         "${CMAKE_SOURCE_DIR}/nrp-run.bash"
+        DESTINATION
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}"
+        FILE_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        )
+
+# Install xvfb-run-nrp. A customized xvfb-run that handle signals correctly (so to be launched by BasicFork).
+file(COPY
+        "${CMAKE_SOURCE_DIR}/.ci/xvfb-run-nrp"
         DESTINATION
         "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}"
         FILE_PERMISSIONS
