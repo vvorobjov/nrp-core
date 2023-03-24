@@ -1,16 +1,12 @@
 from nrp_core import *
 from nrp_core.data.nrp_json import JsonRawData
 
-iteration = 0
 
+@SimulationIteration(keyword="sim_iter")
 @StatusFunction()
-def status_function():
-    global iteration
-
-    iteration += 1
-
+def status_function(sim_iter):
     ret = JsonRawData()
-    ret.data["iteration"] = iteration
+    ret.data["iteration"] = sim_iter
 
     return False, [ret]
 

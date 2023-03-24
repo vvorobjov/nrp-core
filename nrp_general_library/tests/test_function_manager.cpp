@@ -27,6 +27,7 @@
 #include "nrp_general_library/transceiver_function/function_manager.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
 #include "nrp_general_library/utils/json_converter.h"
+#include "nrp_general_library/utils/python_error_handler.cpp"
 #include "tests/test_env_cmake.h"
 
 using JsonDataPack = DataPack<nlohmann::json>;
@@ -45,15 +46,23 @@ class FunctionManagerTest : public testing::Test {
     protected:
         void SetUp() override
         {
-            Py_Initialize();
-            json_converter::initNumpy();
-            boost::python::numpy::initialize();
+            try
+            {
+                Py_Initialize();
+                json_converter::initNumpy();
+                boost::python::numpy::initialize();
 
-            python::object main(python::import("__main__"));
-            python::object nrpModule(python::import(PYTHON_MODULE_NAME_STR));
+                python::object main(python::import("__main__"));
+                python::object nrpModule(python::import(PYTHON_MODULE_NAME_STR));
 
-            globals.update(main.attr("__dict__"));
-            globals.update(nrpModule.attr("__dict__"));
+                globals.update(main.attr("__dict__"));
+                globals.update(nrpModule.attr("__dict__"));
+            }
+            catch(boost::python::error_already_set &)
+            {
+                std::cout << handle_pyerror() <<std::endl;
+                throw;
+            }
 
             functionManager.reset(new FunctionManager(globals));
 

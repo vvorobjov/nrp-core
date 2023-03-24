@@ -216,7 +216,7 @@ class TestNrpServer(unittest.TestCase):
         self.assertEqual(len(trajectory), 4)
 
         for i, datapack in enumerate(trajectory):
-            self.assertEqual(datapack["iteration"], i + 1)
+            self.assertEqual(datapack["iteration"], i)
 
 
     def test_trajectory_proto(self):

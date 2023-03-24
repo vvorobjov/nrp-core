@@ -26,6 +26,8 @@
 
 
 #include "nrp_general_library/transceiver_function/transceiver_function.h"
+#include "nrp_general_library/transceiver_function/simulation_time_decorator.h"
+#include "nrp_general_library/transceiver_function/simulation_iteration_decorator.h"
 #include "nrp_general_library/transceiver_function/status_function.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 #include "nrp_general_library/transceiver_function/from_engine_datapack.h"
@@ -79,40 +81,11 @@ inline std::shared_ptr<DataPackInterface> genDevInterface(const std::string &nam
     return std::shared_ptr<DataPackInterface>(new DataPackInterface(name, engineName, ""));
 }
 
-/*!
- * \brief Returns simulation time in nanoseconds currently stored in the Function Manager
- */
-static int64_t getSimulationTime()
-{
-    if(TransceiverDataPackInterface::getFunctionManager() != nullptr)
-    {
-        return TransceiverDataPackInterface::getFunctionManager()->getSimulationTime().count();
-    }
-
-    return 0;
-}
-
-/*!
- * \brief Returns simulation iteration number currently stored in the Function Manager
- */
-static unsigned long getSimulationIteration()
-{
-    if(TransceiverDataPackInterface::getFunctionManager() != nullptr)
-    {
-        return TransceiverDataPackInterface::getFunctionManager()->getSimulationIteration();
-    }
-
-    return 0;
-}
-
 using namespace boost::python;
 
 
 BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
 {
-    def("getSimulationTime", getSimulationTime);
-    def("getSimulationIteration", getSimulationIteration);
-
     // DataPackIdentifier
     class_<DataPackIdentifier>("DataPackIdentifier", init<const std::string&, const std::string &, const std::string&>((arg("name"), arg("engine_name"), arg("type") = std::string())))
             .def("__init__", make_constructor(&genDevID))
@@ -145,6 +118,13 @@ BOOST_PYTHON_MODULE(PYTHON_MODULE_NAME)
     register_ptr_to_python<TransceiverDataPackInterface::shared_ptr>();
     register_ptr_to_python<TransceiverDataPackInterface::const_shared_ptr>();
 
+    // SimulationTime
+    class_<SimulationTimeDecorator, bases<TransceiverDataPackInterface> >("SimulationTime", init<const std::string&>( arg("keyword") ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<SimulationTimeDecorator>);
+
+    // SimulationIteration
+    class_<SimulationIterationDecorator, bases<TransceiverDataPackInterface> >("SimulationIteration", init<const std::string&>( arg("keyword") ))
+            .def("__call__", &TransceiverDataPackInterface::pySetup<SimulationIterationDecorator>);
 
     // EngineDataPack
     class_<EngineDataPack, bases<TransceiverDataPackInterface> >("EngineDataPack", init<const std::string&, const DataPackIdentifier&, bool>( (arg("keyword"), arg("id"), arg("isPreprocessed") = false) ))

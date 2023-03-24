@@ -1,0 +1,31 @@
+/*! \page nrp_functions Functions
+
+Exchange of simulation data between different components of NRP Core is performed by
+user-defined Functions. They are Python functions that live inside of the NRP Core main process.
+Three types of Functions are currently supported:
+
+- \ref transceiver_function "Transceiver Function" (TF): user-defined Python functions which enable data exchange between engines.
+- \ref preprocessing_function "Preprocessing Function" (PF): user-defined Python functions which enable to pre-process data coming from engines before injecting it into TFs.
+- \ref status_function "Status Function": user-defined Python functions that enable the exchange of data between engines and \ref python_client "NRP-core Python Client".
+
+\section functions_time_iteration Simulation time and iteration number
+
+It is possible to get access to the current simulation time and iteration number in all Functions.
+Both of these values can be aquired by adding a proper decorator to the Python function definition, for example:
+
+\code{.py}
+@SimulationIteration(keyword="sim_iter")
+@SimulationTime(keyword="sim_time")
+@StatusFunction()
+def status_function(sim_iter, sim_time):
+    # sim_iter will contain current iteration number, starting at 0
+    # sim_time will contain current simulation time in nanoseconds
+    pass
+\endcode
+
+The `SimulationIteration` decorator will return the current iteration number, starting at 0.
+The `SimulationTime` decorator will return the current simulation time in nanoseconds.
+Both of these decorators require a single argument, which is the name (keyword) under which it is
+going to be accessible in the Python function. The same keyword must be added as the function parameter.
+
+*/

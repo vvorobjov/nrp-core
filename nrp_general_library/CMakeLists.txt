@@ -32,6 +32,8 @@ set(LIB_SRC_FILES
     nrp_general_library/process_launchers/process_launcher_basic.cpp
     nrp_general_library/process_launchers/process_launcher_manager.cpp
     nrp_general_library/transceiver_function/from_engine_datapack.cpp
+    nrp_general_library/transceiver_function/simulation_iteration_decorator.cpp
+    nrp_general_library/transceiver_function/simulation_time_decorator.cpp
     nrp_general_library/transceiver_function/status_function.cpp
     nrp_general_library/transceiver_function/transceiver_function.cpp
     nrp_general_library/transceiver_function/transceiver_datapack_interface.cpp
