@@ -22,8 +22,13 @@ include(CMakeDependentOption)
 # See the section "common NRP-core CMake options" for the explanation about ENABLE_SIMULATOR parameters
 option(ENABLE_NEST "Enable nest-simulator support" ON)
 cmake_dependent_option(BUILD_NEST_ENGINE_SERVER "Build the server part of the nest-simulator engines" ON "ENABLE_NEST" OFF)
+
 option(ENABLE_GAZEBO "Enable Gazebo support" ON)
 cmake_dependent_option(BUILD_GAZEBO_ENGINE_SERVER "Build the server part of the Gazebo engines" ON "ENABLE_GAZEBO" OFF)
+
+option(ENABLE_EDLUT "Enable EDLUT support" ON)
+option(EDLUT_WITH_CUDA "Enable EDLUT with cuda support" OFF)
+cmake_dependent_option(BUILD_EDLUT_ENGINE_SERVER "Build the server part of the EDLUT engine" ON "ENABLE_EDLUT" OFF)
 
 option(COVERAGE "Enables code coverage" OFF)
 option(BUILD_RST "Convert Doxygen documentation into the reStructuredText source files." OFF)
@@ -258,6 +263,14 @@ else()
     message(STATUS "nest-simulator engines will not be built")
 endif()
 
+## EDLUT Engine
+if(ENABLE_EDLUT)
+    message(STATUS "Building EDLUT engine")
+    add_subdirectory(nrp_edlut_grpc_engine)
+else()
+    message(STATUS "EDLUT engine will not be built")
+endif()
+
 ## Python Engine
 add_subdirectory(nrp_python_json_engine)
 add_subdirectory(nrp_python_grpc_engine)
@@ -413,6 +426,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/tvb/tvb_engine.dox"
         "docs/engines/datatransfer/datatransfer_engine.dox"
         "docs/engines/python_grpc/python_grpc_engine.dox"
+        "docs/engines/edlut/edlut_engine.dox"
 
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"

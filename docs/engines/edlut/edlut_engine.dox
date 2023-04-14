@@ -1,0 +1,80 @@
+/*! \page edlut_engine EDLUT Engine
+
+The EDLUT Engine brings the possibility to connect the EDLUT simulator to NRP-core.
+
+The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and it accepts a single Datapack type which is described below: \ref edlut_engine_datapacks "EdlutDataSpikesDatapack".
+In the same way, this type of engine returns EdlutDataSpikesDatapack as well.
+
+Actually, there is a single datapack id, "spikes_datapack", which can be used to exchange data with an EDLUT engine.
+It is of type EdlutDataSpikesDatapack and is always registered in the Engine and users can use it to either inject spikes into the simulated Neural Network or read spikes from it.
+
+When used to read spikes, i.e. as input argument of a TF, the datapack contains all spike events which happened in the EDLUT simulation in the last timestep.
+The attribute "spikes_time" of the datapack stores an array of spike times and the attribute "neuron_indexes" an array with the indexes of each of the neurons which produced the spike.
+Also the current simulation time of the Engine is stored in the attribute "time".
+
+When "spikes_datapack" is used to inject spikes into the simulated neural network, i.e. when it is returned from a TF, "spikes_time" and "neuron_indexes" must be used to specify exactly which neurons should spike and when the spike event should happen.
+It is important to notice that "spikes_time" must be expressed in the global simulation timeframe, not relative to the current simulation time.
+Therefore the current simulation time and the length of the Engine timestep must be used and taken into account to compute the values of the "spikes_time" array in order to achieve the intended behavior.
+
+\section edlut_engine_datapacks EDLUT Datapacks
+
+This gRPC implementation uses \ref datapacks_protobuf. Below is shown the protobuf message definition used by the EDLUT Engine:
+
+\include edlut_msgs.proto
+
+The EdlutDataSpikesDatapack consists of the following attributes:
+<table>
+<caption id="physics_link_attributes_table">EdlutDataSpikesDatapack Attributes</caption>
+<tr><th>Attribute        <th>Description                              <th>Python Type                   <th>C type
+<tr><td>time             <td>Simulation Time                          <td>float                         <td>float
+<tr><td>spikes_time      <td>Spikes Firing Time                       <td>numpy.array(numpy.float32)    <td>std::array<float>
+<tr><td>neuron_indexes   <td>Neuron Indexes Firing                    <td>numpy.array(numpy.uint32)     <td>std::array<uint32>
+</table>
+
+Each of this attributes can be accessed under their respective names from the *data* attribute of EdlutDataSpikesDatapack type.
+
+\section engine_edlut_config_section Engine Configuration Parameters
+
+This Engine type parameters are defined in EDLUT schema (listed \ref engine_edlut_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas and thus inherits all parameters from them.
+
+To use this engine in an experiment, set `EngineType` to <b>"edlut_grpc_engine"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from the \ref engine_grpc "EngineGRPC" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>NetworkFile<td>Path to the storage of file with the architecture of the network<td>string<td><td>X<td>
+<tr><td>WeightsFile<td>Path to the storage of file containing initial weights of neurons<td>string<td><td>X<td>
+<tr><td>NumThreads<td>Number of threads used for parallel computing<td>string<td>1<td><td>
+</table>
+
+\section engine_edlut_schema Schema
+
+As explained above, the schema used by the EDLUT engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
+
+\include engines/engines_edlut.json
+
+
+
+*/

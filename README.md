@@ -21,7 +21,7 @@ sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `ls
 wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
     
 sudo apt update
-sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip libgmock-dev
+sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip libgmock-dev libomp-dev
 
 # required by gazebo engine
 sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
@@ -73,6 +73,18 @@ git checkout v1.2.0
 cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_DEPS_INSTALL_DIR}"
 cmake --build build/ --target install
 sudo ldconfig && cd ..
+
+# CUDA Support
+# The EDLUT simulator supports running on CUDA GPUs. This option can be enabled if EDLUT_WITH_CUDA cmake option is set to ON while configuring nrp-core. 
+# It is highly recommended to install a CUDA version >=11.0 due to compatibility version with GCC9 (default compiler for Ubuntu 20.04)
+# In order to ensure that you can follow these steps which install CUDA 12.0:
+sudo apt-get --purge -y remove 'cuda*' 
+sudo apt-get --purge -y remove 'nvidia*'
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+sudo dpkg -i cuda-keyring_1.0-1_all.deb
+sudo apt update
+sudo apt install cuda
+echo 'export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}' >> ~/.bashrc
 
 # End of dependencies installation
 ```
