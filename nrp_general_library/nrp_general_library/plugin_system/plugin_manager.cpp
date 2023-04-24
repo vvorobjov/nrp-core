@@ -21,18 +21,19 @@
 //
 
 #include "nrp_general_library/plugin_system/plugin_manager.h"
-
-#include "nrp_general_library/plugin_system/plugin.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include <dlfcn.h>
 #include <iostream>
 
-using engine_launch_fcn_t = NRP_ENGINE_LAUNCH_FCN_T;
-
-EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string &pluginLibFile)
+bool PluginManager::loadPlugin(const std::string &pluginLibFile)
 {
     NRP_LOGGER_TRACE("{} called [ pluginLibFile: {} ]", __FUNCTION__, pluginLibFile);
+
+    if(this->_loadedLibs.count(pluginLibFile)) {
+        NRPLogger::info("Plugin library \"" + pluginLibFile + "\" has been already loaded, skipping request");
+        return false;
+    }
 
     dlerror();  // Clear previous error msgs
 
@@ -40,14 +41,16 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
     void *pLibHandle = nullptr;
     for(const auto &path : this->_pluginPaths)
     {
+        NRPLogger::debug("Looking for Plugin {} at {}", pluginLibFile, path.string());
         const std::string fileName = path.empty() ? pluginLibFile : (path/pluginLibFile).c_str();
+        if(!std::filesystem::exists(fileName))
+            continue;
 
         pLibHandle = dlopen(fileName.c_str(), RTLD_LAZY | RTLD_GLOBAL);
         if(pLibHandle != nullptr)
-        {
             NRPLogger::debug("Plugin {} found at {}", pluginLibFile, fileName);
-            break;
-        }
+
+        break;
     }
 
     // Print error if opening failed
@@ -57,29 +60,17 @@ EngineLauncherInterface::unique_ptr PluginManager::loadPlugin(const std::string 
 
         NRPLogger::error("Unable to load plugin library \"" + pluginLibFile + "\"" + (dlerr ? std::string(": ")+dlerr : ""));
 
-        return nullptr;
+        return false;
     }
 
     // Save stored library
     this->_loadedLibs.emplace(pluginLibFile, pLibHandle);
 
-    // Find EngineLauncherInterface function in library
-    engine_launch_fcn_t *pLaunchFcn = reinterpret_cast<engine_launch_fcn_t*>(dlsym(pLibHandle, CREATE_NRP_ENGINE_LAUNCHER_FCN_STR));
-    if(pLaunchFcn == nullptr)
-    {
-        NRPLogger::error("Plugin Library \"" + pluginLibFile + "\" does not contain an engine load creation function");
-        NRPLogger::error("Register a plugin using CREATE_NRP_ENGINE_LAUNCHER(engine_launcher_name)");
-
-        return nullptr;
-    }
-
-    return EngineLauncherInterface::unique_ptr((*pLaunchFcn)());
+    return true;
 }
 
 PluginManager::~PluginManager()
 {
-    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-
     // Unload all plugins
     while(!this->_loadedLibs.empty())
     {

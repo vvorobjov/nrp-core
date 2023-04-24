@@ -17,6 +17,7 @@ The next pages describe in more detail the elements and function of the Event Lo
 - \subpage computational_graph : this page offers a description, with implementation details, of all elements and components involved in the Computational Graph.
 - \subpage python_graph : this page describes how to define Computational Graphs in Python.
 - \subpage event_loop_configuration : this page describes how to configure NRP-core experiments to use the Event Loop and the Computational Graph.
+- \subpage fn_cpp_nodes : this page describes how to build C++ Functional Nodes and afterwards use them in a Computational Graph
 
 Several example experiments using the Event Loop and the Computational Graph are available in the `examples/event_loop_examples` folder.
 

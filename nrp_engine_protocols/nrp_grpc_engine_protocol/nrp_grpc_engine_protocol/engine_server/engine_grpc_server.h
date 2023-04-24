@@ -87,7 +87,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 std::stringstream pluginLibName;
                 pluginLibName << "lib" << NRP_PROTO_OPS_LIB_PREFIX << packageNameStr <<
                               NRP_PROTO_OPS_LIB_SUFIX << ".so";
-                auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(pluginLibName.str());
+                auto pluginLib = ProtoOpsManager::getInstance().loadProtobufPlugin(pluginLibName.str());
                 if(pluginLib)
                     _protoOps.template emplace_back(std::move(pluginLib));
                 else

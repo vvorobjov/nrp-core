@@ -1,0 +1,6 @@
+{
+  "ComputationalGraph": ["fn.py"],
+  "SimulationLoop": "EventLoop",
+  "EventLoop": {"Timeout": 0},
+  "MQTTNode": {}
+}

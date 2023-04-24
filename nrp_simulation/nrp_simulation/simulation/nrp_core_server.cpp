@@ -52,7 +52,7 @@ NrpCoreServer::NrpCoreServer(const std::string & address, std::shared_ptr<Simula
 
     for(const auto & packageName : libs)
     {
-        auto pluginLib = ProtoOpsManager::getInstance().loadPlugin(packageName);
+        auto pluginLib = ProtoOpsManager::getInstance().loadProtobufPlugin(packageName);
         if(pluginLib)
             _protoOps.template emplace_back(std::move(pluginLib));
         else

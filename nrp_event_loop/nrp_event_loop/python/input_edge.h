@@ -34,67 +34,111 @@ concept INPUT_C = std::is_base_of_v<InputNode<T_IN>, T>;
 /*!
  * \brief Helper template class used to implement Python input edge decorators
  */
-template <class T_IN, INPUT_C<T_IN> INPUT_CLASS>
-class SimpleInputEdge {
+template <class T_IN, class T_OUT, INPUT_C<T_IN> INPUT_CLASS>
+class InputEdge {
 
 public:
 
-    SimpleInputEdge() = delete;
+    InputEdge() = delete;
 
     /*!
      * \brief Constructor
      */
-    SimpleInputEdge(std::string keyword, std::string id, std::string port, InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+    InputEdge(std::string keyword, std::string id, std::string port, InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
                     InputNodePolicies::MsgCachePolicy msgCachePolicy) :
             _keyword(std::move(keyword)), _id(std::move(id)), _port(std::move(port)), _msgPublishPolicy(std::move(msgPublishPolicy)),
             _msgCachePolicy(std::move(msgCachePolicy))
     {}
 
     /*!
-     * \brief __call__ function in the decorator
+     * \brief __call__ function in associated Python decorator
      *
      * It creates and registers an input node. Afterwards add a port to it and registers an edge
-     * to 'obj'. 'obj' is expected to be a Python object wrapping a PythonFunctionalNode
+     * to 'obj'. 'obj' is expected to be a Python object wrapping a Functional Node
      */
     boost::python::object pySetup(const boost::python::object& obj)
     {
         // Register input node
         std::shared_ptr<ComputationalNode> node(makeNewNode());
         ComputationalGraphManager::getInstance().registerNode(node);
-        INPUT_CLASS* i_node = dynamic_cast<INPUT_CLASS*>(node.get());
-        if(!i_node)
-            throw NRPException::logCreate("When creating InputEdge: node with the same name (\"+node->id()+\") already registered with a different type");
+        INPUT_CLASS* iNode = dynamic_cast<INPUT_CLASS*>(node.get());
+        if(!iNode)
+            throw NRPException::logCreate("Error in creating Input Node: a node with the same name (\""+node->id()+"\") is already registered with a different type");
 
-        i_node->setMsgPublishPolicy(_msgPublishPolicy);
-        i_node->setMsgCachePolicy(_msgCachePolicy);
-        i_node->registerOutput(_port);
+        iNode->setMsgPublishPolicy(_msgPublishPolicy);
+        iNode->setMsgCachePolicy(_msgCachePolicy);
+        iNode->registerOutput(_port);
 
         // Register edge
-        try {
-            std::shared_ptr<PythonFunctionalNode> f = boost::python::extract<std::shared_ptr<PythonFunctionalNode> >(
-                    obj);
-
-            auto& cgm = ComputationalGraphManager::getInstance();
-            if(i_node->msgPublishPolicy() == InputNodePolicies::MsgPublishPolicy::LAST)
-                cgm.registerEdge<T_IN, boost::python::object>(
-                        i_node->getSinglePort(_port), f->getOrRegisterInput<T_IN>(_keyword));
-            else
-                cgm.registerEdge<std::vector<const T_IN*>, boost::python::object>(
-                        i_node->getListPort(_port), f->getOrRegisterInput<std::vector<const T_IN*>>(_keyword));
+        if(boost::python::extract<std::shared_ptr<PythonFunctionalNode>>(obj).check()) {
+            // PythonFunctionalNode case
+            std::shared_ptr<PythonFunctionalNode> pyFn = boost::python::extract<std::shared_ptr<PythonFunctionalNode>>(obj);
+            registerEdgePythonFN(iNode, pyFn);
         }
-        catch (const boost::python::error_already_set&) {
-            PyErr_Print();
-            throw NRPException::logCreate("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
+        else if(boost::python::extract<std::shared_ptr<FunctionalNodeBase>>(obj).check()) {
+            // FunctionalNodeBase case
+            std::shared_ptr<FunctionalNodeBase> pyFn = boost::python::extract<std::shared_ptr<FunctionalNodeBase>>(obj);
+            registerEdgeFNBase(iNode, pyFn);
         }
-        catch (const NRPException&) {
-            throw NRPException::logCreate("An error occurred while creating InputEdge. Check that the Functional Node definition is correct");
-        }
+        else
+            throw NRPException::logCreate("InputEdge \""+node->id()+"\" was called with the wrong argument type. Argument must be a FunctionalNode object");
 
         // Returns FunctionalNode
         return obj;
     }
 
 protected:
+
+    /*!
+     * \brief registers an edge between iNode and pyFn. PythonFunctionalNode case
+     */
+    void registerEdgePythonFN(INPUT_CLASS* iNode, std::shared_ptr<PythonFunctionalNode>& pyFn)
+    {
+        try {
+            auto& cgm = ComputationalGraphManager::getInstance();
+            if(iNode->msgPublishPolicy() == InputNodePolicies::MsgPublishPolicy::LAST)
+                cgm.registerEdge<T_IN, boost::python::object>(
+                        iNode->getSinglePort(_port), pyFn->getOrRegisterInput<T_IN>(_keyword));
+            else
+                cgm.registerEdge<std::vector<const T_IN*>, boost::python::object>(
+                        iNode->getListPort(_port), pyFn->getOrRegisterInput<std::vector<const T_IN*>>(_keyword));
+        }
+        catch (const NRPException&) {
+            throw NRPException::logCreate("An error occurred while creating graph edge to input node \""+iNode->id()+"\"");
+        }
+    }
+
+    /*!
+     * \brief registers an edge between iNode and pyFn. FunctionalNodeBase case
+     */
+    void registerEdgeFNBase(INPUT_CLASS* iNode, std::shared_ptr<FunctionalNodeBase>& pyFn)
+    {
+        try {
+            auto& cgm = ComputationalGraphManager::getInstance();
+            std::string errorMsg = "Port \"" + _keyword + "\" of Node \"" + pyFn->id() +
+                                   "\" can't be connected to port \"" + _port + "\" of Node " + iNode->id() +
+                                   "\". Probably there is a mismatch between the port types. Review your CG configuration.";
+            if(iNode->msgPublishPolicy() == InputNodePolicies::MsgPublishPolicy::LAST) {
+                auto iPort = dynamic_cast<InputPort<T_IN, T_OUT>*>(pyFn->getInputById(_keyword));
+                if(!iPort)
+                    throw NRPException::logCreate(errorMsg);
+
+                cgm.registerEdge<T_IN, T_OUT>(
+                        iNode->getSinglePort(_port), iPort);
+            }
+            else {
+                auto iPort = dynamic_cast<InputPort<std::vector<const T_IN *>, std::vector<const T_OUT *>>*>(pyFn->getInputById(_keyword));
+                if(!iPort)
+                    throw NRPException::logCreate(errorMsg);
+
+                cgm.registerEdge<std::vector<const T_IN *>, std::vector<const T_OUT *>>(
+                        iNode->getListPort(_port), iPort);
+            }
+        }
+        catch (const NRPException&) {
+            throw NRPException::logCreate("An error occurred while creating graph edge to input node \""+iNode->id()+"\"");
+        }
+    }
 
     /*!
      * It instantiates a new node of type INPUT_CLASS
@@ -110,5 +154,8 @@ protected:
     InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     InputNodePolicies::MsgCachePolicy _msgCachePolicy;
 };
+
+template <class T_IN, INPUT_C<T_IN> INPUT_CLASS>
+using SimpleInputEdge = InputEdge<T_IN, T_IN, INPUT_CLASS>;
 
 #endif //INPUT_EDGE_H

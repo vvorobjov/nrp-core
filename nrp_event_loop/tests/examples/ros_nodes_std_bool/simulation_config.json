@@ -1,0 +1,6 @@
+{
+    "SimulationLoop": "EventLoop",
+    "EventLoop": {"Timeout": 0},
+    "ComputationalGraph": ["fn.py"],
+    "ROSNode": {}
+}

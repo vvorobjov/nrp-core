@@ -170,7 +170,7 @@ public:
      */
     template<size_t N = 0>
     OutputPort<bpy::object>* getOutput(const std::string& id)
-    { return dynamic_cast<OutputPort<bpy::object>*>(getOutputById<N>(id)); }
+    { return dynamic_cast<OutputPort<bpy::object>*>(getOutputByIdTuple<N>(id)); }
 
     /*!
      * \brief Request the registration of an edge between an output port in another functional node an i_port input port in this node

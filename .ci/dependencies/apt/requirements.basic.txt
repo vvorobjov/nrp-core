@@ -12,3 +12,4 @@ inetutils-tools
 inetutils-traceroute
 inetutils-ping
 nano
+libclang-dev

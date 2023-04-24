@@ -65,7 +65,7 @@ public:
      * the function arguments
      */
     template<size_t in_n, size_t out_n, typename... args>
-    static auto create(const std::string &id, std::function<bool(args...)> f) {
+    static auto create(const std::string &id, std::function<bool(args...)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) {
         // Check that template types are correct
         static_assert(in_n + out_n == sizeof...(args), "Wrong number of input and/or output parameters in Functional Node");
 
@@ -85,7 +85,7 @@ public:
         // Instantiates FN
         using params_t = decltype(std::tuple_cat(std::declval<inputs_t>(), std::declval<outputs_no_ref_t>()));
         auto f_wrap = [f](params_t &p) { return std::apply(f, p); };
-        return FunctionalNode<inputs_no_pointer_t, outputs_no_ref_t>(id, f_wrap);
+        return new FunctionalNode<inputs_no_pointer_t, outputs_no_ref_t>(id, f_wrap, policy);
     }
 
 private:

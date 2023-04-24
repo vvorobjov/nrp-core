@@ -1,0 +1,24 @@
+{
+    "EngineConfigs": [
+        {
+			"EngineType": "python_grpc",
+			"EngineName": "python_1",
+			"ServerAddress":"localhost:1234",
+			"PythonFileName": "engine_grpc.py",
+			"ProtobufPackages": ["MyPackage"]
+		},
+        {
+            "EngineType": "datatransfer_grpc_engine",
+            "EngineName": "datatransfer_engine",
+            "ServerAddress": "localhost:9006",
+            "dataDirectory": "data/test",
+            "ProtobufPackages": ["MyPackage"],
+            "dumps":[
+                {"name": "datapack_1", "network": false, "file": true}
+            ]
+        }
+    ],
+    "SimulationLoop": "EventLoop",
+    "EventLoop": {"Timeout": 1},
+    "ComputationalGraph": ["fn.py"]
+}

@@ -1,4 +1,4 @@
-/*! \page guide_ros_in_nrp_core Communicating with ROS from NRP-Core Experiments
+/*! \page guide_ros_in_nrp_core Connecting with ROS from NRP-Core Experiments
 
 The implemented mechanism to interact with ROS from NRP-Core experiments is via \ref ros_nodes "ROS nodes" in the \ref computational_graph "Computational Graph" (these nodes are a type of node in the graph, not to be confused with ROS nodes in the ROS architecture).
 This \ref python_graph "page" describes how to define Computational Graphs in Python.

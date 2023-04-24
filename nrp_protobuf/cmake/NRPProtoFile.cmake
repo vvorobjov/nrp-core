@@ -242,19 +242,3 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
             DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")
 
 endforeach()
-
-# Generate a comma-separated list of strings of names of all user-defined proto files
-
-set(PROTO_MODULES_LIST, "")
-foreach(PROTO_FILE ${PROTO_PYTHON_FILES})
-    get_filename_component(PROTO_FILE_BASENAME ${PROTO_FILE} NAME_WE)
-    string(APPEND PROTO_MODULES_LIST "\"nrp_core.data.nrp_protobuf.${PROTO_FILE_BASENAME}\",\n")
-endforeach()
-
-# Store the list generated above in a python module
-
-configure_file("python/proto_modules.py.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" @ONLY)
-configure_file("cmake/proto_libraries.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" @ONLY)
-
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" DESTINATION "${PYTHON_INSTALL_DIR_REL}")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY})

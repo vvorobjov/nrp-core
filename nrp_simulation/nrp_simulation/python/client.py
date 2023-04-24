@@ -10,7 +10,7 @@ from google.protobuf import descriptor_pool
 from nrp_server_pb2 import EmptyMessage, RunLoopMessage
 from nrp_server_pb2_grpc import NrpCoreStub
 from engine_grpc_pb2 import DataPackMessage
-import proto_modules
+import nrp_core.data.nrp_protobuf.proto_modules as proto_modules
 import nrp_core.data.nrp_protobuf.dump_pb2 as dump_pb2
 
 from importlib import import_module

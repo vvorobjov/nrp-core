@@ -103,12 +103,13 @@ private:
 
 };
 
+
 class OutputEngineEdge : public SimpleOutputEdge<DataPackInterface*, OutputEngineNode> {
 
 public:
 
     OutputEngineEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge(keyword, parseCGAddress(address, false).first+"_output",
+            SimpleOutputEdge<DataPackInterface*, OutputEngineNode>(keyword, parseCGAddress(address, false).first+"_output",
                              "anonymous_port"+std::to_string(port_n++), false, 1),
             _engineName(parseCGAddress(address, false).first)
     {}

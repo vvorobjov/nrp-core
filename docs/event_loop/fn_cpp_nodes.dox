@@ -1,0 +1,231 @@
+﻿/*! \page fn_cpp_nodes Using C++ Pre-compiled Functional Nodes in the Computational Graph
+
+This page describes how to use the script <b>build_fn_factory_module.sh</b> to generate so called FunctionalNode Factory Modules (.so libraries), which can be afterwards used to add Functional Nodes to a Computational Graph.
+This option will be more performant that the alternative explained \ref functional_node_decorator "here" of Functional Nodes which internally run a Python function.
+
+The script takes as input a header file containing a <b>list of function prototypes</b>.
+The definitions of those functions can be either contained in the same header file or in a separate source file which must be passed to the script too.
+
+The output of the script is a library <b>libFNFactoryModule.so</b> which can be used to instantiate Functional Nodes which run any of the functions declared in the input header file, as explained in a section \ref fn_cpp_nodes_instantiation_cg "below".
+
+\section fn_cpp_nodes_valid_signature Valid Function Signature
+
+The signature of the function prototypes in the header file passed as argument to build_fn_factory_module.sh must attain to certain rules in order to be considered valid, i.e. in order to be runable by a Functional Node.
+All the function prototypes present in this header file must fulfill these rules, otherwise the execution of *build_fn_factory_module.sh* ends with an error.
+
+These rules are:
+1. The function return value must be always *bool*
+2. All function parameters must be named
+3. The list of function parameters must be composed of 0 or more parameters of the form const T*, with T being any unqualified or qualified type, which may be different for each parameter, followed by 0 or more parameters of the form *T&*. 
+The former will become the inputs to the Functional Node and the latter its outputs.
+
+As an example, the prototype below has a valid signature:
+
+\code
+bool my_function(const int* i1, int& o1);
+\endcode
+
+After compiling a FunctionalNode Factory module from a header file containing the function above, Functional nodes can be instantiated from it.
+The Functional Node will have one input port of type <int,int> and id *i1* (see \ref graph_ports "here" for more information about ports), and one output port of type <int> and id *o1*.
+
+Belown are listed a few invalid prototypes and the error messages that would produce when trying to compile them with build_fn_factory_module.sh:
+
+- Unnamed parameters:
+\code
+bool my_function(const int*, int& o1);
+\endcode
+
+\code
+terminate called after throwing an instance of 'std::invalid_parameter'
+  what():  Can't process function: "my_function". All function parameters must be named
+\endcode
+
+- Wrong return type:
+\code
+void my_function(const int* i1, int& o1);
+\endcode
+
+\code
+terminate called after throwing an instance of 'std::invalid_parameter'
+  what():  Can't process function: "my_function". Return type must be "bool"
+\endcode
+
+- Wrong parameters type:
+\code
+bool my_function(const int i1, int& o1);
+\endcode
+
+\code
+terminate called after throwing an instance of 'std::invalid_parameter'
+  what():  Can't process function: "my_function". Function parameters must be 0 or more input parameters (const T*) followed by 0 or more output parameters (T&)
+\endcode
+
+- Again wrong parameters type:
+\code
+bool my_function(const int* i1, int o1);
+\endcode
+
+\code
+terminate called after throwing an instance of 'std::invalid_parameter'
+  what():  Can't process function: "my_function". Function parameters must be 0 or more input parameters (const T*) followed by 0 or more output parameters (T&)
+\endcode
+
+\section fn_cpp_nodes_instantiation_cg Instantiating Compiled Functional Nodes in a Computational Graph
+
+After compiling a *libFNFactoryModule.so* module from a header file using the script *build_fn_factory_module.sh*, the former can be used to add Functional Nodes to a Computational Graph which can run any of the functions declared in the header file.
+
+In the page: \ref python_graph, it is explained how to add nodes and edges to a Computational Graph using a set of Python decorators provided with NRP-Core.
+Concretely, the \ref functional_node_decorator decorator can be used to add a Functional Node to the graph which will execute the decorated Python function.
+
+As an example, the code below will add to the graph a node *my_fn* which will send the input argument *i1* through its port *o1* only if *i1* is not null.
+The input of the node is connected to a ROSInputNode which subscribes to "/test_sub", and its output to a ROSOutputNode which will publish incoming messages to topic "/test_pub".
+
+\code{.py}
+@RosPublisher(keyword="o1", address="/test_pub", type=Bool)
+@RosSubscriber(keyword="i1", address="/test_sub", type=Bool)
+@FunctionalNode(name="my_fn", outputs=['o1'], exec_policy=node_policies.functional_node.exec_policy.on_new_message)
+def my_function(i1):
+    if i1:
+        return [i1]
+    else:
+        return None
+\endcode
+
+The resulting behavior of this graph is that any ROS message published to topic "/test_sub" will be received by the ROSInputNode, which will pass it to *my_fn* node, which will forward it to the ROSOutputNode, which will publish it to "/test_pub".
+
+The same behavior can be achieved compiling the C function below using build_fn_factory_module.sh.
+
+\code
+bool my_function(const std_msgs::Bool* i1, std_msgs::Bool& o1) {
+    if(i1 != nullptr) {
+        o1 = *i1;
+        return true;
+    }
+    else
+        return false;
+}
+\endcode
+
+and, instead of using the *@FunctionalNode* decorator as indicated above, using the function *createFNFromFactoryModule*, also part of the *nrp_core.event_loop* Python module, as in the code snippet below:
+
+\code{.py}
+fn = createFNFromFactoryModule(module_name="libFNFactoryModule.so", function_name="my_function", node_name="my_fn", exec_policy=node_policies.functional_node.exec_policy.on_new_message)
+RosSubscriber(keyword="i1", address="/test_sub", type=Bool)(fn)
+RosPublisher(keyword="o1", address="/test_pub", type=Bool)(fn)
+\endcode
+
+In this case, the arguments of the function run by the FN are typed and some additional care must be paid when creating edges to *my_node*.
+
+In this dummy example, it seems cumbersome to use C++ pre-compiled FN nodes in comparison with the purely Python option.
+In use cases where optimizing performance is important, either because the nodes perform costly computations or because NRP-Core is deployed in resource contrained devices, the C++ pre-compiled option should be preferred.
+
+The folder *nrp_event_loop/tests/examples* contains a set of simple NRP-Core experiments showing different uses of C++ pre-compiled FN nodes.
+
+\subsection fn_cpp_nodes_python_functions Note on the use of "createFNFromFactoryModule" Python function
+
+In the two code examples listed above, even if both would exhibit the same behavior, some differences in the syntax can be noticed.
+
+In the first case of the FN created from a Python function, the functions *FunctionalNode*, *RosSubscriber* and *RosPublisher* are used as decorators. 
+In the second example though, *createFNFromFactoryModule*, *RosSubscriber* and *RosPublisher* are used as functions.
+
+They are the same functions though, but only can be used as decorators when the FN is created to run a Python function, i.e., with the "FunctionalNode" function.
+The first example can be re-written as below and will create the same graph when executed:
+
+\code{.py}
+def my_function(i1):
+    if i1:
+        return [i1]
+    else:
+        return None
+
+fn = FunctionalNode(name="my_fn", outputs=['o1'], exec_policy=node_policies.functional_node.exec_policy.on_new_message)(my_function)
+RosPublisher(keyword="o1", address="/test_pub", type=Bool)(fn)
+RosSubscriber(keyword="i1", address="/test_sub", type=Bool)(fn)
+\endcode
+
+\section fn_cpp_nodes_type_match Matching Port types when connecting C++ Pre-compiled Functional Nodes
+
+As explained \ref graph_ports "here", in the Computational Graph ports are typed.
+A Functional Node instantiated from a C++ Pre-compiled function will have a series of input and output ports with the same types and names as the parameters of the corresponding C++ function.
+
+When connecting these ports to Input, Output or other Functional Nodes in the graph (using the Python functions described in this \ref python_graph "page"), it always must be considered that the types of the connected ports must match, otherwise there will be a runtime error when running the graph in an NRP-Core experiment.
+
+As commented above, the folder *nrp_event_loop/tests/examples* contains examples of C++ Pre-compiled Functional Nodes connected to the different I/O node implementations available: ROS nodes, MQTT nodes, Engine nodes and dummy nodes (only for testing purposes).
+For a complete description of these node implementations see: \ref node_implementations.
+
+\subsection fn_cpp_nodes_type_match_ros ROS Nodes
+
+For connecting a function parameter to a ROS I/O node, the type of the parameter must be a ROS message.
+As in the example experiment: *nrp_event_loop/tests/examples/ros_nodes_std_bool*.
+
+Any of the ROS message definitions contained in the ROS packages compiled with NRP-Core can be used.
+See \ref guide_ros_in_nrp_core "here" for more information.
+
+\subsection fn_cpp_nodes_type_match_mqtt MQTT Nodes
+
+As explained \ref mqtt_nodes "here", for connecting a function parameter to an MQTT I/O node, the type of the parameter must be *std::string*, *nlohmann::json* or any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core".
+
+The example experiment *nrp_event_loop/tests/examples/mqtt_nodes_str_protobuf* shows the connection of C++ Pre-compiled Functional Nodes with MQTT nodes.
+
+\subsection fn_cpp_nodes_type_match_engine Engine Nodes
+
+When connecting to Engine nodes, the type of the connected parameter must be DataPackInterface in the case of InputEngineNodes and DataPackInterface* for OutputEngineNodes.
+As in the example experiments: *nrp_event_loop/tests/examples/{engine_nodes_json;engine_nodes_protobuf;engine_nodes_protobuf_custom}*.
+
+The first two examples demonstrate respectively the use of *DataPack<nlohmann::json>* and *DataPack<Dump::String>*, being *Dump::String* one of the Protobuf message types precompiled with NRP-Core.
+
+The third example shows the use of Protobuf messages compiled with the tool *nrp_compile_protobuf.py*, as explained in this \ref tutorial_add_proto_definition "page".
+
+\section fn_cpp_nodes_script_usage Using the build_fn_factory_module.sh script
+
+The script *build_fn_module.sh* is installed with NRP-Core and can be invoked from the command line.
+It takes as argument the path to the header file containing the function prototypes (or definitions) which are meant to be used in Functional Nodes afterwards.
+Optionally, other arguments can be passed to the script which will be forwared as command line arguments to a cmake command which is executed within the script to configure and build the *libFNFactoryModule.so* module.
+
+Below are commented some special cmake variables which can (and must, depending on the case) be passed to cmake.
+
+\subsection fn_cpp_nodes_script_usage_source SOURCE_FILENAME
+
+In case the definitions of the functions declared in the header file passed to *build_fn_module.sh* are located in a separate source file, the path to it must be passed to cmake using the variable SOURCE_FILENAME. E.g.
+
+\code
+build_fn_factory_module.sh my_prototypes.h -DSOURCE_FILENAME=my_definitions.cpp
+\endcode
+
+\subsection fn_cpp_nodes_script_usage_proto NRP_PROTO_MSGS_PACKAGES
+
+This variable needs to be used when any of the functions in the header file uses Protobuf message types which were not compiled with NRP-Core, i.e. which were compiled with the tool *nrp_compile_protobuf.py*, as in the example *nrp_event_loop/tests/examples/engine_nodes_protobuf_custom*.
+In this case, the name of the package/s containing those messages must be passed as a list to cmake using the variable NRP_PROTO_MSGS_PACKAGES.
+
+For example, *nrp_event_loop/tests/examples/engine_nodes_protobuf_custom* uses a Protobuf message *MyPackage::MyMessage* which is not part of the Protobuf messages compiled with NRP-Core.
+In order to run the example, first you must call *nrp_compile_protobuf.py* from that folder, so that compile and install *my_message.proto*, which contains the definition of *MyPackage::MyMessage*.
+Then, build the *libFNFactoryModule.so* module by executing the command below:
+
+\code
+build_fn_factory_module.sh my_prototypes.h -DNRP_PROTO_MSGS_PACKAGES=MyPackage
+\endcode
+
+Finally, the experiment can be run with the usual command:
+
+\code
+NRPCoreSim -c simulation_config.json
+\endcode
+
+\subsection fn_cpp_nodes_script_usage_ros NRP_ROS_MSGS_PACKAGES
+
+If any of the functions in the header file uses ROS messages, the ROS package in which the message is defined must be passed to cmake using the variable *NRP_ROS_MSGS_PACKAGES*.
+
+The example *nrp_event_loop/tests/examples/ros_nodes_std_bool* uses the ROS message *std_msgs::Bool*, and in order to build the *libFNFactoryModule.so* module the command below must be executed:
+
+\code
+build_fn_factory_module.sh my_prototypes.h -DNRP_ROS_MSGS_PACKAGES=std_msgs
+\endcode
+
+\section fn_cpp_nodes_limitations Limitations
+
+When building a *libFNFactoryModule.so* module from an input header file, the former is linked to all libraries required to handle all the supported cases mentioned in this page: ROS messages, Protobuf messages, DataPacks, etc.
+
+Including additional directories or linking to additional libraries which the compilation of the module might require is not supported yet.
+That is, if the input header file passed to *build_fn_factory_module.sh* requires additional include directories or linking to additional libraries, the compilation will probably fail.
+
+*/

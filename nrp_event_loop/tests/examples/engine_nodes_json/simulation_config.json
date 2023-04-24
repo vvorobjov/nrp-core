@@ -1,0 +1,18 @@
+{
+  "EngineConfigs": 
+	[
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_1",
+			"PythonFileName": "engine_1.py"
+		},
+		{
+			"EngineType": "python_json",
+			"EngineName": "python_2",
+			"PythonFileName": "engine_2.py"
+		}
+	],
+  "ComputationalGraph": ["fn.py"],
+  "SimulationLoop": "EventLoop",
+  "EventLoop": {"Timeout": 1}
+}

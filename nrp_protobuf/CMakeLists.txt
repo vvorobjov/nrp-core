@@ -391,6 +391,22 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nrp_compile_protobuf.py"
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# Generate a comma-separated list of strings of names of all user-defined proto files
+
+set(PROTO_MODULES_LIST, "")
+foreach(PROTO_FILE ${PROTO_PYTHON_FILES})
+    get_filename_component(PROTO_FILE_BASENAME ${PROTO_FILE} NAME_WE)
+    string(APPEND PROTO_MODULES_LIST "\"nrp_core.data.nrp_protobuf.${PROTO_FILE_BASENAME}\",\n")
+endforeach()
+
+# Store the list generated above in a python module
+
+configure_file("${NRP_PROTO_CMAKE_DIR}/proto_modules.py.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" @ONLY)
+configure_file("${NRP_PROTO_CMAKE_DIR}/proto_libraries.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY})
+
 # Install nrp protobuf cmake module and dependencies
 install(
         FILES

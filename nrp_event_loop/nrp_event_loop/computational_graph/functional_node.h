@@ -33,6 +33,33 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
+/*!
+ * \brief Non-abstract, non-templated base class for the FunctionalNode class
+ *
+ * Its existence is necessary for storing and manipulating functional nodes in the creation of Computaional Graph edges
+ */
+class FunctionalNodeBase : public ComputationalNode {
+public:
+
+    FunctionalNodeBase(const std::string &id) :
+            ComputationalNode(id, ComputationalNode::Functional)
+    {}
+
+    /*!
+     * \brief Returns an InputPort by id.
+     */
+    virtual Port* getInputById(const std::string& /*id*/) { return nullptr; };
+
+    /*!
+     * \brief Returns an OutputPort by id.
+     */
+    virtual Port* getOutputById(const std::string& /*id*/) { return nullptr; };
+
+
+    void configure() override {};
+    void compute() override {};
+};
+
 
 template<typename, typename>
 class FunctionalNode;
@@ -46,7 +73,7 @@ class FunctionalNode;
  * _function return value is bool, which is used to decide whether to send outputs or not
  */
 template<typename... INPUT_TYPES, typename... OUTPUT_TYPES>
-class FunctionalNode<std::tuple<INPUT_TYPES...>, std::tuple<OUTPUT_TYPES...> > : public ComputationalNode {
+class FunctionalNode<std::tuple<INPUT_TYPES...>, std::tuple<OUTPUT_TYPES...> > : public FunctionalNodeBase {
 
 protected:
 
@@ -121,7 +148,7 @@ public:
     /*!
      * \brief Returns an InputPort by id.
      */
-    Port* getInputById(const std::string& id)
+    Port* getInputById(const std::string& id) override
     {
         for(auto& e : _inputPorts)
             if (e && e->id() == id)
@@ -184,14 +211,17 @@ public:
     /*!
      * \brief Returns an OutputPort by id.
      */
+    Port* getOutputById(const std::string& id) override
+    { return getOutputByIdTuple(id); }
+
     template <std::size_t N = 0>
-    Port* getOutputById(const std::string& id)
+    Port* getOutputByIdTuple(const std::string& id)
     {
         if constexpr (N < sizeof...(OUTPUT_TYPES)) {
             if (std::get<N>(_outputPorts) && std::get<N>(_outputPorts)->id() == id)
                 return std::get<N>(_outputPorts).get();
             else
-                return getOutputById<N+1>(id);
+                return getOutputByIdTuple<N+1>(id);
         }
 
         std::stringstream s;
@@ -242,7 +272,7 @@ protected:
      * \brief Constructor
      */
     FunctionalNode(const std::string &id, std::function<bool(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
-            ComputationalNode(id, ComputationalNode::Functional),
+            FunctionalNodeBase(id),
             _function(f),
             _execPolicy(policy)
     { initInputs(); }

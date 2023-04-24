@@ -2,7 +2,7 @@
 
 The \ref nrp_simulation "NRPCoreSim" executable can load new engine types on startup. The names of additional Engine libraries can be supplied via a "-p" parameter, followed by a comma separated list of engines to load. This gives users the ability to add their own engines on startup and create new simulation configurations with them.
 
-The NRPCoreSim loads one instance of PluginManager on startup, and fills it with a set of predefined search directories. Should a user request an additional engine library be loaded, it will iterate over these locations until if finds a library file matching the requested string. The user can request both a relative as well as an absolute path, both will be searched.
+The NRPCoreSim loads one instance of EnginePluginManager on startup, and fills it with a set of predefined search directories. Should a user request an additional engine library be loaded, it will iterate over these locations until if finds a library file matching the requested string. The user can request both a relative as well as an absolute path, both will be searched.
 
 If \ref nrp_simulation "NRPCoreSim" is started without the "-p" parameter, i.e. without a list of Engine libraries to be loaded, it will load all the engines specified in the NRP_ENGINE_LAUNCHERS variable, which is compiled during the cmake configuration step.
 Currently all the Engines compiled with nrp-core are added to this variable.

@@ -9,7 +9,7 @@ This is the main NRP-core executable. It can be used to run an experiment locall
 - Initialize the Python interpreter for TransceiverFunctions
 - Setup the process launchers
 - Load engine launchers:
-  - Start the PluginManager
+  - Start the EnginePluginManager
   - Load engine plugins
   - Store all engines launchers contained in the loaded plugins in an EngineLauncherManager
 - Use input parameters to generate a new instance of SimulationManager. This will also launch all engine processes defined in the SimulationConfig passed to NRPCoreSim

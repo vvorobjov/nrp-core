@@ -26,6 +26,7 @@ set(LIB_SRC_FILES
     nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
     nrp_general_library/plugin_system/plugin.cpp
     nrp_general_library/plugin_system/plugin_manager.cpp
+    nrp_general_library/plugin_system/engine_plugin_manager.cpp
     nrp_general_library/process_launchers/launch_commands/basic_fork.cpp
     nrp_general_library/process_launchers/launch_commands/launch_command.cpp
     nrp_general_library/process_launchers/process_launcher.cpp
@@ -79,6 +80,24 @@ set(TEST_SRC_FILES
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
+
+# Python 3 libraries
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
+
+# Boost Python libraries
+# find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
+add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
+find_package(Boost REQUIRED)
+if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+else()
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}" "numpy${Python3_VERSION_MAJOR}")
+endif()
+find_package(Boost REQUIRED COMPONENTS ${BOOST_PYTHON_COMPONENT} filesystem system)
+set(BOOST_PYTHON ${BOOST_PYTHON_COMPONENT})
+list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 
 # cxxopts: Start Parameter Processing
 find_package(cxxopts 2.2 QUIET)
@@ -294,7 +313,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME})
 
-    # Create testing plugin library (used for testing PluginManager)
+    # Create testing plugin library (used for testing EnginePluginManager)
     set(TEST_NRP_PLUGIN "TestNRPPluginManager")
     add_library(${TEST_NRP_PLUGIN} SHARED tests/test_plugin.cpp)
     set_target_properties(${TEST_NRP_PLUGIN} PROPERTIES PREFIX "")

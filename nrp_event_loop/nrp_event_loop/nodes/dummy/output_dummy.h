@@ -76,7 +76,7 @@ public:
     OutputDummyEdge(const std::string &keyword, const std::string &id,
                     bool publishFromCache = false,
                     unsigned int computePeriod = 1) :
-            SimpleOutputEdge(keyword, id, id, publishFromCache, computePeriod)
+            SimpleOutputEdge<boost::python::object, OutputDummy>(keyword, id, id, publishFromCache, computePeriod)
     {}
 
 protected:

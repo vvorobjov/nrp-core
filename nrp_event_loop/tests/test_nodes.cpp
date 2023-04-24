@@ -34,7 +34,8 @@
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/computational_graph/output_node.h"
 
-#include "nrp_event_loop/computational_graph/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory_manager.h"
 
 #include "tests/test_files/helper_classes.h"
 
@@ -494,8 +495,36 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE_FACTORY)
         return true;
     };
 
-    FunctionalNode<std::tuple<int>, std::tuple<int>> f_n = FunctionalNodeFactory::create<1, 1, const int*, int&>("f_node", f1);
-    f_n.compute();
+    std::shared_ptr<FunctionalNode<std::tuple<int>, std::tuple<int>>> f_n(FunctionalNodeFactory::create<1, 1, const int*, int&>("f_node", f1));
+    f_n->compute();
+}
+
+TEST(ComputationalNodes, FN_FACTORY_MANAGER)
+{
+    auto& fn_manager = FunctionalNodeFactoryManager::getInstance();
+    fn_manager.loadFNFactoryPlugin("libFNFactoryModule.so");
+    std::shared_ptr<FunctionalNodeBase> f_n(fn_manager.createFunctionalNode("my_function", "my_node",
+                                                                           FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT));
+
+    auto i_pn = dynamic_cast<InputPort<int, int>*>(f_n->getInputById("i1"));
+    auto o_pn = dynamic_cast<OutputPort<int>*>(f_n->getOutputById("o1"));
+
+    TestNode n1("input", ComputationalNode::Input);
+    TestNode n2("output", ComputationalNode::Output);
+
+    int msg_send = 1;
+    const int* msg_got = nullptr;
+    std::function<void(const int*)> f = [&](const int* a) { msg_got = a; };
+
+    OutputPort<int> o_p("output_port", &n1);
+    InputPort<int, int> i_p("input_port", &n2, f);
+
+    i_p.subscribeTo(o_pn);
+    i_pn->subscribeTo(&o_p);
+
+    o_p.publish(&msg_send);
+    f_n->compute();
+    ASSERT_EQ(*msg_got, msg_send);
 }
 
 // EOF

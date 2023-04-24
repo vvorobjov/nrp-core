@@ -30,7 +30,7 @@
 #endif
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/plugin_system/plugin_manager.h"
+#include "nrp_general_library/plugin_system/engine_plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
@@ -66,7 +66,7 @@ namespace {
 }
 
 static void loadPlugins(const char *libName,
-                        PluginManager &pluginManager,
+                        EnginePluginManager &pluginManager,
                         const EngineLauncherManagerSharedPtr &engines,
                         const std::set<std::string>& engineTypes)
 {
@@ -74,7 +74,7 @@ static void loadPlugins(const char *libName,
 
     // Extract plugin file name and load it
     NRPLogger::debug("Loading {} plugin", libName);
-    auto engineLauncher = pluginManager.loadPlugin(libName);
+    auto engineLauncher = pluginManager.loadEnginePlugin(libName);
     if(engineLauncher == nullptr)
         throw NRPException::logCreate(std::string("Failed to load engine launcher from plugin \"") + libName + "\"");
 
@@ -88,7 +88,7 @@ static void loadPlugins(const char *libName,
 }
 
 
-static void loadEngines(PluginManager & pluginManager,
+static void loadEngines(EnginePluginManager & pluginManager,
                         EngineLauncherManagerSharedPtr & engines,
                         std::vector<std::string> pluginsList,
                         const std::set<std::string>& engineTypes)
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
     // Create Process and engine launchers
     MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager(enginesFD));
-    PluginManager pluginManager;
+    EnginePluginManager pluginManager;
     EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
 
     std::set<std::string> engineTypes;

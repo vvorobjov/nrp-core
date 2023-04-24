@@ -19,13 +19,11 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef PLUGIN_MANAGER_H
-#define PLUGIN_MANAGER_H
+#ifndef PROTO_PLUGIN_MANAGER_H
+#define PROTO_PLUGIN_MANAGER_H
 
+#include "nrp_general_library/plugin_system/plugin_manager.h"
 #include "nrp_protobuf/proto_ops/protobuf_ops.h"
-#include <filesystem>
-
-#include <map>
 
 /*!
  * \brief Singleton class which loads Protobuf conversion libraries.
@@ -33,7 +31,7 @@
  * Also in charge of unloading then when the object is destructed
  *
  */
-class ProtoOpsManager
+class ProtoOpsManager : public PluginManager
 {
 public:
 
@@ -59,35 +57,14 @@ public:
      * \param pluginLibFile Plugin library file (.so)
      * \return Returns ptr to loaded protobuf_ops::NRPProtobufOpsIface if found, nullptr otherwise
      */
-    std::unique_ptr<protobuf_ops::NRPProtobufOpsIface> loadPlugin(const std::string &pluginLibFile);
-
-    /*!
-     *  \brief Destructor. Unloads all plugin libraries
-     */
-    ~ProtoOpsManager();
-
-    /*!
-     * \brief Adds search path under which to look for plugins
-     * \param pluginPath Path to plugins
-     */
-    void addPluginPath(const std::string &pluginPath);
+    std::unique_ptr<protobuf_ops::NRPProtobufOpsIface> loadProtobufPlugin(const std::string &pluginLibFile);
 
 
 private:
-    /*!
-     * \brief Loaded Libraries
-     */
-    std::map<std::string, void*> _loadedLibs;
-
-    /*!
-     * \brief Plugin paths. The last element should always be an empty path,
-     * which signifies using the standard linux search method
-     */
-    std::vector<std::filesystem::path> _pluginPaths = {std::filesystem::path()};
 
     ProtoOpsManager() = default;
     static std::unique_ptr<ProtoOpsManager> _instance;
     
 };
 
-#endif // PLUGIN_MANAGER_H
+#endif // PROTO_PLUGIN_MANAGER_H

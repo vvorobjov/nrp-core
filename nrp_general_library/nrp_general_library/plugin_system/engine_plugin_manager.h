@@ -19,4 +19,25 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#include "nrp_event_loop/computational_graph/functional_node_factory.h"
+#ifndef ENGINE_PLUGIN_MANAGER_H
+#define ENGINE_PLUGIN_MANAGER_H
+
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include "nrp_general_library/plugin_system/plugin_manager.h"
+
+/*!
+ * \brief Loads libraries and extracts engine launchers
+ */
+class EnginePluginManager: public PluginManager
+{
+    public:
+        /*!
+         * \brief Load a Plugin from a given library
+         * \param pluginLibFile Plugin library file (.so)
+         * \return Returns ptr to loaded EngineLauncher if found, nullptr otherwise
+         */
+        EngineLauncherInterface::unique_ptr loadEnginePlugin(const std::string &pluginLibFile);
+
+};
+
+#endif // ENGINE_PLUGIN_MANAGER_H

@@ -127,7 +127,7 @@ public:
 
     InputEngineEdge(const std::string& keyword, const std::string& address,
                     InputNodePolicies::MsgCachePolicy msgCachePolicy) :
-            SimpleInputEdge(keyword, parseCGAddress(address).first+"_input", parseCGAddress(address).second,
+            SimpleInputEdge<DataPackInterface, InputEngineNode>(keyword, parseCGAddress(address).first+"_input", parseCGAddress(address).second,
                             InputNodePolicies::LAST, msgCachePolicy),
             _engineName(parseCGAddress(address).first)
     {}

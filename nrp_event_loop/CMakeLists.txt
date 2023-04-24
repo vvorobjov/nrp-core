@@ -32,7 +32,8 @@ set(LIB_SRC_FILES
         nrp_event_loop/computational_graph/output_node.cpp
 
         nrp_event_loop/computational_graph/computational_graph_manager.cpp
-        nrp_event_loop/computational_graph/functional_node_factory.cpp
+        nrp_event_loop/fn_factory/functional_node_factory.cpp
+        nrp_event_loop/fn_factory/functional_node_factory_manager.cpp
 
         nrp_event_loop/event_loop/event_loop.cpp
 
@@ -95,11 +96,6 @@ set(ROS_TEST_SRC_FILES
 if(ENABLE_ROS)
     find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 endif()
-
-find_package(Boost COMPONENTS
-        system
-        REQUIRED
-        )
 
 ##########################################
 ## Header configuration
@@ -192,7 +188,7 @@ if(ENABLE_ROS)
 
     target_link_libraries(${ROS_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_ELE_LIB_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_ROS_PROXY_TARGET}
             ${catkin_LIBRARIES}
@@ -216,7 +212,7 @@ if(ENABLE_MQTT)
 
     target_link_libraries(${MQTT_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_ELE_LIB_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_MQTT_PROXY_TARGET}
             NRPProtobuf::ProtoDump
@@ -254,7 +250,7 @@ if(ENABLE_SPINNAKER)
 
     target_link_libraries(${SPINNAKER_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_ELE_LIB_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${Boost_LIBRARIES}
             ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib/libspynnaker_external_device_lib.a
@@ -275,7 +271,7 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 
     target_link_libraries(${PYTHON_MODULE_NAME}
         PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_ELE_LIB_TARGET}
     )
 
     if(ENABLE_ROS)
@@ -302,34 +298,75 @@ endif()
 
 
 ##########################################
-## NRPNestExecutable
-if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
-    add_executable(${EXECUTABLE_NAME} ${EXEC_SRC_FILES})
-    target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
-endif()
+## generateFNFactoryModule
+add_custom_command(
+        OUTPUT generateFNFactoryModule
+        COMMAND g++ -I/usr/lib/llvm-10/include/ -L/usr/lib/llvm-10/lib ${CMAKE_CURRENT_SOURCE_DIR}/fn_factory_module/generate_fn_factory_module.cpp -x c++ -std=c++17 -lclang -o generateFNFactoryModule)
 
+# Forces the generation of generateFNFactoryModule
+add_custom_target(
+        GENERATE_FN_FACTORY_MODULE
+        COMMAND bash -c "echo \"Building generateFNFactoryModule tool\""
+        DEPENDS generateFNFactoryModule)
+add_dependencies("${LIBRARY_NAME}" GENERATE_FN_FACTORY_MODULE)
 
 ##########################################
 ## Append Doxygen files
 add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} ${HEADER_DIRECTORY})
 
-
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+
+    # Compile fn factory module tests
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE
+            COMMAND build_fn_factory_module.sh test_files/fn_factory_module/test_fn_cpp_node.h -DSOURCE_FILENAME=test_files/fn_factory_module/test_fn_cpp_node.cpp
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_UNNAMED_PARAM_ERROR
+            COMMAND build_fn_factory_module.sh unnamed_param_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_UNNAMED_PARAM_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_RETURN_ERROR
+            COMMAND build_fn_factory_module.sh wrong_return_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_RETURN_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR
+            COMMAND build_fn_factory_module.sh wrong_param_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR_2
+            COMMAND build_fn_factory_module.sh wrong_param_error_2.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR_2 PROPERTIES WILL_FAIL TRUE)
 
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_link_libraries(${TEST_NAME}
         PUBLIC
-        ${NAMESPACE_NAME}::${LIBRARY_NAME}
+        ${NRP_ELE_LIB_TARGET}
         GTest::GTest
         GTest::Main)
 
-    gtest_discover_tests(${TEST_NAME}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+    gtest_add_tests(
+        TARGET ${TEST_NAME}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
         EXTRA_ARGS -VV)
+
+    set_tests_properties(ComputationalNodes.FN_FACTORY_MANAGER PROPERTIES DEPENDS TEST_FN_FACTORY_MODULE)
 
     if(ENABLE_ROS AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
@@ -337,7 +374,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         add_executable(${ROS_TEST_NAME} ${ROS_TEST_SRC_FILES})
         target_link_libraries(${ROS_TEST_NAME}
                 PUBLIC
-                ${NAMESPACE_NAME}::${LIBRARY_NAME}
+                ${NRP_ELE_LIB_TARGET}
                 ${NAMESPACE_NAME}::${ROS_LIBRARY_NAME}
                 GTest::GTest
                 GTest::Main)
@@ -347,6 +384,47 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
                 EXTRA_ARGS -VV)
     endif()
 
+endif()
+
+# Add tests based on running example experiments
+if(ENABLE_EXAMPLES_TESTING)
+    set(EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples")
+    file(GLOB EXAMPLES RELATIVE ${EXAMPLES_DIR} ${EXAMPLES_DIR}/*)
+    foreach(EXAMPLE ${EXAMPLES})
+        set(CMD build_fn_factory_module.sh test.h)
+
+        if("${EXAMPLE}" STREQUAL "ros_nodes_std_bool")
+            list(APPEND CMD -DNRP_ROS_MSGS_PACKAGES=std_msgs)
+        endif()
+
+        if("${EXAMPLE}" STREQUAL "engine_nodes_protobuf_custom")
+            list(APPEND CMD -DNRP_PROTO_MSGS_PACKAGES=MyPackage)
+            add_test(
+                    NAME "${EXAMPLE}_BuildProto"
+                    COMMAND nrp_compile_protobuf.py
+                    WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+        endif()
+
+        add_test(
+                NAME "${EXAMPLE}_BuildFNModule"
+                COMMAND ${CMD}
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+        if("${EXAMPLE}" STREQUAL "engine_nodes_protobuf_custom")
+            set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DEPENDS "${EXAMPLE}_BuildProto")
+        endif()
+
+        # TODO: these two examples needs roscore and mqtt broker, also doesn't have a timeout
+        if(NOT "${EXAMPLE}" STREQUAL "ros_nodes_std_bool" AND NOT "${EXAMPLE}" STREQUAL "mqtt_nodes_str_protobuf")
+            # NOTE: not very useful, because NRPCoreSim always ends without an exception
+            add_test(
+                    NAME "${EXAMPLE}_Test"
+                    COMMAND NRPCoreSim -c simulation_config.json
+                    WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+        endif()
+    endforeach()
 endif()
 
 
@@ -416,11 +494,19 @@ if(ENABLE_SPINNAKER)
     endif()
 endif()
 
-# Install executable files
-if(TARGET ${EXECUTABLE_NAME})
-    install(TARGETS ${EXECUTABLE_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
+# Configure and Install fn_factory_module
+configure_file(fn_factory_module/build_fn_factory_module.sh.in "${CMAKE_CURRENT_BINARY_DIR}/build_fn_factory_module.sh" @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generateFNFactoryModule" "${CMAKE_CURRENT_BINARY_DIR}/build_fn_factory_module.sh"
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(
+        FILES
+        fn_factory_module/CMakeLists.txt
+        fn_factory_module/fn_factory_module.cpp.template
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}/cmake/fn_factory_module"
+)
 
 # create cmake version and config files
 include(CMakePackageConfigHelpers)

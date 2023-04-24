@@ -9,6 +9,8 @@
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
 
+#include "nrp_event_loop/fn_factory/functional_node_factory_manager.h"
+
 #ifdef SPINNAKER_ON
 #include "nrp_event_loop/nodes/spinnaker/input_node.h"
 #include "nrp_event_loop/nodes/spinnaker/output_node.h"
@@ -23,6 +25,29 @@
 #endif
 
 #include "nrp_event_loop/config/cmake_constants.h"
+
+
+/*!
+ * \brief Helper function for instantiating a C++ Functional Node from Python
+ *
+ * \param fnModuleName name of the module library which will be used to instantiate the node
+ * \param functionName name of the C++ function which the node will run
+ * \param nodeName name of the FN
+ * \param policy exec policy of the FN
+ * \return instantiated FN wrapped in a Python object
+ */
+boost::python::object createFNFromFactoryModule(const std::string& fnModuleName, const std::string& functionName, const std::string &nodeName,
+                                           FunctionalNodePolicies::ExecutionPolicy policy)
+{
+    auto& fn_manager = FunctionalNodeFactoryManager::getInstance();
+    fn_manager.loadFNFactoryPlugin(fnModuleName);
+    std::shared_ptr<FunctionalNodeBase> fn(fn_manager.createFunctionalNode(functionName, nodeName, policy));
+
+    std::shared_ptr<ComputationalNode> fn_base = std::dynamic_pointer_cast<ComputationalNode>(fn);
+    ComputationalGraphManager::getInstance().registerNode(fn_base);
+
+    return boost::python::object(fn);
+}
 
 class node_policies_ns{
 
@@ -73,6 +98,8 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
     }
 
     // basic decorators
+    bpy::class_<FunctionalNodeBase, std::shared_ptr<FunctionalNodeBase>>("FunctionalNodeBase", bpy::no_init);
+
     bpy::class_<PythonFunctionalNode>("FunctionalNode",
                                       bpy::init<const std::string &, const boost::python::list &, FunctionalNodePolicies::ExecutionPolicy>(
                                               (bpy::arg("name"),
@@ -103,6 +130,8 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
     bpy::class_< OutputEngineEdge >("ToEngine", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
             .def("__call__", &OutputEngineEdge::pySetup);
 
+    // CPP FN create wrapper
+    bpy::def("createFNFromFactoryModule",  createFNFromFactoryModule, bpy::args("module_name", "function_name", "node_name","exec_policy"));
 
 #ifdef ROS_ON
     bpy::class_< RosEdgeFactory >("RosSubscriber", bpy::init<const std::string &, const std::string &,

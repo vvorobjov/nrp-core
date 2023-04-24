@@ -29,7 +29,7 @@
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 
-#include "nrp_event_loop/computational_graph/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory.h"
 
 #include "nrp_event_loop/python/functional_node.h"
 

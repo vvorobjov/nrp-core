@@ -62,7 +62,7 @@ class InputDummyEdge : public SimpleInputEdge<boost::python::object, InputDummy>
 public:
 
     InputDummyEdge(const std::string& keyword, const std::string& id, boost::python::object value) :
-            SimpleInputEdge(keyword, id, id, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE),
+            SimpleInputEdge<boost::python::object, InputDummy>(keyword, id, id, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE),
             _value(std::move(value))
     {}
 
