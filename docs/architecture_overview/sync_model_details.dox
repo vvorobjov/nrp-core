@@ -2,7 +2,7 @@
 
 An experiment in NRP-core consists of multiple Engine processes which synchronize with the main Simulation Loop process at fixed intervals of time (ie. simulation time, see below). The length of these intervals is determined by the Engine time step, which can be different for each engine and is set in the experiment configuration by the EngineTimestep parameter. See \ref engine_base_schema "here" for more details about engine configuration.
 
-The Simulation Loop also has its own time step defined by SimulationTimestep parameter in the experiment configuration. 
+The Simulation Loop also has its own time step defined as the minimum EngineTimestep parameter of the engines in the experiment configuration.
 
 \section sim_timeline Simulation time and time frame
 

@@ -30,6 +30,7 @@
 			"MQTTBroker": "localhost:1883",
 			"dataDirectory": "data/test",
 			"streamDataPackMessage": true,
+			"ProtobufPackages": ["Gazebo", "Dump"],
 			"dumps":[
 				{"name": "test_datapack1", "network": true, "file": true},
 				{"name": "test_datapack2", "network": true, "file": true},

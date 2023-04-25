@@ -2,7 +2,6 @@
 	"SimulationName": "example_experiment",
 	"SimDescription": "This experiment launches an Edlut gRPC engine. Uses a FN to excite the simulated network with pre-recorded spike activity and to read spike events from the simulation",
 	"SimulationTimeout": 1,
-	"SimulationTimestep": 0.001,
 	"DataPackProcessor": "cg",
 	"SimulationLoop": "FTILoop",
 	"EngineConfigs": [

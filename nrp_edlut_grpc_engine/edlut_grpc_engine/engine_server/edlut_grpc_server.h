@@ -144,6 +144,11 @@ class EdlutGrpcServer
          */
         nlohmann::json _engineConfig;
 
+        /*!
+         * \brief Sensorial delay needed to advance EDLUT simulation
+         */
+        float _sensorialDelay;
+
 
 
 

@@ -21,7 +21,11 @@
             "type": "integer",
             "default": 1,
             "description": "Number of threads to use if available"
-          }
+          },
+          "SensorialDelay": {
+            "type": "number",
+            "default": 0.00,
+            "description": "Sensorial delay used to compute future spikes"}
         },
         "required": ["NetworkFile", "WeightsFile"]
       }

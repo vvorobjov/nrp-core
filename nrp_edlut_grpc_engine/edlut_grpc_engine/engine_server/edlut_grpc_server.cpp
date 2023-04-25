@@ -46,7 +46,7 @@ SimulationTime EdlutGrpcServer::runLoopStep(SimulationTime timeStep)
     this->_simulationTime += timeStep;
 
     /* Run edlut simulator */
-    this->_edlutSimul->RunSimulationSlot(fromSimulationTime<float, std::ratio<1>>(EdlutGrpcServer::_simulationTime));
+    this->_edlutSimul->RunSimulationSlot(fromSimulationTime<float, std::ratio<1>>(EdlutGrpcServer::_simulationTime)+this->_sensorialDelay);
 
     return this->_simulationTime;
 }
@@ -68,6 +68,7 @@ void EdlutGrpcServer::initEdlutEngine(const nlohmann::json &data, EngineGrpcServ
         auto weightFile = data.at("WeightsFile").get<std::string>();
         auto simTimestep = data.at("EngineTimestep").get<double>();
         auto numThreads = data.at("NumThreads").get<int>();
+        this->_sensorialDelay = data.at("SensorialDelay").get<float>();
 
         this->_edlutSimul = std::make_shared<Simulation> (networkFile.c_str(), weightFile.c_str(), std::numeric_limits<double>::max(), simTimestep, numThreads);
 

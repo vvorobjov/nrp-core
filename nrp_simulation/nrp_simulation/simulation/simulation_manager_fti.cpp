@@ -151,7 +151,7 @@ void FTILoopSimManager::runSimulationOnce()
 
 FTILoop FTILoopSimManager::createSimLoop()
 {
-   this->_timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
+    this->_timeStep = SimulationTime::max();
 
     DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");
@@ -189,8 +189,13 @@ FTILoop FTILoopSimManager::createSimLoop()
         {
             throw NRPException::logCreate(e, "Failed to launch engine:  \"" + engineName + "\"");
         }
-    }
 
+        if(this->_timeStep > toSimulationTimeFromSeconds(engineConfig.at("EngineTimestep").get<double>()))
+        {
+            this->_timeStep = toSimulationTimeFromSeconds(engineConfig.at("EngineTimestep").get<double>());
+        }
+    }
+    NRPLogger::debug("Simulation Timestep is: "+ std::to_string(fromSimulationTime<double, std::ratio<1>>(this->_timeStep)));
     return FTILoop(this->_simConfig, engines, &this->_simulationDataManager);
 }
 

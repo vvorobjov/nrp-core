@@ -66,7 +66,8 @@ To use this engine in an experiment, set `EngineType` to <b>"edlut_grpc_engine"<
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>NetworkFile<td>Path to the storage of file with the architecture of the network<td>string<td><td>X<td>
 <tr><td>WeightsFile<td>Path to the storage of file containing initial weights of neurons<td>string<td><td>X<td>
-<tr><td>NumThreads<td>Number of threads used for parallel computing<td>string<td>1<td><td>
+<tr><td>NumThreads<td>Number of threads used for parallel computing<td>integer<td>1<td><td>
+<tr><td>SensorialDelay<td>Sensorial delay needed by EDLUT to compensate delays in communication and compute future spikes<td>float<td>0.00<td><td>
 </table>
 
 \section engine_edlut_schema Schema

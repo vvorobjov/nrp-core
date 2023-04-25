@@ -15,11 +15,6 @@
       "default": 0,
       "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
-    "SimulationTimestep" : {
-      "type" : "number",
-      "default": 0.01,
-      "description": "Time in seconds the simulation advances in each Simulation Loop. It refers to simulation time."
-    },
     "DataPackProcessor" : {
       "type" : "string",
       "enum" :  ["tf", "cg"],

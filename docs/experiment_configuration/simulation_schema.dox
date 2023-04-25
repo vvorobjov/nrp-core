@@ -8,7 +8,6 @@ The simulation schema contains all the necessary information to initialize and r
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array<th>Values
 <tr><td>SimulationLoop<td>Type of simulation loop used in the experiment<td>enum<td>"FTILoop"<td><td><td>"FTILoop", "EventLoop"
 <tr><td>SimulationTimeout<td>Experiment Timeout (in seconds). It refers to simulation time<td>integer<td>0<td><td><td>
-<tr><td>SimulationTimestep<td>Time in seconds the simulation advances in each \ref simulation_loop "Simulation Loop". It refers to simulation time.<td>number<td>0.01<td><td><td>
 <tr><td>ProcessLauncherType<td>ProcessLauncher type to be used for launching engine processes<td>string<td>Basic<td><td><td>
 <tr><td>EngineConfigs<td>Engines that will be started in the experiment<td>\ref engine_base_schema "#EngineBase"<td><td><td>X<td>
 <tr><td>DataPackProcessor<td>Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg). Only used if "SimulationLoop" parameter is set to "FTILoop" (default)<td>enum<td>"tf"<td><td><td>"tf", "cg"
