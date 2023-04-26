@@ -259,6 +259,11 @@ if(TARGET ${EXECUTABLE_NAME})
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
+# Add installation path to  PYTHONPATH
+message(STATUS "adding nrp-core python libraries install location to PYTHONPATH: ${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
+list(APPEND NRP_ENV_VARS "PYTHONPATH=${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}:\${PYTHONPATH}")
+set(NRP_ENV_VARS ${NRP_ENV_VARS} PARENT_SCOPE)
+
 # create cmake version and config files
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
