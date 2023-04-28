@@ -1,0 +1,33 @@
+{
+	"SimulationName": "tf_exchange",
+	"SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+	"SimulationTimeout": 1,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "python_1",
+			"ServerAddress":"localhost:1234",
+			"PythonFileName": "engine_grpc_1.py",
+			"ProtobufPackages": ["Wrappers", "NrpGenericProto"]
+		},
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "python_2",
+			"ServerAddress":"localhost:1235",
+			"PythonFileName": "engine_grpc_2.py",
+			"ProtobufPackages": ["Wrappers", "NrpGenericProto"]
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "tf_in",
+			"FileName": "tf_in.py"
+		},
+		{
+			"Name": "tf_out",
+			"FileName": "tf_out.py"
+		}
+	]
+}

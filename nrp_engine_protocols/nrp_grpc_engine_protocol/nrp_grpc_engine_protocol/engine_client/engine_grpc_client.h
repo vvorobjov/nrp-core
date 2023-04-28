@@ -271,12 +271,10 @@ class EngineGrpcClient
             DataPackInterfaceConstSharedPtr datapack;
 
             for(auto& mod : _protoOps) {
-                try {
-                    datapack = mod->getDataPackInterfaceFromMessage(this->engineName(), datapackData);
-                }
-                catch (NRPException &) {
-                    // this just means that the module couldn't process the request, try with the next one
-                }
+                datapack = mod->getDataPackInterfaceFromMessage(this->engineName(), datapackData);
+
+                if(datapack != nullptr)
+                    break;
             }
 
             if(datapack)

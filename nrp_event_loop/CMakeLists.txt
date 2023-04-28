@@ -218,6 +218,8 @@ if(ENABLE_MQTT)
             NRPProtobuf::ProtoDump
             NRPProtobuf::ProtoGazebo
             NRPProtobuf::ProtoEngineTest
+            NRPProtobuf::ProtoNrpGenericProto
+            NRPProtobuf::ProtoWrappers
             NRPProtobuf::ProtoEdlutData
             )
 endif()

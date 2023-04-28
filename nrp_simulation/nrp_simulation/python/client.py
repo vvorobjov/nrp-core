@@ -7,11 +7,10 @@ import json
 from google.protobuf.message_factory import MessageFactory
 from google.protobuf import descriptor_pool
 
-from nrp_server_pb2 import EmptyMessage, RunLoopMessage
+from nrp_server_pb2 import EmptyMessage, RunLoopMessage, JsonMessage
 from nrp_server_pb2_grpc import NrpCoreStub
 from engine_grpc_pb2 import DataPackMessage
 import nrp_core.data.nrp_protobuf.proto_modules as proto_modules
-import nrp_core.data.nrp_protobuf.dump_pb2 as dump_pb2
 
 from importlib import import_module
 
@@ -227,11 +226,11 @@ class NrpCore:
                run_loop_response.jsonTrajectoryMessages[json_message_index].dataIndex == i:
 
                 # Unpack the content of Any field into a proper protobuf message
-                proto_message = dump_pb2.String()
+                proto_message = JsonMessage()
                 run_loop_response.jsonTrajectoryMessages[json_message_index].data.Unpack(proto_message)
 
                 # Parse the JSON string of the message
-                json_object = json.loads(proto_message.string_stream)
+                json_object = json.loads(proto_message.data)
 
                 # Append the new JSON object into the trajectory
                 trajectory_data.append(json_object)
@@ -325,11 +324,11 @@ class NrpCore:
 
         :param str datapack_name: Name of the DataPack
         :param str engine_name: Name of the engine to which the DataPack will be passed
-        :param protobuf.Any payload: Payload of the DataPack, a protobuf message
+        :param dict payload: Payload of the DataPack, a JSON-serializable python dictionary
         """
         # Create a proto object with the payload serialized as a JSON string
-        proto_json = dump_pb2.String()
-        proto_json.string_stream = json.dumps(payload)
+        proto_json = JsonMessage()
+        proto_json.data = json.dumps(payload)
 
         # Prepare a JSON DataPack object
         datapack = DataPackMessage()

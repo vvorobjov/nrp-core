@@ -99,7 +99,7 @@ namespace protobuf_ops {
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
             return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, from);
         else
-            throw NRPException::logCreate("Failed to get DataPackInterface from DataPackMessage with name \"" + dataPackId.datapackname() + "\" in engine \"" + engineName + "\"");
+            return nullptr;
     }
 
 

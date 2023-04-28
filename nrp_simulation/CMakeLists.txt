@@ -83,7 +83,6 @@ target_link_libraries(${LIBRARY_NAME}
     ${NRP_PROTO_LIB_TARGET}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
-    NRPProtobuf::ProtoDump
     NRPJSONEngineProtocol::NRPJSONEngineProtocol
     ${NRP_ELE_LIB_TARGET}
     ${NRP_ROS_PROXY_TARGET}

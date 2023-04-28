@@ -21,7 +21,6 @@
 
 #include "nrp_simulation/simulation/nrp_core_server.h"
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
-#include "nrp_protobuf/dump.pb.h"
 #include "nrp_json_engine_protocol/datapack_interfaces/json_datapack.h"
 #include "nrp_protobuf/proto_ops/proto_ops_manager.h"
 #include "nrp_protobuf/proto_libraries.h"
@@ -218,8 +217,8 @@ void NrpCoreServer::prepareTrajectory(NrpCore::RunLoopResponse * returnMessage)
         {
             NrpCore::TrajectoryMessage * trajectoryMessage = returnMessage->add_jsontrajectorymessages();
             const nlohmann::json & data = (dynamic_cast<const JsonDataPack *>((*trajectoryElement).get()))->getData();
-            Dump::String strdata;
-            strdata.set_string_stream(data.dump());
+            NrpCore::JsonMessage strdata;
+            strdata.set_data(data.dump());
 
             trajectoryMessage->set_dataindex(trajectoryIndex);
             trajectoryMessage->mutable_data()->PackFrom(strdata);
@@ -261,9 +260,9 @@ std::vector<std::shared_ptr<const DataPackInterface>> NrpCoreServer::extractExte
         auto datapackData = message->jsondatapacks(i);
         DataPackInterface::shared_ptr datapack;
 
-        Dump::String data;
+        NrpCore::JsonMessage data;
         message->jsondatapacks(i).data().UnpackTo(&data);
-        nlohmann::json * data_json = new nlohmann::json(nlohmann::json::parse(data.string_stream()));
+        nlohmann::json * data_json = new nlohmann::json(nlohmann::json::parse(data.data()));
         datapack = DataPackInterface::shared_ptr(new JsonDataPack(message->jsondatapacks(i).datapackid().datapackname(),
                                                                   message->jsondatapacks(i).datapackid().enginename(),
                                                                   data_json));
@@ -279,17 +278,10 @@ std::vector<std::shared_ptr<const DataPackInterface>> NrpCoreServer::extractExte
         DataPackInterface::const_shared_ptr datapack;
 
         for(auto& mod : _protoOps) {
-            try
-            {
-                datapack = mod->getDataPackInterfaceFromMessage(message->protodatapacks(i).datapackid().enginename(), datapackData);
+            datapack = mod->getDataPackInterfaceFromMessage(message->protodatapacks(i).datapackid().enginename(), datapackData);
 
-                if(datapack)
-                    break;
-            }
-            catch (NRPException &)
-            {
-                // this just means that the module couldn't process the request, try with the next one
-            }
+            if(datapack != nullptr)
+                break;
         }
 
         if(!datapack)

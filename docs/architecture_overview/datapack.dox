@@ -286,7 +286,7 @@ datapack.data.json_type()
 Please be aware that methods specific to 'object' type for accessing or setting elements will raise an error when used with an 'array' type and otherwise.
 
 
-\subsection datapacks_protobuf Protobuf datapacks
+\subsection datapacks_protobuf Protobuf DataPacks
 
 In contrast with JsonDataPack, which can wrap any nlohmann::json C++ object, a Python wrapper class is generated for each Protobuf definition.
 For example, for the *Camera* message listed below (which is used by the \ref gazebo_engine), a python class *GazeboCameraDataPack* is generated.
@@ -308,7 +308,7 @@ This class contains a *data* attribute which is of type *GazeboCamera* and gives
 The generated Python classes match the original Protobuf Python API as described in the <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated">protobuf documentation</a>.
 There are some known limitations with respect to the original Protobuf Python API which are listed below with references to the protobuf documentation:
 
-1. Well Known Types not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">ref</a>
+1. <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">Well Known Types</a> partially supported - \ref datapacks_protobuf_generic.
 2. Repeated Message field not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#repeated-message-fields">ref</a>
 3. Map field type not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#map-fields">ref</a>
 4. Only basic Enum support. To set or get *Enum* fields only *int* can be used. *Enum constants* can't be accessed from python <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#enum">ref</a>
@@ -317,6 +317,44 @@ There are some known limitations with respect to the original Protobuf Python AP
 Finally, these Python wrappers are automatically generated in the NRP-core build process for Protobuf message definitions used by Engines shipped with NRPCore.
 These can be found in the folder *nrp-core-msgs/protobuf/engine_proto_defs*.
 See this \ref tutorial_add_proto_definition "guide" to know how to compile additional messages so they become afterwards available to Engines and TFs.
+
+\subsubsection datapacks_protobuf_generic Generic protobuf DataPacks and wrappers for well-known protobuf types
+
+A set of generic DataPacks is provided with NRP Core.
+These DataPacks allow to exchange most of the data types available in protobuf, and they can be used to pass arrays of arbitrary size.
+The data part of the generic DataPacks has the following structure:
+
+\code{.proto}
+message Array*
+{
+    repeated * array = 1;
+    repeated uint32 shape = 2;
+}
+\endcode
+
+With the asterisk replacing concrete types.
+
+Another generic DataPack type that is provided with NRP Core is the image DataPack, based on the NrpGenericProto::Image type:
+
+\code{.proto}
+message Image
+{
+    uint32     height      = 1;
+    uint32     width       = 2;
+    uint32     step        = 3;
+    IMAGE_TYPE type        = 4;
+    bool       isBigEndian = 5;
+    bytes      data        = 6;
+}
+\endcode
+
+The definitions of the protobuf messages used by the DataPacks can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/nrp_generic.proto`.
+
+A subset of wrappers that mimic the (<a href="https://protobuf.dev/reference/protobuf/google.protobuf/">well-known protobuf types</a>) is also available to use.
+Unfortunately, at the moment it is not possible to use the official wrappers directly, and one must use the wrappers provided with NRP Core.
+The messages can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/wrappers.proto`.
+
+An example use of the generic DataPacks, as well as the wrappers, can be found in the `examples/generic_proto_test` directory.
 
 \subsection datapacks_rosmsg ROS msg datapacks
 
