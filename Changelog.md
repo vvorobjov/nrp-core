@@ -148,6 +148,6 @@
 1. [NRRPLT-8168] Compatibility with the other NRP components for the v4.0.
     * Unmasked signals in engine servers launched by BasicFork. SIGTERM (shutdown command), SIGINT, SIGHUP (parent has died) are expected to be received so be sure they are unblocked. Increased forked processes polling time to 500ms.
     * The template experiments are added: examples/templates.
-    * Renamed configuration atribute from "SimDescription" to "SimulationDescripion" in experiments.
+    * Renamed configuration attribute from "SimDescription" to "SimulationDescripion" in experiments.
     * The templates are added to the NRP-Core Docker images.
 

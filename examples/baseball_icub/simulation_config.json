@@ -1,6 +1,6 @@
 {
 	"SimulationName": "iCub Visual Tracking experiment",
-	"SimDescription": "In this experiment the iCub robot performs a Visual Tracking task",
+	"SimulationDescription": "In this experiment the iCub robot performs a Visual Tracking task",
 	"SimulationTimeout": 10,
 	"EngineConfigs": [
 		{

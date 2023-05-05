@@ -1,6 +1,6 @@
 {
 	"SimulationName": "husky_simulation_data",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses a datatransfer_grpc_engine to log and stream datapacks.",
+	"SimulationDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses a datatransfer_grpc_engine to log and stream datapacks.",
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
