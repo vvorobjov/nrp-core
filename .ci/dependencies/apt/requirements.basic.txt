@@ -11,5 +11,6 @@ net-tools
 inetutils-tools
 inetutils-traceroute
 inetutils-ping
+python3-urllib3
 nano
 libclang-dev

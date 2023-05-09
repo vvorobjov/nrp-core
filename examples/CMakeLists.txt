@@ -70,7 +70,7 @@ add_test(
         NAME Examples.HuskyBraitenbergCG
         COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so" -o SimulationTimeout=2
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/event_loop_examples/husky_braitenberg_cg)
-set_tests_properties(Examples.HuskyBraitenbergGRPC
+set_tests_properties(Examples.HuskyBraitenbergCG
         PROPERTIES
         DISABLED $<OR:$<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>,$<NOT:$<BOOL:${BUILD_GAZEBO_ENGINE_SERVER}>>>
         TIMEOUT 150)
