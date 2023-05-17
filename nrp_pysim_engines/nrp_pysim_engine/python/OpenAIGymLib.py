@@ -4,7 +4,7 @@ import gym
 
 
 class OpenAIInterface(object):
-    def __init__(self, model_name, start_visualizer, time_step):
+    def __init__(self, model_name, start_visualizer, time_step, extra_params):
         super(OpenAIInterface, self).__init__()
         self.action = None
         self.env = gym.make(model_name)

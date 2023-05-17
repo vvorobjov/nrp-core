@@ -1,8 +1,8 @@
 {"python_base" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Python Json Engine Base",
-    "description": "Python Json Engine Base Configuration",
-    "$id": "#PythonJSONEngineBase",
+    "title": "Python Engine Base",
+    "description": "Python Engine Base Configuration",
+    "$id": "#PythonEngineBase",
     "allOf": [
       { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       {

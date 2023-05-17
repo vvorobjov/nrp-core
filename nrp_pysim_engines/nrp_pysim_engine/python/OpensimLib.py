@@ -2,7 +2,7 @@ import opensim as osim
 
 
 class OpensimInterface(object):
-    def __init__(self, model_name, start_visualizer, time_step):
+    def __init__(self, model_name, start_visualizer, time_step, extra_params):
         super().__init__()
 
         self.n_step = 0
@@ -26,10 +26,21 @@ class OpensimInterface(object):
         self.model.addController(self.brain)
         self.state = self.model.initSystem()
         self.manager = None
+        self.stage = self.model.realizeDynamics
         self.reset()
 
         self.joint_set = self.model.getJointSet()
         self.force_set = self.model.getForceSet()
+        self.coordinate_set = self.model.getCoordinateSet()
+
+        if("Integrator accuracy" in extra_params):
+            self.integrator_accuracy = (extra_params["Integrator accuracy"])
+
+        if("Realize state" in extra_params):
+            if(extra_params["Realize state"] == "Acceleration"):
+                self.stage = self.model.realizeAcceleration
+
+
 
     # Run simulation step by step
     def run_one_step(self, action, timestep_ns):
@@ -39,7 +50,8 @@ class OpensimInterface(object):
         # Integrate till the new endtime
         try:
             self.state = self.manager.integrate(self.n_step * timestep_ns / 1e9)
-            self.model.realizeDynamics(self.state)
+            self.stage(self.state)
+
         except Exception as e:
             print(e)
 
@@ -49,7 +61,7 @@ class OpensimInterface(object):
         self.n_step = 0
 
         self._reset_manager()
-        self.model.realizeDynamics(self.state)
+        self.stage(self.state)
         return 0
 
     def _reset_manager(self):
@@ -76,15 +88,19 @@ class OpensimInterface(object):
     def get_model_properties(self, p_type):
         if p_type == "Joint":
             return [joint.getName() for joint in self.joint_set]
+        elif p_type == "Coordinate":
+            return [coordinate.getName() for coordinate in self.coordinate_set]
         elif p_type == "Force":
             return [force.getName() for force in self.force_set]
         else:
-            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
+            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint', 'Coordinate' and 'Force'")
 
     # Obtain the value of one datapack by the datapack name
     def get_model_property(self, p_name, p_type):
         if p_type == "Joint":
-            return self.joint_set.get(p_name).getCoordinate().getValue(self.state)
+            return self.coordinate_set.get(p_name).getValue(self.state)
+        elif p_type == "Velocity":
+            return self.coordinate_set.get(p_name).getSpeedValue(self.state)
         elif p_type == "Force":
             force = self.force_set.get(p_name)
             if not force.get_appliesForce():
@@ -92,13 +108,17 @@ class OpensimInterface(object):
                 return []
             return [force.getRecordValues(self.state).getAsVec3()[i] for i in range(3)]  # SimTK::Vec3 doesn't support slicing
         else:
-            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint' and 'Force'")
+            raise ValueError(f"Wrong Type {p_type}. Supported property types are 'Joint', 'Velocity' and 'Force'")
 
     def get_model_all_properties(self, p_type):
         if p_type == "Joint":
-            j_set = self.joint_set
-            return {j_set.get(i).getName(): j_set.get(i).getCoordinate().getValue(self.state)
-                    for i in range(1, j_set.getSize())}
+            c_set = self.coordinate_set
+            return {c_set.get(i).getName(): c_set.get(i).getValue(self.state)
+                    for i in range(c_set.getSize())}
+        elif p_type == "Velocity":
+            c_set = self.coordinate_set
+            return {c_set.get(i).getName(): c_set.get(i).getSpeedValue(self.state)
+                    for i in range(c_set.getSize())}
         elif p_type == "Force":
             return {applied_force.getName():[applied_force.getRecordValues(self.state).getAsVec3()[i] for i in range(3)]
                     for applied_force in [force for force in self.force_set if force.get_appliesForce()]}

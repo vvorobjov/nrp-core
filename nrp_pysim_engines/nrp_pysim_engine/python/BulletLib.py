@@ -9,7 +9,7 @@ import pybullet_data
 
 
 class BulletInterface(object):
-    def __init__(self, model_name, start_visualizer, time_step):
+    def __init__(self, model_name, start_visualizer, time_step, extra_params):
         super().__init__()
 
         self.physics_client = pybullet.connect(pybullet.GUI if start_visualizer else pybullet.DIRECT)

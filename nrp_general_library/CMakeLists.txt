@@ -71,6 +71,7 @@ set(TEST_SRC_FILES
     tests/datapack.cpp
     tests/engine_launcher_manager.cpp
     tests/plugin_manager.cpp
+    tests/test_engine_client.cpp
     tests/test_process_launcher_basic.cpp
     tests/test_function_manager.cpp
 )

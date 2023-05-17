@@ -16,19 +16,21 @@ class SimulatorManager(object):
 
         self.time_step = configuration["EngineTimestep"]
 
+        extra_config = configuration["EngineExtraConfigs"]
+
         self.sim_interface = None
         if simulator_type == "Opensim":
             from .OpensimLib import OpensimInterface
-            self.sim_interface = OpensimInterface(world_file, start_visualizer, self.time_step)
+            self.sim_interface = OpensimInterface(world_file, start_visualizer, self.time_step, extra_config)
         elif simulator_type == "OpenAI":
             from .OpenAIGymLib import OpenAIInterface
-            self.sim_interface = OpenAIInterface(world_file, start_visualizer, self.time_step)
+            self.sim_interface = OpenAIInterface(world_file, start_visualizer, self.time_step, extra_config)
         elif simulator_type == "Mujoco":
             from .MujocoLib import MujocoInterface
-            self.sim_interface = MujocoInterface(world_file, start_visualizer, self.time_step)
+            self.sim_interface = MujocoInterface(world_file, start_visualizer, self.time_step, extra_config)
         elif simulator_type == "Bullet":
             from .BulletLib import BulletInterface
-            self.sim_interface = BulletInterface(world_file, start_visualizer, self.time_step)
+            self.sim_interface = BulletInterface(world_file, start_visualizer, self.time_step, extra_config)
         else:
             raise Exception(f'Simulator {simulator_type} is not installed')
             

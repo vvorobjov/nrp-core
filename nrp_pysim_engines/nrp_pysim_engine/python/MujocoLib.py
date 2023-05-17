@@ -10,7 +10,7 @@ import glfw
 
 
 class MujocoInterface(object):
-	def __init__(self, model_name, start_visualizer, time_step):
+	def __init__(self, model_name, start_visualizer, time_step, extra_params):
 		super(MujocoInterface, self).__init__()
 		self.model = load_model_from_path(model_name)
 		self.sim = MjSim(self.model)

@@ -258,6 +258,7 @@ class EngineClient
             // setting process start and env params to an empty vector since this can't be done from json schema
             setDefaultProperty<std::vector<std::string>>("EngineProcStartParams", std::vector<std::string>());
             setDefaultProperty<std::vector<std::string>>("EngineEnvParams", std::vector<std::string>());
+            setDefaultProperty<nlohmann::json>("EngineExtraConfigs", nlohmann::json(json::value_t::object));
         }
 
         ~EngineClient() override = default;
