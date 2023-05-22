@@ -1,0 +1,21 @@
+{
+    "name": "GRCP.core",
+    "rootNamespace": "",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Google.Protobuf.dll",
+        "GRPC.System.Runtime.CompilerServices.Unsafe.dll",
+        "Grpc.Core.Api.dll",
+        "Grpc.Core.dll",
+        "System.Memory.dll",
+        "System.Buffers.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
