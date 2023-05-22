@@ -1,0 +1,32 @@
+{
+	"SimulationName": "unity",
+	"SimulationDescription": "Unity engine test",
+	"SimulationTimeout": 100,
+	"EngineConfigs":
+	[
+		{
+			"EngineType": "unity_grpc_engine",
+			"EngineName": "unity",
+			"EngineCommandTimeout": 20,
+			"EngineTimestep": 0.2,
+			"EngineProcCmd": "unity/cube.x86_64",
+			"ServerAddress": "localhost:50051",
+			"ProtobufPackages": ["UnityProto"]
+		},
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "python_dumper",
+			"EngineTimestep": 0.2,
+			"ServerAddress":"localhost:2345",
+			"PythonFileName": "write_to_disc.py",
+			"ProtobufPackages": ["UnityProto"]
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "tf_2",
+			"FileName": "tf_2.py"
+		}
+	]
+}
