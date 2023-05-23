@@ -38,7 +38,8 @@
           "ProtobufPackages": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "Protobuf Packages containing protobuf msg types that will be exchanged by this Engine. It is assumed that these packages have been compiled with NRPCore"
+            "description": "Protobuf Packages containing protobuf msg types that will be exchanged by this Engine. It is assumed that these packages have been compiled with NRPCore",
+            "default": ["EngineTest"]
           },
           "ProtobufPluginsPath": {
             "type": "string",

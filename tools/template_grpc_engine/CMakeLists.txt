@@ -137,6 +137,12 @@ if($${ENABLE_TESTING} AND NOT "$${TEST_SRC_FILES}" STREQUAL "")
         EXTRA_ARGS -VV)
 endif()
 
+if(ENABLE_EXAMPLES_TESTING)
+    add_test(
+            NAME Examples.${engine_name}GrpcEngine
+            COMMAND NRPCoreSim -c simulation_config.json -p "$${PROJECT_NAME}.so"
+            WORKING_DIRECTORY $${CMAKE_CURRENT_SOURCE_DIR}/example_experiment/)
+endif()
 
 ##########################################
 ## Installation
