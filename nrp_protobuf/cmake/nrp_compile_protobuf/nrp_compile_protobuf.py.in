@@ -18,8 +18,8 @@ args = parser.parse_args()
 
 # Prepare cmake command
 install_path = args.install_dir if args.install_dir else nrp_install_dir
-proto_files_path = args.proto_files_path if args.proto_files_path else os.getcwd()
-cmake_cmd = f"cmake -DCMAKE_INSTALL_PREFIX={install_path} -DPROTO_FILES_PATH={proto_files_path} ."
+abs_proto_files_path = os.path.abspath(args.proto_files_path) if args.proto_files_path else os.getcwd()
+cmake_cmd = f"cmake -DCMAKE_INSTALL_PREFIX={install_path} -DPROTO_FILES_PATH={abs_proto_files_path} ."
 
 # Create build directory, configure, build and install
 build_dir = '.nrp_compile_protobuf'
