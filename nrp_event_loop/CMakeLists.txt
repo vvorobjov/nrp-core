@@ -412,6 +412,11 @@ if(ENABLE_EXAMPLES_TESTING)
                 COMMAND ${CMD}
                 WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
 
+        # Disable test if ROS is not installed
+        if("${EXAMPLE}" STREQUAL "ros_nodes_std_bool")
+            set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DISABLED $<NOT:$<BOOL:${ENABLE_ROS}>>)
+        endif()
+
         if("${EXAMPLE}" STREQUAL "engine_nodes_protobuf_custom")
             set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DEPENDS "${EXAMPLE}_BuildProto")
         endif()
