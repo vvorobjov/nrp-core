@@ -31,3 +31,13 @@ message BImage
 {
     bytes image = 1;
 }
+
+message Sensor
+{
+    string model_type = 1;
+    string capture_mode = 2;
+    string id = 3;
+    int32 frames_between_captures = 4;
+    float first_capture_frame = 5;
+}
+
