@@ -116,6 +116,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 grpc::ServerBuilder builder;
                 builder.AddListeningPort(_serverAddress, grpc::InsecureServerCredentials());
                 builder.RegisterService(this);
+                NRPLogger::debug("Using server address: "+ this->_serverAddress);
 
                 this->_server = builder.BuildAndStart();
                 // TODO Should we use a memory barrier here?

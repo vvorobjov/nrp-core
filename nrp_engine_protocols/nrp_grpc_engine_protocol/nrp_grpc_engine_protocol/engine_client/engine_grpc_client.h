@@ -35,6 +35,8 @@
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_protobuf/config/cmake_constants.h"
 #include "nrp_general_library/datapack_interface/datapack.h"
+#include "nrp_general_library/utils/utils.h"
+#include <pistache/router.h>
 
 #include "nrp_protobuf/proto_ops/protobuf_ops.h"
 #include "nrp_protobuf/proto_ops/proto_ops_manager.h"
@@ -69,8 +71,6 @@ class EngineGrpcClient
             this->template setDefaultProperty<std::vector<std::string>>("ProtobufPackages", std::vector<std::string>());
             this->template setDefaultProperty<std::string>("ProtobufPluginsPath", NRP_PLUGIN_INSTALL_DIR);
 
-            std::string serverAddress = this->engineConfig().at("ServerAddress");
-
             // Timeouts of less than 1ms will be rounded up to 1ms
 
             SimulationTime timeout = toSimulationTime<float, std::ratio<1>>(this->engineConfig().at("EngineCommandTimeout"));
@@ -84,7 +84,10 @@ class EngineGrpcClient
                 this->_rpcTimeout = SimulationTime::zero();
             }
 
-            _channel = grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials());
+            this->validateServerAddress();
+
+            this->_serverAddress = this->engineConfig().at("ServerAddress");
+            _channel = grpc::CreateChannel(_serverAddress, grpc::InsecureChannelCredentials());
             _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
 
             ProtoOpsManager::getInstance().addPluginPath(this->engineConfig().at("ProtobufPluginsPath"));
@@ -360,6 +363,52 @@ class EngineGrpcClient
             return startParams;
         }
 
+        std::string tryBind(const std::string & address)
+        {
+            Pistache::Address addressParse(address);
+
+            try
+            {
+                bindToAddress(addressParse.host(), addressParse.port());
+            }
+            catch(const std::exception & e)
+            {
+                // can't bind, ask the OS for a (free) port
+                const uint16_t newPort = getFreePort(addressParse.host());
+
+                // Returns the address using the new port and the previous host
+                return addressParse.host() + ":" + std::to_string(newPort);
+            }
+
+            return address;
+        }
+
+        /*!
+         * \brief Validates if server address is already in use
+         */
+        void validateServerAddress()
+        {
+            const std::string ServerAddressConfig = this->engineConfig().at("ServerAddress");
+            const std::string ServerAddressActual = tryBind(ServerAddressConfig);
+
+            if(ServerAddressActual != ServerAddressConfig)
+            {
+                NRPLogger::info("Engine {} could not bind to the address specified in the engine configuration '{}'. Using '{}' instead.", this->engineName(), ServerAddressConfig, ServerAddressActual);
+
+                // Update the address in the config
+                // This value will be passed to the Engine launcher
+                this->engineConfig().at("ServerAddress") = ServerAddressActual;
+            }
+        }
+
+        /*!
+         * \brief Returns the address used by the gRPC server
+         */
+        const std::string serverAddress() const
+        {
+            return this->_serverAddress;
+        }
+
     protected:
 
         void resetEngineTime() override
@@ -372,6 +421,7 @@ class EngineGrpcClient
 
         std::shared_ptr<grpc::Channel>                       _channel;
         std::unique_ptr<EngineGrpc::EngineGrpcService::Stub> _stub;
+        std::string _serverAddress;
 
         SimulationTime _prevEngineTime = SimulationTime::zero();
         SimulationTime _rpcTimeout     = SimulationTime::zero();
