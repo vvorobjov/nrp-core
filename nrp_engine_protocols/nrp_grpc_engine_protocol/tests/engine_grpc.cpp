@@ -197,8 +197,8 @@ TEST(EngineGrpc, Connection)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // Should throw, because no server is running
 
@@ -217,8 +217,8 @@ TEST(EngineGrpc, InitCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
@@ -247,12 +247,12 @@ TEST(EngineGrpc, InitCommandTimeout)
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "test_engine_grpc";
-    config["EngineCommandTimeout"] = 0.0005;
+    config["EngineCommandTimeout"] = 1;
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
@@ -273,9 +273,8 @@ TEST(EngineGrpc, ShutdownCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-
+    TestEngineGrpcServer server(client.serverAddress());
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
     jsonMessage["throw"]    = false;
@@ -307,8 +306,8 @@ TEST(EngineGrpc, ShutdownCommandTimeout)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
@@ -334,8 +333,8 @@ TEST(EngineGrpc, RunLoopStepCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // The gRPC server isn't running, so the runLoopStep command should fail
 
@@ -376,8 +375,8 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
     config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // Test runLoopStep command timeout
 
@@ -395,8 +394,8 @@ TEST(EngineGrpc, ResetCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
@@ -430,8 +429,8 @@ TEST(EngineGrpc, ResetCommandTimeout)
     config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // Test runLoopStep command timeout
 
@@ -480,8 +479,8 @@ TEST(EngineGrpc, SetDataPackData)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     datapacks_set_t input_datapacks;
 
@@ -518,7 +517,6 @@ TEST(EngineGrpc, SetDataPackData)
     input_datapacks.insert(dataPack2);
 
     ASSERT_THROW(client.sendDataPacksToEngine(input_datapacks), NRPException::exception);
-
     // TODO Add test for setData timeout
 }
 
@@ -534,8 +532,8 @@ TEST(EngineGrpc, GetDataPackData)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // Client sends a request to the server
 
@@ -604,7 +602,6 @@ TEST(EngineGrpc, GetDataPackData)
     datapackIdentifiers.insert(devId2);
 
     ASSERT_THROW(client.getDataPacksFromEngine(datapackIdentifiers), std::runtime_error);
-
     // TODO Add test for getData timeout
 }
 
@@ -623,8 +620,8 @@ TEST(EngineGrpc, GetDataPackData2)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
-    TestEngineGrpcServer server("localhost:9004");
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
+    TestEngineGrpcServer server(client.serverAddress());
 
     // Client sends a request to the server
 

@@ -185,7 +185,15 @@ int main(int argc, char *argv[])
 
     // Set working directory and get config file from params
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParams);
-    NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+    if(!simConfig)
+    {
+        // Print help if config was not found
+        NRPLogger::warn("Couldn't get configuration file from parameters.");
+        std::cout << optParser.help();
+        return 0;
+    }
+    else
+        NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
     // Create default logger for the launcher
     auto logger = NRPLogger

@@ -3,6 +3,7 @@ import os
 from contextlib import redirect_stdout
 from threading import Thread
 import json
+from python_on_whales import DockerClient
 
 from google.protobuf.message_factory import MessageFactory
 from google.protobuf import descriptor_pool
@@ -16,11 +17,12 @@ from importlib import import_module
 
 from nrp_core.nrp_server_launchers import *
 
+
 class NrpCore:
 
     def __init__(self, address, experiment_folder="", config_file="simulation_config.json", args="",
                  log_output=True, server_timeout=10, docker_daemon_address="unix:///var/run/docker.sock", image_name="",
-                 get_archives=[]) -> None:
+                 get_archives=[], compose_file="") -> None:
         """
         Spawns an NRPCoreSim process in server mode and connects to it
 
@@ -43,6 +45,7 @@ class NrpCore:
 
         :param list get_archives: list of archives (files or folders) that should be retrieved from the docker container
                                 when shutting down the simulation (e.g. folder containing logged simulation data)
+        :param compose_file: List[Union[str, pathlib.Path]]: Docker compose yaml file for Compose Launcher
         """
         self._json_datapack_out_buffer = []
         self._proto_datapack_out_buffer = []
@@ -75,6 +78,11 @@ class NrpCore:
                                                    image_name,
                                                    log_file,
                                                    get_archives)
+        elif compose_file:
+            self._launcher = NRPCoreComposeLauncher(compose_file,
+                                                    log_file,
+                                                    get_archives,
+                                                    address=address)
         else:
             self._launcher = NRPCoreForkLauncher(server_args, experiment_folder)
 
@@ -84,8 +92,8 @@ class NrpCore:
 
         # Wait for the server to start
         n = self._wait_until_server_ready(self._channel, self._launcher.is_alive_nrp_process)
-        if n > 0:
-
+        if n > self._server_timeout:
+            
             with redirect_stdout(self._devnull):
                 report = self._launcher.get_exit_report()
 
@@ -93,8 +101,11 @@ class NrpCore:
                 # print report
                 msg = f"NRP Process has exit with code: {report['exit_code']}.\n"
                 msg += "Logs from process:\n"
-                for l in report['logs']:
-                    msg += f"{l}\n"
+                if type(report['logs']==str):
+                    msg += f"{report['logs']}\n"
+                else:
+                    for l in report['logs']:
+                        msg += f"{l}\n"
 
                 print(msg)
 
@@ -140,6 +151,7 @@ class NrpCore:
 
         self._devnull.close()
 
+
     def _close_client(self):
 
         if self._channel:
@@ -158,7 +170,7 @@ class NrpCore:
 
             try:
                 grpc.channel_ready_future(channel).result(timeout=1)
-                return 0
+                return n
             except grpc.FutureTimeoutError:
                 if n > 5:
                     print(f"Waiting for NRP Server connection: {n} out of {self._server_timeout} seconds")

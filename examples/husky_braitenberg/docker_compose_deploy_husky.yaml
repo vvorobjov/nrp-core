@@ -1,0 +1,59 @@
+version: '3.2'
+
+services:
+
+    nest-service:
+        image: docker-registry.ebrains.eu/nest/nest-simulator:3.3
+        env_file:
+            - nest.env
+        container_name: nrp-nest-simulator
+        networks:
+            - husky
+
+    gazebo-service:
+        env_file:
+            - gazebo.env
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        command: /usr/xvfb-run-gazebo-runcmd.bash
+        networks:
+            - husky
+        container_name: nrp-gazebo
+
+    nrp-core-service:
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json  -m server --server_address 172.16.238.10:50050 --logoutput=all --logfilename=.console_output.log --slave
+        networks:
+            husky:
+                ipv4_address: 172.16.238.10
+        ports:
+            - "50050:50050"
+        depends_on:
+            - nest-service
+            - gazebo-service
+            - mqtt-broker-service
+        container_name: nrp-core
+
+
+    mqtt-broker-service:
+        image: eclipse-mosquitto
+        networks:
+            - husky
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf
+        user: 0:0
+        container_name: mqtt-broker
+
+
+networks:
+  husky:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
+

@@ -13,7 +13,6 @@
 					"File": "husky.sdf",
 					"InitPose": "-0.009853 0.086704 0.187752 0 0 0"
 				}
-
 			],
 			"EngineProcStartParams": ["--verbose"]
 		},
