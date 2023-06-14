@@ -424,6 +424,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/troubleshooting.dox"
         "docs/guides/docker_compose.dox"
         "docs/guides/docker_daemon.dox"
+        "docs/guides/remote_docker_compose.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"
