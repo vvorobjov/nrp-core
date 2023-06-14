@@ -1,4 +1,4 @@
-﻿/*
+/*
  * NRP Core - Backend infrastructure to synchronize simulations
  *
  * Copyright 2022-2023 Josip Josifovski, Krzysztof Lebioda
@@ -75,7 +75,7 @@ class CommunicationServiceController : MonoBehaviour
     /// </summary>
     private TimeStepController _timeStepController;
 
- 
+
     /// <summary>
     /// Catches unity camera and returns current frame
     /// </summary>
@@ -125,6 +125,9 @@ class CommunicationServiceController : MonoBehaviour
         Debug.Log("[CommControl] Starting gRPC server");
         StartServer();
         Debug.Log("[CommControl] gRPC Server started");
+
+        _imageSender = FindObjectOfType<ImageSender>();
+        _timeStepController = FindObjectOfType<TimeStepController>();
     }
 
     private void initializeUser(string simulationConfigJson)
@@ -147,7 +150,6 @@ class CommunicationServiceController : MonoBehaviour
 
     private void setDataPacksUser(IList<DataPackMessage> dataPacks)
     {
-        
     }
 
     private long runLoopUser(long timeStep)
@@ -156,11 +158,7 @@ class CommunicationServiceController : MonoBehaviour
 
         scenario.letItGo();
         scenario.Move();
-        // Lazy initialization
-        if(_timeStepController == null)
-        {
-            _timeStepController = FindObjectOfType<TimeStepController>();
-        }
+
 
         return (long)_timeStepController.RunGame(_runLoopStepRequest.TimeStep);
     }
@@ -170,11 +168,6 @@ class CommunicationServiceController : MonoBehaviour
         List<DataPackMessage> dataPacks = new List<DataPackMessage>();
 
         // Image Section
-        // Lazy initialization
-        if (_imageSender == null)
-        {
-            _imageSender = FindObjectOfType<ImageSender>();
-        }
 
 
         byte[] frameBytes = _imageSender.GetCurrentFrame();
@@ -184,7 +177,7 @@ class CommunicationServiceController : MonoBehaviour
 
         DataPackMessage imageDataPack = new DataPackMessage();
         imageDataPack.DataPackId = new DataPackIdentifier();
-        
+
         imageDataPack.DataPackId.DataPackName = "image";
         imageDataPack.DataPackId.DataPackType = "frame";
         imageDataPack.DataPackId.EngineName   = "unity";
@@ -192,31 +185,31 @@ class CommunicationServiceController : MonoBehaviour
 
         dataPacks.Add(imageDataPack);
 
-        
+
         return dataPacks;
     }
 
     private void FixedUpdate()
     {
-        if(Physics.autoSimulation)
+        if (Physics.autoSimulation)
         {
             return;
         }
 
-        if(_shutdownCounter > 0)
+        if (_shutdownCounter > 0)
         {
             _shutdownCounter--;
-            if(_shutdownCounter == 0)
+            if (_shutdownCounter == 0)
             {
                 Application.Quit();
             }
         }
 
-        lock(_locker)
+        lock (_locker)
         {
-            if(_invokedProcedure != ServiceProcedure.NONE)
+            if (_invokedProcedure != ServiceProcedure.NONE)
             {
-                switch(_invokedProcedure)
+                switch (_invokedProcedure)
                 {
                     case ServiceProcedure.INITIALIZE:
                         initializeUser(_initializeRequest.Json);
@@ -239,7 +232,7 @@ class CommunicationServiceController : MonoBehaviour
                         long simulatedTimeStep = runLoopUser(_runLoopStepRequest.TimeStep);
 
                         _totalSimulatedTime += simulatedTimeStep;
-                        _runLoopStepReply = new RunLoopStepReply { EngineTime =_totalSimulatedTime };
+                        _runLoopStepReply = new RunLoopStepReply { EngineTime = _totalSimulatedTime };
                         break;
 
                     case ServiceProcedure.SET_DATAPACKS:
@@ -268,11 +261,10 @@ class CommunicationServiceController : MonoBehaviour
         StopServer();
     }
 
-
     public InitializeReply InitializeAsync(InitializeRequest request)
     {
         _initializeRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.INITIALIZE;
         }
@@ -283,7 +275,7 @@ class CommunicationServiceController : MonoBehaviour
     public ResetReply ResetAsync(ResetRequest request)
     {
         _resetRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.RESET;
         }
@@ -294,7 +286,7 @@ class CommunicationServiceController : MonoBehaviour
     public ShutdownReply ShutdownAsync(ShutdownRequest request)
     {
         _shutdownRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.SHUTDOWN;
         }
@@ -305,7 +297,7 @@ class CommunicationServiceController : MonoBehaviour
     public GetDataPacksReply GetDataPacksAsync(GetDataPacksRequest request)
     {
         _getDataPacksRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.GET_DATAPACKS;
         }
@@ -316,7 +308,7 @@ class CommunicationServiceController : MonoBehaviour
     public RunLoopStepReply RunLoopStepAsync(RunLoopStepRequest request)
     {
         _runLoopStepRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.RUN_LOOP_STEP;
         }
@@ -327,7 +319,7 @@ class CommunicationServiceController : MonoBehaviour
     public SetDataPacksReply SetDataPacksAsync(SetDataPacksRequest request)
     {
         _setDataPacksRequest = request;
-        lock(_locker)
+        lock (_locker)
         {
             _invokedProcedure = ServiceProcedure.SET_DATAPACKS;
         }
@@ -343,7 +335,6 @@ class CommunicationServiceController : MonoBehaviour
             Ports = { new ServerPort(_ipAddress, _port, ServerCredentials.Insecure) }
         };
         _server.Start();
-
     }
 
     public void StopServer()
@@ -358,7 +349,6 @@ class CommunicationServiceController : MonoBehaviour
     /// </summary>
     class EngineGrpcServiceImpl : EngineGrpcService.EngineGrpcServiceBase
     {
-
         private CommunicationServiceController _communicationServiceControlller;
 
         public EngineGrpcServiceImpl(CommunicationServiceController communicationServiceControlller)
@@ -379,7 +369,7 @@ class CommunicationServiceController : MonoBehaviour
 
         public override Task<ResetReply> reset(ResetRequest request, ServerCallContext context)
         {
-        return Task.FromResult(_communicationServiceControlller.ResetAsync(request));
+            return Task.FromResult(_communicationServiceControlller.ResetAsync(request));
         }
 
         public override Task<RunLoopStepReply> runLoopStep(RunLoopStepRequest request, ServerCallContext context)

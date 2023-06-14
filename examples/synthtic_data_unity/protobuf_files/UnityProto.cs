@@ -25,11 +25,15 @@ namespace UnityProto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChF1bml0eV9wcm90by5wcm90bxIKVW5pdHlQcm90byIXCgZCSW1hZ2USDQoF",
-            "aW1hZ2UYASABKAxiBnByb3RvMw=="));
+            "aW1hZ2UYASABKAwifAoGU2Vuc29yEhIKCm1vZGVsX3R5cGUYASABKAkSFAoM",
+            "Y2FwdHVyZV9tb2RlGAIgASgJEgoKAmlkGAMgASgJEh8KF2ZyYW1lc19iZXR3",
+            "ZWVuX2NhcHR1cmVzGAQgASgFEhsKE2ZpcnN0X2NhcHR1cmVfZnJhbWUYBSAB",
+            "KAJiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::UnityProto.BImage), global::UnityProto.BImage.Parser, new[]{ "Image" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::UnityProto.BImage), global::UnityProto.BImage.Parser, new[]{ "Image" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::UnityProto.Sensor), global::UnityProto.Sensor.Parser, new[]{ "ModelType", "CaptureMode", "Id", "FramesBetweenCaptures", "FirstCaptureFrame" }, null, null, null)
           }));
     }
     #endregion
@@ -161,6 +165,247 @@ namespace UnityProto {
             break;
           case 10: {
             Image = input.ReadBytes();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class Sensor : pb::IMessage<Sensor> {
+    private static readonly pb::MessageParser<Sensor> _parser = new pb::MessageParser<Sensor>(() => new Sensor());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<Sensor> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::UnityProto.UnityProtoReflection.Descriptor.MessageTypes[1]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Sensor() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Sensor(Sensor other) : this() {
+      modelType_ = other.modelType_;
+      captureMode_ = other.captureMode_;
+      id_ = other.id_;
+      framesBetweenCaptures_ = other.framesBetweenCaptures_;
+      firstCaptureFrame_ = other.firstCaptureFrame_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public Sensor Clone() {
+      return new Sensor(this);
+    }
+
+    /// <summary>Field number for the "model_type" field.</summary>
+    public const int ModelTypeFieldNumber = 1;
+    private string modelType_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string ModelType {
+      get { return modelType_; }
+      set {
+        modelType_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "capture_mode" field.</summary>
+    public const int CaptureModeFieldNumber = 2;
+    private string captureMode_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string CaptureMode {
+      get { return captureMode_; }
+      set {
+        captureMode_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 3;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "frames_between_captures" field.</summary>
+    public const int FramesBetweenCapturesFieldNumber = 4;
+    private int framesBetweenCaptures_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int FramesBetweenCaptures {
+      get { return framesBetweenCaptures_; }
+      set {
+        framesBetweenCaptures_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "first_capture_frame" field.</summary>
+    public const int FirstCaptureFrameFieldNumber = 5;
+    private float firstCaptureFrame_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public float FirstCaptureFrame {
+      get { return firstCaptureFrame_; }
+      set {
+        firstCaptureFrame_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as Sensor);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(Sensor other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ModelType != other.ModelType) return false;
+      if (CaptureMode != other.CaptureMode) return false;
+      if (Id != other.Id) return false;
+      if (FramesBetweenCaptures != other.FramesBetweenCaptures) return false;
+      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(FirstCaptureFrame, other.FirstCaptureFrame)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ModelType.Length != 0) hash ^= ModelType.GetHashCode();
+      if (CaptureMode.Length != 0) hash ^= CaptureMode.GetHashCode();
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (FramesBetweenCaptures != 0) hash ^= FramesBetweenCaptures.GetHashCode();
+      if (FirstCaptureFrame != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(FirstCaptureFrame);
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (ModelType.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(ModelType);
+      }
+      if (CaptureMode.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(CaptureMode);
+      }
+      if (Id.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Id);
+      }
+      if (FramesBetweenCaptures != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(FramesBetweenCaptures);
+      }
+      if (FirstCaptureFrame != 0F) {
+        output.WriteRawTag(45);
+        output.WriteFloat(FirstCaptureFrame);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (ModelType.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ModelType);
+      }
+      if (CaptureMode.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CaptureMode);
+      }
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (FramesBetweenCaptures != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(FramesBetweenCaptures);
+      }
+      if (FirstCaptureFrame != 0F) {
+        size += 1 + 4;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(Sensor other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ModelType.Length != 0) {
+        ModelType = other.ModelType;
+      }
+      if (other.CaptureMode.Length != 0) {
+        CaptureMode = other.CaptureMode;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.FramesBetweenCaptures != 0) {
+        FramesBetweenCaptures = other.FramesBetweenCaptures;
+      }
+      if (other.FirstCaptureFrame != 0F) {
+        FirstCaptureFrame = other.FirstCaptureFrame;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            ModelType = input.ReadString();
+            break;
+          }
+          case 18: {
+            CaptureMode = input.ReadString();
+            break;
+          }
+          case 26: {
+            Id = input.ReadString();
+            break;
+          }
+          case 32: {
+            FramesBetweenCaptures = input.ReadInt32();
+            break;
+          }
+          case 45: {
+            FirstCaptureFrame = input.ReadFloat();
             break;
           }
         }
