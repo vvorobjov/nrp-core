@@ -52,7 +52,7 @@
       "description": "List of filenames defining the CG nodes and connections"
     },
     "EventLoop" : {
-      "$ref": "json://nrp-core/event_loop.json#EventLoop",
+      "$ref": "json://nrp-core/event_loop.json#/event_loop",
       "description": "Event Loop configuration parameters. Only used if \"SimulationLoop\" parameter is set to \"EventLoop\""
     },
     "ROSNode" : {

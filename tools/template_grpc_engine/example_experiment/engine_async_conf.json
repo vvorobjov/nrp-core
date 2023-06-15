@@ -1,0 +1,6 @@
+{
+	"EngineConfig": {
+			"EngineName": "${engine_name_lowercase}_engine",
+			"ProtobufPackages": ["EngineTest"]
+		}
+}

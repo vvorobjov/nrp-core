@@ -47,7 +47,7 @@ void EventLoopSimManager::initializeCB()
         // Validate configuration
         auto ELoopConf = this->_simConfig->contains("EventLoop") ?
                 (*(this->_simConfig))["EventLoop"].get<nlohmann::json>() : nlohmann::json::object();
-        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#EventLoop");
+        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#/event_loop");
 
         // Configure Event Loop
         auto eTstep = ELoopConf.at("Timestep").get<float>();

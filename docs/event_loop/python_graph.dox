@@ -244,12 +244,15 @@ The decorator has five arguments:
 - `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
 - `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
 
-There are three possible values for the `type` argument of the decorator. These are:
+Below are listed the possible valid values for the `type` argument in the decorator:
 - 'str': incoming messages payload is passed to the connected function as a string
-- 'nrp_core.data.nrp_json.NlohmannJson': payloads are passed as \ref datapacks_json "JSON objects"
-- One of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+- 'nrp_core.data.nrp_json.NlohmannJson': payload is passed as \ref datapacks_json "JSON objects"
+- Any of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+- 'nrp_core.data.nrp_json.JsonDataPack'
+- Any of the protobuf datapack types defined in 'nrp_core.data.nrp_protobuf'
 
-'str' is always safe to use, but in case of using any of the other two types a runtime error will occur if incoming MQTT message can't be converted to that type.
+'str' is always safe to use, but in case of using any of the other types a runtime error will occur if incoming MQTT message can't be converted to that type.
+See the experiment 'examples/event_loop_examples/mqtt_simple' for examples of mqtt decorators using each of the supported types.
 
 \section mqtt_publisher_decorator @MQTTPublisher
 

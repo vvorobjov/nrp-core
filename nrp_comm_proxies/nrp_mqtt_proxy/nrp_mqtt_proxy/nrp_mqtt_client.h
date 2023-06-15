@@ -70,6 +70,11 @@ public:
     virtual void publish(const std::string& address, const std::string& msg, bool retained=false);
 
     /*!
+     * \brief Publishes 'msg' directly to subscriber callbacks, without going through the MQTT broker. Only for testing.
+     */
+    void publishDirect(const std::string& address, const std::string& msg);
+
+    /*!
      * \brief Disconnects client from MQTT Broker
      */
     virtual void disconnect();
@@ -99,7 +104,7 @@ private:
     /*!
      * \brief Subscriptions
      */
-    std::map<std::string, const std::function<void (const std::string&)>&> _subscribers;
+    std::map<std::string, std::function<void (const std::string&)>> _subscribers;
 
     /*!
      * \brief Object containing callbacks to process events in the mqtt client

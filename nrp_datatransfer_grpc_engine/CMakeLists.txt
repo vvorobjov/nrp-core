@@ -5,7 +5,8 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "DataTransfer_grpc")
-set(EXECUTABLE_NAME "NRPDataTransferGrpcServerExecutable")
+set(EXECUTABLE_NAME "NRPDataTransferEngineExecutable")
+set(EXECUTABLE_ASYNC_NAME "DataTransferEngineAsync")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
@@ -34,6 +35,10 @@ set(PYTHON_MODULE_SRC_FILES
 set(EXEC_SRC_FILES
     datatransfer_grpc_engine/server_executable/main.cpp
 )
+
+set(EXEC_ASYNC_SRC_FILES
+        datatransfer_grpc_engine/server_executable/main_async.cpp
+        )
 
 # List testing build files
 set(TEST_SRC_FILES
@@ -123,6 +128,14 @@ if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
     target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
 endif()
 
+if(ENABLE_MQTT)
+    add_executable(${EXECUTABLE_ASYNC_NAME} ${EXEC_ASYNC_SRC_FILES})
+    target_link_libraries(${EXECUTABLE_ASYNC_NAME}
+            ${LIBRARY_NAME}
+            ${NRP_ELE_TARGET}
+            )
+endif()
+
 
 ##########################################
 ## Append Doxygen files
@@ -204,6 +217,11 @@ endif()
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+if(TARGET ${EXECUTABLE_ASYNC_NAME})
+    install(TARGETS ${EXECUTABLE_ASYNC_NAME}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # create cmake version and config files

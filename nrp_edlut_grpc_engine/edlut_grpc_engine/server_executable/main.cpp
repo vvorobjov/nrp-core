@@ -20,6 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
+#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "edlut_grpc_engine/engine_server/edlut_grpc_server.h"
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.h"
 
@@ -37,7 +38,7 @@ int main(int argc, char * argv[])
     const auto protobufPluginsDump = options[EngineGRPCConfigConst::ProtobufPluginsArg.data()].as<std::string>();
     const auto protobufPlugins = nlohmann::json::parse(protobufPluginsDump);
 
-    auto server = EdlutGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins);
+    auto server = EngineGrpcServer(serverAddress, new EdlutEngine(engineName, protobufPluginsPath, protobufPlugins));
 
     // Start the server
 

@@ -60,17 +60,19 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     }
 
     // Create server with given URL
-    auto &newController = NRPGRPCCommunicationController::resetInstance(serverAddr, engineName, protobufPluginsPath, protobufPlugins);
+    auto newController = new NRPGazeboCommunicationController(engineName, protobufPluginsPath, protobufPlugins);
+    _grpcServer.reset(new EngineGrpcServer(serverAddr, newController));
+    CommControllerSingleton::resetInstance(newController);
 
     // Save the server parameters
-    this->_serverAddress = newController.serverAddress();
+    this->_serverAddress = _grpcServer->serverAddress();
     this->_engineName = engineName;
     this->_protobufPluginsPath = protobufPluginsPath;
     this->_protobufPlugins = protobufPlugins;
     NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server {} on {}", this->_engineName, this->_serverAddress);
 
     // Start the server
-    newController.startServerAsync();
+    _grpcServer->startServerAsync();
 
     NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: Server started. Waiting for input...");
 }
@@ -81,10 +83,12 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPGRPCCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_protobufPluginsPath, this->_protobufPlugins);
+    auto newController = new NRPGazeboCommunicationController(this->_engineName, this->_protobufPluginsPath, this->_protobufPlugins);
+    _grpcServer.reset(new EngineGrpcServer(this->_serverAddress, newController));
+    CommControllerSingleton::resetInstance(newController);
 
     // Start server
-    newController.startServerAsync();
+    _grpcServer->startServerAsync();
 
     NRPLogger::info("NRP Communication plugin: Server restarted. Waiting for input...");
 }

@@ -1,0 +1,29 @@
+#include <boost/python.hpp>
+#include <nlohmann/json.hpp>
+
+#include "nrp_pysim_engine/nrp_client/pysim_nrp_client.h"
+#include "nrp_pysim_engine/config/pysim_config.h"
+
+
+/*!
+ * \brief Helper function for instantiating a PythonEngineJSONNRPClient to validate a PythonEngine Engine configuration
+ *
+ * \param config engine configuration to be processed
+ * \return validated config
+ */
+std::string parseAndValidateEngineConfig(const std::string& configFile)
+{
+    nlohmann::json config(json_utils::parseJSONFile(configFile));
+    json_utils::setDefault<std::string>(config.at("EngineConfig"), "EngineType", PySimConfigConst::EngineType);
+    json_utils::validateJson(config, "json://nrp-core/event_loop.json#/event_loop_engine");
+
+    PySimNRPClient client(config.at("EngineConfig"), ProcessLauncherInterface::unique_ptr{});
+    config.at("EngineConfig") = client.engineConfig();
+
+    return config.dump();
+}
+
+BOOST_PYTHON_MODULE(@PYTHON_MODULE_NAME@)
+{
+    boost::python::def("parseAndValidateEngineConfig", parseAndValidateEngineConfig);
+}

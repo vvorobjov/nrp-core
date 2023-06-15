@@ -1,23 +1,28 @@
 ﻿/*! \page event_loop Event Loop
 
-The Event Loop implements asynchronous interaction between simulations in NRP-core.
-It processes incoming events from external processes and sends out others in response. 
-The events accepted or sent by the Event Loop are always data messages in any of the supported communication protocols (eg. ROS messages).
-In contrast with the FTILoop, the Event Loop allows to connect simulations or other processes asynchronously through this event processing mechanism.
+The **Event Loop** implements soft **real-time** execution and **asynchronous interaction** between simulations in NRP-core.
+It executes a loop at a fixed frequency in which it processes incoming events from external processes, executes some predefined computations and sends out other events in response. 
+The events accepted or sent by the Event Loop are always data messages in any of the supported communication protocols (eg. ROS, MQTT).
+In contrast with the FTILoop, the Event Loop allows to connect simulations or other processes asynchronously through this event processing mechanism and execute them under soft real-time constraints.
 
-In order to process and send out events, the Event Loop uses a graph structure, the Computational Graph, which nodes are computational units which receive, process and send events.
+In a fully synchronous experiment, there are **two kind of components**: (1) a central process executing a FTILoop which mananages the \ref simulation_loop, i.e., the execution of Transceiver Functions, datapack send/get operations with engines, etc.; (2) \ref engines "Engine processes", which are synchronized by the former.
+When moving an existing experiment to a fully asynchronous setup, each of these two components are replaced by their asynchronous, real-time versions managed by an Event Loop, in a way which requires only few changes in code, mostly concentrated in the experiment configuration.
+The process of porting an experiment from synchronous to asynchronous is explained in this \ref async_experiments "guide".
+
+In order to connect Engine processes, the Event Loop uses a graph structure, the **Computational Graph**, which **replaces** and extends the **Transceiver Functions** used in FTILoop experiments. Its nodes are computational units which receive, process and send events.
 The edges in the graph represent connections between these nodes through which events can be exchanged.
 Edges are directed, meaning that a given connection allows to send events in only one direction.
-
-The sole function of the Event Loop is to run a Computational Graph at a fixed frequency. 
 The nodes in the graph are executed in a specific order which ensures that each of them performs their computations on the latest available data.
 By instantiating and connecting nodes, users can specify which events the Event Loop should react to, how they should be processed and which events should be sent out in response.
+As said above, the Computational Graph replaces the \ref transceiver_function "Transceiver Functions" when using the Event Loop.
+As explained in this \ref event_loop_configuration "page", it can also be used instead of Transceiver Functions in fully synchronous experiments using the FTILoop.
 
-The next pages describe in more detail the elements and function of the Event Loop and the Computational Graph and how they can be used in NRP-core experiments:
+The next pages describe in more detail the elements and function of the Event Loop, the Computational Graph and how they can be used in NRP-core experiments:
 - \subpage computational_graph : this page offers a description, with implementation details, of all elements and components involved in the Computational Graph.
 - \subpage python_graph : this page describes how to define Computational Graphs in Python.
 - \subpage event_loop_configuration : this page describes how to configure NRP-core experiments to use the Event Loop and the Computational Graph.
 - \subpage fn_cpp_nodes : this page describes how to build C++ Functional Nodes and afterwards use them in a Computational Graph
+- \subpage async_experiments : this page explains the steps required to port a NRPCore experiment from a synchronous setup, using a FTILoop, to fully asynchronous, real-time, using the Event Loop.
 
 Several example experiments using the Event Loop and the Computational Graph are available in the `examples/event_loop_examples` folder.
 

@@ -48,6 +48,9 @@ public:
     DataPack (const DataPack&) = delete;
     DataPack& operator= (const DataPack&) = delete;
 
+    DataPack(DataPack&& obj) = default;
+    DataPack& operator = (DataPack&&) = default;
+
     /*!
      * \brief Returns type of the datapack class
      *

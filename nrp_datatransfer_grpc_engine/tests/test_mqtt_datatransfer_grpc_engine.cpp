@@ -48,10 +48,9 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
                                   NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
-    EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "connected" status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(true);
@@ -77,8 +76,8 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 
     // The expected calls (above) are in these operations
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 
     // TODO: The datapack controller is not destroyed and shared ptr survives
     testing::Mock::AllowLeak(nrpMQTTClientMock.get());
@@ -97,10 +96,9 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
                                   NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
-    EngineGrpcServer::lock_t datapackLock;
 
     // Create a client with "disconnected" status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(false);
@@ -117,8 +115,8 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
             .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 }
 
 TEST(TestDatatransferGrpcEngine, ServerBroker)
@@ -133,10 +131,9 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"],
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
                                   NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
-    EngineGrpcServer::lock_t datapackLock;
 
     // We can try connection to non-existent real broker, but it may fail if broker exists
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(mqtt_config);
@@ -152,6 +149,6 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
             .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 }

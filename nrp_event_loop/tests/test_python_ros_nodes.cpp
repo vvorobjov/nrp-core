@@ -46,11 +46,9 @@ namespace bpy = boost::python;
 TEST(ComputationalGraphPythonNodes, ROS_NODES) {
     // Start roscore in a child process
     // TODO: find a better way to test these nodes without actually running roscore
+    pid_t ppid_before_fork = getpid();
     const auto pid = fork();
-    if(pid == 0) {
-        execlp("roscore", "roscore", (char*) NULL);
-    }
-    else {
+    if(pid) {
         // Setup required elements
         namespace bpy = boost::python;
         ros::init(std::map<std::string, std::string>(), "nrp_core");
@@ -125,6 +123,14 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         ASSERT_EQ(output_p2->getComputePeriod(), 2);
         ASSERT_EQ(output_p2->publishFromCache(), false);
     }
+    else {
+        int r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (r == -1) { perror(0); exit(1); }
+        if (getppid() != ppid_before_fork)
+            exit(1);
+        execlp("roscore", "roscore", (char*) NULL);
+    }
+
 
     // ROS decorator with an incorrect msg type
     ASSERT_THROW(bpy::import("test_ros_wrong_type"), boost::python::error_already_set);

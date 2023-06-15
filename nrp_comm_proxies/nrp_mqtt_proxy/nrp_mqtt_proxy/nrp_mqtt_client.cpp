@@ -52,15 +52,22 @@ void NRPMQTTClient::publish(const std::string& address, const std::string& msg, 
     _topics.at(address).publish(msg);
 }
 
+void NRPMQTTClient::publishDirect(const std::string& address, const std::string& msg)
+{
+    if(_subscribers.count(address))
+        _subscribers.at(address)(msg);
+}
+
 void NRPMQTTClient::subscribe(const std::string& address, const std::function<void (const std::string&)>& callback)
 {
-    if(!isConnected())
-        return;
-
     if(!_subscribers.count(address)) {
         _subscribers.emplace(address, callback);
-        _mqttClient->subscribe(address, QOS);
+
+        if(isConnected())
+            _mqttClient->subscribe(address, QOS);
     }
+    else
+        NRPLogger::warn("Subscribe to " + address + " failed. The address is already in use.");
 }
 
 NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
@@ -75,7 +82,7 @@ NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
 
         // In case of re-connection keep session
         mqtt::connect_options connOpts;
-        connOpts.set_clean_session(false);
+        connOpts.set_clean_session(true);
 
         _mqttClient->set_callback(_callback);
         _mqttClient->connect(connOpts)->wait();

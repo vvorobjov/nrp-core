@@ -66,7 +66,7 @@ add_library(FNFactoryModule SHARED fn_factory_module.cpp ${SOURCE_FILE_PATH})
 
 target_link_libraries(FNFactoryModule
             PUBLIC
-            ${NRP_ELE_LIB_TARGET}
+            ${NRP_EVENT_LOOP_TARGET}
             )
 
 # Link to specified NRP compiled Protobuf libraries

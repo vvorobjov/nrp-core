@@ -33,6 +33,10 @@ class GrpcEngineScript:
 
         self._datapacks_msgs: typing.Dict[str, Message] = {}
 
+    def _getEngineName(self) -> str:
+        """Returns Engine name"""
+        return self._name
+
     def _advanceTime(self, timestep_ns: int) -> None:
         """Advances the simulation time by given timestep"""
         self._time_ns = self._time_ns + timestep_ns
@@ -60,6 +64,12 @@ class GrpcEngineScript:
                                 f" 'protobuf_type' argument must be a Python Protobuf Message type")
         
         self._datapacks_msgs[datapack_name] = protobuf_type()
+
+    def _getRegisteredDataPackNames(self) -> list:
+        """
+        Returns the list of registered datapack names
+        """
+        return list(self._datapacks_msgs.keys())
 
     def _getDataPack(self, datapack_name: str):
         """

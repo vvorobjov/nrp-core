@@ -431,6 +431,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/event_loop/python_graph.dox"
         "docs/event_loop/computational_graph_integration.dox"
         "docs/event_loop/fn_cpp_nodes.dox"
+        "docs/event_loop/async_experiments.dox"
 
         COMMENT "Generating documentation")
 

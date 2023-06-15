@@ -36,13 +36,13 @@ void gazebo::NRPModelControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf
     this->_modelInterface.reset(new ModelGrpcDataPackController(datapackName, model));
     NRPLogger::info("Registering Model datapack [ {} ]", datapackName);
     try {
-        auto &commControl = NRPGRPCCommunicationController::getInstance();
-        commControl.registerDataPack(datapackName, this->_modelInterface.get());
+        auto &commControl = CommControllerSingleton::getInstance().engineCommController();
+        commControl.registerDataPackWithLock(datapackName, this->_modelInterface.get());
         // Register plugin in communication controller
         commControl.registerModelPlugin(this);
     }
     catch(NRPException&) {
-        throw NRPException::logCreate("Failed to register Model datapack. Ensure that this NRP gRPC Model plugin is "
+        throw NRPException::logCreate("Failed to register Model datapack. Ensure that this NRP Model plugin is "
                                       "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
     }
 }

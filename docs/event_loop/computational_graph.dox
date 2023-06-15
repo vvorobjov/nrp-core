@@ -173,10 +173,11 @@ If the Population is a SpikeSourcePoisson, this will have an array of objects ca
 MQTT nodes enable to connect the Computational Graph with MQTT topics.
 
 InputMQTTNode implements an InputNode which subscribes to an MQTT topic and makes incoming messages available through an OutputPort.
-Incoming messages can be injected into the graph in three data formats:
-- As strings containing the corresponding MQTT messages payload
-- As JSON objects, which content is set from the MQTT message payload
-- As any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core"
+Incoming messages can be injected into the graph in the following data formats:
+- Strings containing the corresponding MQTT messages payload
+- JSON objects, which content is set from the MQTT message payload
+- Any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core"
+- \ref datapacks "Datapacks" storing either a JSON object or a Protobuf message
 
 The node is templated with the type of object incoming MQTT messages should be converted to.
 

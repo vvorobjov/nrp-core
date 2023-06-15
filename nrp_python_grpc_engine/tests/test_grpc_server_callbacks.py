@@ -233,10 +233,10 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json)
         # Set the data
-        server_callbacks.set_datapack(self.set_datapack_data)
+        server_callbacks.set_datapacks(self.set_datapack_data)
 
         # Retrieve the data. It should match the data that was set.
-        datapacks = server_callbacks.get_datapack(self.get_datapack_data)
+        datapacks = server_callbacks.get_datapacks(self.get_datapack_data)
         get_json = dump_pb2.String()
         datapacks.dataPacks[0].data.Unpack(get_json)
         self.assertEqual(get_json.string_stream, self.test_str)
@@ -249,7 +249,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Unregistered DataPack .*"):
-            server_callbacks.set_datapack(self.set_datapack_data)
+            server_callbacks.set_datapacks(self.set_datapack_data)
 
     def test_set_datapack_malformed(self):
         """
@@ -259,7 +259,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Unregistered DataPack .*"):
-            server_callbacks.set_datapack(self.set_datapack_data)
+            server_callbacks.set_datapacks(self.set_datapack_data)
 
     def test_set_data_err_msg(self):
         """
@@ -288,7 +288,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
-            server_callbacks.get_datapack(self.get_datapack_data)
+            server_callbacks.get_datapacks(self.get_datapack_data)
 
     def test_get_datapack_incorrect_engine_name(self):
         """
@@ -303,7 +303,7 @@ class TestGrpcServer(unittest.TestCase):
         temp_json.dataPackType = DumpStringDataPack.getType()
         temp_json.engineName = "other_engine_name"
         with self.assertRaisesRegex(Exception, "Requesting DataPack .* from incorrect engine .*"):
-            server_callbacks.get_datapack(request_json)
+            server_callbacks.get_datapacks(request_json)
 
 
 if __name__ == '__main__':

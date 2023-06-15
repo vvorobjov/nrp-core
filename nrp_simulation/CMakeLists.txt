@@ -84,7 +84,7 @@ target_link_libraries(${LIBRARY_NAME}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
     NRPJSONEngineProtocol::NRPJSONEngineProtocol
-    ${NRP_ELE_LIB_TARGET}
+    ${NRP_EVENT_LOOP_TARGET}
     ${NRP_ROS_PROXY_TARGET}
     ${NRP_MQTT_PROXY_TARGET}
     ${catkin_LIBRARIES}

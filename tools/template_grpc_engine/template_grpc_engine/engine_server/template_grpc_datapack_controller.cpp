@@ -33,7 +33,7 @@ void ${engine_name}GrpcDataPackController::handleDataPackData(const google::prot
 {
     // In order to access the data from the message, you need to cast it to the proper type
 
-    std::cout << "TF output data: " << dynamic_cast<const EngineTest::TestPayload &>(data).str() << std::endl;
+    std::cout << "Message Received: " << dynamic_cast<const EngineTest::TestPayload &>(data).integer() << std::endl;
 }
 
 google::protobuf::Message * ${engine_name}GrpcDataPackController::getDataPackInformation()

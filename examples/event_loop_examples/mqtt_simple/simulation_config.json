@@ -1,9 +1,9 @@
 {
   "SimulationName": "test_sim",
   "SimulationDescription": "MQTT test experiment",
-  "SimulationTimeout": 30,
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",
   "ComputationalGraph": ["cg_mqtt.py"],
-  "MQTTNode": {}
+  "MQTTNode": {},
+  "EventLoop": { "Timestep": 0.1, "Timeout": 1}
 }

@@ -32,25 +32,25 @@ void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf:
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     try {
-        auto &commControl = NRPGRPCCommunicationController::getInstance();
+        auto &commControl = CommControllerSingleton::getInstance().engineCommController();
 
         // Register a datapack for each link
         auto links = model->GetLinks();
         for (const auto &link: links) {
-            const auto datapackName = NRPGRPCCommunicationController::createDataPackName(model->GetName(),
+            const auto datapackName = NRPGazeboCommunicationController::createDataPackName(model->GetName(),
                                                                                          link->GetName());
 
             NRPLogger::info("Registering Link datapack [ {} ]", datapackName);
 
             this->_linkInterfaces.push_back(LinkGrpcDataPackController(datapackName, link));
-            commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+            commControl.registerDataPackWithLock(datapackName, &(this->_linkInterfaces.back()));
         }
 
         // Register plugin
         commControl.registerModelPlugin(this);
     }
     catch(NRPException&) {
-        throw NRPException::logCreate("Failed to register Link datapack. Ensure that this NRP gRPC Link plugin is "
+        throw NRPException::logCreate("Failed to register Link datapack. Ensure that this NRP Link plugin is "
                                       "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
     }
 }

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -18,15 +20,9 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from nrp_core.engines.python_json import EngineScript
-from .SimManager import *
+from nrp_core.event_loop import run_event_loop_engine_app
+from nrp_core.engines.python_grpc import parseAndValidateEngineConfig, ProtobufEngineWrapper, ProtobufEventLoopEngine
 
 
-class PySimEngineScript(EngineScript):
-
-    @property
-    def sim_manager(self):
-        if not hasattr(self, '_sim_manager'):
-            self._sim_manager = SimulatorManager(self._config)
-
-        return self._sim_manager
+if __name__ == '__main__':
+    run_event_loop_engine_app(parseAndValidateEngineConfig, ProtobufEngineWrapper, ProtobufEventLoopEngine)

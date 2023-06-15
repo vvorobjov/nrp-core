@@ -23,31 +23,31 @@
 #ifndef EDLUT_GRPC_SERVER_H
 #define EDLUT_GRPC_SERVER_H
 
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
+#include "nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 #include "nrp_protobuf/enginetest.pb.h"
 #include "simulation/Simulation.h"
 #include "communication/ArrayInputSpikeDriver.h"
 #include "communication/ArrayOutputSpikeDriver.h"
 
-class EdlutGrpcServer
-    : public EngineGrpcServer
+class EdlutEngine
+    : public EngineProtoWrapper
 {
     public:
-        EdlutGrpcServer(const std::string &serverAddress, const std::string &engineName,
+        EdlutEngine(const std::string &engineName,
                                  const std::string &protobufPluginsPath,
                                  const nlohmann::json &protobufPlugins);
-        ~EdlutGrpcServer() = default;
+        ~EdlutEngine() = default;
 
         /*!
          * \brief Indicates if the simulation was initialized and is running
          */
-        bool initRunFlag() const { return this->_initRunFlag; };
+        virtual bool initRunFlag() const override { return this->_initRunFlag; };
 
         /*!
          * \brief Indicates if shutdown was requested by the client
          */
-        bool shutdownFlag() const { return this->_shutdownFlag; };
+        virtual bool shutdownFlag() const override { return this->_shutdownFlag; };
 
         /*!
          * \brief Runs a single step of the simulation
@@ -70,7 +70,7 @@ class EdlutGrpcServer
          *
          * \param[in] data Engine configuration data in form of JSON object
          */
-        void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
+        void initialize(const nlohmann::json &data) override;
 
         /*!
          * \brief Shutdowns the engine
@@ -78,10 +78,8 @@ class EdlutGrpcServer
          * The function will be called at the end of the simulation.
          * It should clean up all resources of the server and call API
          * functions of the simulator responsible for terminating the simulation.
-         *
-         * \param[in] data Additional arguments passed from the client
          */
-        void shutdown(const nlohmann::json &data) override;
+        void shutdown() override;
 
         /*!
          * \brief Resets the engine
@@ -102,7 +100,7 @@ class EdlutGrpcServer
         /*!
          * \brief Helper function used by Initializes and Reset to initialize the engine
          */
-        void initEdlutEngine(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock);
+        void initEdlutEngine(const nlohmann::json &data);
 
         /*!
          * \brief Indicates if the simulation was initialized and is running

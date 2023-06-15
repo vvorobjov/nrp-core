@@ -50,12 +50,13 @@ class StandaloneApplication(python_grpc_engine_pb2_grpc.EngineGrpcServiceService
         return python_grpc_engine_pb2.RunLoopStepReply(engineTime=res)
 
     def setDataPacks(self, request, context):
-        server_callbacks.set_datapack(request)
+        server_callbacks.set_datapacks(request)
         return python_grpc_engine_pb2.SetDataPacksReply()
 
     def getDataPacks(self, request, context):
-        res = server_callbacks.get_datapack(request)
+        res = server_callbacks.get_datapacks(request)
         return res
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -65,9 +66,10 @@ if __name__ == '__main__':
     
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
     python_grpc_engine_pb2_grpc.add_EngineGrpcServiceServicer_to_server(
-        StandaloneApplication(),server)
+        StandaloneApplication(), server)
     server.add_insecure_port(args.serverurl)
     server.start()
     print("grpc server start...")
     server.wait_for_termination()
+
 # EOF

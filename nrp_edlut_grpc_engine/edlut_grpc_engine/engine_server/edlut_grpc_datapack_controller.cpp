@@ -36,7 +36,7 @@ void EdlutGrpcDataPackController::handleDataPackData(const google::protobuf::Mes
     const auto &d = dynamic_cast<const EdlutData::Spikes &>(data);
 
     std::stringstream m_data;
-    m_data <<"Simulation time EDLUT "<< fromSimulationTime<float, std::ratio<1>>(EdlutGrpcServer::_simulationTime) <<std::endl;
+    m_data <<"Simulation time EDLUT "<< fromSimulationTime<float, std::ratio<1>>(EdlutEngine::_simulationTime) <<std::endl;
     NRPLogger::debug(m_data.str());
 
     for(int j=0; j<d.spikes_time_size();j++)
@@ -57,7 +57,7 @@ google::protobuf::Message * EdlutGrpcDataPackController::getDataPackInformation(
     
     // Create a new protobuf message and fill it
     auto payload = new EdlutData::Spikes();
-    payload->set_time(fromSimulationTime<float, std::ratio<1>>(EdlutGrpcServer::_simulationTime));
+    payload->set_time(fromSimulationTime<float, std::ratio<1>>(EdlutEngine::_simulationTime));
 
     for(auto &spike: this->_spikesTime)
         payload->add_spikes_time(spike);

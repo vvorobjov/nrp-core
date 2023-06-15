@@ -34,7 +34,7 @@ sudo apt remove python3-flask python3-flask-cors
 # By installing flask version 1.1.4 markupsafe library (included with flask) has to be downgraded to version 2.0.1 to run properly with gunicorn
 # You can install that version with 
 # pip install flask==1.1.4 gunicorn markupsafe==2.0.1
-pip install flask gunicorn
+pip install flask gunicorn paho-mqtt
 
 # required by nest-server (which is built and installed along with nrp-core)
 sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3 

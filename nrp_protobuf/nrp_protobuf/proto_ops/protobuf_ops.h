@@ -36,72 +36,30 @@ namespace gpb = google::protobuf;
 namespace protobuf_ops {
 
     /*!
-     * @brief Extracts the data field from a datapack protobuf msg, which is of Any type
+     * @brief Attempts to unpack an Any protobuf msg to any of the template parameter classes
      *
      * @tparam MSG_TYPE template param containing the list of protobuf types that will be check in the conversion
      * @tparam REMAINING_MSG_TYPES
-     * @param from datapack protobuf msg
-     * @return protobuf msg which was stored in 'from' data field
+     * @param from Any protobuf msg
+     * @return protobuf msg unpacked from 'from'
      */
     template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-    std::unique_ptr<gpb::Message> getDataFromDataPackMessageSubset(const EngineGrpc::DataPackMessage & from)
+    std::unique_ptr<gpb::Message> unpackProtoAnySubset(const gpb::Any & from)
     {
         // If data is of MSG_TYPE type, unpack
-        if(from.data().Is<MSG_TYPE>())
+        if(from.Is<MSG_TYPE>())
         {
             MSG_TYPE * dataPack = new MSG_TYPE();
-            from.data().UnpackTo(dataPack);
+            from.UnpackTo(dataPack);
             return std::unique_ptr<gpb::Message>(dataPack);
         }
 
         // Try with the remaining types or throw
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-            return getDataFromDataPackMessageSubset<REMAINING_MSG_TYPES...>(from);
+            return unpackProtoAnySubset<REMAINING_MSG_TYPES...>(from);
         else
-        {
-            const auto errorMessage = "Unable to unpack data from Datapack Message '" +
-                                      from.datapackid().datapackname() +
-                                      "' in engine '"
-                                      + from.datapackid().enginename() + "'";
-
-            throw NRPException(errorMessage);
-        }
+            return std::unique_ptr<gpb::Message>();
     }
-
-
-    /*!
-     * @brief Finds the type of protobuf msg contained in 'from' data field and creates a datapack from it
-     *
-     * @tparam MSG_TYPE template param containing the list of protobuf types that will be check in the conversion
-     * @tparam REMAINING_MSG_TYPES
-     * @param engineName owner of 'from'
-     * @param from datapack protobuf msg
-     * @return the instantiated datapack
-     */
-    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
-    // TODO: use engine name from 'from' after https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340 is resolved
-    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, const EngineGrpc::DataPackMessage & from)
-    {
-        const auto & dataPackId = from.datapackid();
-
-        if(!from.has_data())
-            return DataPackInterfaceConstSharedPtr(new DataPackInterface(dataPackId.datapackname(),
-                                                                         engineName, dataPackId.datapacktype()));
-        else if(from.data().Is<MSG_TYPE>())
-        {
-            MSG_TYPE * data = new MSG_TYPE();
-            from.data().UnpackTo(data);
-
-            return DataPackInterfaceConstSharedPtr(
-                    new DataPack<MSG_TYPE>(dataPackId.datapackname(), engineName, data));
-        }
-
-        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
-            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, from);
-        else
-            return nullptr;
-    }
-
 
     /*!
      * @brief Set a protobuf datapack msg data field from a protobuf message
@@ -142,6 +100,40 @@ namespace protobuf_ops {
 
             throw NRPException(errorMessage);
         }
+    }
+
+
+    /*!
+     * @brief Finds the type of protobuf msg contained in 'from' data field and creates a datapack from it
+     *
+     * @tparam MSG_TYPE template param containing the list of protobuf types that will be check in the conversion
+     * @tparam REMAINING_MSG_TYPES
+     * @param engineName owner of 'from'
+     * @param from datapack protobuf msg
+     * @return the instantiated datapack
+     */
+    template<class MSG_TYPE, class ...REMAINING_MSG_TYPES>
+    // TODO: use engine name from 'from' after https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8340 is resolved
+    DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessageSubset(const std::string &engineName, const EngineGrpc::DataPackMessage & from)
+    {
+        const auto & dataPackId = from.datapackid();
+
+        if(!from.has_data())
+            return DataPackInterfaceConstSharedPtr(new DataPackInterface(dataPackId.datapackname(),
+                                                                         engineName, dataPackId.datapacktype()));
+        else if(from.data().Is<MSG_TYPE>())
+        {
+            MSG_TYPE * data = new MSG_TYPE();
+            from.data().UnpackTo(data);
+
+            return DataPackInterfaceConstSharedPtr(
+                    new DataPack<MSG_TYPE>(dataPackId.datapackname(), engineName, data));
+        }
+
+        if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
+            return getDataPackInterfaceFromMessageSubset<REMAINING_MSG_TYPES...>(engineName, from);
+        else
+            return nullptr;
     }
 
 
@@ -216,15 +208,16 @@ namespace protobuf_ops {
     // Interface containing conversion operations between protobuf messages and datapacks
     class NRPProtobufOpsIface {
     public:
+
+        virtual std::unique_ptr<gpb::Message> unpackProtoAny(const gpb::Any &from) = 0;
+
+        virtual void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) = 0;
+
         virtual DataPackInterfaceConstSharedPtr
         getDataPackInterfaceFromMessage(const std::string &engineName, const EngineGrpc::DataPackMessage &from) = 0;
 
         virtual void
         setDataPackMessageFromInterface(const DataPackInterface &from, EngineGrpc::DataPackMessage *to) = 0;
-
-        virtual std::unique_ptr<gpb::Message> getDataFromDataPackMessage(const EngineGrpc::DataPackMessage &from) = 0;
-
-        virtual void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) = 0;
 
         virtual void setTrajectoryMessageFromInterface(const DataPackInterface & from, NrpCore::TrajectoryMessage * to) = 0;
     };
@@ -233,17 +226,18 @@ namespace protobuf_ops {
     template<class ...MSG_TYPES>
     class NRPProtobufOps : public NRPProtobufOpsIface {
     public:
+
+        std::unique_ptr<gpb::Message> unpackProtoAny(const gpb::Any& from) override
+        { return unpackProtoAnySubset<MSG_TYPES...>(from); }
+
+        void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) override
+        { setDataPackMessageDataSubset<MSG_TYPES...>(from, to); }
+
         DataPackInterfaceConstSharedPtr getDataPackInterfaceFromMessage(const std::string &engineName, const EngineGrpc::DataPackMessage &from) override
         { return getDataPackInterfaceFromMessageSubset<MSG_TYPES...>(engineName, from); }
 
         void setDataPackMessageFromInterface(const DataPackInterface & from, EngineGrpc::DataPackMessage * to) override
         { setDataPackMessageFromInterfaceSubset<MSG_TYPES...>(from, to); }
-
-        std::unique_ptr<gpb::Message> getDataFromDataPackMessage(const EngineGrpc::DataPackMessage& from) override
-        { return getDataFromDataPackMessageSubset<MSG_TYPES...>(from); }
-
-        void setDataPackMessageData(const gpb::Message &from, EngineGrpc::DataPackMessage *to) override
-        { setDataPackMessageDataSubset<MSG_TYPES...>(from, to); }
 
         void setTrajectoryMessageFromInterface(const DataPackInterface & from, NrpCore::TrajectoryMessage * to) override
         {

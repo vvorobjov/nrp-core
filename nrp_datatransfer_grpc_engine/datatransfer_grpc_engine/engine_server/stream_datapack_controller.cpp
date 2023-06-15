@@ -131,13 +131,11 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
             auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
             bool isFound = false;
             for(auto& mod : _protoOps) {
-                try {
-                    const auto& d = mod->getDataFromDataPackMessage(dataPack);
+                const auto& d = mod->unpackProtoAny(dataPack.data());
+                if(d) {
                     msg = d->GetTypeName();
                     isFound = true;
-                }
-                catch (NRPException &) {
-                    // this just means that the module couldn't process the request, try with the next one
+                    break;
                 }
             }
 
@@ -193,13 +191,11 @@ void StreamDataPackController::streamToFile(const google::protobuf::Message &dat
         auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
         bool isFound = false;
         for(auto& mod : _protoOps) {
-            try {
-                const auto& d = mod->getDataFromDataPackMessage(dataPack);
+            const auto& d = mod->unpackProtoAny(dataPack.data());
+            if(d) {
                 data_str = (this->*fmtCallback)(*d);
                 isFound = true;
-            }
-            catch (NRPException &) {
-                // this just means that the module couldn't process the request, try with the next one
+                break;
             }
         }
 
@@ -223,7 +219,7 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
     if(!this->_initialized)
         m_data << "sim_time" << ",";
     else
-        m_data << fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime) << ",";
+        m_data << fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime) << ",";
 
     auto n = data.GetDescriptor()->field_count();
     for(int i = 0; i < n; ++i)
@@ -237,7 +233,7 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
 
 std::string StreamDataPackController::fmtString(const google::protobuf::Message &data){
     const auto& dump = dynamic_cast<const Dump::String &>(data);
-    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime)) +
             + "," + dump.string_stream();
 }
 
@@ -263,7 +259,7 @@ std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &
         }
     }
 
-    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime)) +
             + "," + msg;
 }
 

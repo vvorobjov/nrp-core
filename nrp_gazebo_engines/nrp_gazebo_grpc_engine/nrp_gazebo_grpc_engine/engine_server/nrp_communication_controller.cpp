@@ -26,37 +26,19 @@
 
 using namespace nlohmann;
 
-std::unique_ptr<NRPGRPCCommunicationController> NRPGRPCCommunicationController::_instance = nullptr;
+NRPGazeboCommunicationController::NRPGazeboCommunicationController(const std::string &engineName,
+                                 const std::string &protobufPluginsPath,
+                                 const nlohmann::json &protobufPlugins) :
+        EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins)
+{ }
 
-NRPGRPCCommunicationController::~NRPGRPCCommunicationController()
-{
-    this->_stepController = nullptr;
-}
-
-NRPGRPCCommunicationController &NRPGRPCCommunicationController::getInstance()
-{
-    if(NRPGRPCCommunicationController::_instance)
-        return *(NRPGRPCCommunicationController::_instance.get());
-    else
-        throw NRPException::logCreate("Attempting to access NRPGRPCCommunicationController singleton, but it has to be"
-                                      " instantiated first");
-}
-
-NRPGRPCCommunicationController &NRPGRPCCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName,
-                                                                      const std::string &protobufPluginsPath,
-                                                                      const nlohmann::json &protobufPlugins)
-{
-    NRPGRPCCommunicationController::_instance.reset(new NRPGRPCCommunicationController(serverURL, engineName, protobufPluginsPath, protobufPlugins));
-    return NRPGRPCCommunicationController::getInstance();
-}
-
-void NRPGRPCCommunicationController::registerStepController(GazeboStepController *stepController)
+void NRPGazeboCommunicationController::registerStepController(GazeboStepController *stepController)
 {
     lock_t lock(this->_datapackLock);
     this->_stepController = stepController;
 }
 
-SimulationTime NRPGRPCCommunicationController::runLoopStep(SimulationTime timeStep)
+SimulationTime NRPGazeboCommunicationController::runLoopStep(SimulationTime timeStep)
 {
     if(this->_stepController == nullptr)
     {
@@ -68,7 +50,6 @@ SimulationTime NRPGRPCCommunicationController::runLoopStep(SimulationTime timeSt
 
     try
     {
-        // Execute loop step (Note: The _datapackLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to datapacks is possible at this moment)
         return this->_stepController->runLoopStep(timeStep);
     }
     catch(const std::exception &e)
@@ -78,8 +59,10 @@ SimulationTime NRPGRPCCommunicationController::runLoopStep(SimulationTime timeSt
     }
 }
 
-void NRPGRPCCommunicationController::initialize(const json &data, lock_t &lock)
+void NRPGazeboCommunicationController::initialize(const json &data)
 {
+    lock_t lock(this->_datapackLock);
+
     double waitTime = data.at("WorldLoadTime");
     if(waitTime <= 0)
         waitTime = std::numeric_limits<double>::max();
@@ -99,8 +82,8 @@ void NRPGRPCCommunicationController::initialize(const json &data, lock_t &lock)
             lock.lock();
 
             const auto errMsg = "Gazebo Engine was unable to load world file \"" + data.at("GazeboWorldFile").get<std::string>() +
-                    "\" before the specified timeout of " + std::to_string(data.at("WorldLoadTime").get<int>()) +
-                    " seconds. Check for gazebo errors in the output log or set a larger timeout if needed";
+                                "\" before the specified timeout of " + std::to_string(data.at("WorldLoadTime").get<int>()) +
+                                " seconds. Check for gazebo errors in the output log or set a larger timeout if needed";
             throw std::runtime_error(errMsg);
         }
     }
@@ -111,10 +94,10 @@ void NRPGRPCCommunicationController::initialize(const json &data, lock_t &lock)
             // Parse pose
             std::istringstream poseStr(model.at("InitPose").get<std::string>());
             std::vector<std::string> poseArgs(std::istream_iterator<std::string>{poseStr},
-                                             std::istream_iterator<std::string>());
+                                              std::istream_iterator<std::string>());
             if(poseArgs.size() != 6)
                 throw NRPException::logCreate("Error while parsing SDF model" + model.at("Name").get<std::string>()
-                        + ". Pose array must contain 6 elements, contains " + std::to_string(poseArgs.size()));
+                                              + ". Pose array must contain 6 elements, contains " + std::to_string(poseArgs.size()));
 
             // Parse args
             std::vector<std::string> args = {"gz", "model", "--spawn-file=" + model.at("File").get<std::string>(),
@@ -141,7 +124,7 @@ void NRPGRPCCommunicationController::initialize(const json &data, lock_t &lock)
     lock.lock();
 }
 
-void NRPGRPCCommunicationController::reset()
+void NRPGazeboCommunicationController::reset()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -157,19 +140,34 @@ void NRPGRPCCommunicationController::reset()
     }
     catch(const std::exception &e)
     {
-        NRPLogger::error("NRPGRPCCommunicationController::reset: failed to resetWorld()");
+        NRPLogger::error("NRPGazeboCommunicationController::reset: failed to resetWorld()");
 
         throw;
     }
 }
 
-void NRPGRPCCommunicationController::shutdown(const json&)
+void NRPGazeboCommunicationController::shutdown()
 {
     // Do nothing
 }
 
-NRPGRPCCommunicationController::NRPGRPCCommunicationController(const std::string &serverURL, const std::string &engineName,
-                                                       const std::string &protobufPluginsPath,
-                                                       const nlohmann::json &protobufPlugins)
-    : EngineGrpcServer(serverURL, engineName, protobufPluginsPath, protobufPlugins)
+std::unique_ptr<CommControllerSingleton> CommControllerSingleton::_instance = nullptr;
+
+CommControllerSingleton &CommControllerSingleton::getInstance()
+{
+    if(CommControllerSingleton::_instance)
+        return *(CommControllerSingleton::_instance.get());
+    else
+        throw NRPException::logCreate("Attempting to access CommControllerSingleton singleton, but it has to be"
+                                      " instantiated first");
+}
+
+CommControllerSingleton &CommControllerSingleton::resetInstance(NRPGazeboCommunicationController* engineController)
+{
+    CommControllerSingleton::_instance.reset(new CommControllerSingleton(engineController));
+    return CommControllerSingleton::getInstance();
+}
+
+CommControllerSingleton::CommControllerSingleton(NRPGazeboCommunicationController* engineController)
+    : _controller(engineController)
 {}

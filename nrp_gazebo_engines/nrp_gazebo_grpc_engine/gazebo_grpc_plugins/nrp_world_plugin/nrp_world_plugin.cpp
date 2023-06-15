@@ -49,10 +49,10 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 
     NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
     try {
-        NRPGRPCCommunicationController::getInstance().registerStepController(this);
+        CommControllerSingleton::getInstance().engineCommController().registerStepController(this);
     }
     catch(NRPException&) {
-        throw NRPException::logCreate("Failed to register world controller. Ensure that this NRP gRPC world plugin is "
+        throw NRPException::logCreate("Failed to register world controller. Ensure that this NRP world plugin is "
                                       "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
     }
 }

@@ -87,12 +87,12 @@ def run_loop():
 
 @app.route('/set_datapacks', methods=["POST"])
 def set_datapack():
-    return jsonify(server_callbacks.set_datapack(request.json))
+    return jsonify(server_callbacks.set_datapacks(request.json))
 
 
 @app.route('/get_datapacks', methods=["POST"])
 def get_datapack():
-    return jsonify(server_callbacks.get_datapack(request.json))
+    return jsonify(server_callbacks.get_datapacks(request.json))
 
 
 @app.route('/reset', methods=["POST"])

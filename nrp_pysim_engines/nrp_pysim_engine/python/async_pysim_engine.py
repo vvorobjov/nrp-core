@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # NRP Core - Backend infrastructure to synchronize simulations
 #
 # Copyright 2020-2021 NRP Team
@@ -18,7 +20,11 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
+from nrp_core.event_loop import run_event_loop_engine_app
+from nrp_core.engines.python_json import JSONEngineWrapper, JSONEventLoopEngine
+from nrp_core.engines.py_sim import parseAndValidateEngineConfig
 
-from .engine_script import *
 
-# EOF
+if __name__ == '__main__':
+    run_event_loop_engine_app(parseAndValidateEngineConfig, JSONEngineWrapper, JSONEventLoopEngine)
+

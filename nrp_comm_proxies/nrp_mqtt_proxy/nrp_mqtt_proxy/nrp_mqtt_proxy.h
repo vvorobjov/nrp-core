@@ -58,6 +58,11 @@ public:
     void publish(const std::string& address, const std::string& msg, bool retained=false);
 
     /*!
+     * \brief Check connection status to broker
+     */
+    bool isConnected();
+
+    /*!
      * \brief Disconnects client from MQTT Broker
      */
     void disconnect();
@@ -66,6 +71,15 @@ public:
      * \brief Clear all topics with retain messages by sending an empty msg
      */
     void clearRetained();
+
+protected:
+
+    /*!
+     * \brief If true, msgs are published directly to subscriber callbacks, without going through the MQTT broker. Only for testing.
+     */
+    bool _doBypassBroker = false;
+
+    friend class EventLoop_EVENT_LOOP_ENGINE_Test;
 
 private:
 

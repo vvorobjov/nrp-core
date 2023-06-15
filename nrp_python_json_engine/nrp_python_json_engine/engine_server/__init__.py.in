@@ -18,7 +18,8 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-
-from .grpc_engine_script import *
+from .@PYTHON_MODULE_NAME@ import *
+from .engine_script import *
+from .json_event_loop_engine import JSONEngineWrapper, JSONEventLoopEngine
 
 # EOF

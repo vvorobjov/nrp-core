@@ -25,42 +25,41 @@
 #include <sstream>
 
 
-SimulationTime EdlutGrpcServer::_simulationTime = SimulationTime::zero();
+SimulationTime EdlutEngine::_simulationTime = SimulationTime::zero();
 
-EdlutGrpcServer::EdlutGrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName,
+EdlutEngine::EdlutEngine(const std::string &engineName,
                                                    const std::string &protobufPluginsPath,
                                                    const nlohmann::json &protobufPlugins)
-    : EngineGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins),
+    : EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins),
     _engineName(engineName)
 {
     this->_inputSpikeDriver = std::make_shared<ArrayInputSpikeDriver>();
     this->_outputSpikeDriver = std::make_shared<ArrayOutputSpikeDriver>();
 }
 
-SimulationTime EdlutGrpcServer::runLoopStep(SimulationTime timeStep)
+SimulationTime EdlutEngine::runLoopStep(SimulationTime timeStep)
 {
 
-    NRP_LOGGER_TRACE("EdlutGrpcServer::runLoopStep called");
+    NRP_LOGGER_TRACE("EdlutEngine::runLoopStep called");
 
     this->_simulationTime += timeStep;
 
     /* Run edlut simulator */
-    this->_edlutSimul->RunSimulationSlot(fromSimulationTime<float, std::ratio<1>>(EdlutGrpcServer::_simulationTime)+this->_sensorialDelay);
+    this->_edlutSimul->RunSimulationSlot(fromSimulationTime<float, std::ratio<1>>(EdlutEngine::_simulationTime)+this->_sensorialDelay);
 
     return this->_simulationTime;
 }
 
-void EdlutGrpcServer::initialize(const nlohmann::json &data, EngineGrpcServer::lock_t & datapackLock)
+void EdlutEngine::initialize(const nlohmann::json &data)
 {
     NRPLogger::info("Initializing EDLUT gRPC Engine");
     this->_engineConfig = data;
     NRPLogger::debug(this->_engineConfig.dump(4));
 
-    initEdlutEngine(data, datapackLock);
+    initEdlutEngine(data);
 }
 
-void EdlutGrpcServer::initEdlutEngine(const nlohmann::json &data, EngineGrpcServer::lock_t & /*datapackLock*/)
+void EdlutEngine::initEdlutEngine(const nlohmann::json &data)
 {
     // Create Edlut sim objects
     try{
@@ -83,26 +82,25 @@ void EdlutGrpcServer::initEdlutEngine(const nlohmann::json &data, EngineGrpcServ
     }
 
     // Register datapack
-    this->registerDataPackNoLock("spikes_datapack", new EdlutGrpcDataPackController("spikes_datapack", this->_engineName, this->_edlutSimul, this->_inputSpikeDriver, this->_outputSpikeDriver));
+    this->registerDataPack("spikes_datapack", new EdlutGrpcDataPackController("spikes_datapack", this->_engineName, this->_edlutSimul, this->_inputSpikeDriver, this->_outputSpikeDriver));
     NRPLogger::info("DataPack \"spikes_datapack\" was registered");
 
-    EdlutGrpcServer::_simulationTime = SimulationTime::zero();
+    EdlutEngine::_simulationTime = SimulationTime::zero();
     this->_initRunFlag = true;
 }
 
-void EdlutGrpcServer::shutdown(const nlohmann::json &/*data*/)
+void EdlutEngine::shutdown()
 {
     NRPLogger::info("Shutting down EDLUT simulation");
     this->_shutdownFlag = true;
 }
 
-void EdlutGrpcServer::reset()
+void EdlutEngine::reset()
 {
     NRPLogger::info("Resetting EDLUT simulation");
 
-    EngineGrpcServer::lock_t lock(this->_datapackLock);
     this->clearRegisteredDataPacks();
-    this->initEdlutEngine(this->_engineConfig, lock);
+    this->initEdlutEngine(this->_engineConfig);
 }
 
 

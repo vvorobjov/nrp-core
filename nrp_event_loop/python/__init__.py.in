@@ -19,4 +19,6 @@
 # Agreement No. 945539 (Human Brain Project SGA3).
 
 from .@PYTHON_MODULE_NAME@ import *
+from .event_loop_interface import EventLoopInterface
+from .event_loop_engine import EngineWrapper, EventLoopEngine, run_event_loop_engine_app
 

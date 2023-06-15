@@ -108,27 +108,28 @@ class TestEngineGrpcClient
         }
 };
 
-class TestEngineGrpcServer
-    : public EngineGrpcServer
+class TestEngine
+    : public EngineProtoWrapper
 {
     public:
 
-        TestEngineGrpcServer(const std::string & serverAddress)
-            : EngineGrpcServer(serverAddress, "TestEngineGrpcServer",
+        TestEngine()
+            : EngineProtoWrapper("TestEngine",
                                NRP_PLUGIN_INSTALL_DIR,
                                json::array({"EngineTest"}))
         {
 
         }
 
-        virtual ~TestEngineGrpcServer() override = default;
+        virtual ~TestEngine() override = default;
 
-        void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &) override
+        void initialize(const nlohmann::json &/*data*/) override
         {
             specialBehaviour();
 
-            if(data.at("throw"))
+            if(_doThrow)
             {
+                _doThrow = false;
                 throw std::runtime_error("Init failed");
             }
         }
@@ -140,12 +141,13 @@ class TestEngineGrpcServer
             this->resetEngineTime();
         }
 
-        void shutdown(const nlohmann::json &data) override
+        void shutdown() override
         {
             specialBehaviour();
 
-            if(data.at("throw"))
+            if(_doThrow)
             {
+                _doThrow = false;
                 throw std::runtime_error("Shutdown failed");
             }
         }
@@ -153,6 +155,11 @@ class TestEngineGrpcServer
         void timeoutOnNextCommand(int sleepTimeMs = 1500)
         {
             this->_sleepTimeMs = sleepTimeMs;
+        }
+
+        void throwOnNextCommand()
+        {
+            _doThrow = true;
         }
 
         SimulationTime runLoopStep(const SimulationTime timeStep) override
@@ -174,6 +181,10 @@ class TestEngineGrpcServer
             return this->_time;
         }
 
+        virtual bool initRunFlag() const override { return true; }
+
+        virtual bool shutdownFlag() const override { return false; }
+
     private:
 
         void specialBehaviour()
@@ -187,6 +198,7 @@ class TestEngineGrpcServer
 
         SimulationTime _time = SimulationTime::zero();
         int            _sleepTimeMs = 0;
+        bool _doThrow = false;
 };
 
 TEST(EngineGrpc, Connection)
@@ -197,8 +209,10 @@ TEST(EngineGrpc, Connection)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // Should throw, because no server is running
 
@@ -217,12 +231,13 @@ TEST(EngineGrpc, InitCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
-    jsonMessage["throw"]   = false;
 
     // The gRPC server isn't running, so the init command should fail
 
@@ -238,7 +253,7 @@ TEST(EngineGrpc, InitCommand)
     // Force the server to return an error from the rpc
     // Check if the client receives an error response on command handling failure
 
-    jsonMessage["throw"] = true;
+    engineWrapper->throwOnNextCommand();
     ASSERT_THROW(client.sendInitializeCommand(jsonMessage), std::runtime_error);
 }
 
@@ -251,17 +266,18 @@ TEST(EngineGrpc, InitCommandTimeout)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
-    jsonMessage["throw"]   = false;
 
     // Test init command timeout
 
     server.startServer();
-    server.timeoutOnNextCommand();
+    engineWrapper->timeoutOnNextCommand();
     ASSERT_THROW(client.sendInitializeCommand(jsonMessage), std::runtime_error);
 }
 
@@ -273,11 +289,13 @@ TEST(EngineGrpc, ShutdownCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
+    
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
-    jsonMessage["throw"]    = false;
 
     // The gRPC server isn't running, so the shutdown command should fail
 
@@ -293,7 +311,7 @@ TEST(EngineGrpc, ShutdownCommand)
     // Force the server to return an error from the rpc
     // Check if the client receives an error response on command handling failure
 
-    jsonMessage["throw"] = true;
+    engineWrapper->throwOnNextCommand();
     ASSERT_THROW(client.sendShutdownCommand(jsonMessage), std::runtime_error);
 }
 
@@ -306,17 +324,18 @@ TEST(EngineGrpc, ShutdownCommandTimeout)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     nlohmann::json jsonMessage;
     jsonMessage["shutdown"] = true;
-    jsonMessage["throw"]    = false;
 
     // Test shutdown command timeout
 
     server.startServer();
-    server.timeoutOnNextCommand();
+    engineWrapper->timeoutOnNextCommand();
     ASSERT_THROW(client.sendShutdownCommand(jsonMessage), std::runtime_error);
 }
 
@@ -333,8 +352,10 @@ TEST(EngineGrpc, RunLoopStepCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // The gRPC server isn't running, so the runLoopStep command should fail
 
@@ -345,19 +366,19 @@ TEST(EngineGrpc, RunLoopStepCommand)
 
     // Engine time should never be smaller than 0
 
-    server.resetEngineTime();
+    engineWrapper->resetEngineTime();
     timeStep = floatToSimulationTime(-0.1f);
     ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 
     // Normal loop execution, the command should return engine time
 
-    server.resetEngineTime();
+    engineWrapper->resetEngineTime();
     timeStep = floatToSimulationTime(1.0f);
     ASSERT_NEAR(client.runLoopStepCallback(timeStep).count(), timeStep.count(), 0.0001);
 
     // Try to go back in time. The client should raise an error when engine time is decreasing
 
-    server.resetEngineTime();
+    engineWrapper->resetEngineTime();
     timeStep = floatToSimulationTime(2.0f);
     ASSERT_NO_THROW(client.runLoopStepCallback(timeStep));
     timeStep = floatToSimulationTime(-1.0f);
@@ -375,13 +396,15 @@ TEST(EngineGrpc, runLoopStepCommandTimeout)
     config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // Test runLoopStep command timeout
 
     server.startServer();
-    server.timeoutOnNextCommand();
+    engineWrapper->timeoutOnNextCommand();
     SimulationTime timeStep = floatToSimulationTime(2.0f);
     ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 }
@@ -394,12 +417,13 @@ TEST(EngineGrpc, ResetCommand)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     nlohmann::json jsonMessage;
     jsonMessage["init"]    = true;
-    jsonMessage["throw"]   = false;
 
     // The gRPC server isn't running, so the reset command should fail
 
@@ -429,24 +453,28 @@ TEST(EngineGrpc, ResetCommandTimeout)
     config["ProtobufPackages"] = json::array({"EngineTest"});
     config["EngineCommandTimeout"] = 1;
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // Test runLoopStep command timeout
 
     server.startServer();
-    server.timeoutOnNextCommand();
+    engineWrapper->timeoutOnNextCommand();
     ASSERT_THROW(client.sendResetCommand(), std::runtime_error);
 }
 
 TEST(EngineGrpc, RegisterDataPacks)
 {
-    TestEngineGrpcServer server("localhost:9004");
+    // No need to be concern about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
+    EngineGrpcServer server("localhost:9004", engineWrapper);
     TestGrpcDataPackController *dev1 = nullptr;
 
-    ASSERT_EQ(server.getNumRegisteredDataPacks(), 0);
-    server.registerDataPack("dev1", dev1);
-    ASSERT_EQ(server.getNumRegisteredDataPacks(), 1);
+    ASSERT_EQ(engineWrapper->getNumRegisteredDataPacks(), 0);
+    engineWrapper->registerDataPack("dev1", dev1);
+    ASSERT_EQ(engineWrapper->getNumRegisteredDataPacks(), 1);
 }
 
 
@@ -479,13 +507,15 @@ TEST(EngineGrpc, SetDataPackData)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     datapacks_set_t input_datapacks;
 
     std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
-    server.registerDataPack(datapackName, datapackController.get());
+    engineWrapper->registerDataPack(datapackName, datapackController.get());
 
     auto dataPack1 = generateDataPack(datapackName, engineName); // Client side
     input_datapacks.insert(dataPack1);
@@ -532,8 +562,10 @@ TEST(EngineGrpc, GetDataPackData)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // Client sends a request to the server
 
@@ -543,7 +575,7 @@ TEST(EngineGrpc, GetDataPackData)
     auto dataPack1 = generateDataPack(datapackName, engineName);
     std::shared_ptr<TestGrpcDataPackController> datapackController(new TestGrpcDataPackController()); // Server side
 
-    server.registerDataPack(datapackName, datapackController.get());
+    engineWrapper->registerDataPack(datapackName, datapackController.get());
 
     input_datapacks.insert(dataPack1);
 
@@ -620,8 +652,10 @@ TEST(EngineGrpc, GetDataPackData2)
     config["ProtobufPluginsPath"] = NRP_PLUGIN_INSTALL_DIR;
     config["ProtobufPackages"] = json::array({"EngineTest"});
 
+    // No need to be concerned about deleting this pointer, EngineGrpcServer takes care of that
+    auto engineWrapper = new TestEngine();
     TestEngineGrpcClient client(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-    TestEngineGrpcServer server(client.serverAddress());
+    EngineGrpcServer server(client.serverAddress(), engineWrapper);
 
     // Client sends a request to the server
 
@@ -634,8 +668,8 @@ TEST(EngineGrpc, GetDataPackData2)
     std::shared_ptr<TestGrpcDataPackController> datapackController1(new TestGrpcDataPackController()); // Server side
     std::shared_ptr<TestGrpcDataPackController> datapackController2(new TestGrpcDataPackController()); // Server side
 
-    server.registerDataPack(datapackName1, datapackController1.get());
-    server.registerDataPack(datapackName2, datapackController2.get());
+    engineWrapper->registerDataPack(datapackName1, datapackController1.get());
+    engineWrapper->registerDataPack(datapackName2, datapackController2.get());
 
     input_datapacks.insert(dataPack1);
     input_datapacks.insert(dataPack2);
