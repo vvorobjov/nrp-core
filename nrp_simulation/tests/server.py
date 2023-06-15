@@ -79,6 +79,37 @@ class TestNrpServer(unittest.TestCase):
             NrpCore("localhost:50051", config_file="wrong_file", server_timeout=1)
 
 
+    def test_initialize_datapacks(self):
+        """Tests the ability of initialize() to receive and return DataPacks"""
+        trajectory = self.nrp_core.initialize()
+        self.assertEqual(len(trajectory), 2)
+        self.assertEqual(trajectory[0]["time"], 0)
+        self.assertEqual(trajectory[1]["time"], 0)
+
+
+    def test_reset_datapacks(self):
+        """Tests the ability of reset() to receive and return DataPacks"""
+        self.nrp_core.initialize()
+        self.nrp_core.run_loop(2)
+
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 0)
+        self.nrp_core.set_json_datapack("actions", "python_1", {"test_reset": 987})
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 1)
+
+        trajectory = self.nrp_core.reset()
+        self.assertEqual(len(self.nrp_core._json_datapack_out_buffer), 0)
+
+        self.assertEqual(len(trajectory), 2)
+        self.assertEqual(trajectory[0]["time"], 20000000)
+        self.assertEqual(trajectory[1]["time"], 20000000)
+
+        if "action" in trajectory[0]:
+            self.assertEqual(trajectory[0]["action"], 987)
+        else:
+            self.assertEqual(trajectory[1]["action"], 987)
+
+
+
     def test_done_flag(self):
 
         self.tearDown()

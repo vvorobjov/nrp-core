@@ -91,6 +91,8 @@ void FTILoop::initLoop()
             throw NRPException::logCreate(e, "Failed to initialize engine \"" + engine->engineName() + "\"");
         }
     }
+
+    this->_devHandler->postEngineInit(this->_engines);
 }
 
 void FTILoop::resetLoop()
@@ -119,6 +121,8 @@ void FTILoop::resetLoop()
         }
     }
 
+    this->_devHandler->preEngineReset(this->_engines);
+
     for(const auto &engine : this->_engines)
     {
         try
@@ -137,6 +141,8 @@ void FTILoop::resetLoop()
     }
 
     this->_simTime = SimulationTime::zero();
+
+    this->_devHandler->postEngineReset(this->_engines);
 }
 
 void FTILoop::shutdownLoop()

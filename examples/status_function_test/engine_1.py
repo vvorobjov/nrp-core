@@ -4,12 +4,14 @@ from nrp_core.engines.python_json import EngineScript
 
 
 class Script(EngineScript):
+
     def initialize(self):
         """Initialize datapack1 with time"""
         print("Engine 1 is initializing. Registering datapack...")
         self.datapack_out_name = "datapack_engine1"
-        self._registerDataPack(self.datapack_out_name)
         self._registerDataPack("actions")
+        self._registerDataPack(self.datapack_out_name)
+
         self._setDataPack(self.datapack_out_name, { "time":      self._time_ns,
                                                     "timestep":  0,
                                                     "test_data": 0 })
@@ -33,4 +35,12 @@ class Script(EngineScript):
         print("Engine 1 is shutting down")
 
     def reset(self):
-        print("Engine 1 is resetting")
+        actions_datapack = self._getDataPack("actions")
+        action = 0
+        if actions_datapack and "test_reset" in actions_datapack:
+            action = actions_datapack["test_reset"]
+
+        self._setDataPack(self.datapack_out_name, { "time":      self._time_ns,
+                                                    "timestep":  0,
+                                                    "test_data": 0,
+                                                    "action":  action})

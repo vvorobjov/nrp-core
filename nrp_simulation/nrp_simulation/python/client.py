@@ -8,7 +8,7 @@ from python_on_whales import DockerClient
 from google.protobuf.message_factory import MessageFactory
 from google.protobuf import descriptor_pool
 
-from nrp_server_pb2 import EmptyMessage, RunLoopMessage, JsonMessage
+from nrp_server_pb2 import ResetMessage, EmptyMessage, RunLoopMessage, JsonMessage
 from nrp_server_pb2_grpc import NrpCoreStub
 from engine_grpc_pb2 import DataPackMessage
 import nrp_core.data.nrp_protobuf.proto_modules as proto_modules
@@ -17,11 +17,10 @@ from importlib import import_module
 
 from nrp_core.nrp_server_launchers import *
 
-
 class NrpCore:
 
     def __init__(self, address, experiment_folder="", config_file="simulation_config.json", args="",
-                 log_output=True, server_timeout=10, docker_daemon_address="unix:///var/run/docker.sock", image_name="",
+                 log_output=".console_output.log", server_timeout=10, docker_daemon_address="unix:///var/run/docker.sock", image_name="",
                  get_archives=[], compose_file="") -> None:
         """
         Spawns an NRPCoreSim process in server mode and connects to it
@@ -33,8 +32,8 @@ class NrpCore:
                                 relative to `experiment_folder`.
                                 By default, "simulation_config.json"
         :param str args: additional NRPCoreSim command line parameters
-        :param bool log_output: if True, console output from NRPCoreSim process is hidden and logged into a file named
-                                .console_output.log in the experiment folder. Default is True.
+        :param str log_output: if not empty, console output from NRPCoreSim process will be logged into a file
+                                with the given name, relative to the experiment directory
         :param int server_timeout: time in seconds for waiting for connection with the NRPCoreSim grpc server.
                                     10 seconds by default.
         :param str docker_daemon_address: IP address of the docker daemon used
@@ -62,12 +61,11 @@ class NrpCore:
         self._stub = None
 
         # Spawn NRP Core server process with chosen launcher
-        log_file = ".console_output.log"
         server_args = ["-c", config_file, "-m", "server", "--server_address", address]
         if args:
             server_args += args.split(" ")
         if log_output:
-            server_args += ["--logoutput=all", f"--logfilename={log_file}"]
+            server_args += ["--logoutput=all", f"--logfilename={log_output}"]
 
         self._launcher = None
 
@@ -76,11 +74,11 @@ class NrpCore:
                                                    experiment_folder,
                                                    docker_daemon_address,
                                                    image_name,
-                                                   log_file,
+                                                   log_output,
                                                    get_archives)
         elif compose_file:
             self._launcher = NRPCoreComposeLauncher(compose_file,
-                                                    log_file,
+                                                    log_output,
                                                     get_archives,
                                                     address=address)
         else:
@@ -93,7 +91,7 @@ class NrpCore:
         # Wait for the server to start
         n = self._wait_until_server_ready(self._channel, self._launcher.is_alive_nrp_process)
         if n > self._server_timeout:
-            
+
             with redirect_stdout(self._devnull):
                 report = self._launcher.get_exit_report()
 
@@ -179,12 +177,16 @@ class NrpCore:
 
         return n
 
-    def _call_rpc_async(self, sim_rpc, message) -> Thread:
-        t = Thread(target=self._call_rpc, args=(sim_rpc, message,))
+    def _call_rpc_async(self, sim_rpc, message, response) -> Thread:
+        t = Thread(target=self._call_rpc, args=(sim_rpc, message, response))
         t.start()
         return t
 
-    def _call_rpc(self, sim_rpc, message):
+    def unpack_thread_results(self, response):
+        return response.doneFlag, self._read_trajectory(response.trajectory)
+
+
+    def _call_rpc(self, sim_rpc, message, thread_response = None):
         """Processes calls to RPCs of the NRP Core Server"""
         if not self._is_open:
             raise ChildProcessError("This NRP Server is closed. Please delete this object and create a new one")
@@ -209,7 +211,10 @@ class NrpCore:
         except ValueError as e:
             raise ConnectionError("Channel has been closed already") from e
 
-        return response
+        if thread_response is not None:
+            thread_response.append(response)
+        else:
+            return response
 
 
     def current_state(self):
@@ -217,7 +222,9 @@ class NrpCore:
 
     def initialize(self):
         """Calls the initialize() RPC of the NRP Core Server"""
-        self._call_rpc(self._stub.initialize, EmptyMessage())
+        response = self._call_rpc(self._stub.initialize, EmptyMessage())
+
+        return self._read_trajectory(response.trajectory)
 
 
     def _clear_datapack_out_buffers(self):
@@ -225,21 +232,21 @@ class NrpCore:
         self._proto_datapack_out_buffer = []
 
 
-    def _read_trajectory(self, run_loop_response) -> list:
+    def _read_trajectory(self, response) -> list:
         trajectory_data = []
-        total_messages = len(run_loop_response.jsonTrajectoryMessages) + len(run_loop_response.protoTrajectoryMessages)
+        total_messages = len(response.jsonTrajectoryMessages) + len(response.protoTrajectoryMessages)
         json_message_index = 0
         proto_message_index = 0
 
         # Assemble proto and json messages into a single trajectory list
 
         for i in range(total_messages):
-            if json_message_index < len(run_loop_response.jsonTrajectoryMessages) and \
-               run_loop_response.jsonTrajectoryMessages[json_message_index].dataIndex == i:
+            if json_message_index < len(response.jsonTrajectoryMessages) and \
+               response.jsonTrajectoryMessages[json_message_index].dataIndex == i:
 
                 # Unpack the content of Any field into a proper protobuf message
                 proto_message = JsonMessage()
-                run_loop_response.jsonTrajectoryMessages[json_message_index].data.Unpack(proto_message)
+                response.jsonTrajectoryMessages[json_message_index].data.Unpack(proto_message)
 
                 # Parse the JSON string of the message
                 json_object = json.loads(proto_message.data)
@@ -250,10 +257,10 @@ class NrpCore:
                 json_message_index += 1
             else:
                 # Extract the class that matched the trajectory message type and instantiate it
-                proto_message = self.proto_message_classes[run_loop_response.protoTrajectoryMessages[proto_message_index].data.TypeName()]()
+                proto_message = self.proto_message_classes[response.protoTrajectoryMessages[proto_message_index].data.TypeName()]()
 
                 # Unpack the content of Any field into the message created above
-                run_loop_response.protoTrajectoryMessages[proto_message_index].data.Unpack(proto_message)
+                response.protoTrajectoryMessages[proto_message_index].data.Unpack(proto_message)
 
                 # Append the new proto object to the trajectory
                 trajectory_data.append(proto_message)
@@ -263,33 +270,47 @@ class NrpCore:
         return trajectory_data
 
 
-    def run_loop(self, num_iterations, run_async=False):
-        """Calls the runLoop() RPC of the NRP Core Server"""
+    def run_loop(self, num_iterations, run_async=False, response=None):
+        """
+        Calls the runLoop() RPC of the NRP Core Server
+
+        param int num_iterations: Number of simulation iterations to execute
+        param bool run_async: Flag that makes the call to be executed asynchronously. When True, the method
+                              will return a Thread object, and the execution results (done flag, observations)
+                              will be put in the response parameter.
+        param List response: Mutable variable to hold results of the call in asynchronous mode. Assumed to be an empty list.
+        """
 
         # Prepare the message for the RPC
         message = RunLoopMessage()
         message.numIterations = num_iterations
-        message.jsonDataPacks.extend(self._json_datapack_out_buffer)
-        message.protoDataPacks.extend(self._proto_datapack_out_buffer)
+        message.dataPacks.jsonDataPacks.extend(self._json_datapack_out_buffer)
+        message.dataPacks.protoDataPacks.extend(self._proto_datapack_out_buffer)
 
         # Clean the user's message buffer, all messages should be copied to the RPC message
         self._clear_datapack_out_buffers()
 
         if run_async:
-            response = self._call_rpc_async(self._stub.runLoop, message)
+            return self._call_rpc_async(self._stub.runLoop, message, response)
         else:
             response = self._call_rpc(self._stub.runLoop, message)
+            return response.doneFlag, self._read_trajectory(response.trajectory)
 
-        return response.doneFlag, self._read_trajectory(response)
 
-    def run_until_timeout(self, run_async=False):
-        """Calls the runUntilTimeout() RPC of the NRP Core Server"""
+    def run_until_timeout(self, run_async=False, response=None):
+        """
+        Calls the runUntilTimeout() RPC of the NRP Core Server
+
+        param bool run_async: Flag that makes the call to be executed asynchronously. When True, the method
+                              will return a Thread object, and the execution results (done flag, observations)
+                              will be put in the response parameter.
+        param List response: Mutable variable to hold results of the call in asynchronous mode. Assumed to be an empty list.
+        """
         if run_async:
-            response = self._call_rpc_async(self._stub.runUntilTimeout, EmptyMessage())
+            return self._call_rpc_async(self._stub.runUntilTimeout, EmptyMessage(), response)
         else:
             response = self._call_rpc(self._stub.runUntilTimeout, EmptyMessage())
-
-        return response.doneFlag, response.timeoutFlag, self._read_trajectory(response)
+            return response.doneFlag, response.timeoutFlag, self._read_trajectory(response.trajectory)
 
     def stop(self):
         """Calls the stopLoop() RPC of the NRP Core Server"""
@@ -297,8 +318,18 @@ class NrpCore:
 
     def reset(self):
         """Calls the reset() RPC of the NRP Core Server"""
+
+        # Prepare the message for the RPC
+        message = ResetMessage()
+        message.dataPacks.jsonDataPacks.extend(self._json_datapack_out_buffer)
+        message.dataPacks.protoDataPacks.extend(self._proto_datapack_out_buffer)
+
+        # Clean the user's message buffer, all messages should be copied to the RPC message
         self._clear_datapack_out_buffers()
-        self._call_rpc(self._stub.reset, EmptyMessage())
+
+        response = self._call_rpc(self._stub.reset, message)
+
+        return self._read_trajectory(response.trajectory)
 
     def shutdown(self):
         """Calls the shutdown() RPC of the NRP Core Server"""

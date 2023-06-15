@@ -38,7 +38,7 @@ NrpCore takes as arguments:
 - experiment_folder (str): path to the folder containing all files needed to execute the experiment. By default is an empty string, which is interpreted as the current folder
 - config_file (str): path to the experiment configuration file. It can be an absolute path or relative to `experiment_folder`. By default, "simulation_config.json"
 - args (str): additional NRPCoreSim command line parameters
-- log_output (bool): if true, console output from NRPCoreSim process is hidden and logged into a file .console_output.log in the experiment folder. It is true by default.
+- log_output (str): if not empty, console output from NRPCoreSim process will be logged into a file with the given name, relative to the experiment directory
 - server_timeout (int): time in seconds for waiting for connecting to the NRPCoreSim grpc server. 10 seconds by default.
 - docker_daemon_address (str): IP address of the docker daemon used to launch the experiment in a docker container (more detail below). 'unix:///var/run/docker.sock' by default, which is the value expected when docker daemon is running locally with its default configuration.
 - image_name (str): name of the docker image which will be used to run the experiment (more detail below). Empty by default.
@@ -83,6 +83,23 @@ The data will be passed to NRP Core on the first subsequent call to the `run_loo
 NRP Core will convert the data into `DataPacks` using the datapack name and engine name specified as arguments to the `set_x_datapack` methods.
 These DataPacks will be then forwarded to the proper engines.
 
+The same mechanism can be used to pass DataPacks to the `reset()` engine function:
+
+\code{.py}
+# JSON-serializable objects
+data = {}
+data["test_data"] = 888
+nrp_core.set_json_datapack("actions", "python_1", data)
+
+# protobuf objects
+data = TestPayload()
+data.integer = 555
+nrp_core.set_proto_datapack("actions", "python_1", data)
+
+# Pass the data to the engines
+nrp_core.reset()
+\endcode
+
 The data (observations) may also be passed from the engines to the client, using the so-called Status Function.
 The Status Function is capable of producing observations continuously when the simulation is executed step-by-step with the `run_loop()` service.
 It can also return trajectories (observations accumulated over multiple simulation steps) in case of episode-based simulations
@@ -117,6 +134,28 @@ if done_flag:
     for observation in trajectory:
         # Process the observation
 \endcode
+
+Additionally, DataPacks can be returned from `initialize()` and `reset()` service calls:
+
+\code{.py}
+# Main script
+
+observations = self.nrp_core.initialize()
+for observation in observations:
+    # Process the observation
+
+observations = self.nrp_core.reset()
+for observation in observations:
+    # Process the observation
+\endcode
+
+
+\section python_client_vectorization Vectorization of NRP Core clients using gym interface
+
+An easy way to vectorize NRP Core environments is to create a simple wrapper with <a href="https://www.gymlibrary.dev/">gym</a> interface around the NRP Core Python client,
+and to use this wrapped environment with e.g. `SubprocVecEnv` provided with <a href="https://stable-baselines3.readthedocs.io/en/master/index.html">stable baselines</a>.
+An example of such interface, together with the vectorization process, is present in `examples/nrp_vectorization`.
+
 
 \section python_client_docker Launching Experiments in Docker Containers
 

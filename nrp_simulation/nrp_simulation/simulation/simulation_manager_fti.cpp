@@ -75,8 +75,6 @@ bool FTILoopSimManager::resetCB()
             this->_loop->resetLoop();
         else
             throw NRPException::logCreate("Cannot reset simulation, FTI loop has not been created");
-
-        this->_simulationDataManager.clear();
     }
     catch(NRPException &e) {
         throw NRPException::logCreate(e, "Reset simulation failed");
