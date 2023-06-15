@@ -66,8 +66,13 @@ This flag system allows to configure the resulting nrp-core depending on which s
 \section installation_environment Setting the environment
 
 In order to properly set the environment to run experiments with NRP-core, please make sure to add the lines below to your ~/.bashrc file
-\skip Start of setting environment
-\until End of setting environment
+\code{.sh}
+export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
+export NRP_DEPS_INSTALL_DIR="/home/${USER}/.local/nrp_deps"
+source  ${NRP_INSTALL_DIR}/bin/.nrp_env
+. /usr/share/gazebo-11/setup.sh
+. /opt/ros/noetic/setup.bash
+\endcode
 
 \section installation_sim Steps for installing additional simulators
 This section includes installation steps for simulators that may be used with \ref python_json_engine and \ref pysim_engine.
@@ -75,7 +80,7 @@ The \ref pysim_engine "PySim engine" allows to connect a set of simulators with 
 
 \subsection installation_sim_tvb Installation of The Virtual Brain
 
-The instructions below install TVB root and data directly from git repositiories.
+The instructions below install TVB root and data directly from git repositories.
 It is also possible to install them via pip, but then certain features and data sets may not be accessible.
 Complete instructions can be found at <a href="https://github.com/the-virtual-brain/tvb-root">tvb-root</a> and <a href="https://github.com/the-virtual-brain/tvb-data">tvb-data</a>
 repository pages.
