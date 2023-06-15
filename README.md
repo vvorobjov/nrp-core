@@ -46,8 +46,8 @@ pip install grpcio-tools pytest psutil docker
 # Required for using docker with ssh
 pip install paramiko
 
-# Python package of python_on_whales is required if want to invoke nrp-core remotely with compose (See guides/remote_docker_compose.dox)
-pip install python-on-whales
+# The Python packages 'python_on_whales' and 'pyyaml' are required to invoke nrp-core remotely with the Docker Compose (see guides/remote_docker_compose.dox for details).
+pip install python-on-whales pyyaml
 
    
 # 4- Installing ROS
