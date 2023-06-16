@@ -3,7 +3,7 @@
 import gym
 from gym import spaces
 
-from nrp_core.client import NrpCore
+from nrp_client import NrpCore
 from nrp_core.data.nrp_protobuf.wrappers_pb2 import BoolValue, Int32Value
 
 

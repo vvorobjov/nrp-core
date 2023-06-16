@@ -59,7 +59,7 @@ pid_t DockerLauncher::launchProcess(const nlohmann::json &launcherConfig, const 
 
 
     // Call DockerHandle init with engine configuration
-    bpy::object nrpModule = bpy::import(PYTHON_MODULE_NAME_STR);
+    bpy::object nrpModule = bpy::import(PYTHON_CLIENT_MODULE_NAME_STR);
     bpy::dict nrpDict(nrpModule.attr("__dict__"));
 
     try {

@@ -22,7 +22,7 @@
 import logging
 from nrp_core.event_loop import EngineWrapper, EventLoopEngine
 from google.protobuf.message import DecodeError
-from engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
+from nrp_protobuf.engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
 import nrp_core.engines.python_grpc.grpc_server_callbacks as server_callbacks
 
 

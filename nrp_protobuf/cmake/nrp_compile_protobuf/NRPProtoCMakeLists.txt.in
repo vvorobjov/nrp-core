@@ -23,6 +23,7 @@ find_package(NRPProtobuf REQUIRED)
 # Variables used to configure and generate the output libraries
 set(NRP_PROTO_CMAKE_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@/${HEADER_DIRECTORY}/cmake")
 set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+set(NRP_PROTO_PYTHON_CMAKE_DATA_DIR "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}")
 set(NRP_PROTO_PYTHON_INSTALL_DIR "${PYTHON_INSTALL_DIR_REL}")
 
 # Include cmake file doing the targets and installs definitions
@@ -34,3 +35,5 @@ install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
         PATTERN "*.h"
         PATTERN "*.hpp"
 )
+install(FILES ${NRP_PROTO_PYTHON_FILES_TARGETS}
+        DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")

@@ -25,7 +25,7 @@ from types import ModuleType
 import os
 import sys
 
-import engine_grpc_pb2 as python_grpc_engine_pb2
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
 from nrp_core.engines.python_grpc import GrpcEngineScript
 
 script = None

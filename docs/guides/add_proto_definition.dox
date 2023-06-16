@@ -40,10 +40,10 @@ Each of the elements of this array can be the package specifier in any of the .p
 Additionally, the \ref python_grpc_engine can import and use generated Python protobuf modules.
 As described \ref engine_grpc_protobuf_libraries "here", these are named `<package>_pb2.py`, being <package> the package specifier in the .proto file in lowercase.
 
-Modules from .proto files compiled with nrp-core can be found under *nrp_core.data.nrp_protobuf* package. E.g.:
+Modules from .proto files compiled with nrp-core can be found under *nrp_protobuf* package. E.g.:
 
 \code{.py}
-from nrp_core.data.nrp_protobuf import dump_pb2
+from nrp_protobuf import dump_pb2
 \endcode
 
 Modules compiled using *nrp_compile_protobuf.py* can be imported directly, as in the example below.

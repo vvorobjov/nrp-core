@@ -30,6 +30,7 @@ RUN pip install grpcio-tools pytest psutil flask gunicorn flask_cors mpi4py doco
 RUN pip install opencv-python
 
 # Install python_on_whales for the example of invoking nrp-core remotely with compose (See guides/remote_docker_compose.dox)
+# Needed for tests
 RUN pip install python-on-whales pyyaml
 
 # Install Documentation dependencies

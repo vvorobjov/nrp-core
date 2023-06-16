@@ -265,6 +265,10 @@ add_subdirectory(nrp_datatransfer_grpc_engine)
 add_subdirectory(nrp_simulation)
 
 ##########################################
+## NRP clients
+add_subdirectory(nrp_clients/python)
+
+##########################################
 ## cppcheck
 
 # Generates a file with exact compiler calls for all translation units, which is needed by cppcheck

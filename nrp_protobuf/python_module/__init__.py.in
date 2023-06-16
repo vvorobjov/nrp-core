@@ -30,4 +30,3 @@ def new_init(self, name, engine_name):
     self.data.effort = float('NaN')
 
 GazeboJointDataPack.__init__ = new_init
-

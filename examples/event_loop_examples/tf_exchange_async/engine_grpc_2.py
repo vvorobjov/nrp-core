@@ -1,7 +1,7 @@
 """Python Engine 2. Will get time from Engine 1 and print it"""
 
 from nrp_core.engines.python_grpc import GrpcEngineScript
-from nrp_core.data.nrp_protobuf import dump_pb2
+from nrp_protobuf import dump_pb2
 
 class Script(GrpcEngineScript):
     def initialize(self):

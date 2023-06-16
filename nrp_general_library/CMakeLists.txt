@@ -5,6 +5,7 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "nrp_core")
+set(PYTHON_CLIENT_MODULE_NAME "nrp_client")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -398,8 +399,7 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
-install(FILES "${HEADER_DIRECTORY}/python/docker_handle.py"
-    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}

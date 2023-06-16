@@ -23,8 +23,8 @@ import unittest
 from nrp_core.data.nrp_protobuf import *
 
 import nrp_core.engines.python_grpc.grpc_server_callbacks as server_callbacks
-import engine_grpc_pb2 as python_grpc_engine_pb2
-from nrp_core.data.nrp_protobuf import dump_pb2
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
+from nrp_protobuf import dump_pb2
 import json
 
 

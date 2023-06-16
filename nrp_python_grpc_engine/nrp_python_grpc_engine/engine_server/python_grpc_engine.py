@@ -27,8 +27,8 @@ import urllib.parse
 import json
 import grpc
 from concurrent import futures
-import engine_grpc_pb2 as python_grpc_engine_pb2
-import engine_grpc_pb2_grpc as python_grpc_engine_pb2_grpc
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
+import nrp_protobuf.engine_grpc_pb2_grpc as python_grpc_engine_pb2_grpc
 
 import time
 

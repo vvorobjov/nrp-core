@@ -37,6 +37,11 @@
 #define PYTHON_MODULE_NAME_STR "@PYTHON_MODULE_NAME@"
 
 /*!
+ * \brief Name of python module library as string
+ */
+#define PYTHON_CLIENT_MODULE_NAME_STR "@PYTHON_CLIENT_MODULE_NAME@"
+
+/*!
  * \brief Install Location
  */
 #define NRP_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@"

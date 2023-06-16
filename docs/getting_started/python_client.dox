@@ -2,21 +2,21 @@
 
 NRP-Core experiments can be run from the provided application, \ref nrp_simulation.
 In this way, the experiment is loaded from a specified configuration file and run until the specified timeout.
-Additionally, we provide a Python module, *nrp_core.client.NrpCore*, which can be used to start experiments from Python and which enable more control over the experiment execution.
+Additionally, we provide a Python module, *nrp_client.NrpCore*, which can be used to start experiments from Python and which enable more control over the experiment execution.
 
-The main class used to launch and control NRP-Core experiment is *nrp_core.client.NrpCore*.
+The main class used to launch and control NRP-Core experiment is *nrp_client.NrpCore*.
 When instantiated, it internally launches an NRPCoreSim process in \ref server_mode "server mode" and forwards requests made through its methods to the NRPCoreSim GRPC server.
 The NRPCoreSim process can be launched either as a forked process or inside of a docker container.
 More details on these options are given below.
 
-`nrp_core.client.NrpCore` provides methods which match the available services in NRPCoreSim server: `initialize()`, `run_loop(int number_of_iterations)`, `run_until_timeout()`, `stop()`, `reset()` and `shutdown()`.
+`nrp_client.NrpCore` provides methods which match the available services in NRPCoreSim server: `initialize()`, `run_loop(int number_of_iterations)`, `run_until_timeout()`, `stop()`, `reset()` and `shutdown()`.
 Each of these methods calls the corresponding GRPC service as described \ref server_mode "here".
 
 Below there is an example on how to use **NrpCore** for launching the \ref getting_started_experiment_tf_exchange "tf_exchange" experiment and running it:
 
 \code{.py}
 # Import NrpCore
-from nrp_core.client import NrpCore
+from nrp_client import NrpCore
 # Start NRPCoreSim server with tf_exchange experiment and connects to it
 n = NrpCore('localhost:5345',"nrp-core/examples/tf_exchange","simulation_config.json")
 # Initialize the experiment

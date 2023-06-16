@@ -4,8 +4,8 @@ import base64
 import numpy as np
 
 from nrp_core.engines.python_grpc import GrpcEngineScript
-from nrp_core.data.nrp_protobuf import nrpgenericproto_pb2
-from nrp_core.data.nrp_protobuf import wrappers_pb2
+from nrp_protobuf import nrpgenericproto_pb2
+from nrp_protobuf import wrappers_pb2
 
 class Script(GrpcEngineScript):
     """Produces DataPacks that will be tested by tf_in.py"""

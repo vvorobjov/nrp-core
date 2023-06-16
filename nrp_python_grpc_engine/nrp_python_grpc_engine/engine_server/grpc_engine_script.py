@@ -20,7 +20,7 @@
 import typing
 
 from google.protobuf.message import Message
-from engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
+from nrp_protobuf.engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
 
 
 class GrpcEngineScript:

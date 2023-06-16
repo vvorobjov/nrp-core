@@ -1,5 +1,5 @@
-from nrp_core.client import NrpCore
-from nrp_core.data.nrp_protobuf.enginetest_pb2 import TestPayload
+from nrp_client import NrpCore
+from nrp_protobuf.enginetest_pb2 import TestPayload
 
 import sys
 import os

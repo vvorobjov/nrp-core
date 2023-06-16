@@ -246,12 +246,6 @@ if(TARGET ${PYTHON_MODULE_NAME})
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 endif()
 
-# Install python module with the NRP client
-install(FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/client.py"
-        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/nrp_server_launchers.py"
-    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
-
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}

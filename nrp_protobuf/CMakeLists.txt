@@ -27,6 +27,17 @@ set(LIB_SRC_FILES
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
 )
+# List of python module configuration files
+set(PYTHON_MODULE_ROOT_FILES
+    python_module/setup.py
+    python_module/pyproject.toml
+)
+set(PYTHON_MODULE_CMAKE_ROOT_DIR
+    ${CMAKE_CURRENT_BINARY_DIR}/py-${PYTHON_MODULE_NAME}
+)
+set(PYTHON_MODULE_CMAKE_SRC_DIR
+    ${PYTHON_MODULE_CMAKE_ROOT_DIR}/${PYTHON_MODULE_NAME}
+)
 
 # List executable build files
 set(EXEC_SRC_FILES
@@ -41,6 +52,12 @@ set(TEST_SRC_FILES
 ## Dependencies
 
 find_package(PkgConfig REQUIRED)
+
+find_package(
+        Python3
+        REQUIRED
+        COMPONENTS Interpreter
+)
 
 # Protobuf: google's Protocol Buffers library
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
@@ -120,18 +137,19 @@ function(GENERATE_PROTO_PYTHON PROTO_FILE_NAME PROTO_PYTHON_FILES_VAR)
     get_filename_component(hw_proto_name "${hw_proto}" NAME_WE)
 
     # Generated sources
-    set(proto_python "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/${hw_proto_name}_pb2.py")
+    set(proto_python "${PYTHON_MODULE_CMAKE_SRC_DIR}/${hw_proto_name}_pb2.py")
 
     # Generate
     add_custom_command(
             OUTPUT "${proto_python}"
-            COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            COMMAND "mkdir" ARGS -p "${PYTHON_MODULE_CMAKE_SRC_DIR}"
             COMMAND python3
             ARGS -m grpc_tools.protoc
             --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
-            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
-            --python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            --python_out "${PYTHON_MODULE_CMAKE_SRC_DIR}/"
             "${hw_proto}"
+            COMMAND sed -i 's@^import .*_pb2 as@from . \\0@' ${proto_python}
+            COMMENT "Generating Python proto file ${proto_python}"
             DEPENDS "${hw_proto}")
 
     set(${PROTO_PYTHON_FILES_VAR} ${${PROTO_PYTHON_FILES_VAR}} ${proto_python} PARENT_SCOPE)
@@ -145,19 +163,20 @@ function(GENERATE_GRPC_PYTHON PROTO_FILE_NAME PROTO_PYTHON_FILES_VAR)
     get_filename_component(hw_proto_name "${hw_proto}" NAME_WE)
 
     # Generated sources
-    set(proto_python "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/${hw_proto_name}_pb2_grpc.py")
+    set(proto_python "${PYTHON_MODULE_CMAKE_SRC_DIR}/${hw_proto_name}_pb2_grpc.py")
 
     # Generate
     add_custom_command(
             OUTPUT "${proto_python}"
-            COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            COMMAND "mkdir" ARGS -p "${PYTHON_MODULE_CMAKE_SRC_DIR}/"
             COMMAND python3
             ARGS -m grpc_tools.protoc
             --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs"
-            --proto_path "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs"
-            --grpc_python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            --grpc_python_out "${PYTHON_MODULE_CMAKE_SRC_DIR}/"
             "${hw_proto}"
-            DEPENDS "${hw_proto}")
+            COMMAND sed -i 's@^import .*_pb2 as@from . \\0@' ${proto_python}
+            COMMENT "Generating Python gRPC file ${proto_python}"
+            DEPENDS "${hw_proto}" )
 
     set(${PROTO_PYTHON_FILES_VAR} ${${PROTO_PYTHON_FILES_VAR}} ${proto_python} PARENT_SCOPE)
 
@@ -168,23 +187,32 @@ endfunction()
 
 # Proto generation
 set(PROTO_SRC_FILES "")
-set(PROTO_PYTHON_FILES "")
+set(PROTO_PYTHON_FILES_SRC "")
 
 generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_SRC_FILES)
-generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES)
-generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES)
+generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES_SRC)
+generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/engine_grpc.proto" PROTO_PYTHON_FILES_SRC)
 
 generate_proto_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
 generate_grpc_cpp("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_SRC_FILES)
-generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
-generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES)
+generate_proto_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES_SRC)
+generate_grpc_python("${NRP_CORE_MSGS_PROTO_PATH}/nrp_proto_defs/nrp_server.proto" PROTO_PYTHON_FILES_SRC)
+
+
+####################################
+## Python protobuf module
+# Module setuptools configuration file
+configure_file("python_module/setup.cfg.in" "${PYTHON_MODULE_CMAKE_ROOT_DIR}/setup.cfg" @ONLY)
+file(COPY ${PYTHON_MODULE_ROOT_FILES} DESTINATION "${PYTHON_MODULE_CMAKE_ROOT_DIR}/")
+
+# add_subdirectory(python_module)
 
 # Forces the generation of proto and grpc python code
 add_custom_target(
         FORCE_PROTO_PYTHON
         COMMAND bash -c "echo \"Generating proto python files\""
-        DEPENDS ${PROTO_PYTHON_FILES})
+        DEPENDS ${PROTO_PYTHON_FILES_SRC})
 
 ##########################################
 # NRPProtobuf
@@ -328,12 +356,6 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
         PATTERN "*.hpp"
 )
 
-# Install automatically generated python modules with proto and gRPC
-if(PROTO_PYTHON_FILES)
-    install(FILES ${PROTO_PYTHON_FILES}
-            DESTINATION "${PYTHON_INSTALL_DIR_REL}")
-endif()
-
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}
@@ -365,7 +387,10 @@ install(
 ##########################################
 
 # Process all Engine proto files distributed with nrp-core
-set(NRP_PROTO_PYTHON_INSTALL_DIR "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/data/${PYTHON_MODULE_NAME}")
+# NRP_PROTO_PYTHON_CMAKE_DATA_DIR -Python proto (.py + .so) cmake build directory
+set(NRP_PROTO_PYTHON_CMAKE_DATA_DIR "${PYTHON_MODULE_CMAKE_SRC_DIR}")
+set(NRP_PROTO_PYTHON_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/nrp_core/data/nrp_protobuf)
+set(NRP_PROTO_PYTHON_FILES_TARGETS "")
 set(PROTO_FILES_PATH "${NRP_CORE_MSGS_PROTO_PATH}/engine_proto_defs")
 set(NRP_PROTO_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/NRPProtoFile.cmake)
@@ -396,15 +421,14 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nrp_compile_protobuf.py"
 set(PROTO_MODULES_LIST, "")
 foreach(PROTO_FILE ${PROTO_PYTHON_FILES})
     get_filename_component(PROTO_FILE_BASENAME ${PROTO_FILE} NAME_WE)
-    string(APPEND PROTO_MODULES_LIST "\"nrp_core.data.nrp_protobuf.${PROTO_FILE_BASENAME}\",\n")
+    string(APPEND PROTO_MODULES_LIST "\"nrp_protobuf.${PROTO_FILE_BASENAME}\",\n")
 endforeach()
 
 # Store the list generated above in a python module
 
-configure_file("${NRP_PROTO_CMAKE_DIR}/proto_modules.py.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" @ONLY)
-configure_file("${NRP_PROTO_CMAKE_DIR}/proto_libraries.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" @ONLY)
+configure_file("python_module/proto_modules.py.in" "${PYTHON_MODULE_CMAKE_SRC_DIR}/proto_modules.py" @ONLY)
+configure_file("cmake/proto_libraries.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" @ONLY)
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_modules.py" DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/proto_libraries.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY})
 
 # Install nrp protobuf cmake module and dependencies
@@ -424,3 +448,25 @@ foreach(PROTO_MSG_TYPES ${PROTO_MSG_TYPES_ALL})
     file(APPEND "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" ${PROTO_MSG_TYPES})
     file(APPEND "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" ",")
 endforeach()
+
+
+# Python module installation
+
+
+# Add Python installation targets
+# nrp-py-protobuf-dev-nodeps is run with make
+add_custom_target(nrp-py-protobuf-dev-nodeps ALL
+    WORKING_DIRECTORY ${PYTHON_MODULE_CMAKE_ROOT_DIR}
+    COMMAND pip install . -U -t "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/" --no-deps
+    COMMENT "Installing NRP-Core Python protobuf into NRP-Core installation folder"
+    DEPENDS ${PROTO_PYTHON_FILES_SRC} ${NRP_PROTO_PYTHON_FILES_TARGETS}
+    VERBATIM
+)
+
+add_custom_target(nrp-py-protobuf
+    WORKING_DIRECTORY ${PYTHON_MODULE_CMAKE_ROOT_DIR}
+    COMMAND pip install . -U
+    COMMENT "Installing NRP-Core Python protobuf into Python site-packages"
+    DEPENDS ${PROTO_PYTHON_FILES_SRC} ${NRP_PROTO_PYTHON_FILES_TARGETS}
+    VERBATIM
+)

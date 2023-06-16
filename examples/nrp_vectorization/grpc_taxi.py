@@ -5,7 +5,7 @@ Python gRPC engine that wraps around Taxi gym environment.
 import gym
 
 from nrp_core.engines.python_grpc import GrpcEngineScript
-from nrp_core.data.nrp_protobuf import wrappers_pb2
+from nrp_protobuf import wrappers_pb2
 
 class Script(GrpcEngineScript):
 
