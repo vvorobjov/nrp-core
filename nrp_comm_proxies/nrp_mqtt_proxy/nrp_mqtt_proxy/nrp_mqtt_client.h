@@ -30,6 +30,8 @@
 #include "nrp_general_library/utils/nrp_logger.h"
 #include "mqtt/async_client.h"
 
+#define MQTT_BASE "nrp_simulation"
+
 // TODO: QOS and non-clean session are hardcoded, they could be parameters
 const int  QOS = 1;
 const auto TIMEOUT = std::chrono::seconds(10);

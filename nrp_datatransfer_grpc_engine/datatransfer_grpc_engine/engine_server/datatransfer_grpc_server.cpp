@@ -74,7 +74,15 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
         NRPLogger::info("Using preset MQTT client connection");
     }
     mqttConnected = _mqttClient->isConnected();
-    this->_mqttBase = std::string(MQTT_BASE) + std::string(data.at("simulationID"));
+
+    // Topic: MQTT_BASE/simulationID
+    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
+    if (data.contains("MQTTPrefix")){
+        // Topic: MQTTPrefix/MQTT_BASE/simulationID
+        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
+    }
+    this->_mqttBase += std::string(data.at("simulationID"));
+
     if(!mqttConnected)
     {
         NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");

@@ -24,6 +24,7 @@
             "EngineName": "datatransfer_engine",
             "MQTTBroker": "localhost:1883",
             "simulationID": "0",
+            "MQTTPrefix": "localhost",
             "dumps": []
         }
     ],

@@ -30,7 +30,6 @@
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
-#define MQTT_BASE "nrp/"
 #endif /*MQTT_ON*/
 
 class DataTransferEngine

@@ -34,7 +34,7 @@
 
 #include "tests/test_env_cmake.h"
 
-#define MQTT_WELCOME "nrp/0/welcome"
+#define MQTT_WELCOME "nrp_simulation/0/welcome"
 
 TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 {
@@ -66,8 +66,12 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // data topics announcements from the DataPack Controller
     for (size_t i = 0; i < engine_config["dumps"].size(); i++){
         nlohmann::json dump = engine_config["dumps"].at(i);
-        EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dump["name"].get<std::string>(), testing::_))
-                .Times(1);
+        EXPECT_CALL(*nrpMQTTClientMock,
+                    publish(
+                        std::string(MQTT_BASE) + std::string("/0/data"),
+                        std::string(MQTT_BASE) + std::string("/0/data/") + dump["name"].get<std::string>(),
+                        testing::_))
+            .Times(1);
     }
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
             .Times(1);
