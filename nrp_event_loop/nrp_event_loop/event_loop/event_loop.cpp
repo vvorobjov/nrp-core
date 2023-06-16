@@ -59,6 +59,8 @@ void EventLoop::initializeCB()
         throw;
     }
 
+    std::tie(_clock, _iteration) = findTimeNodes();
+
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);
 }
@@ -72,6 +74,12 @@ void EventLoop::runLoopCB()
     if(_spinROS)
         ros::spinOnce();
 #endif
+
+    if(_clock)
+        _clock->updateClock(_currentTime);
+
+    if(_iteration)
+        _iteration->updateIteration(_iterations);
 
     try {
         ComputationalGraphManager::getInstance().compute();

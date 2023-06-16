@@ -45,27 +45,30 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
     _doRun = true;
     bool useTimeout = timeout != std::chrono::milliseconds(0);
 
+    _iterations = 0L;
     auto startLoopTime = std::chrono::steady_clock::now();
-    auto startStepOld = startLoopTime;
-    auto startStepNew = startLoopTime;
-    auto stepDuration = startStepNew - startStepOld;
+    auto startStepTime = startLoopTime;
+    auto lastStartStepTime = startLoopTime;
+    auto lastStepDuration = startStepTime - lastStartStepTime;
 
     while(_doRun) {
-        startStepNew = std::chrono::steady_clock::now();
-        stepDuration = startStepNew - startStepOld;
+        startStepTime = std::chrono::steady_clock::now();
+        lastStepDuration = startStepTime - lastStartStepTime;
+        _currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(startStepTime - startLoopTime);
 
-        if(useTimeout && startStepNew - startLoopTime >= timeout)
+        if(useTimeout && _currentTime >= timeout)
             break;
 
-        if(stepDuration > _timestep + _timestepThres) {
+        if(lastStepDuration > _timestep + _timestepThres) {
             NRPLogger::warn("Event Loop can't run at the target frequency. Actual step duration: " +
-            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(stepDuration).count()) +
+            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(lastStepDuration).count()) +
             " (ms). Target step duration: " + std::to_string(_timestep.count()) + " (ms).");
         }
 
-        runLoopOnce(startStepNew);
+        runLoopOnce(startStepTime);
 
-        startStepOld = startStepNew;
+        lastStartStepTime = startStepTime;
+        _iterations++;
     }
 
     _doRun = false;

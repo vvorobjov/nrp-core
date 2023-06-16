@@ -20,9 +20,9 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#include "edlut_grpc_engine/engine_server/edlut_grpc_datapack_controller.h"
+#include "edlut_grpc_engine/engine_server/edlut_spikes_datapack_controller.h"
 
-EdlutGrpcDataPackController::EdlutGrpcDataPackController(const std::string & datapackName,
+EdlutSpikesDataPackController::EdlutSpikesDataPackController(const std::string & datapackName,
                                                          const std::string & engineName,
                                                          const std::shared_ptr<Simulation> edlutSim,
                                                          const std::shared_ptr<ArrayInputSpikeDriver> isd,
@@ -30,7 +30,7 @@ EdlutGrpcDataPackController::EdlutGrpcDataPackController(const std::string & dat
     : _datapackName(datapackName), _engineName(engineName), _edlutSimul(edlutSim), _inputSpikeDriver(isd), _outputSpikeDriver(osd)
 { }
 
-void EdlutGrpcDataPackController::handleDataPackData(const google::protobuf::Message &data)
+void EdlutSpikesDataPackController::handleDataPackData(const google::protobuf::Message &data)
 {
     // In order to access the data from the message, you need to cast it to the proper type
     const auto &d = dynamic_cast<const EdlutData::Spikes &>(data);
@@ -51,13 +51,12 @@ void EdlutGrpcDataPackController::handleDataPackData(const google::protobuf::Mes
 
 }
 
-google::protobuf::Message * EdlutGrpcDataPackController::getDataPackInformation()
+google::protobuf::Message * EdlutSpikesDataPackController::getDataPackInformation()
 {
     this->getSpikeActivity(this->_spikesTime,this->_neuronIndexes);
     
     // Create a new protobuf message and fill it
     auto payload = new EdlutData::Spikes();
-    payload->set_time(fromSimulationTime<float, std::ratio<1>>(EdlutEngine::_simulationTime));
 
     for(auto &spike: this->_spikesTime)
         payload->add_spikes_time(spike);
@@ -72,7 +71,7 @@ google::protobuf::Message * EdlutGrpcDataPackController::getDataPackInformation(
     return payload;
 }
 
-void EdlutGrpcDataPackController::addExternalSpikeActivity(const std::vector<double> & event_time, const std::vector<long int> & neuron_index) noexcept(false){
+void EdlutSpikesDataPackController::addExternalSpikeActivity(const std::vector<double> & event_time, const std::vector<long int> & neuron_index) noexcept(false){
     try{
         //we introduce the new activity in the driver.
         if (event_time.size()>0) {
@@ -85,7 +84,7 @@ void EdlutGrpcDataPackController::addExternalSpikeActivity(const std::vector<dou
     }
 }
 
-void EdlutGrpcDataPackController::getSpikeActivity(std::vector<double> & event_time, std::vector<long int> & neuron_index) noexcept(false){
+void EdlutSpikesDataPackController::getSpikeActivity(std::vector<double> & event_time, std::vector<long int> & neuron_index) noexcept(false){
     try{
 
         double * OutputSpikeTimes;
@@ -115,6 +114,5 @@ void EdlutGrpcDataPackController::getSpikeActivity(std::vector<double> & event_t
         throw EDLUTException(TASK_EDLUT_INTERFACE, ERROR_EDLUT_INTERFACE, REPAIR_EDLUT_INTERFACE);
     }
 }
-
 
 // EOF

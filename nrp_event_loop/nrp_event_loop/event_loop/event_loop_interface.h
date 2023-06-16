@@ -115,6 +115,10 @@ class EventLoopInterface
         std::chrono::milliseconds _timestep;
         /*! \brief allowed time deviation in event loop timestep execution before printing a warning message */
         std::chrono::milliseconds _timestepThres;
+        /*! \brief current time clock  */
+        std::chrono::milliseconds _currentTime = std::chrono::milliseconds(0);
+        /*! \brief stores the number of times the loop has been run */
+        unsigned long _iterations = 0L;
 
         /*!
          * \brief Internal isRunning function

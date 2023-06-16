@@ -28,8 +28,6 @@
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_error_handler.h"
 
-#include "nrp_event_loop/utils/graph_utils.h"
-
 #include "nrp_event_loop/computational_graph/functional_node.h"
 
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
@@ -188,7 +186,7 @@ protected:
         // Create edges to other functional nodes
         for (auto& [port_id, address]: _f2fEdges) {
             std::string name, property;
-            std::tie(name, property) = parseCGAddress(address);
+            std::tie(name, property) = parseNodeAddress(address);
 
             // Get ports
             PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));

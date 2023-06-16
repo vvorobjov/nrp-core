@@ -66,7 +66,7 @@ TEST(FTILoopTest, RunLoop)
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));
     SimulationDataManager simulationDataManager;
 
-    const SimulationTime timestep(10);
+    const SimulationTime timestep = std::chrono::duration_cast<SimulationTime>(std::chrono::milliseconds (500));
     const float timeStepFloat = 0.01f;
 
     {
@@ -99,4 +99,44 @@ TEST(FTILoopTest, RunLoop)
     ASSERT_NO_THROW(simLoop.runLoop(timestep));
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(simLoop.getSimTime(), timestep+timestep);
+}
+
+TEST(FTILoopTest, TimeNodes)
+{
+    auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
+    jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
+    (*config)["DataPackProcessor"] = "cg";
+    (*config)["ComputationalGraph"] = std::vector<std::string>({TEST_TIME_NODES_FILE});
+    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+
+    const char *procName = "test";
+    PythonInterpreterState pyState(1, const_cast<char**>(&procName));
+    SimulationDataManager simulationDataManager;
+
+    const float timeStepFloat = 0.01f;
+    {
+        nlohmann::json nestCfg(config->at("EngineConfigs").at(1));
+        nestCfg["NestInitFileName"] = TEST_NEST_SIM_FILE;
+        nestCfg["EngineTimestep"] = timeStepFloat;
+
+        nlohmann::json gazeboCfg(config->at("EngineConfigs").at(0));
+        gazeboCfg["GazeboWorldFile"] = TEST_GAZEBO_WORLD_FILE;
+        gazeboCfg["EngineTimestep"] = timeStepFloat;
+
+        config->at("EngineConfigs").at(1) = nestCfg;
+        config->at("EngineConfigs").at(0) = gazeboCfg;
+    }
+
+    EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+    EngineClientInterfaceSharedPtr physics(GazeboEngineGrpcLauncher().launchEngine(config->at("EngineConfigs").at(0), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
+
+    // TODO Without the sleeps between calls, gRPC seems to fail in weird ways...
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    FTILoop simLoop(config, {brain, physics}, &simulationDataManager);
+
+    ASSERT_NO_THROW(simLoop.initLoop());
+    ASSERT_EQ(simLoop.getSimTime(), SimulationTime::zero());
+    auto runTime = std::chrono::duration_cast<SimulationTime>(std::chrono::seconds(1));
+    ASSERT_NO_THROW(simLoop.runLoop(runTime));
 }

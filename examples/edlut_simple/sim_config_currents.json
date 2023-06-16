@@ -1,0 +1,19 @@
+{
+	"SimulationName": "example_experiment",
+	"SimDescription": "This experiment launches an Edlut gRPC engine. Uses a FN to excite the simulated network with pre-recorded spike activity and to read spike events from the simulation",
+	"SimulationTimeout": 1,
+	"DataPackProcessor": "cg",
+	"SimulationLoop": "FTILoop",
+	"EngineConfigs": [
+		{
+			"EngineType": "edlut_grpc_engine",
+			"EngineName": "edlut_engine",
+            "ProtobufPackages": ["EdlutData"],
+          	"NetworkFile": "Network.net",
+          	"WeightsFile": "Weights.net",
+          	"EngineTimestep": 0.001,
+          	"NumThreads": 8
+		}
+	],
+	"ComputationalGraph": ["input_activity.py"]
+}

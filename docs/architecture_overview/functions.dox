@@ -11,7 +11,7 @@ Three types of Functions are currently supported:
 \section functions_time_iteration Simulation time and iteration number
 
 It is possible to get access to the current simulation time and iteration number in all Functions.
-Both of these values can be aquired by adding a proper decorator to the Python function definition, for example:
+Both of these values can be acquired by adding a proper decorator to the Python function definition, for example:
 
 \code{.py}
 @SimulationIteration(keyword="sim_iter")

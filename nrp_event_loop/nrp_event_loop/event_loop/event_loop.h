@@ -28,6 +28,9 @@
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/computational_graph/output_node.h"
 
+#include "nrp_general_library/utils/time_utils.h"
+#include "nrp_event_loop/nodes/time/input_time.h"
+
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 #include <nlohmann/json.hpp>
@@ -64,10 +67,14 @@ class EventLoop : public EventLoopInterface
         ComputationalGraph::ExecMode _execMode;
         /*! \brief true if the EventLoop is assumed to always owns the GIL, false if it is shared with other threads  */
         bool _ownGIL;
-        /*! \brief if true ros::sping is called in every loop  */
+        /*! \brief if true ros::spin is called in every loop  */
         bool _spinROS;
         /*! \brief GIL state object used to request the GIL ownership when needed  */
         PyGILState_STATE _pyGILState;
+        /*! \brief Pointer to the clock_node of the graph */
+        InputClockNode* _clock = nullptr;
+        /*! \brief Pointer to the iteration_node of the graph */
+        InputIterationNode* _iteration = nullptr;
 
 };
 

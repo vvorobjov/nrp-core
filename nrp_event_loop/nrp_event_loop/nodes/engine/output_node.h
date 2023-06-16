@@ -31,8 +31,6 @@
 #include "nrp_event_loop/computational_graph/output_node.h"
 #include "nrp_event_loop/python/output_edge.h"
 
-#include "nrp_event_loop/utils/graph_utils.h"
-
 /*!
  * \brief Output node used to connect the computational graph with an EngineClient
  */
@@ -109,9 +107,9 @@ class OutputEngineEdge : public SimpleOutputEdge<DataPackInterface*, OutputEngin
 public:
 
     OutputEngineEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge<DataPackInterface*, OutputEngineNode>(keyword, parseCGAddress(address, false).first+"_output",
+            SimpleOutputEdge<DataPackInterface*, OutputEngineNode>(keyword, ComputationalNode::parseNodeAddress(address, false).first+"_output",
                              "anonymous_port"+std::to_string(port_n++), false, 1),
-            _engineName(parseCGAddress(address, false).first)
+            _engineName(ComputationalNode::parseNodeAddress(address, false).first)
     {}
 
 protected:

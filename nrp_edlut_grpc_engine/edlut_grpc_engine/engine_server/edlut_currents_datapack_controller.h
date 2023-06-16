@@ -20,8 +20,8 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
-#ifndef EDLUT_GRPC_DATAPACK_CONTROLLER_SERVER_H
-#define EDLUT_GRPC_DATAPACK_CONTROLLER_SERVER_H
+#ifndef EDLUT_CURRENTS_DATAPACK_CONTROLLER_SERVER_H
+#define EDLUT_CURRENTS_DATAPACK_CONTROLLER_SERVER_H
 
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
@@ -30,16 +30,16 @@
 #include "nrp_protobuf/proto_ops/proto_ops_manager.h"
 #include "nrp_general_library/utils/time_utils.h"
 #include "edlut_grpc_engine/engine_server/edlut_grpc_server.h"
+#include "communication/ArrayInputCurrentDriver.h"
 
-class EdlutGrpcDataPackController
+class EdlutCurrentsDataPackController
     : public DataPackController<google::protobuf::Message>
 {
     public:
-        EdlutGrpcDataPackController(const std::string & datapackName,
+        EdlutCurrentsDataPackController(const std::string & datapackName,
                                     const std::string & engineName,
                                     const std::shared_ptr<Simulation> edlutSim,
-                                    const std::shared_ptr<ArrayInputSpikeDriver> isd,
-                                    const std::shared_ptr<ArrayOutputSpikeDriver> osd);
+                                    const std::shared_ptr<ArrayInputCurrentDriver> icd);
 
         /*!
          * \brief Processes data coming from the transceiver function
@@ -61,20 +61,12 @@ class EdlutGrpcDataPackController
         google::protobuf::Message * getDataPackInformation() override;
 
         /*!
-         * \brief Introduces data to the simulation network
+         * \brief Introduces current data to the simulation network
          *
          * The data will be passed to the network through the input driver.
          *
          */
-        void addExternalSpikeActivity(const std::vector<double> & event_time, const std::vector<long int> & neuron_index) noexcept(false);
-
-        /*!
-         * \brief Gets output data from the simulation network
-         *
-         * The output data will be passed to the datapack controller through the output driver.
-         *
-         */
-        void getSpikeActivity(std::vector<double> & event_time, std::vector<long int> & neuron_index) noexcept(false);
+        void addExternalCurrentActivity(const std::vector<double> & event_time, const std::vector<long int> & neuron_index, const std::vector<float> & current_value) noexcept(false);
 
     private:
 
@@ -94,14 +86,9 @@ class EdlutGrpcDataPackController
         std::shared_ptr<Simulation> _edlutSimul;
 
         /*!
-         * \brief Input spike driver to EDLUT simulation
+         * Input current driver
          */
-        std::shared_ptr<ArrayInputSpikeDriver> _inputSpikeDriver;
-
-        /*!
-         * \brief Output spike driver to read spikes activity
-         */
-        std::shared_ptr<ArrayOutputSpikeDriver> _outputSpikeDriver;
+        std::shared_ptr<ArrayInputCurrentDriver> _inputCurrentDriver;
 
         /*!
          * \brief Buffer vector used by both input and output drivers to temporarily store spikes firing times
@@ -113,8 +100,13 @@ class EdlutGrpcDataPackController
          */
         vector<long int> _neuronIndexes;
 
+        /*!
+         * \brief Buffer vector used by input driver to temporarily store network currents values
+         */
+        vector<float> _currentValues;
+
 };
 
-#endif // EDLUT_GRPC_DATAPACK_CONTROLLER_SERVER_H
+#endif // EDLUT_CURRENTS_DATAPACK_CONTROLLER_SERVER_H
 
 // EOF

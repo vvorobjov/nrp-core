@@ -27,7 +27,8 @@ set(LIB_SRC_FILES
 if(BUILD_EDLUT_ENGINE_SERVER)
     list(APPEND LIB_SRC_FILES
         edlut_grpc_engine/engine_server/edlut_grpc_server.cpp
-        edlut_grpc_engine/engine_server/edlut_grpc_datapack_controller.cpp)
+        edlut_grpc_engine/engine_server/edlut_spikes_datapack_controller.cpp
+        edlut_grpc_engine/engine_server/edlut_currents_datapack_controller.cpp)
 endif()
 
 # List of Python module build files
@@ -64,6 +65,7 @@ if(BUILD_EDLUT_ENGINE_SERVER)
         FetchContent_Populate(edlut_sim)
         if(EDLUT_WITH_CUDA)
             set(with-cuda ON CACHE INTERNAL "Build EDLUT with cuda")
+            set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build EDLUT library shared")
         endif()
         add_subdirectory(${edlut_sim_SOURCE_DIR}/Kernel ${edlut_sim_BINARY_DIR})
     endif()

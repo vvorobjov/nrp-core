@@ -29,6 +29,10 @@
 #include "simulation/Simulation.h"
 #include "communication/ArrayInputSpikeDriver.h"
 #include "communication/ArrayOutputSpikeDriver.h"
+#include "communication/ArrayInputCurrentDriver.h"
+#include "communication/FileOutputWeightDriver.h"
+#include "simulation/EventQueue.h"
+#include "simulation/SaveWeightsEvent.h"
 
 class EdlutEngine
     : public EngineProtoWrapper
@@ -138,6 +142,11 @@ class EdlutEngine
         std::shared_ptr<ArrayOutputSpikeDriver> _outputSpikeDriver;
 
         /*!
+         * Input current driver
+         */
+        std::shared_ptr<ArrayInputCurrentDriver> _inputCurrentDriver;
+
+        /*!
          * \brief Parameters backup needed to reset EDLUT simulation as json object
          */
         nlohmann::json _engineConfig;
@@ -152,6 +161,6 @@ class EdlutEngine
 
 };
 
-#endif // EDLUT_JSON_SERVER_H
+#endif // EDLUT_GRPC_SERVER_H
 
 // EOF

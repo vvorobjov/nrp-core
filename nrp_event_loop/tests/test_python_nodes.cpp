@@ -40,7 +40,11 @@
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
 
+#include "nrp_event_loop/nodes/time/input_time.h"
+
 #include "nrp_general_library/utils/utils.h"
+
+#include "nrp_event_loop/utils/graph_utils.h"
 
 //// Python nodes
 
@@ -355,6 +359,103 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
 
     // check that execution period was set correctly, always 1 for output Engine nodes
     ASSERT_EQ(output_p->getComputePeriod(), 1);
+}
+
+TEST(ComputationalGraphPythonNodes, TIME_NODES) {
+    // Setup required elements
+    namespace bpy = boost::python;
+    ComputationalGraphManager::resetInstance();
+    Py_Initialize();
+    PyImport_ImportModule(EVENT_LOOP_MODULE_NAME_STR);
+    appendPythonPath(TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH);
+
+    //// Test normal case
+    // load graph and configure nodes
+    try {
+        bpy::import("test_time_nodes");
+    }
+    catch (const NRPException &) {
+        NRPLogger::error("Test failed when loading test_time_nodes.py");
+        PyErr_Print();
+        boost::python::throw_error_already_set();
+    }
+
+    auto& gm = ComputationalGraphManager::getInstance();
+    gm.configure();
+
+    // Find nodes
+    InputIterationNode* _iteration = nullptr;
+    InputClockNode* _clock = nullptr;
+    std::tie(_clock, _iteration) = findTimeNodes();
+
+    ASSERT_NE(_clock, nullptr);
+    ASSERT_NE(_iteration, nullptr);
+
+    auto clockPort = _clock->getSinglePort("clock");
+    auto iterPort = _iteration->getSinglePort("iteration");
+
+    ASSERT_NE(clockPort, nullptr);
+    ASSERT_NE(iterPort, nullptr);
+
+    auto clockOut = dynamic_cast<OutputDummy*>(gm.getNode("clock_out"));
+    auto iterOut = dynamic_cast<OutputDummy*>(gm.getNode("iteration_out"));
+
+    // Check time nodes send expected messages
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 0);
+    ASSERT_EQ(iterOut->call_count, 0);
+
+    _iteration->updateIteration(0);
+    _clock->updateClock(SimulationTime(0));
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 1);
+    ASSERT_EQ(iterOut->call_count, 1);
+    ASSERT_EQ(bpy::extract<ulong>(*(clockOut->lastData)), 0);
+    ASSERT_EQ(bpy::extract<ulong>(*(iterOut->lastData)), 0);
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 1);
+    ASSERT_EQ(iterOut->call_count, 1);
+
+    _iteration->updateIteration(1);
+    _clock->updateClock(SimulationTime(10000000));
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 2);
+    ASSERT_EQ(iterOut->call_count, 2);
+    ASSERT_EQ(bpy::extract<ulong>(*(clockOut->lastData)), 10);
+    ASSERT_EQ(bpy::extract<ulong>(*(iterOut->lastData)), 1);
+}
+
+TEST(ComputationalGraphPythonNodes, TIME_NODES_RESERVED_NAMES) {
+    // Setup required elements
+    namespace bpy = boost::python;
+    ComputationalGraphManager::resetInstance();
+    Py_Initialize();
+    PyImport_ImportModule(EVENT_LOOP_MODULE_NAME_STR);
+    appendPythonPath(TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH);
+
+    //// Test normal case
+    // load graph and configure nodes
+    try {
+        bpy::import("test_time_nodes_reserved_names");
+    }
+    catch (const NRPException &) {
+        NRPLogger::error("Test failed when loading test_time_nodes.py");
+        PyErr_Print();
+        boost::python::throw_error_already_set();
+    }
+
+    auto &gm = ComputationalGraphManager::getInstance();
+    gm.configure();
+
+    // Find nodes
+    ASSERT_ANY_THROW(findTimeNodes());
 }
 
 // EOF

@@ -19,19 +19,4 @@
  * Agreement No. 945539 (Human Brain Project SGA3).
  */
 
-#ifndef TEST_ENV_CMAKE_H
-#define TEST_ENV_CMAKE_H
-
-#define TEST_SIM_SIMPLE_CONFIG_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/simple_simulation_config.json"
-
-#define TEST_SIM_CONFIG_FILE "@TEST_SIM_CONFIG_FILE@"
-
-#define TEST_INVALID_JSON_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/invalid_json.json"
-
-#define TEST_GAZEBO_WORLD_FILE "@GAZEBO_WORLD_FILE@"
-
-#define TEST_NEST_SIM_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/nest_simple.py"
-
-#define TEST_TIME_NODES_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/test_time_nodes.py"
-
-#endif // TEST_ENV_CMAKE_H
+#include "nrp_event_loop/nodes/time/input_time.h"

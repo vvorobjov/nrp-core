@@ -8,6 +8,7 @@
 #include "nrp_event_loop/nodes/dummy/output_dummy.h"
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
+#include "nrp_event_loop/nodes/time/input_time.h"
 
 #include "nrp_event_loop/fn_factory/functional_node_factory_manager.h"
 
@@ -129,6 +130,12 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
 
     bpy::class_< OutputEngineEdge >("ToEngine", bpy::init<const std::string &, const std::string &>( (bpy::arg("keyword"), bpy::arg("address")) ))
             .def("__call__", &OutputEngineEdge::pySetup);
+
+    bpy::class_< InputClockEdge >("Clock", bpy::init<const std::string &>((bpy::arg("keyword")) ))
+            .def("__call__", &InputClockEdge::pySetup);
+
+    bpy::class_< InputIterationEdge >("Iteration", bpy::init<const std::string &>((bpy::arg("keyword")) ))
+            .def("__call__", &InputIterationEdge::pySetup);
 
     // CPP FN create wrapper
     bpy::def("createFNFromFactoryModule",  createFNFromFactoryModule, bpy::args("module_name", "function_name", "node_name","exec_policy"));

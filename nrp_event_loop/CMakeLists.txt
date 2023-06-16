@@ -47,6 +47,8 @@ set(LIB_SRC_FILES
         nrp_event_loop/nodes/engine/input_node.cpp
         nrp_event_loop/nodes/engine/output_node.cpp
 
+        nrp_event_loop/nodes/time/input_time.cpp
+
         nrp_event_loop/utils/graph_utils.cpp
         nrp_event_loop/utils/data_conversion.cpp
 )

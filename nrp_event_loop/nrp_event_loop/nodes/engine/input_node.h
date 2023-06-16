@@ -31,8 +31,6 @@
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/python/input_edge.h"
 
-#include "nrp_event_loop/utils/graph_utils.h"
-
 /*!
  * \brief Input node used to connect an EngineClient with the computational graph
  *
@@ -127,9 +125,10 @@ public:
 
     InputEngineEdge(const std::string& keyword, const std::string& address,
                     InputNodePolicies::MsgCachePolicy msgCachePolicy) :
-            SimpleInputEdge<DataPackInterface, InputEngineNode>(keyword, parseCGAddress(address).first+"_input", parseCGAddress(address).second,
+            SimpleInputEdge<DataPackInterface, InputEngineNode>(keyword, ComputationalNode::parseNodeAddress(address).first+"_input",
+                                                                ComputationalNode::parseNodeAddress(address).second,
                             InputNodePolicies::LAST, msgCachePolicy),
-            _engineName(parseCGAddress(address).first)
+            _engineName(ComputationalNode::parseNodeAddress(address).first)
     {}
 
 protected:

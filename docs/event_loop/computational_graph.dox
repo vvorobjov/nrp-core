@@ -183,6 +183,20 @@ The node is templated with the type of object incoming MQTT messages should be c
 
 OutputMQTTNode implements an OutputNode which publishes incoming messages to an MQTT topic. As in the case of InputMQTTNode, it can accept either strings, JSON objects or protobuf messages, which are set as payload in an MQTT message and published.
 
+\subsubsection time_nodes Time Nodes
+
+This class encompasses nodes which can be used to input system time information into the Computational Graph.
+Currently there are two nodes available: InputClockNode and InputIterationNode. Both stream messages of type *unsigned long*.
+
+InputClockNode streams a message through its only port, *clock*, containing the current "system time" in milliseconds.
+The meaning of system time is different depending on whether the Computational Graph is operated by an EventLoop or a FTILoop.
+See this \ref event_loop_configuration "page" for more information about the possible ways of using a Computational Graph in NRP-Core.
+If an EventLoop is used to manage the runtime execution of the graph, InputClockNode sends the current value of the internal (real-time) clock of the EventLoop, wrt the instant in which the EventLoop started.
+If a FTILoop is used instead, InputClockNode sends the current simulation time, identically as the \ref functions_time_iteration "@SimulationTime" decorator in TransceiverFunctions.
+
+InputIterationNode streams a message through port *iteration* containing the current iteration number.
+In this case the content of the message is similar if the graph is operated either by an EventLoop of a FTILoop: the number of times the loop has been executed.
+
 \section graph_layers Execution Order of Nodes in the Graph
 
 In each cycle of the Event Loop, all the nodes in the graph are executed in order.
