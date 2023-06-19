@@ -1,6 +1,6 @@
 {
-    "SimulationName": "husky_simulation",
-    "SimulationDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot.",
+    "SimulationName": "husky_simulation_nest_server",
+    "SimulationDescription": "Template showcasing the integration with NEST Desktop. Launches a Gazebo simulation with a Husky robot. Separatedly NEST desktop is started with a Braitenberg model, braitenberg_nest_server.py, which controls the robot",
     "SimulationTimeout": 20,
     "EngineConfigs": [
         {
@@ -20,17 +20,22 @@
             "EngineProcStartParams": ["--verbose"]
         },
         {
-            "EngineType": "nest_json",
+            "EngineType": "nest_server",
             "EngineName": "nest",
-            "NestInitFileName": "braitenberg.py",
-            "EngineEnvParams": ["PYNEST_QUIET=1"]
+            "NestInitFileName": "braitenberg_nest_server.py",
+            "EngineEnvParams": ["PYNEST_QUIET=1"],
+            "NestServerHost": "nest-simulator",
+            "NestServerPort": 9000,
+            "EngineLaunchCommand": {
+                "LaunchType": "EmptyLaunchCommand"
+            }
         },
         {
             "EngineType": "datatransfer_grpc_engine",
             "EngineName": "datatransfer_engine",
             "MQTTBroker": "localhost:1883",
-            "simulationID": "0",
             "MQTTPrefix": "localhost",
+            "simulationID": "0",
             "ProtobufPackages": ["Gazebo", "Dump"],
             "dumps": []
         }
