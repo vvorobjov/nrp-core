@@ -11,7 +11,7 @@ classifiers =
 python_requires = >=3.8
 install_requires =
     psutil
-    grpcio-tools
+    grpcio-tools >= 1.49.1
 
 [options.package_data]
 @PYTHON_MODULE_NAME@ = data/*.so

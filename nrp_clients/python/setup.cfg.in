@@ -11,8 +11,8 @@ classifiers =
 python_requires = >=3.8
 install_requires =
     psutil
-    grpcio-tools
-    nrp-protobuf
+    grpcio-tools >= 1.49.1
+    nrp-protobuf == @NRP_VERSION@
 
 [options.extras_require]
 docker = 
