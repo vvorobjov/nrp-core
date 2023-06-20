@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.3.1)
+set(NRP_VERSION 1.4.0)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
