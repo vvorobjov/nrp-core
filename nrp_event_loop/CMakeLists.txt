@@ -411,6 +411,9 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
 
     set_tests_properties(ComputationalNodes.FN_FACTORY_MANAGER PROPERTIES DEPENDS TEST_FN_FACTORY_MODULE)
 
+    # Add python Event Loop test
+    add_test(NAME EventLoopPython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopPython.xml" test_event_loop.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
     if(ENABLE_ROS AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
         set(ROS_TEST_NAME "${TEST_NAME}ROS")
@@ -442,6 +445,8 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         gtest_discover_tests(${MQTT_TEST_NAME}
                 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
                 EXTRA_ARGS -VV)
+
+        add_test(NAME EventLoopEnginePython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopEnginePython.xml" test_event_loop_engine.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     endif()
 
 endif()
@@ -491,10 +496,6 @@ if(ENABLE_EXAMPLES_TESTING)
         endif()
     endforeach()
 endif()
-
-# Add python Event Loop test
-add_test(NAME EventLoopPython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopPython.xml" test_event_loop.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME EventLoopEnginePython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopEnginePython.xml" test_event_loop_engine.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 ##########################################
 ## Installation

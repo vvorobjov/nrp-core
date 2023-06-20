@@ -26,8 +26,7 @@ cmake_dependent_option(BUILD_NEST_ENGINE_SERVER "Build the server part of the ne
 option(ENABLE_GAZEBO "Enable Gazebo support" ON)
 cmake_dependent_option(BUILD_GAZEBO_ENGINE_SERVER "Build the server part of the Gazebo engines" ON "ENABLE_GAZEBO" OFF)
 
-# Temporary fix until the bug when compiling without ROS the edlut engine fails to build [https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8933] is solved
-cmake_dependent_option(ENABLE_EDLUT "Enable EDLUT support" ON "ENABLE_ROS" OFF)
+option(ENABLE_EDLUT "Enable EDLUT support" OFF)
 option(EDLUT_WITH_CUDA "Enable EDLUT with cuda support" OFF)
 cmake_dependent_option(BUILD_EDLUT_ENGINE_SERVER "Build the server part of the EDLUT engine" ON "ENABLE_EDLUT" OFF)
 
