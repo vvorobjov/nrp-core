@@ -81,7 +81,7 @@ class EventLoopEngine(EventLoopInterface):
 
         self._client = None
         # for testing only
-        self._allowNoMqtt = False
+        self._doNotConnectMqtt = False
 
     def __del__(self):
         self.shutdown()
@@ -114,15 +114,15 @@ class EventLoopEngine(EventLoopInterface):
         self._client.on_connect = on_connect
         self._client.on_message = on_message
 
-        try:
-            self._client.connect(self._mqtt_config["MQTTBroker"] if "MQTTBroker" in self._mqtt_config
-                             else "localhost")
-        except ConnectionRefusedError as e:
-            if not self._allowNoMqtt:
+        if not self._doNotConnectMqtt:
+            try:
+                self._client.connect(self._mqtt_config["MQTTBroker"] if "MQTTBroker" in self._mqtt_config
+                                     else "localhost")
+            except (ConnectionRefusedError, OSError) as e:
                 raise RuntimeError("EventLoopEngine failed to connect to MQTT. Ensure that the MQTT broker is running "
-                                   "and check the engine configuration.")
-        finally:
-            self._client.loop()
+                                   "and check the engine configuration: {}".format(e))
+            finally:
+                self._client.loop()
 
     def _run_loop_cb(self):
         if self._client.is_connected():

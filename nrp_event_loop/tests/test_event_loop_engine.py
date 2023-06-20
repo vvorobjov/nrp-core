@@ -86,7 +86,7 @@ class TestEventLoopEngine(unittest.TestCase):
         ele = EventLoopEngineTest(0.01, 0.001, 2, True, engine_config, {}, engine)
 
         # Initialize
-        ele._allowNoMqtt = True
+        ele._doNotConnectMqtt = True
         ele.initialize()
         self.assertEqual(engine._initCalls, 1)
         self.assertTrue("test" in engine._config and engine._config["test"])
