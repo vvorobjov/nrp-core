@@ -14,11 +14,9 @@ NRP-core has only been tested on <b>Ubuntu 20.04</b> at the moment, and therefor
 
 NRP-core only supports <b>NEST 3</b>.
 
-As part of the installation process NEST 3 is built and installed. If you have an existing installation of NEST we recommend you to uninstall it before installing NRP-core. In case you still want to use your installed version, you can avoid the installation process to build and install NEST by changing the value of <i>ENABLE_NEST</i> from <i>FULL</i> to <i>CLIENT</i> in the root CMakeLists.txt file:
-
-\code{.sh}
-set(ENABLE_NEST CLIENT)
-\endcode
+As part of the installation process NEST 3 is built and installed.
+If you have an existing installation of NEST and don't NRP-Core to mess with your environment add the parameter *-DBUILD_NEST_ENGINE_SERVER=OFF* to your NRP-Core cmake command.
+The NEST Engine won't be built in this case but still can be used from a docker container in experiments.
 
 In any case, be aware that NEST 2.x is incompatible with NRP-core.
 
