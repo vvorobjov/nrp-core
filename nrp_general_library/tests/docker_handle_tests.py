@@ -1,4 +1,4 @@
-from nrp_core.docker_handle import NRPDockerHandle
+from nrp_client.docker_handle import NRPDockerHandle
 
 import unittest
 

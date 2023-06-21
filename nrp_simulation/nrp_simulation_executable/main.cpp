@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 #endif
 
 #include "nrp_general_library/config/cmake_constants.h"
-#include "nrp_general_library/plugin_system/plugin_manager.h"
+#include "nrp_general_library/plugin_system/engine_plugin_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
@@ -66,7 +66,7 @@ namespace {
 }
 
 static void loadPlugins(const char *libName,
-                        PluginManager &pluginManager,
+                        EnginePluginManager &pluginManager,
                         const EngineLauncherManagerSharedPtr &engines,
                         const std::set<std::string>& engineTypes)
 {
@@ -74,7 +74,7 @@ static void loadPlugins(const char *libName,
 
     // Extract plugin file name and load it
     NRPLogger::debug("Loading {} plugin", libName);
-    auto engineLauncher = pluginManager.loadPlugin(libName);
+    auto engineLauncher = pluginManager.loadEnginePlugin(libName);
     if(engineLauncher == nullptr)
         throw NRPException::logCreate(std::string("Failed to load engine launcher from plugin \"") + libName + "\"");
 
@@ -88,7 +88,7 @@ static void loadPlugins(const char *libName,
 }
 
 
-static void loadEngines(PluginManager & pluginManager,
+static void loadEngines(EnginePluginManager & pluginManager,
                         EngineLauncherManagerSharedPtr & engines,
                         std::vector<std::string> pluginsList,
                         const std::set<std::string>& engineTypes)
@@ -185,7 +185,15 @@ int main(int argc, char *argv[])
 
     // Set working directory and get config file from params
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParams);
-    NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
+    if(!simConfig)
+    {
+        // Print help if config was not found
+        NRPLogger::warn("Couldn't get configuration file from parameters.");
+        std::cout << optParser.help();
+        return 0;
+    }
+    else
+        NRPLogger::info("Working directory: [ {} ]", std::filesystem::current_path().c_str());
 
     // Create default logger for the launcher
     auto logger = NRPLogger
@@ -238,7 +246,7 @@ int main(int argc, char *argv[])
 
     // Create Process and engine launchers
     MainProcessLauncherManager::shared_ptr processLaunchers(new MainProcessLauncherManager(enginesFD));
-    PluginManager pluginManager;
+    EnginePluginManager pluginManager;
     EngineLauncherManagerSharedPtr engines(new EngineLauncherManager());
 
     std::set<std::string> engineTypes;
@@ -272,24 +280,24 @@ int main(int argc, char *argv[])
 
     // Connect to ROS
 #ifdef ROS_ON
-    if(simConfig->contains("ConnectROS")) {
-        nlohmann::json nodeProperties = simConfig->at("ConnectROS");
+    if(simConfig->contains("ROSNode")) {
+        nlohmann::json nodeProperties = simConfig->at("ROSNode");
         ros::init(std::map<std::string, std::string>(), nodeProperties.at("NodeName"));
         NRPROSProxy::resetInstance();
     }
 #else
-    if(simConfig->contains("ConnectROS"))
-        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ConnectROS' will be ignored.");
+    if(simConfig->contains("ROSNode"))
+        NRPLogger::info("nrp-core has been compiled without ROS support. Configuration parameter 'ROSNode' will be ignored.");
 #endif
 
     // Connect to MQTT
 #ifdef MQTT_ON
-    if(simConfig->contains("ConnectMQTT")) {
-        NRPMQTTProxy::resetInstance(simConfig->at("ConnectMQTT"));
+    if(simConfig->contains("MQTTNode")) {
+        NRPMQTTProxy::resetInstance(simConfig->at("MQTTNode"));
     }
 #else
-    if(simConfig->contains("ConnectMQTT"))
-        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'ConnectMQTT' will be ignored.");
+    if(simConfig->contains("MQTTNode"))
+        NRPLogger::info("nrp-core has been compiled without MQTT support. Configuration parameter 'MQTTNode' will be ignored.");
 #endif
 
     // Create simulation manager
@@ -325,8 +333,19 @@ int main(int argc, char *argv[])
     else if(mode == "standalone")
     {
         auto res = manager->initializeSimulation();
+
+        shutdown_handler = [&] (int) {
+            if(manager->currentState() == SimulationManager::SimState::Running) {
+                NRPLogger::info("Interruption Signal received. Stopping the simulation");
+                manager->stopSimulation();
+            }
+            else
+                NRPLogger::warn("Interruption Signal received. But the simulation is not running, signal will be ignored");
+        };
+        signal(SIGINT, signal_handler);
+
         if(res.currentState != SimulationManager::SimState::Failed)
-            manager->runSimulationUntilTimeout();
+            manager->runSimulationUntilDoneOrTimeout();
 
         manager->shutdownSimulation();
     }
@@ -343,8 +362,10 @@ int main(int argc, char *argv[])
 
 #ifdef MQTT_ON
     NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
-    if(mqttProxy)
+    if(mqttProxy) {
+        mqttProxy->clearRetained();
         mqttProxy->disconnect();
+    }
 #endif
 
     if(enginesFD >= 0)

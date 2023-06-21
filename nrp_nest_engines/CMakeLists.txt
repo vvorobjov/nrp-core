@@ -7,6 +7,9 @@ project(NESTEngines VERSION ${NRP_VERSION})
 ## Contains nest-server app
 
 if(BUILD_NEST_ENGINE_SERVER)
+    # python is required. (e.g. see NEST_CMAKE_INSTALL_PYNEST)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
     set(NRP_NEST_SERVER_EXECUTABLE "nest-server")
     set(NRP_NEST_SERVER_MPI_EXECUTABLE "nest-server-mpi")
 

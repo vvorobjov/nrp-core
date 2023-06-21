@@ -66,7 +66,7 @@ def detect_red(camDataPack):
 @ToSpinnaker(keyword="lpg", address="red_left_eye_poisson_control")
 @ToSpinnaker(keyword="rpg", address="red_right_eye_poisson_control")
 @ToSpinnaker(keyword="gpg", address="green_blue_eye_poisson_control")
-@FromEngine(keyword='camera', address='/gazebo/husky_camera::camera')
+@FromEngine(keyword='camera', address='/gazebo/husky::eye_vision_camera::camera')
 @FunctionalNode(name="cam_tf", outputs=['lpg', 'rpg', 'gpg'])
 def transceiver_function(camera):
     # print("Camera Depth: " + str(camera.image_depth))

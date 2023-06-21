@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,12 +41,12 @@ TransceiverDataPackInterface::shared_ptr TransceiverFunction::pySetup(boost::pyt
 
     assert(tf->_tfInterpreterRegistryPtr == nullptr);
     if(tf->_tfInterpreterRegistryPtr == nullptr)
-        tf->_tfInterpreterRegistryPtr = TransceiverFunction::TFInterpreter->registerNewDataPackFunction(this->linkedEngineName(), tf);
+        tf->_tfInterpreterRegistryPtr = TransceiverFunction::_functionManager->registerNewDataPackFunction(this->linkedEngineName(), tf);
 
     return tf;
 }
 
-boost::python::object TransceiverFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
+boost::python::object TransceiverFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t /*dataPacks*/)
 {
     boost::python::object retVal = this->_function(*args, **kwargs);
     this->checkTFOutputIsCorrectOrRaise(retVal);
@@ -81,12 +81,12 @@ void TransceiverFunction::checkTFOutputIsCorrectOrRaise(const boost::python::obj
     }
 }
 
-EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::getRequestedDataPackIDs() const
+datapack_identifiers_set_t TransceiverFunction::getRequestedDataPackIDs() const
 {
-    return EngineClientInterface::datapack_identifiers_set_t();
+    return datapack_identifiers_set_t();
 }
 
-EngineClientInterface::datapack_identifiers_set_t TransceiverFunction::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
+datapack_identifiers_set_t TransceiverFunction::updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const
 {
     return std::move(datapackIDs);
 }

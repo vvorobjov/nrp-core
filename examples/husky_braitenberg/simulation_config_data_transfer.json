@@ -1,12 +1,20 @@
 {
 	"SimulationName": "husky_simulation_data",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses a datatransfer_grpc_engine to log and stream datapacks.",
+	"SimulationDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses a datatransfer_grpc_engine to log and stream datapacks.",
 	"SimulationTimeout": 20,
 	"EngineConfigs": [
 		{
 			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
 			"GazeboWorldFile": "husky_world.sdf",
+			"GazeboSDFModels": [
+				{
+					"Name": "husky",
+					"File": "husky.sdf",
+					"InitPose": "-0.009853 0.086704 0.187752 0 0 0"
+				}
+
+			],
 			"EngineProcStartParams": ["--verbose"]
 		},
 		{
@@ -22,6 +30,7 @@
 			"MQTTBroker": "localhost:1883",
 			"dataDirectory": "data/test",
 			"streamDataPackMessage": true,
+			"ProtobufPackages": ["Gazebo", "Dump"],
 			"dumps":[
 				{"name": "test_datapack1", "network": true, "file": true},
 				{"name": "test_datapack2", "network": true, "file": true},

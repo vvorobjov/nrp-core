@@ -145,9 +145,89 @@
     
 ## NRPCore 1.3.1 (2023-02-28)
 
-1. [NRRPLT-8168] Compatibility with the other NRP components for the v4.0.
+1. [Pull request #167](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/167) Compatibility with the other NRP components for the v4.0.
     * Unmasked signals in engine servers launched by BasicFork. SIGTERM (shutdown command), SIGINT, SIGHUP (parent has died) are expected to be received so be sure they are unblocked. Increased forked processes polling time to 500ms.
     * The template experiments are added: examples/templates.
-    * Renamed configuration atribute from "SimDescription" to "SimulationDescripion" in experiments.
+    * Renamed configuration attribute from "SimDescription" to "SimulationDescripion" in experiments.
     * The templates are added to the NRP-Core Docker images.
+
+## NRPCore 1.4.0 (2023-06-16)
+
+1. Bug fixes:
+    * [Pull request #148](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/148)
+    * [Pull request #150](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/150)
+    * [Pull request #152](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/152)
+    * [Pull request #153](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/153)
+    * [Pull request #157](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/157)
+    * [Pull request #158](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/158)
+    * [Pull request #133](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/133)
+    * [Pull request #173](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/173)
+    * [Pull request #175](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/175)
+    * [Pull request #188](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/188)
+    * [Pull request #185](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/185)
+    * [Pull request #186](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/186)
+    * [Pull request #181](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/181)
+    * [Pull request #191](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/191)
+
+2. Completed support in NRP-Core for the execution of experiments under soft real-time constraints with the possibility of running Engines in real-time and with asynchronous communications using the EventLoop:
+    * [Pull request #184](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/184)
+
+3. Added support, guide and example on how to vectorize NRP-Core experiments using openai gym API:
+    * [Pull request #182](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/182)
+    * [Pull request #187](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/187)
+
+4. Added support to distribute the execution of NRP-Core experiments using the Python client and docker compose
+    * [Pull request #154](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/154)
+    * [Pull request #189](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/189)
+
+5. Implemented a Python gRPC Engine, similar in structure to the already existing Python JSON Engine but it exchanges Protobuf messages over gRPC, thus improving considerably the Engine performance:
+    * [Pull request #132](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/132)
+
+6. Added a command line tool to compile protobuf message files into c++ modules which can be dynamically loaded by Engines to extend the type of protobuf messages they can exchange without the need to recompile NRP-Core. It is particularly useful when used in combination with the Python GRPC Engine:
+    * [Pull request #146](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/146)
+    * [Pull request #159](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/159)
+    * [Pull request #161](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/161)
+    * [Pull request #180](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/180)
+
+7. Removed SimulationTimestep parameter from the experiment configuration. This parameter is computed now as the minimum value in the EngineTimestep values of the engines included in the experiment:
+    * [Pull request #176](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/176)
+
+8. Added support for using precompiled C++ Functional Nodes in the Computational Graph, along with a tool to compile C++ modules from the node function definitions source code:
+    * [Pull request #169](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/169)
+    * [Pull request #160](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/160)
+
+9. Added an Engine implementation for the EDLUT spiking neural network simulator (https://github.com/EduardoRosLab/edlut):
+    * [Pull request #165](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/165)
+    * [Pull request #183](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/183)
+
+10. Added support to access the current simulation time and simulation iteration in TFs and the Computational Graph:
+    * [Pull request #164](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/164)
+    * [Pull request #177](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/177)
+
+11. Multiple improvements in the Gazebo Engine: support for using separate SDF files containing additional models to be spawned in the simulation; included new example experiments; other bug fixes and improvemnts:
+    * [Pull request #143](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/143)
+
+13. Added a new execution mode in the Computational Graph in which Output nodes can have a period property expressing the frequency at which they should publish a message and only those Functional Nodes required to procude those messages are executed at each cycle:
+    * [Pull request #137](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/137)
+
+14. Added PyBullet to the collection of simulators that can be interfaced from the PySim Engine:
+    * [Pull request #122](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/122)
+
+15. Several improvements and bug fixes in EventLoop and Computational Graph:
+    * [Pull request #162](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/162)
+
+16. Improvement in the DataTransfer Engine logging format and added support for retained mqtt msgs:
+    * [Pull request #144](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/144)
+    * [Pull request #147](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/147)
+    * [Pull request #190](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/190)
+
+17. Introduced a new channel of communication between the NRPCore python client and Engines:
+    * [Pull request #149](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/149)
+    * [Pull request #155](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/155)
+
+18. Integration of xpra for remote experiment visualization:
+    * [Pull request #179](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/179)
+
+19. Separate the NRP-Core Python client as an independent Python module which can be installed and used standalone, without installing the rest of NRP-Core:
+    * [Pull request #172](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/172)
 

@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+from shutil import copyfileobj, rmtree
+
+nrp_install_dir = "@CMAKE_INSTALL_PREFIX@"
+
+# Parse arguments
+parser = argparse.ArgumentParser(description="Script which compiles protobuf files so they can be used with nrp-core")
+parser.add_argument('--proto_files_path', type=str,
+                    help='Path to the .proto files to be compiled. If not present, '
+                         'the are assumed to be located in the current directory')
+parser.add_argument('--install_dir', type=str,
+                    help='Installation directory, NRPCore installation directory by default')
+
+args = parser.parse_args()
+
+# Prepare cmake command
+install_path = args.install_dir if args.install_dir else nrp_install_dir
+abs_proto_files_path = os.path.abspath(args.proto_files_path) if args.proto_files_path else os.getcwd()
+cmake_cmd = f"cmake -DCMAKE_INSTALL_PREFIX={install_path} -DPROTO_FILES_PATH={abs_proto_files_path} ."
+
+# Create build directory, configure, build and install
+build_dir = '.nrp_compile_protobuf'
+if os.path.exists(build_dir):
+    rmtree(build_dir)
+os.makedirs(build_dir)
+os.chdir(build_dir)
+
+with open("CMakeLists.txt", 'w') as output_f, \
+        open(nrp_install_dir + "/@CMAKE_INSTALL_INCLUDEDIR@/@HEADER_DIRECTORY@/cmake/NRPProtoCMakeLists.txt", 'r') \
+        as input_f:
+    copyfileobj(input_f, output_f)
+
+os.system(cmake_cmd)
+os.system('make')
+os.system('make install')

@@ -32,9 +32,11 @@ set(LIB_SRC_FILES
         nrp_event_loop/computational_graph/output_node.cpp
 
         nrp_event_loop/computational_graph/computational_graph_manager.cpp
-        nrp_event_loop/computational_graph/functional_node_factory.cpp
+        nrp_event_loop/fn_factory/functional_node_factory.cpp
+        nrp_event_loop/fn_factory/functional_node_factory_manager.cpp
 
         nrp_event_loop/event_loop/event_loop.cpp
+        nrp_event_loop/event_loop/event_loop_interface.cpp
 
         nrp_event_loop/python/functional_node.cpp
         nrp_event_loop/python/input_edge.cpp
@@ -44,6 +46,8 @@ set(LIB_SRC_FILES
         nrp_event_loop/nodes/dummy/output_dummy.cpp
         nrp_event_loop/nodes/engine/input_node.cpp
         nrp_event_loop/nodes/engine/output_node.cpp
+
+        nrp_event_loop/nodes/time/input_time.cpp
 
         nrp_event_loop/utils/graph_utils.cpp
         nrp_event_loop/utils/data_conversion.cpp
@@ -67,7 +71,7 @@ set(SPINNAKER_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
-        python_module/python_module.cpp
+        python/python_module.cpp
 )
 
 # List executable build files
@@ -88,18 +92,17 @@ set(ROS_TEST_SRC_FILES
         tests/test_python_ros_nodes.cpp
         )
 
+set(MQTT_TEST_SRC_FILES
+        tests/test_event_loop_engine.cpp
+        )
+
 
 ##########################################
 ## Dependencies
 
 if(ENABLE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_CATKIN_PACKAGES})
+    find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 endif()
-
-find_package(Boost COMPONENTS
-        system
-        REQUIRED
-        )
 
 ##########################################
 ## Header configuration
@@ -127,6 +130,7 @@ endif()
 if(ENABLE_MQTT)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_headers.txt" PROTO_MSG_TYPES_INCLUDE)
     file(READ "${CMAKE_BINARY_DIR}/nrp_proto_msg_types.txt" NRP_PROTO_MSG_TYPES)
+    string(REPLACE "," ";" NRP_PROTO_MSG_TYPES ${NRP_PROTO_MSG_TYPES})
     set(PROTO_MSG_TYPES_CHECK "")
     foreach(MSG ${NRP_PROTO_MSG_TYPES})
         string(REPLACE "::" "" PYTHON_MSG "${MSG}")
@@ -137,7 +141,7 @@ if(ENABLE_MQTT)
 endif()
 
 # Python Module defines
-configure_file("python_module/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 ##########################################
 # Library
@@ -146,7 +150,7 @@ add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
 
-set(NRP_ELE_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP Event Loop Engine Library target")
+set(NRP_EVENT_LOOP_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP Event Loop Library target")
 
 set_target_properties(${LIBRARY_NAME} PROPERTIES PREFIX "")
 
@@ -191,7 +195,7 @@ if(ENABLE_ROS)
 
     target_link_libraries(${ROS_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_EVENT_LOOP_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_ROS_PROXY_TARGET}
             ${catkin_LIBRARIES}
@@ -199,8 +203,8 @@ if(ENABLE_ROS)
             )
 endif()
 
-# MQTT nodes target
 if(ENABLE_MQTT)
+    # MQTT nodes target
     set(MQTT_LIBRARY_NAME "${LIBRARY_NAME}MQTTNodes")
     add_library(${MQTT_LIBRARY_NAME} SHARED ${MQTT_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${MQTT_LIBRARY_NAME} ALIAS ${MQTT_LIBRARY_NAME})
@@ -215,10 +219,50 @@ if(ENABLE_MQTT)
 
     target_link_libraries(${MQTT_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_EVENT_LOOP_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_MQTT_PROXY_TARGET}
+            ${NRP_PROTO_LIB_TARGET}
+            NRPProtobuf::ProtoDump
+            NRPProtobuf::ProtoGazebo
+            NRPProtobuf::ProtoEngineTest
+            NRPProtobuf::ProtoNrpGenericProto
+            NRPProtobuf::ProtoWrappers
+            NRPProtobuf::ProtoEdlutData
             )
+
+    # Event Loop Engine target
+    set(EVENT_LOOP_ENGINE_TARGET "${LIBRARY_NAME}Engine")
+    add_library(${EVENT_LOOP_ENGINE_TARGET} SHARED
+            nrp_event_loop/event_loop/event_loop_engine.cpp
+            nrp_event_loop/event_loop/event_loop_engine_opts_parser.cpp)
+
+    add_library(${NAMESPACE_NAME}::${EVENT_LOOP_ENGINE_TARGET} ALIAS ${EVENT_LOOP_ENGINE_TARGET})
+    target_compile_options(${EVENT_LOOP_ENGINE_TARGET} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+
+    set(NRP_ELE_TARGET "${NAMESPACE_NAME}::${EVENT_LOOP_ENGINE_TARGET}" CACHE INTERNAL "NRP Event Loop Engine Library target")
+
+    target_include_directories(${EVENT_LOOP_ENGINE_TARGET} BEFORE
+            PUBLIC
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
+            )
+
+    target_link_libraries(${EVENT_LOOP_ENGINE_TARGET}
+            PUBLIC
+            ${NRP_EVENT_LOOP_TARGET}
+            NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+            ${NRP_GEN_LIB_TARGET}
+            ${NRP_MQTT_PROXY_TARGET}
+            NRPProtobuf::ProtoDump
+            NRPProtobuf::ProtoGazebo
+            NRPProtobuf::ProtoEngineTest
+            NRPProtobuf::ProtoNrpGenericProto
+            NRPProtobuf::ProtoWrappers
+            NRPProtobuf::ProtoEdlutData
+            )
+
 endif()
 
 # SPINNAKER nodes target
@@ -249,7 +293,7 @@ if(ENABLE_SPINNAKER)
 
     target_link_libraries(${SPINNAKER_LIBRARY_NAME}
             PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            ${NRP_EVENT_LOOP_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${Boost_LIBRARIES}
             ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib/libspynnaker_external_device_lib.a
@@ -270,8 +314,7 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
 
     target_link_libraries(${PYTHON_MODULE_NAME}
         PUBLIC
-            ${NAMESPACE_NAME}::${LIBRARY_NAME}
-            ${NRP_PROTO_LIB_TARGET}
+            ${NRP_EVENT_LOOP_TARGET}
     )
 
     if(ENABLE_ROS)
@@ -298,34 +341,78 @@ endif()
 
 
 ##########################################
-## NRPNestExecutable
-if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
-    add_executable(${EXECUTABLE_NAME} ${EXEC_SRC_FILES})
-    target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
-endif()
+## generateFNFactoryModule
+add_custom_command(
+        OUTPUT generateFNFactoryModule
+        COMMAND g++ -I/usr/lib/llvm-10/include/ -L/usr/lib/llvm-10/lib ${CMAKE_CURRENT_SOURCE_DIR}/fn_factory_module/generate_fn_factory_module.cpp -x c++ -std=c++17 -lclang -o generateFNFactoryModule)
 
+# Forces the generation of generateFNFactoryModule
+add_custom_target(
+        GENERATE_FN_FACTORY_MODULE
+        COMMAND bash -c "echo \"Building generateFNFactoryModule tool\""
+        DEPENDS generateFNFactoryModule)
+add_dependencies("${LIBRARY_NAME}" GENERATE_FN_FACTORY_MODULE)
 
 ##########################################
 ## Append Doxygen files
 add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} ${HEADER_DIRECTORY})
 
-
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
+
+    # Compile fn factory module tests
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE
+            COMMAND build_fn_factory_module.sh test_files/fn_factory_module/test_fn_cpp_node.h -DSOURCE_FILENAME=test_files/fn_factory_module/test_fn_cpp_node.cpp
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_UNNAMED_PARAM_ERROR
+            COMMAND build_fn_factory_module.sh unnamed_param_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_UNNAMED_PARAM_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_RETURN_ERROR
+            COMMAND build_fn_factory_module.sh wrong_return_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_RETURN_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR
+            COMMAND build_fn_factory_module.sh wrong_param_error.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+            NAME TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR_2
+            COMMAND build_fn_factory_module.sh wrong_param_error_2.h
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_files/fn_factory_module")
+
+    set_tests_properties(TEST_FN_FACTORY_MODULE_WRONG_PARAM_ERROR_2 PROPERTIES WILL_FAIL TRUE)
 
     # Create testing executable
     enable_testing()
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_link_libraries(${TEST_NAME}
         PUBLIC
-        ${NAMESPACE_NAME}::${LIBRARY_NAME}
+        ${NRP_EVENT_LOOP_TARGET}
         GTest::GTest
         GTest::Main)
 
-    gtest_discover_tests(${TEST_NAME}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+    gtest_add_tests(
+        TARGET ${TEST_NAME}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests"
         EXTRA_ARGS -VV)
+
+    set_tests_properties(ComputationalNodes.FN_FACTORY_MANAGER PROPERTIES DEPENDS TEST_FN_FACTORY_MODULE)
+
+    # Add python Event Loop test
+    add_test(NAME EventLoopPython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopPython.xml" test_event_loop.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
     if(ENABLE_ROS AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
@@ -333,7 +420,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         add_executable(${ROS_TEST_NAME} ${ROS_TEST_SRC_FILES})
         target_link_libraries(${ROS_TEST_NAME}
                 PUBLIC
-                ${NAMESPACE_NAME}::${LIBRARY_NAME}
+                ${NRP_EVENT_LOOP_TARGET}
                 ${NAMESPACE_NAME}::${ROS_LIBRARY_NAME}
                 GTest::GTest
                 GTest::Main)
@@ -343,8 +430,72 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
                 EXTRA_ARGS -VV)
     endif()
 
+    if(ENABLE_MQTT AND NOT "${MQTT_TEST_SRC_FILES}" STREQUAL "")
+        enable_testing()
+        set(MQTT_TEST_NAME "${TEST_NAME}MQTT")
+        add_executable(${MQTT_TEST_NAME} ${MQTT_TEST_SRC_FILES})
+        target_link_libraries(${MQTT_TEST_NAME}
+                PUBLIC
+                ${NRP_EVENT_LOOP_TARGET}
+                ${EVENT_LOOP_ENGINE_TARGET}
+                NRPProtobuf::ProtoEngineTest
+                GTest::GTest
+                GTest::Main)
+
+        gtest_discover_tests(${MQTT_TEST_NAME}
+                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+                EXTRA_ARGS -VV)
+
+        add_test(NAME EventLoopEnginePython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopEnginePython.xml" test_event_loop_engine.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    endif()
+
 endif()
 
+# Add tests based on running example experiments
+if(ENABLE_EXAMPLES_TESTING)
+    set(EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/examples")
+    file(GLOB EXAMPLES RELATIVE ${EXAMPLES_DIR} ${EXAMPLES_DIR}/*)
+    foreach(EXAMPLE ${EXAMPLES})
+        set(CMD build_fn_factory_module.sh test.h)
+
+        if("${EXAMPLE}" STREQUAL "ros_nodes_std_bool")
+            list(APPEND CMD -DNRP_ROS_MSGS_PACKAGES=std_msgs)
+        endif()
+
+        if("${EXAMPLE}" STREQUAL "engine_nodes_protobuf_custom")
+            list(APPEND CMD -DNRP_PROTO_MSGS_PACKAGES=MyPackage)
+            add_test(
+                    NAME "${EXAMPLE}_BuildProto"
+                    COMMAND nrp_compile_protobuf.py
+                    WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+        endif()
+
+        add_test(
+                NAME "${EXAMPLE}_BuildFNModule"
+                COMMAND ${CMD}
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+        # Disable test if ROS is not installed
+        if("${EXAMPLE}" STREQUAL "ros_nodes_std_bool")
+            set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DISABLED $<NOT:$<BOOL:${ENABLE_ROS}>>)
+        endif()
+
+        if("${EXAMPLE}" STREQUAL "engine_nodes_protobuf_custom")
+            set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DEPENDS "${EXAMPLE}_BuildProto")
+        endif()
+
+        # TODO: these two examples needs roscore and mqtt broker, also doesn't have a timeout
+        if(NOT "${EXAMPLE}" STREQUAL "ros_nodes_std_bool" AND NOT "${EXAMPLE}" STREQUAL "mqtt_nodes_str_protobuf")
+            # NOTE: not very useful, because NRPCoreSim always ends without an exception
+            add_test(
+                    NAME "${EXAMPLE}_Test"
+                    COMMAND NRPCoreSim -c simulation_config.json
+                    WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+        endif()
+    endforeach()
+endif()
 
 ##########################################
 ## Installation
@@ -387,7 +538,10 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(TARGETS ${PYTHON_MODULE_NAME}
             DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
 
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
+    install(FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/python/event_loop_interface.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/python/event_loop_engine.py"
             DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/${PYTHON_MODULE_NAME}")
 endif()
 
@@ -403,6 +557,11 @@ if(ENABLE_MQTT)
         install(TARGETS ${MQTT_LIBRARY_NAME}
                 DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
     endif()
+
+    if(TARGET ${EVENT_LOOP_ENGINE_TARGET})
+        install(TARGETS ${EVENT_LOOP_ENGINE_TARGET}
+                DESTINATION "${NRP_PLUGIN_INSTALL_DIR}")
+    endif()
 endif()
 
 if(ENABLE_SPINNAKER)
@@ -412,11 +571,19 @@ if(ENABLE_SPINNAKER)
     endif()
 endif()
 
-# Install executable files
-if(TARGET ${EXECUTABLE_NAME})
-    install(TARGETS ${EXECUTABLE_NAME}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
+# Configure and Install fn_factory_module
+configure_file(fn_factory_module/build_fn_factory_module.sh.in "${CMAKE_CURRENT_BINARY_DIR}/build_fn_factory_module.sh" @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generateFNFactoryModule" "${CMAKE_CURRENT_BINARY_DIR}/build_fn_factory_module.sh"
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(
+        FILES
+        fn_factory_module/CMakeLists.txt
+        fn_factory_module/fn_factory_module.cpp.template
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_DIRECTORY}/cmake/fn_factory_module"
+)
 
 # create cmake version and config files
 include(CMakePackageConfigHelpers)

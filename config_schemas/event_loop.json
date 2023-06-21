@@ -1,0 +1,78 @@
+{
+  "event_loop_base" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "EventLoopBase",
+    "description": "Event Loop base configuration parameters",
+    "$id": "#EventLoopBase",
+    "type": "object",
+    "properties" : {
+      "Timeout" : {
+        "type" : "number",
+        "default": 0,
+        "description": "Event loop timeout (in seconds). 0 means no timeout"
+      },
+      "Timestep" : {
+        "type" : "number",
+        "default": 0.01,
+        "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency"
+      },
+      "TimestepWarnThreshold": {
+        "type" : "number",
+        "default": 0.001,
+        "description": "Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the \"Timestep\" parameter"
+      }
+    }
+  },
+  "event_loop" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "EventLoop",
+    "description": "Event Loop configuration parameters",
+    "$id": "#EventLoop",
+    "allOf": [
+      { "$ref": "#/event_loop_base" },
+      {
+        "properties": {
+          "ExecutionMode": {
+            "type": "string",
+            "enum": ["AllNodes", "OutputDriven"],
+            "default": "AllNodes",
+            "description": "Execution Mode that will be used when running the Event Loop"
+          }
+        }
+      }
+    ]
+  },
+  "event_loop_engine" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "EventLoopEngine",
+    "description": "Event Loop Engine configuration parameters",
+    "$id": "#EventLoopEngine",
+    "allOf": [
+      { "$ref": "#/event_loop_base" },
+      {
+        "properties": {
+          "EngineConfig": {
+            "$ref": "json://nrp-core/engines/engine_base.json#EngineBase",
+            "description": "Configuration of the Engine run by the Event Loop"
+          },
+          "MQTTConfig" : {
+            "$ref": "json://nrp-core/nrp_connectors.json#/MQTTClient",
+            "default": {},
+            "description": "configuration of the MQTT client"
+          },
+          "ProcessLastMsg" : {
+            "type" : "bool",
+            "default": true,
+            "description": "if true, only the last message received through a topic during the last step is processed"
+          },
+          "DataQueueSize" : {
+            "type" : "integer",
+            "default": 1,
+            "description": "Maximum number of messages received through a topic which are stored each step"
+          }
+        },
+        "required": ["EngineConfig"]
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
 
     NRPLogger::info("NRP Communication plugin: Initializing...");
 
-    std::string serverAddr, engineName;
+    std::string serverAddr, engineName, protobufPluginsPath;
+    nlohmann::json protobufPlugins;
     try
     {
         // Parse options from input
@@ -40,25 +41,38 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
         // Save given URL
         serverAddr = inputArgsParse[EngineGRPCConfigConst::EngineServerAddrArg.data()].as<std::string>();
         engineName = inputArgsParse[EngineGRPCConfigConst::EngineNameArg.data()].as<std::string>();
+        protobufPluginsPath = inputArgsParse[EngineGRPCConfigConst::ProtobufPluginsPathArg.data()].as<std::string>();
+        const auto protobufPluginsDump = inputArgsParse[EngineGRPCConfigConst::ProtobufPluginsArg.data()].as<std::string>();
+        protobufPlugins = nlohmann::json::parse(protobufPluginsDump);
 
     }
     catch(cxxopts::OptionException &e)
     {
-        NRPLogger::error("Failed to parse options [ {} ]", e.what());
+        NRPLogger::error("NRP Communication plugin: Failed to parse Engine options");
+
+        throw;
+    }
+    catch(std::domain_error &e)
+    {
+        NRPLogger::error("NRP Communication plugin: Failed to parse Engine options");
 
         throw;
     }
 
     // Create server with given URL
-    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName);
+    auto newController = new NRPGazeboCommunicationController(engineName, protobufPluginsPath, protobufPlugins);
+    _grpcServer.reset(new EngineGrpcServer(serverAddr, newController));
+    CommControllerSingleton::resetInstance(newController);
 
     // Save the server parameters
-    this->_serverAddress = newController.serverAddress();
+    this->_serverAddress = _grpcServer->serverAddress();
     this->_engineName = engineName;
+    this->_protobufPluginsPath = protobufPluginsPath;
+    this->_protobufPlugins = protobufPlugins;
     NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: starting server {} on {}", this->_engineName, this->_serverAddress);
 
     // Start the server
-    newController.startServerAsync();
+    _grpcServer->startServerAsync();
 
     NRPLogger::info("gazebo::NRPCommunicationPlugin::Load: Server started. Waiting for input...");
 }
@@ -69,10 +83,12 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName);
+    auto newController = new NRPGazeboCommunicationController(this->_engineName, this->_protobufPluginsPath, this->_protobufPlugins);
+    _grpcServer.reset(new EngineGrpcServer(this->_serverAddress, newController));
+    CommControllerSingleton::resetInstance(newController);
 
     // Start server
-    newController.startServerAsync();
+    _grpcServer->startServerAsync();
 
     NRPLogger::info("NRP Communication plugin: Server restarted. Waiting for input...");
 }

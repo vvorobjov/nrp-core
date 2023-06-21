@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@
 
 #include "nrp_event_loop/computational_graph/input_port.h"
 
+#include "nrp_event_loop/nodes/ros/output_node.h"
+
 #include "nrp_event_loop/config/cmake_constants.h"
 
 #include "nrp_general_library/utils/utils.h"
@@ -44,11 +46,9 @@ namespace bpy = boost::python;
 TEST(ComputationalGraphPythonNodes, ROS_NODES) {
     // Start roscore in a child process
     // TODO: find a better way to test these nodes without actually running roscore
+    pid_t ppid_before_fork = getpid();
     const auto pid = fork();
-    if(pid == 0) {
-        execlp("roscore", "roscore", (char*) NULL);
-    }
-    else {
+    if(pid) {
         // Setup required elements
         namespace bpy = boost::python;
         ros::init(std::map<std::string, std::string>(), "nrp_core");
@@ -70,6 +70,11 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         boost::function<void (const boost::shared_ptr<nrp_ros_msgs::Test const>&)> callback =
                 [&](const boost::shared_ptr<nrp_ros_msgs::Test const>& a) { msg_got = std::move(a); };
         NRPROSProxy::getInstance().subscribe("/test_pub/test", callback);
+
+        boost::shared_ptr<nrp_ros_msgs::Test const> msg_got_2;
+        boost::function<void (const boost::shared_ptr<nrp_ros_msgs::Test const>&)> callback_2 =
+                [&](const boost::shared_ptr<nrp_ros_msgs::Test const>& a) { msg_got_2 = std::move(a); };
+        NRPROSProxy::getInstance().subscribe("/test_pub/test_2", callback);
 
         nrp_ros_msgs::Test msg_sent;
         msg_sent.string_msg = "first";
@@ -109,7 +114,23 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         kill(pid,SIGTERM);
         int status;
         waitpid(pid, &status, 0);
+
+        // check compute period and publish from cache
+        auto output_p = dynamic_cast<OutputROSNode<nrp_ros_msgs::Test>*>(ComputationalGraphManager::getInstance().getNode("/test_pub/test"));
+        ASSERT_EQ(output_p->getComputePeriod(), 1);
+        ASSERT_EQ(output_p->publishFromCache(), true);
+        auto output_p2 = dynamic_cast<OutputROSNode<nrp_ros_msgs::Test>*>(ComputationalGraphManager::getInstance().getNode("/test_pub/test_2"));
+        ASSERT_EQ(output_p2->getComputePeriod(), 2);
+        ASSERT_EQ(output_p2->publishFromCache(), false);
     }
+    else {
+        int r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (r == -1) { perror(0); exit(1); }
+        if (getppid() != ppid_before_fork)
+            exit(1);
+        execlp("roscore", "roscore", (char*) NULL);
+    }
+
 
     // ROS decorator with an incorrect msg type
     ASSERT_THROW(bpy::import("test_ros_wrong_type"), boost::python::error_already_set);

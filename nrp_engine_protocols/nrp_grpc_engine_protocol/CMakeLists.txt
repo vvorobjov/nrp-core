@@ -22,6 +22,7 @@ set(LIB_SRC_FILES
     nrp_grpc_engine_protocol/config/engine_grpc_config.cpp
     nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.cpp
     nrp_grpc_engine_protocol/engine_server/engine_grpc_server.cpp
+    nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.cpp
     nrp_grpc_engine_protocol/engine_client/engine_grpc_client.cpp
 )
 
@@ -125,6 +126,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     target_link_libraries(${TEST_NAME}
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME}
+            NRPProtobuf::ProtoEngineTest
         GTest::GTest
         GTest::Main)
 

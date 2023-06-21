@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,47 +22,47 @@
 #ifndef PLUGIN_MANAGER_H
 #define PLUGIN_MANAGER_H
 
-#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include <filesystem>
-
 #include <map>
+#include <vector>
 
-/*!
- * \brief Loads libraries and extracts engine launchers
- */
 class PluginManager
 {
-    public:
-        /*!
-         * \brief Load a Plugin from a given library
-         * \param pluginLibFile Plugin library file (.so)
-         * \return Returns ptr to loaded EngineLauncher if found, nullptr otherwise
-         */
-        EngineLauncherInterface::unique_ptr loadPlugin(const std::string &pluginLibFile);
+public:
+    /*!
+     * \brief Load a Plugin from a given library
+     * \param pluginLibFile Plugin library file (.so)
+     * \return Returns true if the plugin was loaded successfully, false otherwise
+     */
+    bool loadPlugin(const std::string &pluginLibFile);
 
-        /*!
-         *  \brief Destructor. Unloads all plugin libraries
-         */
-        ~PluginManager();
+    /*!
+     *  \brief Destructor. Unloads all plugin libraries
+     */
+    ~PluginManager();
 
-        /*!
-         * \brief Adds search path under which to look for plugins
-         * \param pluginPath Path to plugins
-         */
-        void addPluginPath(const std::string &pluginPath);
+    /*!
+     * \brief Adds search path under which to look for plugins
+     * \param pluginPath Path to plugins
+     */
+    void addPluginPath(const std::string &pluginPath);
 
+protected:
 
-    private:
-        /*!
-         * \brief Loaded Libraries
-         */
-        std::map<std::string, void*> _loadedLibs;
+    /*!
+     * \brief Loaded Libraries
+     */
+    std::map<std::string, void*> _loadedLibs;
 
-        /*!
-         * \brief Plugin paths. The last element should always be an empty path,
-         * which signifies using the standard linux search method
-         */
-        std::vector<std::filesystem::path> _pluginPaths = {std::filesystem::path()};
+private:
+
+    /*!
+     * \brief Plugin paths. The last element should always be an empty path,
+     * which signifies using the standard linux search method
+     *
+     * The current working directory is always the 1st element in the vector
+     */
+    std::vector<std::filesystem::path> _pluginPaths = {std::filesystem::current_path(), std::filesystem::path()};
 };
 
 #endif // PLUGIN_MANAGER_H

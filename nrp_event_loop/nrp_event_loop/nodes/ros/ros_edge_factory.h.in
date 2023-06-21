@@ -26,12 +26,16 @@ public:
     RosEdgeFactory(const std::string& keyword, const std::string& address, const bpy::object& msgType,
                    InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
                    InputNodePolicies::MsgCachePolicy msgCachePolicy,
-                   bool isInput = true) :
+                   bool isInput = true,
+                   bool publishFromCache = false,
+                   unsigned int computePeriod = 1) :
         _keyword(keyword),
         _address(address),
         _msgPublishPolicy(msgPublishPolicy),
         _msgCachePolicy(msgCachePolicy),
-        _isInput(isInput)
+        _isInput(isInput),
+        _publishFromCache(publishFromCache),
+        _computePeriod(computePeriod)
     {
         _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
         _moduleName = boost::python::extract<std::string>(msgType.attr("__module__"))();
@@ -53,7 +57,7 @@ public:
     template<class MSG_TYPE>
     boost::python::object pySetupOutput(const boost::python::object& obj)
     {
-        auto rosEdge = OutputROSEdge<MSG_TYPE>(_keyword, _address);
+        auto rosEdge = OutputROSEdge<MSG_TYPE>(_keyword, _address, _publishFromCache, _computePeriod);
         return rosEdge.pySetup(obj);
     }
 
@@ -91,6 +95,8 @@ private:
     InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     InputNodePolicies::MsgCachePolicy _msgCachePolicy;
     bool _isInput;
+    bool _publishFromCache;
+    unsigned int _computePeriod;
 };
 
 class RosEdgeFactoryOutput
@@ -98,7 +104,10 @@ class RosEdgeFactoryOutput
 {
 public:
 
-    RosEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType) :
-            RosEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false)
+    RosEdgeFactoryOutput(const std::string& keyword, const std::string& address, const bpy::object& msgType,
+                         bool publishFromCache = false,
+                         unsigned int computePeriod = 1) :
+            RosEdgeFactory(keyword, address, msgType, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE, false,
+                           publishFromCache, computePeriod)
     {}
 };

@@ -1,0 +1,5 @@
+{
+  "ComputationalGraph": ["fn.py"],
+  "SimulationLoop": "EventLoop",
+  "EventLoop": {"Timeout": 1}
+}

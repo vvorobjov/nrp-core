@@ -1,0 +1,240 @@
+This is a doxygen comment. It is used to generate the documentation.
+/*! \page remote_docker_compose Running multiple remote nrp-cores with docker compose
+
+This guide gives an overview on how to run multiple nrp-core experiments possibly distributed in multiple machines using docker compose files.<br>
+The resulting runtime structure of the created nrp-core processes follows will be similar as the example depicted below.
+
+\image html swarm-Page-4.drawio.png "Simulation architecture for multiple nrp-core
+
+In order to reproduce this scenario some environment setup should be done. We require 3 Virtual Machines including one master-node and two worker nodes.
+
+1- Master node should have direct password-less ssh access to worker nodes. To do this run these commands on master-node:
+
+\code{.yaml}
+
+# Generate ssh keys for master node (press enter and accept defaults)
+ssh-keygen
+
+# Copy the content of your public_key (id_rsa.pub)
+cat "${HOME}"/.ssh/id_rsa.pub
+
+# Then go the each of the worker nodes and add paste the key at the end of authorized_keys file
+vim "${HOME}"/.ssh/authorized_keys
+
+# Then from the master-node try to ssh to both worker nodes and it should be fine
+
+\endcode
+
+2- Since manager node is trying to run docker commands on remote nodes, we need to allow manager's docker client to connect to worker's docker engine.
+
+This could be done via docker context. see <a href="https://docs.docker.com/engine/context/working-with-contexts/">Docker documentation</a>  for more details.
+
+Follow these steps to add context for each worker node (IMPORTANT: You should already run step 1 so manager node can ssh to worker nodes):
+
+\code{.yaml}
+
+# Install docker on manager node in case its not installed. Do not install docker from snap store since it install very old version, use convenience script
+
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+
+# Add context for worker node 1 with IP address of 10.1.1.184
+docker context create worker_1 --docker "host=ssh://10.1.1.184"
+
+# Add context for worker node 2 with IP address of 10.1.1.79
+docker context create worker_2 --docker "host=ssh://10.1.1.79"
+
+\endcode
+
+3- Next step is to clone nrp-core repository from bitbucket on master node. Let's say you clone it in your home's root folder.
+
+Then you should install nrp-core. see \ref installation "installation page" for more details.
+
+
+4- There is an environment variable in the compose file called "NRPCORE_EXPERIMENT_DIR" that obviously contains the path to experiment folder (husky_braitenberg),
+and is being used throughout the compose file to mount files inside engines. So this address should be identical in all 3 nodes. Also the output logs from different engines will
+be written to this folder. We propose to use folder sharing using NFS, in a way that master node shares the experiment folder through nfs with two worker nodes.
+Follow these steps on the manager node to setup nfs and share a folder with it:
+
+\code{.yaml}
+
+# Install nfs
+sudo apt-get update
+
+sudo apt install nfs-kernel-server
+
+# Then add two lines to /etc/exports for two worker nodes. Following is an example for these two lines. My experiment is in the folder of '/home/ubuntu/nrp-core/examples/husky_braitenberg'
+# The IP address of my worker nodes are 10.1.1.184 and 10.1.1.79 and you should put your ip addresses there. (don't copy the # sign !! )
+
+# /home/ubuntu/nrp-core/examples/husky_braitenberg    10.1.1.184(rw,sync,no_root_squash,no_subtree_check)
+# /home/ubuntu/nrp-core/examples/husky_braitenberg    10.1.1.79(rw,sync,no_root_squash,no_subtree_check)
+
+# Make the NFS Share Available to Clients
+sudo exportfs -a
+sudo systemctl restart nfs-kernel-server #restarting the NFS kernel
+
+# If you have a firewall enabled, you�ll also need to open up firewall access using the sudo ufw allow command.
+
+# Installing NFS Client Packages : Run these commands on the worker nodes
+
+sudo apt update
+
+sudo apt install nfs-common
+
+# Create the folder in worker nodes
+sudo mkdir -p /home/ubuntu/nrp-core/examples/husky_braitenberg
+
+# Mount the file share by running the mount command, as follows. There is no output if the command is successful.
+# Remember to replace 10.1.1.154 with your master nodes' IP address and path to your experiment folder
+
+sudo mount 10.1.1.154:/home/ubuntu/nrp-core/examples/husky_braitenberg /home/ubuntu/nrp-core/examples/husky_braitenberg
+
+# To verify that the NFS share is mounted successfully:
+df -h
+
+# If df -h command takes forever, try rebooting your VM and remount using the above command again
+
+\endcode
+
+5- If you are pulling docker images from private registry, first login to the registry with docker login command, make sure you use `docker login` instead of `sudo docker login`
+
+
+
+Consider the learning scenario, where you want to run Husky experiment multiple times, each time with a different input.
+
+You can run these nrp-cores serially, but if there is the possibility of running them simultaneously, you can have an array of nrp-cores (along with their engines) that can significantly hasten your learning process.
+
+This can be done with the docker-compose launcher. In docker-compose we define nrp-core and different engines as services that are connected via an internal network together and this eco-system have only one entry point which is nrp-core running in a container.
+
+Outside of this ecosystem, a user using a python client of nrp-core talks to that nrp-core with GRPC and nrp-core runs the simulation by commanding the already run engines.
+
+Let's say your master-script is as follow:
+
+\code{.py}
+import time
+from nrp_client import NrpCore
+
+nrp_1 = "10.1.1.184:50050"
+nrp_2 = "10.1.1.79:50050"
+compose_file = "/home/HOME/nrp-core/examples/husky_braitenberg/docker_compose_deploy_husky.yaml"
+config_file = "/home/HOME/nrp-core/examples/husky_braitenberg/simulation_config_docker-compose.json"
+
+# This line will run the compose file in the next step
+
+nrp_core_1 = NrpCore(nrp_1, compose_file=compose_file,config_file=config_file)
+
+nrp_core_2 = NrpCore(nrp_2, compose_file=compose_file,config_file=config_file)
+
+nrp_core_1.initialize()
+
+nrp_core_2.initialize()
+
+time.sleep(10)
+for i in range(100):
+    nrp_core_1.run_loop(1)
+    nrp_core_2.run_loop(1)
+
+nrp_core_1.shutdown()
+nrp_core_2.shutdown()
+
+\endcode
+
+NrpCore takes as arguments:
+- address (str): the address that will be used by NRPCoreSim server
+- compose_file (str): path to the docker compose file needed to execute the experiment. It will throws an error if you don't provide this value.
+- config_file (str): path to the experiment configuration file. It can be an absolute path or relative to `experiment_folder`.
+- log_output (bool): if true, console output from NRPCoreSim process is hidden and logged into a file .console_output.log in the experiment folder. It is true by default.
+- get_archives (list): list of archives (files or folders) that should be retrieved from the docker container when shutting down the simulation (eg. folder containing logged simulation data from a data transfer engine). Empty list by default.
+
+You can use other functions like *run_until_timeout* instead of *run_loop()* function.
+
+\section tutorial_compose_initialize Preparing the environment.
+
+This tutorial is going to explain how to run husky experiment <a href="https://bitbucket.org/hbpneurorobotics/nrp-core/src/development/examples/husky_braitenberg/">husky experiment</a>
+using the compose file. The docker-compose file used for this example is as follow:
+
+
+\code{.yaml}
+version: '3.2'
+
+services:
+
+    nest-service:
+        image: docker-registry.ebrains.eu/nest/nest-simulator:3.3
+        env_file:
+            - nest.env
+        container_name: nrp-nest-simulator
+        networks:
+            - husky
+
+    gazebo-service:
+        env_file:
+            - gazebo.env
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        command: /usr/xvfb-run-gazebo-runcmd.bash
+        networks:
+            - husky
+        container_name: nrp-gazebo
+
+    nrp-core-service:
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}:/experiment
+        command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json  -m server --server_address 172.16.238.10:50050 --logoutput=all --logfilename=.console_output.log --slave
+        networks:
+            husky:
+                ipv4_address: 172.16.238.10
+        ports:
+            - "50050:50050"
+        depends_on:
+            - nest-service
+            - gazebo-service
+            - mqtt-broker-service
+        container_name: nrp-core
+
+
+    mqtt-broker-service:
+        image: eclipse-mosquitto
+        networks:
+            - husky
+        volumes:
+            - ${NRPCORE_EXPERIMENT_DIR}/mosquitto.conf:/mosquitto/config/mosquitto.conf
+        user: 0:0
+        container_name: mqtt-broker
+
+networks:
+  husky:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
+
+\endcode
+
+As you can see there are multiple environment variables that should be set before running this compose-file.
+The NRPCORE_EXPERIMENT_DIR should be set to the path of experiment on manager node. These variables could be added to .bashrc of the manager node.
+
+
+\code{.sh}
+
+export NRP_DOCKER_REGISTRY=nexus.neurorobotics.ebrains.eu:443/
+export NRP_CORE_TAG=:latest
+export NRPCORE_EXPERIMENT_DIR=/home/ubuntu/nrp-core/examples/husky_braitenberg
+
+\endcode
+
+For each engine there is an env file (for example for we have `gazebo.env` and `nest.env`) that sets the passes required environment variables inside the engine's container to run the engine.
+
+The nrp-core is accessible via `<worker_node_ip>:50050` and you can test it with a simple grpc tester function. Make sure that the port 50050 is open and accessible from manager node to worker nodes.
+
+if your manager and worker nodes are not in the same network  you have to open port 50050 for nrp-core and also port 22 so docker can connect to remote docker engine with ssh.
+
+The specified IP address for nrp-core service is due to fact that when we want to access nrp-core running inside a container from outside the compose (like our python client in our case )
+we need to run nrp-core with a fixed IP address which matches the IP of the interface within container. We also connected all engines via husky docker network so that can freely talk to each other on any port.
+
+*/

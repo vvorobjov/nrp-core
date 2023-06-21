@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,9 @@ cxxopts::Options EngineGRPCOptsParser::createOptionParser(bool allowUnrecognised
 
     options.add_options()
             (EngineGRPCConfigConst::EngineServerAddrArg.data(), "NRP URL Address", cxxopts::value<std::string>())
-            (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""));
+            (EngineGRPCConfigConst::EngineNameArg.data(), "NRP Engine Name", cxxopts::value<std::string>()->default_value(""))
+            (EngineGRPCConfigConst::ProtobufPluginsPathArg.data(), "Protobuf Plugins Path", cxxopts::value<std::string>())
+            (EngineGRPCConfigConst::ProtobufPluginsArg.data(), "Protobuf Plugins", cxxopts::value<std::string>());
 
     return options;
 }

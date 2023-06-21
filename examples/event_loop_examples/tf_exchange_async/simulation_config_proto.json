@@ -1,0 +1,21 @@
+{
+  "SimulationName": "test_sim",
+  "DataPackProcessor": "cg",
+  "SimulationLoop": "EventLoop",
+  "ComputationalGraph": ["tf_grpc.py"],
+  "MQTTNode": {},
+  "EventLoop": {
+    "Timestep": 0.1,
+    "Timeout": 2
+  },
+  "ExternalProcesses" : [
+    {
+      "ProcCmd": "async_python_grpc_engine.py",
+      "ProcStartParams": ["--config=proto_engine_async_conf_1.json", "--loglevel=info"]
+    },
+    {
+      "ProcCmd": "async_python_grpc_engine.py",
+      "ProcStartParams": ["--config=proto_engine_async_conf_2.json", "--loglevel=info"]
+    }
+  ]
+}

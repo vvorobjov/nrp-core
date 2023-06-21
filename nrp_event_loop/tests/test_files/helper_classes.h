@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,6 +71,8 @@ public:
 
     void compute() override
     {
+        cycle_calls.push_back("compute");
+
         if(doBlockExec)
         {
             std::lock_guard<std::mutex> lk(m);
@@ -85,6 +87,12 @@ public:
         isExecuting = false;
     }
 
+    void graphCycleStartCB() override
+    {
+        cycle_calls.push_back("graphCycleStartCB");
+    }
+
+    std::vector<std::string> cycle_calls;
     bool doBlockExec = false;
     bool isConfigured = false;
 };
@@ -127,8 +135,9 @@ public:
 class TestOutputNode : public OutputNode<TestMsg> {
 public:
 
-    TestOutputNode(const std::string &id, OutputNodePolicies::MsgPublishPolicy msgPublishPolicy, int maxPortConnections) :
-        OutputNode(id, msgPublishPolicy, maxPortConnections)
+    TestOutputNode(const std::string &id, OutputNodePolicies::PublishFormatPolicy publishFormatPolicy,
+                   bool publishFromCache, int maxPortConnections, unsigned int computePeriod) :
+        OutputNode(id, publishFormatPolicy, publishFromCache, maxPortConnections, computePeriod)
     { }
 
     void sendSingleMsg(const std::string& /*id*/, const TestMsg* data) override

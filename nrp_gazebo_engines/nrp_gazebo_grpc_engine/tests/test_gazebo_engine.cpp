@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,9 +49,8 @@ TEST(TestGazeboGrpcEngine, Start)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-    sleep(1);
-
     ASSERT_ANY_THROW(engine->initialize());
+    sleep(1);
 }
 
 TEST(TestGazeboGrpcEngine, WorldPlugin)
@@ -69,9 +68,9 @@ TEST(TestGazeboGrpcEngine, WorldPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
+    ASSERT_NO_THROW(engine->initialize());
     sleep(1);
 
-    ASSERT_NO_THROW(engine->initialize());
     ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
     ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
     ASSERT_NO_THROW(engine->reset());
@@ -94,32 +93,31 @@ TEST(TestGazeboGrpcEngine, CameraPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-    sleep(1);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // The data is updated asynchronously, on every new frame. It may happen that on first
     // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-    const EngineClientInterface::datapacks_t * datapacks;
+    datapacks_vector_t datapacks;
     int trial = 0;
 
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("nrp_camera::camera", engine->engineName(), "irrelevant_type")});
-        ASSERT_EQ(datapacks->size(), 1);
+        datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), "irrelevant_type")});
+        ASSERT_EQ(datapacks.size(), 1);
     }
-    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
+    while(datapacks.begin()->get()->isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
     ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    const DataPack<Gazebo::Camera>& camDat = dynamic_cast<const DataPack<Gazebo::Camera>&>(*(datapacks->at(0)));
+    const DataPack<Gazebo::Camera> * camDat = dynamic_cast<const DataPack<Gazebo::Camera>*>(datapacks.begin()->get());
 
-    ASSERT_EQ(camDat.getData().imageheight(), 240);
-    ASSERT_EQ(camDat.getData().imagewidth(),  320);
-    ASSERT_EQ(camDat.getData().imagedepth(),  3);
-    ASSERT_EQ(camDat.getData().imagedata().size(), 320*240*3);
+    ASSERT_EQ(camDat->getData().imageheight(), 240);
+    ASSERT_EQ(camDat->getData().imagewidth(),  320);
+    ASSERT_EQ(camDat->getData().imagedepth(),  3);
+    ASSERT_EQ(camDat->getData().imagedata().size(), 320*240*3);
 }
 
 
@@ -130,6 +128,7 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     config["EngineName"] = "engine";
     config["EngineType"] = "gazebo_grpc";
     config["GazeboWorldFile"] = TEST_JOINT_PLUGIN_FILE;
+    config["GazeboSDFModels"] = {{{"Name", "youbot"}, {"File", TEST_YOUBOT_FILE}, {"InitPose", "0 0 1 0 0 0"}}};
     config["GazeboRNGSeed"] = 12345;
     std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
     config["EngineEnvParams"] = env_params;
@@ -140,12 +139,11 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
+    ASSERT_NO_THROW(engine->initialize());
     sleep(1);
 
-    ASSERT_NO_THROW(engine->initialize());
-
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint",
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint",
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(datapacks.size(), 1);
 
@@ -160,18 +158,24 @@ TEST(TestGazeboGrpcEngine, JointPlugin)
     newJointDev->set_effort(NAN);
     newJointDev->set_velocity(NAN);
     newJointDev->set_position(newTargetPos);
-    DataPack<Gazebo::Joint> dev("youbot::base_footprint_joint", engine->engineName(), newJointDev);
+    std::shared_ptr<DataPackInterface> newJointDataPack =
+        std::shared_ptr<DataPackInterface>(new DataPack<Gazebo::Joint>("youbot::base_footprint_joint",
+                                                                       engine->engineName(),
+                                                                       newJointDev));
 
-    ASSERT_NO_THROW(engine->sendDataPacksToEngine({&dev}));
+    datapacks_set_t outputDataPacks;
+    outputDataPacks.insert(newJointDataPack);
+
+    ASSERT_NO_THROW(engine->sendDataPacksToEngine(outputDataPacks));
 }
 
-TEST(TestGazeboGrpcEngine, LinkPlugin)
+TEST(TestGazeboGrpcEngine, LinkAndModelPlugin)
 {
     // Setup config
     nlohmann::json config;
     config["EngineName"] = "engine";
     config["EngineType"] = "gazebo_grpc";
-    config["GazeboWorldFile"] = TEST_LINK_PLUGIN_FILE;
+    config["GazeboWorldFile"] = TEST_LINK_AND_MODEL_PLUGIN_FILE;
     config["GazeboRNGSeed"] = 12345;
     std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
     config["EngineEnvParams"] = env_params;
@@ -182,17 +186,25 @@ TEST(TestGazeboGrpcEngine, LinkPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
+    ASSERT_NO_THROW(engine->initialize());
     sleep(1);
 
-    ASSERT_NO_THROW(engine->initialize());
-
-    // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("link_youbot::base_footprint",
+    // Test link datapack data getting
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint",
                                                     engine->engineName(), "irrelevant_type")});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const auto *pLinkDev = dynamic_cast<const DataPack<Gazebo::Link> *>(datapacks[0].get());
+    const auto *pLinkDev = dynamic_cast<const DataPack<Gazebo::Link> *>(datapacks.begin()->get());
     ASSERT_NE(pLinkDev, nullptr);
 
-    // TODO: Check that link state is correct
+    // Test model datapack data getting
+    datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot",
+                                                                   engine->engineName(),
+                                                                   "irrelevant_type")});
+    ASSERT_EQ(datapacks.size(), 1);
+
+    const auto *pModelDev = dynamic_cast<const DataPack<Gazebo::Model> *>(datapacks.begin()->get());
+    ASSERT_NE(pModelDev, nullptr);
+
+    // TODO: Check that link and model state are correct
 }

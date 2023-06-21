@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,14 @@ public:
     /*!
      * \brief Constructor
      */
-    OutputROSNode(const std::string &id) :
-            OutputNode<MSG_TYPE>(id)
+    OutputROSNode(const std::string &id,
+                  bool publishFromCache = false,
+                  unsigned int computePeriod = 1) :
+            OutputNode<MSG_TYPE>(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod)
     { }
+
+    std::string typeStr() const override
+    { return "RosPublisher"; }
 
 protected:
 
@@ -58,7 +63,7 @@ protected:
             rosProxy->publish(this->id(), *data);
         else
             NRPLogger::warn("From OutputROSNode \"" + this->id() +
-                            "\". NRPCoreSim is not connected to ROS and this node can't publish. Check your experiment configuration");
+                            "\". NRPCoreSim is not connected to ROS and this node can't publish. Add \"ROSNode\" parameter to  your experiment configuration");
     }
 
     // TODO: implement this node in a way that supports ROS msg types that contains a field with an array of another type.
@@ -76,14 +81,17 @@ class OutputROSEdge : public SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>
 
 public:
 
-    OutputROSEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>(keyword, address, address)
+    OutputROSEdge(const std::string &keyword, const std::string &address,
+                  bool publishFromCache = false,
+                  unsigned int computePeriod = 1) :
+            SimpleOutputEdge<MSG_TYPE, OutputROSNode<MSG_TYPE>>(keyword, address, address,
+                    publishFromCache, computePeriod)
     {}
 
 protected:
 
     OutputROSNode<MSG_TYPE>* makeNewNode() override
-    { return new OutputROSNode<MSG_TYPE>(this->_id); }
+    { return new OutputROSNode<MSG_TYPE>(this->_id, this->_publishFromCache, this->_computePeriod); }
 };
 
 

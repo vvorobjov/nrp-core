@@ -2,7 +2,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,8 +50,8 @@ TEST(TestGazeboJSONEngine, Start)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_ANY_THROW(engine->initialize());
+    sleep(1);
 }
 
 TEST(TestGazeboJSONEngine, WorldPlugin)
@@ -69,8 +69,9 @@ TEST(TestGazeboJSONEngine, WorldPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
+
     ASSERT_NO_THROW(engine->runLoopStepAsync(toSimulationTime<int, std::milli>(100)));
     ASSERT_NO_THROW(engine->runLoopStepAsyncGet(toSimulationTimeFromSeconds(5.0)));
     ASSERT_NO_THROW(engine->reset());
@@ -93,31 +94,31 @@ TEST(TestGazeboJSONEngine, CameraPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // The data is updated asynchronously, on every new frame. It may happen that on first
     // acquisition there's no camera image yet (isEmpty function returns true), so we allow for few acquisition trials.
 
-    const EngineClientInterface::datapacks_t * datapacks;
+    datapacks_vector_t datapacks;
     int trial = 0;
 
     do
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        datapacks = &engine->updateDataPacksFromEngine({DataPackIdentifier("nrp_camera::camera", engine->engineName(), JsonDataPack::getType())});
-        ASSERT_EQ(datapacks->size(), 1);
+        datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("camera::link::camera", engine->engineName(), JsonDataPack::getType())});
+        ASSERT_EQ(datapacks.size(), 1);
     }
-    while(dynamic_cast<const DataPackInterface&>(*(datapacks->at(0))).isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
+    while(datapacks.begin()->get()->isEmpty() && trial++ < MAX_DATA_ACQUISITION_TRIALS);
 
     ASSERT_LE(trial, MAX_DATA_ACQUISITION_TRIALS);
 
-    const JsonDataPack &camDat = dynamic_cast<const JsonDataPack&>(*(datapacks->at(0)));
+    const JsonDataPack * camDat = dynamic_cast<const JsonDataPack *>(datapacks.begin()->get());
 
-    ASSERT_EQ(camDat.getData()["image_height"], 240);
-    ASSERT_EQ(camDat.getData()["image_width" ], 320);
-    ASSERT_EQ(camDat.getData()["image_depth" ], 3);
-    ASSERT_EQ(camDat.getData()["image_data"  ].size(), 320*240*3);
+    ASSERT_EQ(camDat->getData()["image_height"], 240);
+    ASSERT_EQ(camDat->getData()["image_width" ], 320);
+    ASSERT_EQ(camDat->getData()["image_depth" ], 3);
+    ASSERT_EQ(camDat->getData()["image_data"  ].size(), 320*240*3);
 }
 
 
@@ -128,6 +129,7 @@ TEST(TestGazeboJSONEngine, JointPlugin)
     config["EngineName"] = "engine";
     config["EngineType"] = "gazebo_json";
     config["GazeboWorldFile"] = TEST_JOINT_PLUGIN_FILE;
+    config["GazeboSDFModels"] = {{{"Name", "youbot"}, {"File", TEST_YOUBOT_FILE}, {"InitPose", "0 0 1 0 0 0"}}};
     config["GazeboRNGSeed"] = 12345;
     std::vector<std::string> env_params ={"GAZEBO_MODEL_PATH=" TEST_GAZEBO_MODELS_DIR ":$GAZEBO_MODEL_PATH"};
     config["EngineEnvParams"] = env_params;
@@ -138,22 +140,27 @@ TEST(TestGazeboJSONEngine, JointPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint_joint", engine->engineName(), JsonDataPack::getType())});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const JsonDataPack *pJointDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
+    const JsonDataPack *pJointDev = dynamic_cast<const JsonDataPack*>(datapacks.begin()->get());
     ASSERT_EQ(pJointDev->getData()["position"], 0);
 
     // Test datapack data setting
     const auto newTargetPos = 2.0f;
 
-    JsonDataPack newJointDev(pJointDev->name(), pJointDev->engineName(), new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} }));
+    std::shared_ptr<DataPackInterface> newJointDataPack = 
+        std::shared_ptr<DataPackInterface>(new JsonDataPack(pJointDev->name(),
+                                                            pJointDev->engineName(),
+                                                            new nlohmann::json({ { "effort", NAN }, { "velocity", NAN }, { "position", newTargetPos} })));
+    datapacks_set_t outputDataPacks;
+    outputDataPacks.insert(newJointDataPack);
 
-    ASSERT_NO_THROW(engine->sendDataPacksToEngine({&newJointDev}));
+    ASSERT_NO_THROW(engine->sendDataPacksToEngine(outputDataPacks));
 }
 
 TEST(TestGazeboJSONEngine, LinkPlugin)
@@ -173,14 +180,14 @@ TEST(TestGazeboJSONEngine, LinkPlugin)
             launcher.launchEngine(config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
 
     ASSERT_NE(engine, nullptr);
-
     ASSERT_NO_THROW(engine->initialize());
+    sleep(1);
 
     // Test datapack data getting
-    auto datapacks = engine->updateDataPacksFromEngine({DataPackIdentifier("link_youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
+    auto datapacks = engine->getDataPacksFromEngine({DataPackIdentifier("youbot::base_footprint", engine->engineName(), JsonDataPack::getType())});
     ASSERT_EQ(datapacks.size(), 1);
 
-    const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks[0].get());
+    const JsonDataPack *pLinkDev = dynamic_cast<const JsonDataPack*>(datapacks.begin()->get());
     ASSERT_NE(pLinkDev, nullptr);
 
     // TODO: Check that link state is correct

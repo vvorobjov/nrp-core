@@ -20,3 +20,6 @@ tools/build_grpc_engine/
 tools/build_json_engine/
 reports
 .paho
+.nrp_compile_protobuf
+.build_fn_factory_module
+libFNFactoryModule.so

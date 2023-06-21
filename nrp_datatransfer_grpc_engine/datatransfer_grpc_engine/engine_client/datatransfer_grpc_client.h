@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 #include "datatransfer_grpc_engine/config/datatransfer_config.h"
 #include "nrp_general_library/plugin_system/plugin.h"
 
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
 
 class DataTransferEngineGrpcClient
     : public EngineGrpcClient<DataTransferEngineGrpcClient, DataTransferGrpcConfigConst::EngineSchema>

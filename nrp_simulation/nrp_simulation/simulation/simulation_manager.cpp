@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     _simState(SimState::Created)
 {
     validateConfig(_simConfig);
+    
+    // This must be set after config validation,
+    // so that the default value of SimulationTimeout can be set in case it's not set in the config file
+    _simTimeout = toSimulationTime<unsigned, std::ratio<1>>(int(this->_simConfig->at("SimulationTimeout")));
 }
 
 SimulationManager::RequestResult SimulationManager::initializeSimulation()
@@ -55,12 +59,12 @@ SimulationManager::RequestResult SimulationManager::initializeSimulation()
                           "initialized");
 }
 
-SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations, const nlohmann::json & clientData)
+SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIterations)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     return processRequest([&]() {
                               changeState(SimState::Running);
-                              if(!this->runCB(numIterations, clientData))
+                              if(!this->runCB(numIterations))
                                   NRPLogger::debug("Simulation has been stopped before running the specified number of iterations");
                               changeState(SimState::Stopped);
                           },
@@ -69,12 +73,12 @@ SimulationManager::RequestResult SimulationManager::runSimulation(unsigned numIt
                           "run");
 }
 
-SimulationManager::RequestResult SimulationManager::runSimulationUntilTimeout()
+SimulationManager::RequestResult SimulationManager::runSimulationUntilDoneOrTimeout()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
     return processRequest([&]() {
                               changeState(SimState::Running);
-                              if(!this->runUntilTimeOutCB())
+                              if(!this->runUntilDoneOrTimeoutCB())
                                   NRPLogger::debug("Simulation has been stopped before reaching timeout");
                               changeState(SimState::Stopped);
                           },
@@ -171,6 +175,12 @@ SimulationManager::SimState SimulationManager::currentState()
 {
     return _simState;
 }
+
+SimulationDataManager & SimulationManager::getSimulationDataManager()
+{
+    return this->_simulationDataManager;
+}
+
 
 void SimulationManager::checkTransitionConstraints(std::vector<SimState> validSourceStates, std::string actionStr)
 {

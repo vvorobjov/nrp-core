@@ -11,8 +11,10 @@ List of available engines:
 - \subpage gazebo_engine "Gazebo": engine implementation for the <a href="http://gazebosim.org/">Gazebo physics simulator</a>
 - \subpage nest_engine "NEST": two different implementations that integrate the <a href="https://www.nest-simulator.org/">NEST Simulator</a> into NRP-core
 - \subpage python_json_engine "Python JSON Engine": generic Python-based mechanism that imports and executes a simulator inside a user-defined python script. Ideal for simulators with a Python API.
+- \subpage python_grpc_engine "Python GRPC Engine": This engine is similar to the Python JSON Engine but uses GRPC as the communication mechanism. Compared to Python JSON Engine, this kind of engine has a faster data transfer rate.
 - \subpage pysim_engine "PySim": engine implementation based on the \ref python_json_engine wrapping different simulators (Mujoco, Opensim and OpenAI) with a python API
 - \subpage tvb_engine "The Virtual Brain": engine implementation based on the \ref python_json_engine and <a href="https://docs.thevirtualbrain.org/api/index.html">TVB Python API</a>
 - \subpage datatransfer_engine "Data Transfer Engine": engine implementation designed to transfer data from NRP-core experiments to file or the network.
+- \subpage edlut_engine "Edlut Engine": engine implementation designed to integrate the <a href="https://github.com/EduardoRosLab/edlut">EDLUT</a> simulator in NRP-core.
 
 */

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ public:
             _value(std::move(value))
     {}
 
+protected:
+
     void configure() override
     {}
-
-protected:
 
     bool updatePortData(const std::string& id) override
     {
@@ -62,7 +62,7 @@ class InputDummyEdge : public SimpleInputEdge<boost::python::object, InputDummy>
 public:
 
     InputDummyEdge(const std::string& keyword, const std::string& id, boost::python::object value) :
-            SimpleInputEdge(keyword, id, id, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE),
+            SimpleInputEdge<boost::python::object, InputDummy>(keyword, id, id, InputNodePolicies::LAST, InputNodePolicies::KEEP_CACHE),
             _value(std::move(value))
     {}
 

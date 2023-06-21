@@ -49,6 +49,10 @@
       "type" : "number",
       "default": 0.0,
       "description": "Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout"
+    },
+    "EngineExtraConfigs" : {
+      "type" : "object",
+      "description": "Engine Extra Configurations which can customize certain engine functionalities. Valid configurations depend on the engine"
     }
   },
   "required" : ["EngineName", "EngineType"]

@@ -39,10 +39,14 @@
             "default": "data",
             "description": "Path to the storage of file streams."
           },
+          "MQTTPrefix": {
+            "type": "string",
+            "description": "prefix to be added to MQTT topics published by this Engine"
+          },          
           "simulationID": {
             "type": "string",
             "default": "0",
-            "description": "A simulation identifier to be added to MQTT topics published by this Engine"
+            "description": "Simulation identifier to be added to MQTT topics published by this Engine"
           },
           "streamDataPackMessage" : {
             "type": "boolean",
@@ -56,7 +60,8 @@
             "default": [],
             "description": "List of datapacks for transfer"
           },
-          "EngineType": { "enum": ["datatransfer_grpc_engine"] }
+          "EngineType": { "enum": ["datatransfer_grpc_engine"] },
+          "ProtobufPackages": { "default": ["Dump"]}
         }
       }
     ]

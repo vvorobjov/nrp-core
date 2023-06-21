@@ -6,6 +6,7 @@ set(NAMESPACE_NAME "$${PROJECT_NAME}")
 set(LIBRARY_NAME "$${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "${engine_name}_grpc")
 set(EXECUTABLE_NAME "NRP${engine_name}GrpcServerExecutable")
+set(EXECUTABLE_ASYNC_NAME "${engine_name}Async")
 set(TEST_NAME "$${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "$${LIBRARY_NAME}Targets")
@@ -32,8 +33,12 @@ set(PYTHON_MODULE_SRC_FILES
 
 # List executable build files
 set(EXEC_SRC_FILES
-    ${engine_name_lowercase}_grpc_engine/server_executable/main.cpp
+    ${engine_name_lowercase}_grpc_engine/server_executable/main_sync.cpp
 )
+
+set(EXEC_ASYNC_SRC_FILES
+        ${engine_name_lowercase}_grpc_engine/server_executable/main_async.cpp
+        )
 
 # List testing build files
 set(TEST_SRC_FILES
@@ -68,6 +73,7 @@ target_link_libraries($${LIBRARY_NAME}
     PUBLIC
         $${NRP_GEN_LIB_TARGET}
         NRPGRPCEngineProtocol::NRPGRPCEngineProtocol
+        NRPProtobuf::ProtoEngineTest
 
     PRIVATE
 )
@@ -109,6 +115,13 @@ if(NOT "$${EXEC_SRC_FILES}" STREQUAL "")
     target_link_libraries($${EXECUTABLE_NAME} $${LIBRARY_NAME})
 endif()
 
+if(ENABLE_MQTT)
+    add_executable($${EXECUTABLE_ASYNC_NAME} $${EXEC_ASYNC_SRC_FILES})
+    target_link_libraries($${EXECUTABLE_ASYNC_NAME}
+            $${LIBRARY_NAME}
+            $${NRP_ELE_TARGET}
+            )
+endif()
 
 ##########################################
 ## Append Doxygen files
@@ -136,6 +149,12 @@ if($${ENABLE_TESTING} AND NOT "$${TEST_SRC_FILES}" STREQUAL "")
         EXTRA_ARGS -VV)
 endif()
 
+if(ENABLE_EXAMPLES_TESTING)
+    add_test(
+            NAME Examples.${engine_name}GrpcEngine
+            COMMAND NRPCoreSim -c simulation_config.json -p "$${PROJECT_NAME}.so"
+            WORKING_DIRECTORY $${CMAKE_CURRENT_SOURCE_DIR}/example_experiment/)
+endif()
 
 ##########################################
 ## Installation
@@ -186,6 +205,11 @@ endif()
 if(TARGET $${EXECUTABLE_NAME})
     install(TARGETS $${EXECUTABLE_NAME}
         RUNTIME DESTINATION $${CMAKE_INSTALL_BINDIR})
+endif()
+
+if(TARGET $${EXECUTABLE_ASYNC_NAME})
+    install(TARGETS $${EXECUTABLE_ASYNC_NAME}
+            RUNTIME DESTINATION $${CMAKE_INSTALL_BINDIR})
 endif()
 
 # create cmake version and config files

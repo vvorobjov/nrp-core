@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,11 @@
  *	\brief Path to a gazebo world file. Loads world with joint and world plugin
  */
 #define TEST_JOINT_PLUGIN_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/test_joint_plugin.sdf"
+
+/*!
+ *	\brief Path to youbot model sdf file, with joint plugin
+ */
+#define TEST_YOUBOT_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/models/youbot/model.sdf"
 
 /*!
  *	\brief Path to a gazebo world file. Loads world with link and world plugin

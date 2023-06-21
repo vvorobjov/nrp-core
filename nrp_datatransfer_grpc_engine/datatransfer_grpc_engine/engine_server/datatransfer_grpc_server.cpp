@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// This project has received funding from the European Union’s Horizon 2020
+// This project has received funding from the European Union�s Horizon 2020
 // Framework Programme for Research and Innovation under the Specific Grant
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
@@ -25,20 +25,21 @@
 
 #include "nrp_general_library/utils/time_utils.h"
 
-int DataTransferGrpcServer::_iteration = 0;
-SimulationTime DataTransferGrpcServer::_simulationTime = SimulationTime::zero();
+int DataTransferEngine::_iteration = 0;
+SimulationTime DataTransferEngine::_simulationTime = SimulationTime::zero();
 
-DataTransferGrpcServer::DataTransferGrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName)
-    : EngineGrpcServer(serverAddress, engineName),
+DataTransferEngine::DataTransferEngine(const std::string &engineName,
+                                     const std::string &protobufPluginsPath,
+                                     const nlohmann::json &protobufPlugins)
+    : EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins),
     _engineName(engineName)
 {
     _dataPacksNames.clear();
 }
 
-SimulationTime DataTransferGrpcServer::runLoopStep(SimulationTime timeStep)
+SimulationTime DataTransferEngine::runLoopStep(SimulationTime timeStep)
 {
-    NRP_LOGGER_TRACE("DataTransferGrpcServer::runLoopStep called");
+    NRP_LOGGER_TRACE("DataTransferEngine::runLoopStep called");
 
     _iteration++;
 
@@ -53,7 +54,7 @@ SimulationTime DataTransferGrpcServer::runLoopStep(SimulationTime timeStep)
     return _simulationTime;
 }
 
-void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcServer::lock_t & /*datapackLock*/)
+void DataTransferEngine::initialize(const nlohmann::json &data)
 {
     NRPLogger::info("Initializing Data Transfer Engine");
 
@@ -73,13 +74,21 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         NRPLogger::info("Using preset MQTT client connection");
     }
     mqttConnected = _mqttClient->isConnected();
-    this->_mqttBase = std::string(MQTT_BASE) + std::string(data.at("simulationID"));
+
+    // Topic: MQTT_BASE/simulationID
+    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
+    if (data.contains("MQTTPrefix")){
+        // Topic: MQTTPrefix/MQTT_BASE/simulationID
+        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
+    }
+    this->_mqttBase += std::string(data.at("simulationID"));
+
     if(!mqttConnected)
     {
         NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");
     }
     else {      
-        _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!");  
+        _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!", true);
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -96,14 +105,14 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
         const auto netDump = dump.at("network") && mqttConnected;
         const auto fileDump = dump.at("file");
         if (fileDump && !netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir));
+            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir));
         }
 #ifdef MQTT_ON
         else if (fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, dataDir, _mqttClient, this->_mqttBase));
+            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir, _mqttClient, this->_mqttBase));
         }
         else if (!fileDump && netDump){
-            this->registerDataPackNoLock(datapackName, new StreamDataPackController(datapackName, this->_engineName, _mqttClient, this->_mqttBase));
+            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, _mqttClient, this->_mqttBase));
         }
 #endif
         else {
@@ -116,14 +125,15 @@ void DataTransferGrpcServer::initialize(const nlohmann::json &data, EngineGrpcSe
     this->_initRunFlag = true;
 }
 
-void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
+void DataTransferEngine::shutdown()
 {
     NRPLogger::debug("Shutting down simulation");
 
 #ifdef MQTT_ON
     try{
         if (_mqttClient->isConnected()){
-            _mqttClient->publish(this->_mqttBase + "/welcome", "Bye! NRP-core is disconnecting!");
+            _mqttClient->publish(this->_mqttBase + "/welcome", "Bye! NRP-core is disconnecting!", true);
+            _mqttClient->clearRetained();
             _mqttClient->disconnect();
         }
     }
@@ -136,7 +146,7 @@ void DataTransferGrpcServer::shutdown(const nlohmann::json &/*data*/)
     this->_shutdownFlag = true;
 }
 
-void DataTransferGrpcServer::reset()
+void DataTransferEngine::reset()
 {
     NRPLogger::debug("Resetting simulation");
     this->_simulationTime = SimulationTime::zero();
@@ -154,7 +164,7 @@ void DataTransferGrpcServer::reset()
 }
 
 #ifdef MQTT_ON
-bool DataTransferGrpcServer::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > client)
+bool DataTransferEngine::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > client)
 {
     _mqttClient = client;
 

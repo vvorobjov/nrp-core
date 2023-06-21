@@ -15,6 +15,7 @@ The sections linked hereafter first detail how JSON-schema is used for managing 
 
 - \subpage json_schema "General notes about the use of JSON schema"
 - \subpage simulation_schema "Simulation schema"
+- \subpage event_loop_schema "Event Loop schema"
 - \subpage engine_base_schema "Engine schema
 - \subpage transceiver_function_schema "Transceiver function schema"
 - \subpage process_launcher_schema "Process Launcher schema"

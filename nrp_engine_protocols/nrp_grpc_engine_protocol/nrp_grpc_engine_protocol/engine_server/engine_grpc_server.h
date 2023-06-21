@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,21 +33,24 @@
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_general_library/utils/time_utils.h"
-#include "proto_python_bindings/proto_field_ops.h"
-#include "nrp_protobuf/protobuf_utils.h"
+#include "nrp_protobuf/config/cmake_constants.h"
+#include "nrp_protobuf/proto_python_bindings/proto_field_ops.h"
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
+#include "nrp_protobuf/proto_ops/proto_ops_manager.h"
 
+#include "nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.h"
 
-using ProtoDataPackController = DataPackController<google::protobuf::Message>;
 
 using EngineGrpc::EngineGrpcService;
 
 /*!
- * \brief Abstract class for Engine server with gRPC support
+ * \brief class for Engine server with gRPC support
  *
- * The class provides a base for implementing an Engine server with gRPC
- * as middleware. All RPC services are implemented. Derived classes are responsible
- * for implementing simulation initialization, shutdown and run step methods.
+ * The class provides an Engine server with gRPC
+ * as middleware. All RPC services are implemented. EngineProtoWrapper is used to perform
+ * the actual simulation initialization, shutdown, reset, data exchange and run step operations.
  */
+
 class EngineGrpcServer : public EngineGrpcService::Service
 {
     public:
@@ -64,23 +67,21 @@ class EngineGrpcServer : public EngineGrpcService::Service
          * \brief Constructor
          *
          * \param[in] serverAddress Address of the gRPC server
-         * \param[in] engineName    Name of the simulation engine
+         * \param[in] engineWrapper Class processing requests to the Engine
          */
-        EngineGrpcServer(const std::string serverAddress, const std::string &engineName)
-                : _loggerCfg(engineName), _engineName(engineName)
+        EngineGrpcServer(const std::string serverAddress, EngineProtoWrapper* engineWrapper)
+                :  _engineWrapper(engineWrapper)
         {
             this->_serverAddress   = serverAddress;
             this->_isServerRunning = false;
 
             grpc::EnableDefaultHealthCheckService(true);
-
-            NRPLogger::info("EngineGrpcServer {} has been created", engineName);
         }
 
         /*!
          * \brief Destructor
          */
-        virtual ~EngineGrpcServer()
+        ~EngineGrpcServer()
         {
             this->shutdownServer();
         }
@@ -95,6 +96,7 @@ class EngineGrpcServer : public EngineGrpcService::Service
                 grpc::ServerBuilder builder;
                 builder.AddListeningPort(_serverAddress, grpc::InsecureServerCredentials());
                 builder.RegisterService(this);
+                NRPLogger::debug("Using server address: "+ this->_serverAddress);
 
                 this->_server = builder.BuildAndStart();
                 // TODO Should we use a memory barrier here?
@@ -124,6 +126,16 @@ class EngineGrpcServer : public EngineGrpcService::Service
         }
 
         /*!
+         * \brief Indicates if the simulation was initialized and is running
+         */
+         virtual bool initRunFlag() const  { return this->_engineWrapper->initRunFlag(); }
+
+        /*!
+         * \brief Indicates if shutdown was requested by the client
+         */
+        virtual bool shutdownFlag() const  { return this->_engineWrapper->shutdownFlag(); }
+
+        /*!
          * \brief Indicates whether the gRPC server is currently running
          */
         bool isServerRunning() const
@@ -139,62 +151,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
             return this->_serverAddress;
         }
 
-        /*!
-         * \brief Registers a datapack controller with the given name in the engine
-         *
-         * \param[in] datapackName       Name of the datapack to be registered
-         * \param[in] datapackController Pointer to the datapack controller object that's supposed to be
-         *                             registered in the engine
-         */
-        void registerDataPack(const std::string & datapackName, ProtoDataPackController *interface)
-        {
-            EngineGrpcServer::lock_t lock(this->_datapackLock);
-            this->registerDataPackNoLock(datapackName, interface);
-        }
-
-        void registerDataPackNoLock(const std::string & datapackName, ProtoDataPackController *interface)
-        {
-            this->_datapacksControllers.emplace(datapackName, interface);
-        }
-
-        // TODO used only in tests, try to remove it?
-        unsigned getNumRegisteredDataPacks()
-        {
-            return this->_datapacksControllers.size();
-        }
-
-        /*!
-         * \brief Get the Engine name
-         */
-        const std::string &getEngineName() { return _engineName; }
-
-    protected:
-        mutex_t                       _datapackLock;
-
-        void clearRegisteredDataPacks()
-        {
-            // TODO Check if it's true
-            // Do not lock scope. This method is called from the route handlers, which should already have locked down access.
-            //EngineJSONServer::lock_t lock(this->_datapackLock);
-
-            this->_datapacksControllers.clear();
-        }
-
-        /*!
-        * \brief Returns the pointer to the DataPackController of the Data Pack with the specified name
-        */
-        ProtoDataPackController* getDataPackController(const std::string & datapackName)
-        {
-            return this->_datapacksControllers.find(datapackName)->second;
-        }
-
-
-        /*!
-        * \brief If true controllers are sent incoming DataPackMessages, if false only the contained data
-        */
-        bool _handleDataPackMessage = false;
-
     private:
+
+        mutex_t _engineCallLock;
 
         /*!
          * \brief Address of the gRPC server
@@ -207,56 +166,14 @@ class EngineGrpcServer : public EngineGrpcService::Service
         bool _isServerRunning;
 
         /*!
-         * \brief Conbfiguration of the process logger
-         */
-        NRPLogger _loggerCfg;
-
-        /*!
-         * \brief Name of the simulation engine
-         *
-         * Must be the same on the server and the client side. It should be imprinted
-         * in the datapack metadata, which allows for additional consistency checks.
-         */
-        std::string _engineName;
-
-        /*!
          * \brief Pointer to the gRPC server object
          */
         std::unique_ptr<grpc::Server> _server;
 
         /*!
-         * \brief Map of datapack names and datapack controllers used by the engine
+         * \brief Pointer to the Engine Wrapper object
          */
-         std::map<std::string, ProtoDataPackController*> _datapacksControllers;
-
-        /*!
-         * \brief Initializes the simulation
-         *
-         * \param[in] data       Simulation configuration data
-         * \param[in] datapackLock ???
-         */
-        virtual void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) = 0;
-
-        /*!
-         * \brief Resets the simulation
-         */
-        virtual void reset() = 0;
-
-        /*!
-         * \brief Shutdowns the simulation
-         *
-         * \param[in] data Additional data
-         */
-        virtual void shutdown(const nlohmann::json &data) = 0;
-
-        /*!
-         * \brief Runs a single simulation loop step
-         *
-         * \param[in] timeStep Time step by which the simulation should be advanced
-         *
-         * \return Engine time after running the step
-         */
-        virtual SimulationTime runLoopStep(const SimulationTime timeStep) = 0;
+        std::unique_ptr<EngineProtoWrapper> _engineWrapper;
 
         /*!
          * \brief Initializes the simulation
@@ -277,13 +194,13 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_datapackLock);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
 
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
                 // Run engine-specific initialization function
 
-                this->initialize(requestJson, lock);
+                this->_engineWrapper->initialize(requestJson);
             }
             catch(const std::exception &e)
             {
@@ -314,10 +231,10 @@ class EngineGrpcServer : public EngineGrpcService::Service
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
             try
             {
-                EngineGrpcServer::lock_t lock(this->_datapackLock);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
 
                 // Run engine-specific reset function
-                this->reset();
+                this->_engineWrapper->reset();
             }
             catch(const std::exception &e)
             {
@@ -347,13 +264,15 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_datapackLock);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
 
+                // TODO: we don't have any instance where json data is actually sent to an engine for shutdown,
+                //  it can be removed from EngineGrpc::ShutdownRequest definition
                 nlohmann::json requestJson = nlohmann::json::parse(request->json());
 
                 // Run engine-specifi shutdown function
 
-                this->shutdown(requestJson);
+                this->_engineWrapper->shutdown();
             }
             catch(const std::exception &e)
             {
@@ -383,9 +302,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                EngineGrpcServer::lock_t lock(this->_datapackLock);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
 
-                int64_t engineTime = (this->runLoopStep(SimulationTime(request->timestep()))).count();
+                int64_t engineTime = (this->_engineWrapper->runLoopStep(SimulationTime(request->timestep()))).count();
 
                 reply->set_enginetime(engineTime);
             }
@@ -416,7 +335,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                this->setDataPacksData(*request);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
+
+                this->_engineWrapper->setDataPacks(*request);
             }
             catch(const std::exception &e)
             {
@@ -445,7 +366,9 @@ class EngineGrpcServer : public EngineGrpcService::Service
         {
             try
             {
-                this->getDataPacksData(*request, reply);
+                EngineGrpcServer::lock_t lock(this->_engineCallLock);
+
+                this->_engineWrapper->getDataPacks(*request, reply);
             }
             catch(const std::exception &e)
             {
@@ -453,64 +376,6 @@ class EngineGrpcServer : public EngineGrpcService::Service
             }
 
             return grpc::Status::OK;
-        }
-
-        virtual void setDataPacksData(const EngineGrpc::SetDataPacksRequest & data)
-        {
-            EngineGrpcServer::lock_t lock(this->_datapackLock);
-
-            const auto numDataPacks = data.datapacks_size();
-
-            for(int i = 0; i < numDataPacks; i++)
-            {
-                const auto &dataPack = data.datapacks(i);
-                const auto &devInterface = this->_datapacksControllers.find(dataPack.datapackid().datapackname());
-
-                if(devInterface != _datapacksControllers.end())
-                {
-                    if(_handleDataPackMessage)
-                        devInterface->second->handleDataPackData(dataPack);
-                    else
-                    {
-                        const auto data = protobuf_utils::getDataFromDataPackMessage(dataPack);
-                        devInterface->second->handleDataPackData(*data);
-                    }
-                }
-                else
-                {
-                    const auto errorMessage = "DataPack " + dataPack.datapackid().datapackname() + " is not registered in engine " + this->_engineName;
-                    throw std::invalid_argument(errorMessage);
-                }
-            }
-        }
-
-        virtual void getDataPacksData(const EngineGrpc::GetDataPacksRequest & request, EngineGrpc::GetDataPacksReply * reply)
-        {
-            EngineGrpcServer::lock_t lock(this->_datapackLock);
-
-            const auto numDataPacks = request.datapackids_size();
-
-            for(int i = 0; i < numDataPacks; i++)
-            {
-                const auto &devInterface = this->_datapacksControllers.find(request.datapackids(i).datapackname());
-                if(devInterface != _datapacksControllers.end())
-                {
-                    auto * protoDataPack = reply->add_datapacks();
-
-                    protoDataPack->mutable_datapackid()->set_datapackname(request.datapackids(i).datapackname());
-                    protoDataPack->mutable_datapackid()->set_enginename(this->_engineName);
-
-                    // ask controller to fetch datapack data. nullptr means there is no new data available
-                    auto d = devInterface->second->getDataPackInformation();
-                    if(d != nullptr)
-                        protobuf_utils::setDataPackMessageData(*d, protoDataPack);
-                }
-                else
-                {
-                    const auto errorMessage = "DataPack " + request.datapackids(i).datapackname() + " is not registered in engine " + this->_engineName;
-                    throw std::invalid_argument(errorMessage);
-                }
-            }
         }
 
         /*!

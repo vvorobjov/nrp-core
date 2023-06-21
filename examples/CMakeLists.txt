@@ -6,7 +6,7 @@ include(CTest)
 
 add_test(
     NAME Examples.HuskyBraitenbergJson
-    COMMAND NRPCoreSim -c simulation_config_test.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=2
+    COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPGazeboJSONEngine.so" -o SimulationTimeout=2
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/husky_braitenberg_json)
 set_tests_properties(Examples.HuskyBraitenbergJson 
     PROPERTIES 
@@ -39,7 +39,6 @@ set_tests_properties(Examples.TFExchange
     PROPERTIES 
         TIMEOUT 150)
 
-
 add_test(
     NAME Examples.NestSimple
     COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so" 
@@ -65,6 +64,15 @@ add_test(
 set_tests_properties(Examples.OpensimTVB 
     PROPERTIES 
         DISABLED $<OR:$<NOT:$<BOOL:${ENABLE_OPENSIM}>>,$<NOT:$<BOOL:${ENABLE_TVB}>>>
+        TIMEOUT 150)
+
+add_test(
+        NAME Examples.HuskyBraitenbergCG
+        COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so" -o SimulationTimeout=2
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/event_loop_examples/husky_braitenberg_cg)
+set_tests_properties(Examples.HuskyBraitenbergCG
+        PROPERTIES
+        DISABLED $<OR:$<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>,$<NOT:$<BOOL:${BUILD_GAZEBO_ENGINE_SERVER}>>>
         TIMEOUT 150)
 
 add_custom_target(gcovr-examples

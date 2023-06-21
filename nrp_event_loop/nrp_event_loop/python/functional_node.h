@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_error_handler.h"
-
-#include "nrp_event_loop/utils/graph_utils.h"
 
 #include "nrp_event_loop/computational_graph/functional_node.h"
 
@@ -68,49 +66,10 @@ public:
      * \brief Constructor
      */
     PythonFunctionalNode(const std::string &id, const boost::python::list& o_ports, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
-        FunctionalNode(id, [] (params_t&) {}, policy)
+        FunctionalNode(id, [] (params_t&) { return true; }, policy)
     {
         bpy::stl_input_iterator<std::string> begin(o_ports), end;
         _oPortIds.insert(_oPortIds.begin(), begin, end);
-    }
-
-    /*!
-     * \brief Configure this node
-     */
-    void configure() override
-    {
-        // Create edges to other functional nodes
-        for (auto& [port_id, address]: _f2fEdges) {
-            std::string name, property;
-            std::tie(name, property) = extractNodePortFromAddress(address);
-
-            // Get ports
-            PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
-            if(!node)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                "'. A Functional node with name '" + name + "' could not be found in the computational graph. Be sure that the edge"
-                                                            " address is correctly formatted and the connected node exists.");
-
-            OutputPort<bpy::object>* o_port = node->getOutput(property);
-            if(!o_port)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                                              "'. Functional node '" + name + "' doesn't have a declared output '"+ property +"'. Be sure that the edge"
-                                                                                          " address is correctly formatted and the specified output exists.");
-
-            InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
-
-            // Register edge
-            ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
-        }
-
-        // check unbound inputs and print warning
-        for(size_t i=0; i < _iPortIds.size(); ++i)
-            if(!getInputByIndex(i)) {
-                std::stringstream s;
-                s << "In python functional node \"" << this->id() << "\". Input argument \"" << _iPortIds[i] <<
-                  "\" is not connected" << std::endl;
-                NRPLogger::info(s.str());
-            }
     }
 
     /*!
@@ -209,7 +168,7 @@ public:
      */
     template<size_t N = 0>
     OutputPort<bpy::object>* getOutput(const std::string& id)
-    { return dynamic_cast<OutputPort<bpy::object>*>(getOutputById<N>(id)); }
+    { return dynamic_cast<OutputPort<bpy::object>*>(getOutputByIdTuple<N>(id)); }
 
     /*!
      * \brief Request the registration of an edge between an output port in another functional node an i_port input port in this node
@@ -217,15 +176,68 @@ public:
     void registerF2FEdge(const std::string& i_port, const std::string& address)
     { _f2fEdges[i_port] = address; }
 
+protected:
+
+    /*!
+     * \brief Configure this node
+     */
+    void configure() override
+    {
+        // Create edges to other functional nodes
+        for (auto& [port_id, address]: _f2fEdges) {
+            std::string name, property;
+            std::tie(name, property) = parseNodeAddress(address);
+
+            // Get ports
+            PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
+            if(!node)
+                throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                              "'. A Functional node with name '" + name + "' could not be found in the computational graph. Be sure that the edge"
+                                                                                          " address is correctly formatted and the connected node exists.");
+
+            OutputPort<bpy::object>* o_port = node->getOutput(property);
+            if(!o_port)
+                throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                              "'. Functional node '" + name + "' doesn't have a declared output '"+ property +"'. Be sure that the edge"
+                                                                                                                              " address is correctly formatted and the specified output exists.");
+
+            InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
+
+            // Register edge
+            ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
+        }
+
+        // check unbound inputs and outputs and print warning
+        for(size_t i=0; i < _iPortIds.size(); ++i)
+            if(!getInputByIndex(i)) {
+                std::stringstream s;
+                s << "In python functional node \"" << this->id() << "\". Input argument \"" << _iPortIds[i] <<
+                  "\" is not connected" << std::endl;
+                NRPLogger::warn(s.str());
+            }
+
+        for(const auto& pId : _oPortIds) {
+            if(!getOutput(pId)->subscriptionsSize()) {
+                std::stringstream s;
+                s << "In python functional node \"" << this->id() << "\". Output \"" << pId <<
+                  "\" is not connected" << std::endl;
+                NRPLogger::warn(s.str());
+            }
+        }
+    }
+
+    friend class ComputationalGraphPythonNodes_PYTHON_FUNCTIONAL_NODE_Test;
+
 private:
 
     /*!
      * \brief Set the wrapped python function arguments, calls it with them and set _outputs
      */
-    void pythonCallback(params_t&)
+    bool pythonCallback(params_t&)
     {
         boost::python::tuple args;
         boost::python::dict kwargs;
+        boost::python::object o_output;
 
         for(size_t i=0; i < _iPortIds.size(); ++i) {
             const bpy::object* in = nullptr;
@@ -235,13 +247,26 @@ private:
         }
 
         try {
-            boost::python::list l_output = boost::python::extract<boost::python::list>(
-                    _pythonF(*args, **kwargs));
+            o_output = _pythonF(*args, **kwargs);
 
+            // Check None case
+            if (o_output.is_none())
+                return false;
+        }
+        catch (const boost::python::error_already_set&) {
+            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\"";
+            NRPLogger::error(error_msg);
+            PyErr_Print();
+            throw NRPException::logCreate(error_msg);
+        }
+
+        try {
+            // Otherwise a list is expected
+            boost::python::list l_output = boost::python::extract<boost::python::list>(o_output);
             if(_oPortIds.size() != (size_t)boost::python::len(l_output)) {
                 std::stringstream error_msg;
                 error_msg << "Functional Node with id \"" << this->id() << "\" has " << _oPortIds.size() <<
-                          " declared outputs, but its Python function returns " << boost::python::len(l_output) << " elements.";
+                          " declared outputs, but returns " << boost::python::len(l_output) << " elements.";
                 throw NRPException::logCreate(error_msg.str());
             }
 
@@ -250,11 +275,12 @@ private:
                 *_outputs[i] = l_output[i];
         }
         catch (const boost::python::error_already_set&) {
-            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\"";
-            NRPLogger::error(error_msg);
+            std::string error_msg = "An error occurred while executing Functional Node with id \"" + this->id() + "\". It is expected to return an object of type list or None";
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
+
+        return true;
     }
 
     /*!
@@ -317,10 +343,10 @@ public:
             f->registerF2FEdge(_keyword, _address);
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while creating the F2FEdge '" + _address +
-            "'. Check that Functional Node definition is correct");
+            std::string error_msg = "An error occurred while creating the F2FEdge '" + _address +
+            "'. Check that Functional Node definition is correct";
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
 
         // Returns FunctionalNode

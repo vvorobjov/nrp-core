@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,38 +103,34 @@ class EngineJSONNRPClient
             return enginePID;
         }
 
-        virtual void sendDataPacksToEngine(const typename EngineClientInterface::datapacks_ptr_t &datapacksArray) override
+        virtual void sendDataPacksToEngine(const datapacks_set_t & dataPacks) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
+            // TODO Early return if no datapacks?
+
             // Convert datapacks to JSON format
             nlohmann::json request;
-            for(const auto &curDataPack : datapacksArray)
+            for(auto curDataPack : dataPacks)
             {
-                if(curDataPack->engineName().compare(this->engineName()) == 0)
+                assert(curDataPack->engineName() == this->engineName());
+
+                if(curDataPack->isEmpty())
+                    throw NRPException::logCreate("Attempt to send empty datapack " + curDataPack->name() + " to Engine " + this->engineName());
+                else if(curDataPack->type() != JsonDataPack::getType())
                 {
-                    if(curDataPack->isEmpty())
-                        throw NRPException::logCreate("Attempt to send empty datapack " + curDataPack->name() + " to Engine " + this->engineName());
-                    else if(curDataPack->type() != JsonDataPack::getType())
-                    {
-                        throw NRPException::logCreate("Engine \"" +
-                                                    this->engineName() +
-                                                    "\" cannot handle datapack type '" +
-                                                    curDataPack->type() + "'");
-                    }
-
-                    // We get ownership of the datapack's data
-                    // We'll have to delete the object after we're done
-                    nlohmann::json * data = (dynamic_cast<JsonDataPack *>(curDataPack))->releaseData();
-
-                    const auto & name = curDataPack->name();
-
-                    request[name]["engine_name"] = curDataPack->engineName();
-                    request[name]["type"]        = curDataPack->type();
-                    request[name]["data"].swap(*data);
-
-                    delete data;
+                    throw NRPException::logCreate("Engine \"" +
+                                                this->engineName() +
+                                                "\" cannot handle datapack type '" +
+                                                curDataPack->type() + "'");
                 }
+
+                const nlohmann::json & data = (dynamic_cast<const JsonDataPack *>(curDataPack.get()))->getData();
+                const auto & name = curDataPack->name();
+
+                request[name]["engine_name"] = curDataPack->engineName();
+                request[name]["type"]        = curDataPack->type();
+                request[name]["data"]        = data;
             }
 
             // Send updated datapacks to Engine JSON server
@@ -165,16 +161,16 @@ class EngineJSONNRPClient
             return startParams;
         }
 
-        virtual typename EngineClientInterface::datapacks_set_t getDataPacksFromEngine(const typename EngineClientInterface::datapack_identifiers_set_t &datapackIdentifiers) override
+        virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &requestedDataPackIds) override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
             nlohmann::json request;
-            for(const auto &devID : datapackIdentifiers)
+            for(const auto &id : requestedDataPackIds)
             {
-                if(this->engineName().compare(devID.EngineName) == 0)
+                if(this->engineName().compare(id.EngineName) == 0)
                 {
-                    request[devID.Name] = {{"engine_name", devID.EngineName}, {"type", devID.Type}};
+                    request[id.Name] = {{"engine_name", id.EngineName}, {"type", id.Type}};
                 }
 
             }
@@ -349,11 +345,11 @@ protected:
          * \param datapacks JSON data of datapacks
          * \return Returns list of datapacks
          */
-        typename EngineClientInterface::datapacks_set_t getDataPackInterfacesFromJSON(const nlohmann::json &datapacks) const
+        datapacks_vector_t getDataPackInterfacesFromJSON(const nlohmann::json &datapacks) const
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-            typename EngineClientInterface::datapacks_set_t interfaces;
+            datapacks_vector_t interfaces;
 
             for(auto curDataPackIterator = datapacks.begin(); curDataPackIterator != datapacks.end(); ++curDataPackIterator)
             {
@@ -364,7 +360,7 @@ protected:
                                               (*curDataPackIterator)["type"]);
 
                     datapackID.EngineName = this->engineName();
-                    interfaces.insert(this->getSingleDataPackInterfaceFromJSON(curDataPackIterator, datapackID));
+                    interfaces.push_back(this->getSingleDataPackInterfaceFromJSON(curDataPackIterator, datapackID));
                 }
                 catch(std::exception &e)
                 {

@@ -4,9 +4,9 @@ from nrp_core.data.nrp_json import *
 from nrp_core.event_loop import *
 
 
-@ToEngine(keyword="gpg", address="/nest/gpg")
-@ToEngine(keyword="rpg", address="/nest/rpg")
-@ToEngine(keyword="lpg", address="/nest/lpg")
+@ToEngine(keyword="gpg", address="/nest")
+@ToEngine(keyword="rpg", address="/nest")
+@ToEngine(keyword="lpg", address="/nest")
 @FromFunctionalNode('camera', '/image_preprocessor/processed_image')
 @FunctionalNode(name="brain_stimulation", outputs=['lpg', 'rpg', 'gpg'])
 def compute_poisson_rates(camera):

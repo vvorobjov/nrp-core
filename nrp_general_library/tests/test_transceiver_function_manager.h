@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,16 @@ struct TestSimpleTransceiverDataPack
     TestSimpleTransceiverDataPack(python::object fcn);
     virtual ~TestSimpleTransceiverDataPack() override;
 
-    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
-    {   return EngineClientInterface::datapack_identifiers_set_t(); }
+    datapack_identifiers_set_t getRequestedDataPackIDs() const override
+    {   return datapack_identifiers_set_t(); }
 
     TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry() override;
 
     const std::string &linkedEngineName() const override;
 
-    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
-    EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs = EngineClientInterface::datapack_identifiers_set_t()) const override;
+    datapack_identifiers_set_t updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs = datapack_identifiers_set_t()) const override;
 
     TransceiverDataPackInterface::shared_ptr *_tfInterpreterRegistry = nullptr;
     python::object _fcn;
@@ -49,69 +49,4 @@ struct TestSimpleTransceiverDataPack
     std::string _linkedEngine = "engine";
 };
 
-struct TestOutputDataPack
-        : public DataPackInterface
-{
-    static DataPackIdentifier ID(const std::string & name = "out");
-
-    TestOutputDataPack();
-
-    TestOutputDataPack(const DataPackIdentifier &id)
-        : DataPackInterface(id)
-    {}
-
-    virtual ~TestOutputDataPack() override;
-
-    int TestValue = 0;
-};
-
-struct TestInputDataPack
-        : public DataPackInterface
-{
-    static DataPackIdentifier ID();
-
-    TestInputDataPack();
-
-    TestInputDataPack(const DataPackIdentifier &id)
-        : DataPackInterface(id)
-    {}
-
-    virtual ~TestInputDataPack() override;
-
-    std::string TestValue;
-};
-
-
-struct TestTransceiverDataPack
-        : public TransceiverDataPackInterface
-{
-    TestTransceiverDataPack() = default;
-
-    virtual ~TestTransceiverDataPack() override;
-
-    EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&) const override
-    {   return this->getRequestedDataPackIDs(); }
-
-    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override
-    {   return {TestOutputDataPack::ID()};  }
-
-    TransceiverDataPackInterface::shared_ptr *getTFInterpreterRegistry() override
-    {   return this->_tfInterpreterRegistry;    }
-
-    const std::string &linkedEngineName() const override;
-
-    boost::python::object runTf(boost::python::tuple&, boost::python::dict&) override
-    {
-        const auto &outDev = TFInterpreter->getEngineDataPacks().begin()->second->front();
-        TestInputDataPack inDev(TestInputDataPack::ID());
-        inDev.TestValue = std::to_string(dynamic_cast<const TestOutputDataPack*>(outDev.get())->TestValue);
-
-        boost::python::list datapacks;
-        datapacks.append(inDev);
-
-        return std::move(datapacks);
-    }
-
-    TransceiverDataPackInterface::shared_ptr *_tfInterpreterRegistry = nullptr;
-    std::string _linkedEngine = "engine";
-};
+// EOF

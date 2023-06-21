@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,16 @@ struct EngineGRPCConfigConst
          * \brief Parameter name that is used to pass along the engine name
          */
         static constexpr std::string_view EngineNameArg = "engine";
+
+    /*!
+     * \brief Parameter name that is used to pass the protobuf plugins path
+     */
+    static constexpr std::string_view ProtobufPluginsPathArg = "protobuf_plugins_path";
+
+    /*!
+         * \brief Parameter name that is used to pass the list of protobuf plugins
+         */
+    static constexpr std::string_view ProtobufPluginsArg = "protobuf_plugins";
 
         /*!
          * \brief JSON name under which the runLoopStep timeStep is saved

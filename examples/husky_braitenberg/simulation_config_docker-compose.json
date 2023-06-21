@@ -1,12 +1,20 @@
 {
 	"SimulationName": "husky_simulation_nest_server",
-	"SimDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the nest_server engine.",
+	"SimulationDescription": "Launches a Gazebo simulation with a Husky robot and a Nest sim with a Braitenberg model which controls the robot. Uses the nest_server engine.",
 	"SimulationTimeout": 100,
 	"EngineConfigs": [
 		{
 			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
 			"GazeboWorldFile": "husky_world.sdf",
+			"GazeboSDFModels": [
+				{
+					"Name": "husky",
+					"File": "/experiment/husky.sdf",
+					"InitPose": "-0.009853 0.086704 0.187752 0 0 0"
+				}
+
+			],
 			"EngineProcStartParams": ["--verbose"],
 			"ServerAddress": "nrp-gazebo:9000",
 			"EngineLaunchCommand": {
@@ -32,11 +40,16 @@
 			"simulationID": "test/0",
 			"dataDirectory": "data/test",
 			"streamDataPackMessage": true,
+			"ProtobufPackages": ["Gazebo", "Dump"],
 			"dumps":[
 				{"name": "test_datapack1", "network": true, "file": true},
 				{"name": "test_datapack2", "network": true, "file": true},
 				{"name": "test_datapack3", "network": true, "file": true},
 				{"name": "husky::back_left_joint", "network": true, "file": true}
+			],
+			"ProtobufPackages":[
+				"Gazebo",
+				"Dump"
 			]
 		}
 	],

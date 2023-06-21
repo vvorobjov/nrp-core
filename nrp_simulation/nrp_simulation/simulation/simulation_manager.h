@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 
 #include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_general_library/utils/ptr_templates.h"
+#include "nrp_general_library/engine_interfaces/engine_client_interface.h"
+#include "nrp_simulation/datapack_handle/simulation_data_manager.h"
 
 #include <mutex>
 #include <functional>
@@ -101,14 +103,16 @@ public:
      * \brief Runs the simulation until a separate thread stops it or simTimeout (defined in SimulationConfig) is reached. If simTimeout is zero or negative, ignore it
      * \return Simulation state after processing the request
      */
-    RequestResult runSimulationUntilTimeout();
+    RequestResult runSimulationUntilDoneOrTimeout();
+
+    virtual bool hasSimulationTimedOut() const = 0;
 
     /*!
      * \brief Run the Simulation for specified amount of timesteps
      * \param numIterations Number of iterations (i.e timesteps) to run simulation
      * \return Simulation state after processing the request
      */
-    RequestResult runSimulation(unsigned numIterations, const nlohmann::json & json);
+    RequestResult runSimulation(unsigned numIterations);
 
     /*!
      * \brief Shuts down the simulation.
@@ -121,12 +125,12 @@ public:
      */
     SimState currentState();
 
-    virtual const std::string & getStatus() = 0;
-
     /*!
      * \brief returns a simulation state as a string
      */
     std::string printSimState(const SimState& simState);
+
+    SimulationDataManager & getSimulationDataManager();
 
 protected:
 
@@ -138,9 +142,9 @@ protected:
     /*! \brief Forward request to stop the simulation. */
     virtual void stopCB() = 0;
     /*! \brief Run the simulation. */
-    virtual bool runUntilTimeOutCB() = 0;
+    virtual bool runUntilDoneOrTimeoutCB() = 0;
     /*! \brief Run the simulation. */
-    virtual bool runCB(unsigned numIterations, const nlohmann::json & clientData) = 0;
+    virtual bool runCB(unsigned numIterations) = 0;
     /*! \brief Shutdown the simulation. */
     virtual void shutdownCB() = 0;
 
@@ -148,6 +152,10 @@ protected:
      * \brief Simulation Configuration
      */
     jsonSharedPtr _simConfig;
+
+    SimulationDataManager _simulationDataManager;
+
+    SimulationTime _simTimeout = SimulationTime::zero();
 
 private:
 

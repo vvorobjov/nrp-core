@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,15 +37,16 @@
 #include <boost/python.hpp>
 #include <boost/asio.hpp>
 
-
 /*!
- * \brief Returns a free port number
+ * \brief Attempts to bind to a given address
  * \param hostIpv4 IP4 address of the host
- * \return Free port number
+ * \param port Port to connect to, if 0 a free port is searched and used
+ * \return Port used in the connection, same as "port" argument or found free port
  *
- * The function asks the OS to return a free port number.
+ * When "port" is 0, the function asks the OS to look for a free port number. Throws an exception
+ * if the connection is not successful
  */
-inline int getFreePort(std::string hostIpv4)
+inline int bindOrFindFreePort(std::string hostIpv4, int port = 0)
 {
     using namespace boost::asio;
 
@@ -63,15 +64,35 @@ inline int getFreePort(std::string hostIpv4)
     io_service service;
     ip::tcp::socket socket(service);
     socket.open(ip::tcp::v4());
-    socket.bind(ip::tcp::endpoint(addressStruct, 0));
+    socket.bind(ip::tcp::endpoint(addressStruct, port));
 
-    int port = socket.local_endpoint().port();
+    int newPort = socket.local_endpoint().port();
 
     // Close the socket, so that the port can be used by the caller
     socket.close();
 
-    return port;
+    return newPort;
 }
+
+/*!
+ * \brief Attempts to bind to a given address
+ * \param hostIpv4 IP4 address of the host
+ * \param port Port to connect to
+ *
+ * Throws an exception if the connection is not successful
+ */
+inline void bindToAddress(std::string hostIpv4, int port)
+{ bindOrFindFreePort(hostIpv4, port); }
+
+/*!
+ * \brief Returns a free port number
+ * \param hostIpv4 IP4 address of the host
+ * \return Free port number
+ *
+ * Asks the OS to look for a free port number
+ */
+inline int getFreePort(std::string hostIpv4)
+{ return bindOrFindFreePort(hostIpv4); }
 
 /*!
  * \brief Appends 'path' to PYTHON_PATH env variable

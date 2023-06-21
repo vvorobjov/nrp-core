@@ -5,6 +5,7 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "nrp_core")
+set(PYTHON_CLIENT_MODULE_NAME "nrp_client")
 set(EXECUTABLE_NAME "${PROJECT_NAME}Main")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
@@ -26,17 +27,19 @@ set(LIB_SRC_FILES
     nrp_general_library/engine_interfaces/engine_launcher_manager.cpp
     nrp_general_library/plugin_system/plugin.cpp
     nrp_general_library/plugin_system/plugin_manager.cpp
+    nrp_general_library/plugin_system/engine_plugin_manager.cpp
     nrp_general_library/process_launchers/launch_commands/basic_fork.cpp
     nrp_general_library/process_launchers/launch_commands/launch_command.cpp
     nrp_general_library/process_launchers/process_launcher.cpp
     nrp_general_library/process_launchers/process_launcher_basic.cpp
     nrp_general_library/process_launchers/process_launcher_manager.cpp
     nrp_general_library/transceiver_function/from_engine_datapack.cpp
+    nrp_general_library/transceiver_function/simulation_iteration_decorator.cpp
+    nrp_general_library/transceiver_function/simulation_time_decorator.cpp
     nrp_general_library/transceiver_function/status_function.cpp
     nrp_general_library/transceiver_function/transceiver_function.cpp
     nrp_general_library/transceiver_function/transceiver_datapack_interface.cpp
     nrp_general_library/transceiver_function/function_manager.cpp
-    nrp_general_library/transceiver_function/transceiver_function_sorted_results.cpp
     nrp_general_library/utils/file_finder.cpp
     nrp_general_library/utils/fixed_string.cpp
     nrp_general_library/utils/json_converter.cpp
@@ -69,6 +72,7 @@ set(TEST_SRC_FILES
     tests/datapack.cpp
     tests/engine_launcher_manager.cpp
     tests/plugin_manager.cpp
+    tests/test_engine_client.cpp
     tests/test_process_launcher_basic.cpp
     tests/test_function_manager.cpp
 )
@@ -78,6 +82,24 @@ set(TEST_SRC_FILES
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
+
+# Python 3 libraries
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
+
+# Boost Python libraries
+# find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
+add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
+find_package(Boost REQUIRED)
+if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+else()
+    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}" "numpy${Python3_VERSION_MAJOR}")
+endif()
+find_package(Boost REQUIRED COMPONENTS ${BOOST_PYTHON_COMPONENT} filesystem system)
+set(BOOST_PYTHON ${BOOST_PYTHON_COMPONENT})
+list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
 
 # cxxopts: Start Parameter Processing
 find_package(cxxopts 2.2 QUIET)
@@ -95,13 +117,13 @@ if(NOT ${cxxopts_FOUND})
 endif()
 
 # restclient-cpp: REST client library
-find_package(restclient-cpp QUIET)
+find_package(restclient-cpp 0.5.2 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${restclient-cpp_FOUND})
     message("Please wait. Downloading restclient-cpp...")
 
     ExternalProject_Add(restclient-cpp
             GIT_REPOSITORY https://github.com/mrtazz/restclient-cpp.git
-            GIT_TAG c140e62ecc793533ad40794c17d2982121aebc0b
+            GIT_TAG 0.5.2
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
             CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -Dwith-mpi=ON -Dwith-python=ON)
 
@@ -115,7 +137,7 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 find_package(nlohmann_json REQUIRED)
 
 # nlohmann_json schema validator
-find_package(nlohmann_json_schema_validator 2.1.0 QUIET)
+find_package(nlohmann_json_schema_validator 2.1.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${nlohmann_json_schema_validator_FOUND})
     message("Please wait. Downloading nlohmann_json_schema_validator...")
     ExternalProject_Add(nlohmann_json_schema_validator
@@ -130,12 +152,12 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
 endif()
 
 ## Log library
-find_package(spdlog 1.8.1 QUIET)
+find_package(spdlog 1.11.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${spdlog_FOUND})
     message("Please wait. Downloading spdlog...")
     ExternalProject_Add(spdlog
             GIT_REPOSITORY https://github.com/gabime/spdlog.git
-            GIT_TAG v1.8.1
+            GIT_TAG v1.11.0
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
             CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DSPDLOG_BUILD_SHARED=ON)
 
@@ -155,8 +177,9 @@ pkg_check_modules(LibZip REQUIRED IMPORTED_TARGET libzip)
 ## Header configuration
 
 set(NRP_CLEAR_ENV "NRP_CLEAR_ENV")
-
 set(NRP_CONFIG_DIR "config_schemas")
+set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
+set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
 
 # General Header defines
 configure_file("nrp_general_library/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
@@ -181,8 +204,17 @@ add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
 add_library(${NAMESPACE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 target_compile_options(${LIBRARY_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
 
-set(NRP_GEN_LIB_TARGET "${NAMESPACE_NAME}::${LIBRARY_NAME}" CACHE INTERNAL "NRP General Library target")
-set(NRP_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" CACHE INTERNAL "NRP Plugin Installation Directory")
+add_library(lib_restclient STATIC IMPORTED )
+set_property(TARGET lib_restclient PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/librestclient-cpp.so")
+
+add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
+set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
+
+add_library(lib_spdlog STATIC IMPORTED )
+set_property(TARGET lib_spdlog PROPERTY
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
 
 if(NOT ${cxxopts_FOUND})
     add_dependencies(${LIBRARY_NAME} cxxopts)
@@ -199,19 +231,6 @@ endif()
 if(NOT ${spdlog_FOUND})
     add_dependencies(${LIBRARY_NAME} spdlog)
 endif()
-
-
-add_library(lib_restclient STATIC IMPORTED )
-set_property(TARGET lib_restclient PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/librestclient-cpp.so")
-
-add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
-set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
-    IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
-
-add_library(lib_spdlog STATIC IMPORTED )
-set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
 
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
 target_link_libraries(${LIBRARY_NAME}
@@ -234,6 +253,7 @@ target_link_libraries(${LIBRARY_NAME}
 target_include_directories(${LIBRARY_NAME} BEFORE
     PUBLIC
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+        "$<INSTALL_INTERFACE:${NRP_DEP_CMAKE_INSTALL_PREFIX}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
         "$<BUILD_INTERFACE:${NRP_DEP_CMAKE_INSTALL_PREFIX}/include>"
@@ -283,7 +303,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     # Python Module for testing
     set(TEST_PYTHON_MODULE_NAME "NRPGeneralPythonTestModule")
 
-    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/python_module.cpp" "tests/test_transceiver_function_manager.cpp")
+    add_library(${TEST_PYTHON_MODULE_NAME} SHARED "tests/test_transceiver_function_manager.cpp")
     set_target_properties(${TEST_PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
     target_link_libraries(${TEST_PYTHON_MODULE_NAME} ${NAMESPACE_NAME}::${LIBRARY_NAME})
 
@@ -295,7 +315,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
         PUBLIC
         ${NAMESPACE_NAME}::${LIBRARY_NAME})
 
-    # Create testing plugin library (used for testing PluginManager)
+    # Create testing plugin library (used for testing EnginePluginManager)
     set(TEST_NRP_PLUGIN "TestNRPPluginManager")
     add_library(${TEST_NRP_PLUGIN} SHARED tests/test_plugin.cpp)
     set_target_properties(${TEST_NRP_PLUGIN} PROPERTIES PREFIX "")
@@ -379,8 +399,7 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
 endif()
-install(FILES "${HEADER_DIRECTORY}/python/docker_handle.py"
-    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
+
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}

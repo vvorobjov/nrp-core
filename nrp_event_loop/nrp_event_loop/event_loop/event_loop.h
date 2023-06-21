@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,90 +22,60 @@
 #ifndef EVENT_LOOP_H
 #define EVENT_LOOP_H
 
-#include <chrono>
-#include <thread>
-#include <future>
+#include "nrp_event_loop/event_loop/event_loop_interface.h"
 
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/computational_graph/output_node.h"
+
+#include "nrp_general_library/utils/time_utils.h"
+#include "nrp_event_loop/nodes/time/input_time.h"
 
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
 #include <nlohmann/json.hpp>
 
 /*!
- * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
+ * \brief EventLoop implementation which runs a Computational Graph
  */
-class EventLoop
+class EventLoop : public EventLoopInterface
 {
     public:
-
-        virtual ~EventLoop();
-
-        EventLoop() = delete;
 
         /*!
          * \brief Constructor
          */
-        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, bool ownGIL = true, bool spinROS = false);
+        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+                  ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
+                  bool ownGIL = true, bool spinROS = false);
 
-        /*!
-         * \brief Run a single loop
-         */
-        void runLoopOnce();
+        ~EventLoop();
 
-        /*!
-         * \brief Run loop
-        */
-        void runLoop(std::chrono::milliseconds timeout);
+    protected:
 
-        /*!
-         * \brief Run loop in a thread
-         */
-        void runLoopAsync(std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
+        void initializeCB() override;
 
-        /*!
-         * \brief Stop loop
-         */
-        void stopLoop();
+        void runLoopCB() override;
 
-        /*!
-         * \brief Shutdown loop
-         */
-        void shutdown();
-
-        /*!
-         * \brief Returns true if the event loop is currently running, false otherwise
-         */
-        bool isRunning();
-
-        /*!
-         * \brief Blocks execution until the loop reaches timeout
-         */
-        void waitForLoopEnd();
+        void shutdownCB() override;
 
     private:
-
-        /*!
-         * \brief Initialize loop
-         */
-        void initialize();
-
-        /*! \brief future state of the event loop thread run async  */
-        std::future<void> _runFuture;
+    
         /*! \brief Configuration of the Computational Graph run by this EventLoop  */
         nlohmann::json _graph_config;
-        /*! \brief timestep of the event loop  */
-        std::chrono::milliseconds _timestep;
-        /*! \brief boolean variable used to step the event loop from parent thread */
-        std::atomic<bool> _doRun;
+        /*! \brief Execution mode the event loop will use */
+        ComputationalGraph::ExecMode _execMode;
         /*! \brief true if the EventLoop is assumed to always owns the GIL, false if it is shared with other threads  */
         bool _ownGIL;
-        /*! \brief if true ros::sping is called in every loop  */
+        /*! \brief if true ros::spin is called in every loop  */
         bool _spinROS;
         /*! \brief GIL state object used to request the GIL ownership when needed  */
         PyGILState_STATE _pyGILState;
+        /*! \brief Pointer to the clock_node of the graph */
+        InputClockNode* _clock = nullptr;
+        /*! \brief Pointer to the iteration_node of the graph */
+        InputIterationNode* _iteration = nullptr;
+
 };
 
 

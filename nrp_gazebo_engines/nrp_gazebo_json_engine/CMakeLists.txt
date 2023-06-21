@@ -24,14 +24,6 @@ set(LIB_SRC_FILES
     nrp_gazebo_json_engine/nrp_client/gazebo_engine_json_nrp_client.cpp
 )
 
-if(BUILD_GAZEBO_ENGINE_SERVER)
-    list(APPEND LIB_SRC_FILES
-        nrp_gazebo_json_engine/engine_server/gazebo_step_controller.cpp
-        nrp_gazebo_json_engine/engine_server/camera_datapack_controller.cpp
-        nrp_gazebo_json_engine/engine_server/joint_datapack_controller.cpp
-        nrp_gazebo_json_engine/engine_server/link_datapack_controller.cpp)
-endif()
-
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
 )
@@ -62,9 +54,6 @@ set(NRP_GAZEBO_COMMUNICATION_PLUGIN NRPGazeboJSONCommunicationPlugin)
 # Gazebo defines
 configure_file("nrp_gazebo_json_engine/config/cmake_constants.h.in" "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
-# Python module dependencies
-#configure_file("nrp_gazebo_json_engine/python/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
-
 ##########################################
 # NRPGazeboJSONEngine
 add_library("${LIBRARY_NAME}" SHARED ${LIB_SRC_FILES})
@@ -78,13 +67,15 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         $<INSTALL_INTERFACE:include>
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
-        ${GAZEBO_INCLUDE_DIRS}
+
+    PRIVATE
 )
 
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         NRPJSONEngineProtocol::NRPJSONEngineProtocol
-        ${GAZEBO_LIBRARIES}
+
+    PRIVATE
 )
 
 
@@ -124,11 +115,17 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 if(BUILD_GAZEBO_ENGINE_SERVER)
 
     ##########################################
+    ## Gazebo Grpc DataPack Controllers
+    set(NRP_GAZEBO_JSON_LIB "${NAMESPACE_NAME}::${LIBRARY_NAME}")
+    add_subdirectory(nrp_gazebo_json_engine/engine_server)
+
+    ##########################################
     ## Gazebo plugins
     set(NRP_GAZEBO_LIB_TARGETS
-            "${NAMESPACE_NAME}::${LIBRARY_NAME}")
-    add_subdirectory(gazebo_json_plugins)
+            ${NRP_GAZEBO_JSON_LIB}
+            NRPGazeboJSONDataPackControllers::NRPGazeboJSONDataPackControllers)
 
+    add_subdirectory(gazebo_json_plugins)
 
     ##########################################
     ## Tests

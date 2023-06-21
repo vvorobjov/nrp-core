@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/computational_graph/output_node.h"
 
-#include "nrp_event_loop/computational_graph/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory_manager.h"
 
 #include "tests/test_files/helper_classes.h"
 
@@ -42,11 +43,21 @@
 
 TEST(ComputationalNodes, COMPUTATIONAL_NODE) {
     TestNode n1("node", ComputationalNode::Functional);
-    n1.setVisited(true);
 
     ASSERT_EQ(n1.id(), "node");
-    ASSERT_EQ(n1.isVisited(), true);
     ASSERT_EQ(n1.type(), ComputationalNode::Functional);
+
+    ASSERT_EQ(n1.isVisited(), false);
+    n1.setVisited(true);
+    ASSERT_EQ(n1.isVisited(), true);
+    n1.setVisited(false);
+    ASSERT_EQ(n1.isVisited(), false);
+
+    ASSERT_EQ(n1.doCompute(), false);
+    n1.setDoCompute(true);
+    ASSERT_EQ(n1.doCompute(), true);
+    n1.setDoCompute(false);
+    ASSERT_EQ(n1.doCompute(), false);
 }
 
 //// INPUT NODE
@@ -235,7 +246,8 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     TestMsg msg_send;
 
     //// getOrRegisterInput
-    TestOutputNode n_o("output", OutputNodePolicies::MsgPublishPolicy::SERIES, 1);
+    TestOutputNode n_o("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                       false, 1, 1);
     auto i_p1 = n_o.getOrRegisterInput<TestMsg>("input");
     auto i_p2 = n_o.getOrRegisterInput<TestMsg>("input");
 
@@ -267,7 +279,8 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     ASSERT_EQ(n_o.sent_msgs.at(0), &msg_send);
 
     //// compute, BATCH
-    TestOutputNode n_o2("output", OutputNodePolicies::MsgPublishPolicy::BATCH, 1);
+    TestOutputNode n_o2("output", OutputNodePolicies::PublishFormatPolicy::BATCH,
+                        false, 1, 1);
     n_o2.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
     n_o2.configure();
 
@@ -283,6 +296,85 @@ TEST(ComputationalNodes, OUTPUT_NODE) {
     ASSERT_EQ(n_o2.sendBatchMsgCalled, true);
     ASSERT_EQ(n_o2.sent_msgs.size(), 1);
     ASSERT_EQ(n_o2.sent_msgs.at(0), &msg_send);
+
+    //// compute period
+    ASSERT_EQ(n_o.getComputePeriod(), 1);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), true);
+    n_o.setComputePeriod(2);
+    ASSERT_EQ(n_o.getComputePeriod(), 2);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), true);
+    n_o.setComputePeriod(0);
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.graphCycleStartCB();
+    ASSERT_EQ(n_o.doCompute(), false);
+    n_o.setDoCompute(true);
+    ASSERT_EQ(n_o.doCompute(), true);
+
+    //// compute period and publish from cache constraints
+    TestOutputNode n_o3("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        true, 2, 1);
+
+    ASSERT_EQ(n_o3._maxPortConnections, 1);
+
+    TestOutputNode n_o4("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        false, 2, 2);
+
+    ASSERT_EQ(n_o4._maxPortConnections, 1);
+
+    TestOutputNode n_o5("output", OutputNodePolicies::PublishFormatPolicy::SERIES,
+                        false, 2, 1);
+    n_o5.setComputePeriod(2);
+
+    ASSERT_EQ(n_o5._maxPortConnections, 2);
+    ASSERT_EQ(n_o5.getComputePeriod(), 1);
+
+    //// compute "publish from cache"
+    n_o.resetCalls();
+    n_o3.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
+    n_o3.configure();
+
+    o_p.publish(&msg_send);
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 1);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 1);
+
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 1);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 2);
+
+    o_p.publish(&msg_send);
+    o_p.publish(&msg_send);
+    n_o.compute();
+    n_o3.compute();
+
+    ASSERT_EQ(n_o.sent_msgs.size(), 2);
+    ASSERT_EQ(n_o3.sent_msgs.size(), 3);
+
+    //// compute period
+    n_o4.getOrRegisterInput<TestMsg>("input")->subscribeTo(&o_p);
+    n_o4.configure();
+
+    o_p.publish(&msg_send);
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 0);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 1);
+    o_p.publish(&msg_send);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 1);
+    n_o4.graphCycleStartCB();
+    n_o4.compute();
+    ASSERT_EQ(n_o4.sent_msgs.size(), 2);
 }
 
 //// FUNCTIONAL NODE
@@ -301,14 +393,18 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
     InputPort<int, int> i_p("input_port", &n2, f);
 
     int nCalledF = 0;
-    std::function<void(const int*, int&)> f1 = [&](const int*i1, int&o1) {
+    bool returnF = true;
+    std::function<bool(const int*, int&)> f1 = [&](const int*i1, int&o1) {
         if(i1 != nullptr)
             o1 = *i1;
         nCalledF++;
+        return returnF;
     };
 
     // Instantiating FunctionalNode directly, only for testing, usually this is done via FunctionalNodeFactory::create
-    auto f_wrap = [f1](std::tuple<const int*, int> &p) { std::apply(f1, p); };
+    auto f_wrap = [f1](std::tuple<const int*, int> &p) {
+        return std::apply(f1, p);
+    };
     FunctionalNode<std::tuple<int>, std::tuple<int>> f_n("f_node", f_wrap, FunctionalNodePolicies::ON_NEW_INPUT);
 
     //// Register and get input / output
@@ -376,6 +472,13 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE)
     f_n.compute();
     ASSERT_EQ(nCalledP, 3);
     ASSERT_EQ(nCalledF, 3);
+
+    // case FN function returns false
+    returnF = false;
+    f_n.compute();
+    ASSERT_EQ(nCalledP, 3);
+    ASSERT_EQ(nCalledF, 4);
+
 }
 
 
@@ -385,13 +488,43 @@ TEST(ComputationalNodes, FUNCTIONAL_NODE_FACTORY)
     // template arguments or function signature the code just won't compile, so just calling the
     // function.
 
-    std::function<void(const int*, int&)> f1 = [](const int*i1, int&o1) {
+    std::function<bool(const int*, int&)> f1 = [](const int*i1, int&o1) {
         if(i1 != nullptr)
             o1 = *i1;
+
+        return true;
     };
 
-    FunctionalNode<std::tuple<int>, std::tuple<int>> f_n = FunctionalNodeFactory::create<1, 1, const int*, int&>("f_node", f1);
-    f_n.compute();
+    std::shared_ptr<FunctionalNode<std::tuple<int>, std::tuple<int>>> f_n(FunctionalNodeFactory::create<1, 1, const int*, int&>("f_node", f1));
+    f_n->compute();
+}
+
+TEST(ComputationalNodes, FN_FACTORY_MANAGER)
+{
+    auto& fn_manager = FunctionalNodeFactoryManager::getInstance();
+    fn_manager.loadFNFactoryPlugin("libFNFactoryModule.so");
+    std::shared_ptr<FunctionalNodeBase> f_n(fn_manager.createFunctionalNode("my_function", "my_node",
+                                                                           FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT));
+
+    auto i_pn = dynamic_cast<InputPort<int, int>*>(f_n->getInputById("i1"));
+    auto o_pn = dynamic_cast<OutputPort<int>*>(f_n->getOutputById("o1"));
+
+    TestNode n1("input", ComputationalNode::Input);
+    TestNode n2("output", ComputationalNode::Output);
+
+    int msg_send = 1;
+    const int* msg_got = nullptr;
+    std::function<void(const int*)> f = [&](const int* a) { msg_got = a; };
+
+    OutputPort<int> o_p("output_port", &n1);
+    InputPort<int, int> i_p("input_port", &n2, f);
+
+    i_p.subscribeTo(o_pn);
+    i_pn->subscribeTo(&o_p);
+
+    o_p.publish(&msg_send);
+    f_n->compute();
+    ASSERT_EQ(*msg_got, msg_send);
 }
 
 // EOF

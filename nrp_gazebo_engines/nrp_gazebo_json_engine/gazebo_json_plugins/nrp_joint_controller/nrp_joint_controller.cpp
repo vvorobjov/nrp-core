@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include "nrp_joint_controller/nrp_joint_controller.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/nrp_communication_controller.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include <algorithm>
@@ -127,13 +127,19 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
         }
 
         // Create datapack
-        const auto datapackName = NRPCommunicationController::createDataPackName(*this, joint->GetName());
+        const auto datapackName = NRPJSONCommunicationController::createDataPackName(model->GetName(), joint->GetName());
 
-        NRPLogger::info("Registering joint controller for joint [ {} ]", jointName);
+        NRPLogger::info("Registering Joint datapack [ {} ]", datapackName);
         this->_jointDataPackControllers.push_back(JointDataPackController(joint, jointControllerPtr, jointName));
-        NRPCommunicationController::getInstance().registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+        try {
+            auto &commControl = NRPJSONCommunicationController::getInstance();
+            commControl.registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+            // Register plugin
+            commControl.registerModelPlugin(this);
+        }
+        catch(NRPException&) {
+            throw NRPException::logCreate("Failed to register Joint datapack. Ensure that this NRP JSON Joint plugin is "
+                                          "used in conjunction with a gazebo_json Engine in an NRP Core experiment.");
+        }
     }
-
-    // Register plugin
-    NRPCommunicationController::getInstance().registerModelPlugin(this);
 }

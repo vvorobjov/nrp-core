@@ -1,0 +1,21 @@
+{
+  "SimulationName": "test_sim",
+  "DataPackProcessor": "cg",
+  "SimulationLoop": "EventLoop",
+  "ComputationalGraph": ["tf_1.py"],
+  "MQTTNode": {},
+  "EventLoop": {
+    "Timestep": 0.1,
+    "Timeout": 11
+  },
+  "ExternalProcesses" : [
+    {
+      "ProcCmd": "async_python_json_engine.py",
+      "ProcStartParams": ["--config=json_engine_async_conf_1.json", "--loglevel=info"]
+    },
+    {
+      "ProcCmd": "async_python_json_engine.py",
+      "ProcStartParams": ["--config=json_engine_async_conf_2.json", "--loglevel=info"]
+    }
+  ]
+}

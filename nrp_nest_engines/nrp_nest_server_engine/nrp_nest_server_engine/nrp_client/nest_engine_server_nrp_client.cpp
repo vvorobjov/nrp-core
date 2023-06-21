@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -367,11 +367,11 @@ const std::string & NestEngineServerNRPClient::getDataPackIdList(const std::stri
     return this->_populations.at(datapackName);
 }
 
-EngineClientInterface::datapacks_set_t NestEngineServerNRPClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
+datapacks_vector_t NestEngineServerNRPClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    EngineClientInterface::datapacks_set_t retVals;
+    datapacks_vector_t retVals;
 
     for(const auto &devID : datapackIdentifiers)
     {
@@ -394,18 +394,18 @@ EngineClientInterface::datapacks_set_t NestEngineServerNRPClient::getDataPacksFr
             // Extract datapack details from the body
             // Response from GetStatus is an array of JSON objects, which contains datapack parameters
 
-            retVals.emplace(new JsonDataPack(devID.Name, devID.EngineName, new nlohmann::json(nlohmann::json::parse(response))));
+            retVals.push_back(DataPackInterfaceConstSharedPtr(new JsonDataPack(devID.Name, devID.EngineName, new nlohmann::json(nlohmann::json::parse(response)))));
         }
     }
 
     return retVals;
 }
 
-void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray)
+void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_set_t &datapacksArray)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    for(DataPackInterface * const datapack : datapacksArray)
+    for(auto datapack : datapacksArray)
     {
         if(isDataPackTypeValid(datapack->id(), this->engineName()))
         {
@@ -414,7 +414,7 @@ void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_ptr_t &dat
             const auto datapackName = datapack->name();
 
             std::string setStatusStr = "{\"nodes\":" + getDataPackIdList(datapackName) + ","
-                                       "\"params\":" + ((JsonDataPack const *)datapack)->getData().dump() + "}";
+                                       "\"params\":" + ((JsonDataPack const *)datapack.get())->getData().dump() + "}";
 
             try
             {

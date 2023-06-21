@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -121,63 +121,6 @@ class TestEngineJSONNRPClient
     SimulationTime curTime = SimulationTime::zero();
 };
 
-TEST(EngineJSONNRPClientTest, EmptyDataPack)
-{
-    TestEngineJSONServer server("localhost:5463");
-
-    const auto engineName = "engine1";
-
-    auto data = new nlohmann::json({{"", {{"data", 1}}}});
-    auto dev1 = JsonDataPack("datapack1", "engine_name_1", data);
-
-    dev1.setEngineName(engineName);
-
-    // Register datapack controllers
-    auto dev1Ctrl = TestJSONDataPackController(DataPackIdentifier(dev1.id()));
-    server.registerDataPack(dev1.name(), &dev1Ctrl);
-
-    nlohmann::json config;
-    config["EngineName"] = engineName;
-    config["EngineType"] = "test_engine_json";
-
-    // Start server
-    server.startServerAsync();
-    TestEngineJSONNRPClient client("localhost:" + std::to_string(server.serverPort()), config, ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic()));
-
-    TestEngineJSONNRPClient::datapack_identifiers_set_t devIDs({dev1.id()});
-
-    // Return an empty datapack from the controller, it should end up in the cache on clients side
-
-    dev1Ctrl.triggerEmptyDataPackReturn(true);
-
-    auto datapacks = client.updateDataPacksFromEngine(devIDs);
-
-    ASSERT_EQ(datapacks.size(), 1);
-    ASSERT_EQ(datapacks.at(0)->isEmpty(), true);
-
-    // Return a regular datapack (with data) from the controller. It should replace the empty datapack
-
-    dev1Ctrl.triggerEmptyDataPackReturn(false);
-
-    datapacks = client.updateDataPacksFromEngine(devIDs);
-
-    ASSERT_EQ(datapacks.size(), 1);
-    ASSERT_EQ(datapacks.at(0)->isEmpty(), false);
-
-    // Return another empty datapack from the controller, it should not overwrite the previous datapack
-
-    dev1Ctrl.triggerEmptyDataPackReturn(true);
-
-    datapacks = client.updateDataPacksFromEngine(devIDs);
-
-    ASSERT_EQ(datapacks.size(), 1);
-    ASSERT_EQ(datapacks.at(0)->isEmpty(), false);
-
-    // It seems like the REST server needs some time to release resources before the next test can run...
-    // Without the sleep, it will complain about address already taken
-
-    sleep(1);
-}
 
 TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
 {
@@ -227,8 +170,8 @@ TEST(EngineJSONNRPClientTest, DISABLED_ServerCalls)
     ASSERT_EQ(client.getEngineTime(), server.curTime);
 
     // Test datapack retrieval
-    TestEngineJSONNRPClient::datapack_identifiers_set_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
-    auto datapacks = client.updateDataPacksFromEngine(devIDs);
+    datapack_identifiers_set_t devIDs({dev1.id(), dev2.id(), devThrow.id()});
+    auto datapacks = client.getDataPacksFromEngine(devIDs);
 
     // Only two datapacks (dev1, dev2) should be retrieved, as they are associated with the correct EngineName
     ASSERT_EQ(datapacks.size(), 2);

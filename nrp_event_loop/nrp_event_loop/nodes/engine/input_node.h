@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/python/input_edge.h"
 
-#include "nrp_event_loop/utils/graph_utils.h"
-
 /*!
  * \brief Input node used to connect an EngineClient with the computational graph
  *
@@ -50,6 +48,9 @@ public:
             _engineName(engineName)
     {}
 
+    std::string typeStr() const override
+    { return "FromEngine"; }
+
     /*!
      * Get the set of DataPackInterfaces that this node requests
      */
@@ -59,20 +60,22 @@ public:
     /*!
      * Set datapacks to be published into the graph in the next call to 'compute'
      */
-    void setDataPacks(EngineClientInterface::datapacks_set_t dpacks)
+    void setDataPacks(datapacks_vector_t dpacks)
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
         // TODO: in order to use MsgPublishPolicy::ALL policy with this type of node a vector of datapacks should be
         //  store, not just one which is being overwritten
         // move datapacks into temporary storage without copying the shared pointer
-        while(!dpacks.empty()) {
-            auto n = dpacks.extract(dpacks.begin());
-            if(this->_portMap.count(n.value()->name()) &&
-               (!_dataTemp.count(n.value()->name()) || !n.value()->isEmpty()))
-                _dataTemp[n.value()->name()] = std::move(n.value());
+        for(auto dpack: dpacks) {
+            auto name = dpack->name();
+            if(this->_portMap.count(name) && 
+               (!_dataTemp.count(name) || !dpack->isEmpty()))
+                _dataTemp[name] = std::move(dpack);
         }
     }
+
+protected:
 
     void configure() override
     {
@@ -80,13 +83,12 @@ public:
             _dataIds.insert(DataPackIdentifier(id, _engineName, ""));
     }
 
-protected:
-
     bool updatePortData(const std::string& id) override
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
-        // move temp datapack to store without copying shared pointer and update pointer
+        // move temp datapack to store without copying shared pointer and update pointer,
+        // only if there is no dapatapack 'id' stored already or the new one is not empty
         auto d = _dataTemp.find(id);
         if(d != _dataTemp.end() && (!_dataStore.count(id) || !_dataTemp.at(id)->isEmpty())) {
             _portMap.at(id).clear();
@@ -123,9 +125,10 @@ public:
 
     InputEngineEdge(const std::string& keyword, const std::string& address,
                     InputNodePolicies::MsgCachePolicy msgCachePolicy) :
-            SimpleInputEdge(keyword, extractNodePortFromAddress(address).first+"_input", extractNodePortFromAddress(address).second,
+            SimpleInputEdge<DataPackInterface, InputEngineNode>(keyword, ComputationalNode::parseNodeAddress(address).first+"_input",
+                                                                ComputationalNode::parseNodeAddress(address).second,
                             InputNodePolicies::LAST, msgCachePolicy),
-            _engineName(extractNodePortFromAddress(address).first)
+            _engineName(ComputationalNode::parseNodeAddress(address).first)
     {}
 
 protected:

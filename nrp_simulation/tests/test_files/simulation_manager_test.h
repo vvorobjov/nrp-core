@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,19 +39,13 @@ class TestSimManager
                 SimulationManager(simulationConfig)
         {}
 
-        const std::string & getStatus() override
-        {
-            return this->_status;
-        }
-
+    MOCK_METHOD(bool, hasSimulationTimedOut, (), (const override));
     MOCK_METHOD(void, initializeCB, (), (override));
     MOCK_METHOD(bool, resetCB, (), (override));
     MOCK_METHOD(void, stopCB, (), (override));
-    MOCK_METHOD(bool, runUntilTimeOutCB, (), (override));
-    MOCK_METHOD(bool, runCB, (unsigned numIterations, const nlohmann::json & json), (override));
+    MOCK_METHOD(bool, runUntilDoneOrTimeoutCB, (), (override));
+    MOCK_METHOD(bool, runCB, (unsigned numIterations), (override));
     MOCK_METHOD(void, shutdownCB, (), (override));
-
-    std::string _status = "";
 };
 
 #endif

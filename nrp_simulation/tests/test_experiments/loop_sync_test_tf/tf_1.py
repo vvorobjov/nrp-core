@@ -28,6 +28,10 @@ def transceiver_function(datapack_python1, datapack_python2, datapack_python3, n
     Moreover, every engine has a transceiver function associated with it.
     The test will check if the transceiver functions are called at the same frequency
     as the engines they are bound to.
+
+    NOTE: the value of 'num_iterations' when it is read by this function to compose 'tested_values' will depend on the
+    order in which tfs are executed within a loop step. Therefore, 'expected_values' assume a concrete order. If the
+    order of execution change, which will not affect the synchronization behavior, the test will fail.
     """
     global num_iterations
     global engine_times

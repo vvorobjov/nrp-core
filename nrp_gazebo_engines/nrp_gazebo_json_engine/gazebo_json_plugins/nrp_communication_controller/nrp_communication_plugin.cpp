@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include "nrp_communication_controller/nrp_communication_plugin.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/nrp_communication_controller.h"
 #include "nrp_json_engine_protocol/engine_server/engine_json_opts_parser.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
@@ -45,11 +45,15 @@ void gazebo::NRPCommunicationPlugin::Load(int argc, char **argv)
     }
     catch(cxxopts::OptionException &e)
     {
-        throw NRPException::logCreate(e, "Failed to parse options");
+        throw NRPException::logCreate(e, "NRP Communication plugin:: Failed to parse options");
+    }
+    catch(std::domain_error &e)
+    {
+        throw NRPException::logCreate(e, "NRP Communication plugin: Failed to parse options");
     }
 
     // Create server with given URL
-    auto &newController = NRPCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
+    auto &newController = NRPJSONCommunicationController::resetInstance(serverAddr, engineName, registrationAddr);
 
     // Save server parameters
     this->_serverAddress = newController.serverAddress();
@@ -69,7 +73,7 @@ void gazebo::NRPCommunicationPlugin::Reset()
     
     // Reset server
     NRPLogger::info("NRP Communication plugin: Resetting controller...");
-    auto &newController = NRPCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_registrationAddress);
+    auto &newController = NRPJSONCommunicationController::resetInstance(this->_serverAddress, this->_engineName, this->_registrationAddress);
 
     // Start server
     newController.startServerAsync();

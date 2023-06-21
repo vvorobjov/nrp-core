@@ -1,0 +1,22 @@
+{
+	"SimulationName": "husky_braitenberg_cg",
+	"SimulationDescription": "Adaptation of the example `husky_braitenberg` in which a Computational Graph (CG) is used to process and rely data between Engines.",
+	"SimulationLoop": "EventLoop",
+	"MQTTNode": {},
+	"EngineConfigs": [
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"ComputationalGraph": ["cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
+	"EventLoop": { "Timestep": 0.1},
+	"ExternalProcesses" : [
+		{
+			"ProcCmd": "gzserver",
+			"ProcStartParams": ["--config=engine_async_conf.json", "--loglevel=info", "--verbose", "-s", "NRPGazeboAsyncPlugin.so", "--seed", "0", "husky_world.sdf"]
+		}
+	]
+}

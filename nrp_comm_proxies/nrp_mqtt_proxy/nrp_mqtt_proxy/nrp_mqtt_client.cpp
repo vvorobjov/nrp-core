@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,26 +35,39 @@ bool NRPMQTTClient::isConnected()
     }
 }
 
-void NRPMQTTClient::publish(const std::string& address, const std::string& msg)
+void NRPMQTTClient::publish(const std::string& address, const std::string& msg, bool retained)
 {
     if(!isConnected())
         return;
 
     if(!_topics.count(address))
-        _topics.emplace(address, mqtt::topic(*_mqttClient, address, QOS));
+        _topics.emplace(address, mqtt::topic(*_mqttClient, address, QOS, retained));
+
+    if(_topics.at(address).get_retained() != retained) {
+        std::string p1 = retained ? "" : "non ";
+        std::string p2 = retained ? "non " : "";
+        NRPLogger::warn("Attempt to publish a {}retained message to topic \"{}\", but this topic publishes {}retained messages", p1, address, p2);
+    }
 
     _topics.at(address).publish(msg);
 }
 
+void NRPMQTTClient::publishDirect(const std::string& address, const std::string& msg)
+{
+    if(_subscribers.count(address))
+        _subscribers.at(address)(msg);
+}
+
 void NRPMQTTClient::subscribe(const std::string& address, const std::function<void (const std::string&)>& callback)
 {
-    if(!isConnected())
-        return;
-
     if(!_subscribers.count(address)) {
         _subscribers.emplace(address, callback);
-        _mqttClient->subscribe(address, QOS);
+
+        if(isConnected())
+            _mqttClient->subscribe(address, QOS);
     }
+    else
+        NRPLogger::warn("Subscribe to " + address + " failed. The address is already in use.");
 }
 
 NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
@@ -69,7 +82,7 @@ NRPMQTTClient::NRPMQTTClient(nlohmann::json clientParams) :
 
         // In case of re-connection keep session
         mqtt::connect_options connOpts;
-        connOpts.set_clean_session(false);
+        connOpts.set_clean_session(true);
 
         _mqttClient->set_callback(_callback);
         _mqttClient->connect(connOpts)->wait();
@@ -98,6 +111,17 @@ void NRPMQTTClient::disconnect()
     catch(std::exception &e)
     {
         NRPLogger::error("Couldn't gracefully disconnect from MQTT broker.");
+    }
+}
+
+void NRPMQTTClient::clearRetained()
+{
+    if(!isConnected())
+        return;
+
+    for (auto & [address, topic] : _topics) {
+        if(topic.get_retained())
+            topic.publish("");
     }
 }
 

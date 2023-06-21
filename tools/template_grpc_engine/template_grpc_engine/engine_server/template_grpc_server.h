@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,26 +23,28 @@
 #ifndef ${engine_name_uppercase}_GRPC_SERVER_H
 #define ${engine_name_uppercase}_GRPC_SERVER_H
 
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
+#include "nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
-class ${engine_name}GrpcServer
-    : public EngineGrpcServer
+class ${engine_name}Engine
+    : public EngineProtoWrapper
 {
     public:
-        ${engine_name}GrpcServer(const std::string &serverAddress, const std::string &engineName);
-        ~${engine_name}GrpcServer() = default;
+        ${engine_name}Engine(const std::string &engineName,
+                                 const std::string &protobufPluginsPath,
+                                 const nlohmann::json &protobufPlugins);
+        ~${engine_name}Engine() = default;
 
         /*!
          * \brief Indicates if the simulation was initialized and is running
          */
-        bool initRunFlag() const { return this->_initRunFlag; };
+        virtual bool initRunFlag() const override { return this->_initRunFlag; };
 
         /*!
          * \brief Indicates if shutdown was requested by the client
          */
-        bool shutdownFlag() const { return this->_shutdownFlag; };
+        virtual bool shutdownFlag() const override { return this->_shutdownFlag; };
 
         /*!
          * \brief Runs a single step of the simulation
@@ -65,7 +67,7 @@ class ${engine_name}GrpcServer
          *
          * \param[in] data Engine configuration data in form of JSON object
          */
-        void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
+        void initialize(const nlohmann::json &data) override;
 
         /*!
          * \brief Shutdowns the engine
@@ -76,7 +78,7 @@ class ${engine_name}GrpcServer
          *
          * \param[in] data Additional arguments passed from the client
          */
-        void shutdown(const nlohmann::json &data) override;
+        void shutdown() override;
 
         /*!
          * \brief Resets the engine

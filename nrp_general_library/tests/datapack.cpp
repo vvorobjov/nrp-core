@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,9 +53,4 @@ TEST(DataDataPackTest, GetData)
 
     dev.getData();
     ASSERT_FALSE(dev.isEmpty());
-
-    auto i2 = dev.releaseData();
-    ASSERT_TRUE(dev.isEmpty());
-    ASSERT_THROW(dev.getData(), NRPException::exception);
-    delete i2;
 }

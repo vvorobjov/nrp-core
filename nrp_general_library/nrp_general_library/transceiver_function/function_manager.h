@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
+#include "nrp_general_library/transceiver_function/from_engine_datapack.h"
 
 #include <vector>
 #include <map>
@@ -49,40 +50,12 @@ struct FunctionData
     /*!
     * \brief DataPacks requested by the Function
     */
-    EngineClientInterface::datapack_identifiers_set_t DataPackIDs;
+    datapack_identifiers_set_t DataPackIDs;
 
     FunctionData() = default;
     FunctionData(const std::string &name,
                  const TransceiverDataPackInterface::shared_ptr &function,
-                 const EngineClientInterface::datapack_identifiers_set_t &datapackIDs);
-};
-
-
-/*!
- * \brief Result of a single TF run
- */
-// TODO Review as part of NRRPLT-8589
-struct DataPackFunctionResult
-{
-    using datapack_list_t = boost::python::list;
-
-    /*!
-     * \brief Python DataPack List
-     */
-    datapack_list_t DataPackList;
-
-    /*!
-     * \brief Extracted Pointers to datapacks in DataPackList
-     */
-    // TODO Shouldn't this store unique/shared pointers?
-    std::vector<DataPackInterface*> DataPacks;
-
-    /*!
-     * \brief Extract datapacks from DataPackList and insert them into DataPacks
-     */
-    void extractDataPacks();
-
-    DataPackFunctionResult(datapack_list_t &&_datapackList);
+                 const datapack_identifiers_set_t &datapackIDs);
 };
 
 
@@ -100,12 +73,10 @@ struct DataPackFunctionResult
 class FunctionManager
 {
     public:
-        //
-        using engines_datapacks_t = std::map<std::string, const EngineClientInterface::datapacks_t*>;
+
         using function_datas_t = std::multimap<std::string, FunctionData>;
         using linked_functions_t = std::pair<FunctionManager::function_datas_t::iterator, FunctionManager::function_datas_t::iterator>;
-        using tf_results_t = std::list<DataPackFunctionResult>;
-        using status_function_results_t = std::tuple<std::unique_ptr<nlohmann::json>, FunctionManager::tf_results_t>;
+        using status_function_results_t = std::tuple<bool, datapacks_vector_t>;
 
         FunctionManager();
         FunctionManager(const boost::python::dict &tfGlobals);
@@ -114,22 +85,33 @@ class FunctionManager
          * \brief Get DataPack IDs requested by TFs
          * \return
          */
-        // TODO Review as part of NRRPLT-8589
-        EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs() const;
+        datapack_identifiers_set_t getRequestedDataPackIDs() const;
+
+        DataPackPassingPolicy getDataPackPassingPolicy() const;
+
+        void setDataPackPassingPolicy(DataPackPassingPolicy method);
 
         /*!
-         * \brief Set EngineClientInterface pointers. Used by TransceiverFunctions to access datapacks
-         * \param engines Mapping from engine name to engine ptr
+         * \brief Sets simulation time that will be accessible by all Python Functions
+         * \param simulationTime Current simulation time from the simulation manager
          */
-        // TODO Review as part of NRRPLT-8589
-        void setEngineDataPacks(engines_datapacks_t &&engineDataPacks);
+        void setSimulationTime(SimulationTime simulationTime);
 
         /*!
-         * \brief Access engine map
+         * \brief Returns simulation time stored by the manager
          */
-        // TODO Review as part of NRRPLT-8589
-        constexpr const engines_datapacks_t &getEngineDataPacks() const
-        {   return this->_engineDataPacks;  }
+        const SimulationTime & getSimulationTime() const;
+
+        /*!
+         * \brief Sets simulation iteration that will be accessible by all Python Functions
+         * \param simulationIteration Current simulation iteration from the simulation manager
+         */
+        void setSimulationIteration(unsigned long simulationIteration);
+
+        /*!
+         * \brief Returns simulation iteration number stored by the manager
+         */
+        unsigned long getSimulationIteration() const;
 
         /*!
          * \brief Loads given DataPack Processing Function
@@ -160,23 +142,22 @@ class FunctionManager
          * \param engineName Name of engine
          * \return Returns results of executed Preprocessing Functions
          */
-        FunctionManager::tf_results_t executePreprocessingFunctions(const std::string &engineName);
+        datapacks_vector_t executePreprocessingFunctions(const std::string &engineName, datapacks_set_t dataPacks);
 
         /*!
          * \brief Executes all Transceiver Functions linked to an engine
          * \param engineName Name of engine
          * \return Returns results of executed Preprocessing Functions
          */
-        FunctionManager::tf_results_t executeTransceiverFunctions(const std::string &engineName);
+        datapacks_vector_t executeTransceiverFunctions(const std::string &engineName, datapacks_set_t dataPacks);
 
         /*!
          * \brief Executes Status Function registered loaded by the manager
-         * \param clientData Extra data coming from the NRP Client, will be passed to the status function
          * \return Results of the Status Function execution as JSON object
          *
          * This method will run the Status Function that was loaded using `loadStatusFunction` method.
          */
-        status_function_results_t executeStatusFunction(const nlohmann::json & clientData);
+        status_function_results_t executeStatusFunction(datapacks_set_t dataPacks);
 
     private:
         /*!
@@ -185,13 +166,19 @@ class FunctionManager
          * \param transceiverFunction Transfer Function to register
          * \return Returns pointer to stored location. Used by TransceiverDataPackInterfaceGeneral to automatically update the registered function when an upper decorator runs pySetup
          */
+        // TODO Why does this return a pointer to pointer?
         TransceiverDataPackInterfaceSharedPtr *registerNewDataPackFunction(const std::string &linkedEngine, const TransceiverDataPackInterfaceSharedPtr &transceiverFunction);
+
+        SimulationTime _simulationTime = SimulationTime::zero();
+        unsigned long _simulationIteration = 0;
+        DataPackPassingPolicy _DataPackPassingPolicy;
 
         /*!
          * \brief Registers new Status Function in the manager
          * \param statusFunction Pointer to the function object
          * \return Shared pointer to the function object
          */
+        // TODO Why does this return a pointer to pointer?
         TransceiverDataPackInterfaceSharedPtr *registerNewStatusFunction(const TransceiverDataPackInterfaceSharedPtr &statusFunction);
 
         /*!
@@ -208,11 +195,6 @@ class FunctionManager
          * \brief Loaded Status Function
          */
         std::unique_ptr<FunctionData> _statusFunction = nullptr;
-
-        /*!
-         * \brief Engine Map. From engine name to datapacks
-         */
-        engines_datapacks_t _engineDataPacks;
 
         /*!
          * \brief Internal iterator used for transactional loading of transceiver functions
@@ -238,7 +220,7 @@ class FunctionManager
          * \param tfName Name of function to execute
          * \return Returns result of execution. Contains a list of datapack commands
          */
-        boost::python::object runDataPackFunction(const std::string &tfName);
+        std::vector<std::shared_ptr<DataPackInterface>> runDataPackFunction(const std::string &tfName, datapacks_set_t dataPacks);
 
         /*!
          * \brief Get TFs linked to specific engine
@@ -254,7 +236,9 @@ class FunctionManager
          *                      when false, it will run Transceiver Functions
          * \return Returns results of executed DataPack Processing Functions
          */
-        tf_results_t executeDataPackFunctions(const std::string &engineName, const bool preprocessing);
+        datapacks_vector_t executeDataPackFunctions(const std::string &engineName,
+                                                    datapacks_set_t dataPacks,
+                                                    const bool preprocessing);
 
         // Give the function classes access to private methods,
         // so that they can register themselves in the manager

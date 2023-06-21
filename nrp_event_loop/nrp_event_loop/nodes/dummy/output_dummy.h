@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,10 @@
 class OutputDummy : public OutputNode<boost::python::object> {
 public:
 
-    OutputDummy(const std::string &id) :
-            OutputNode(id)
+    OutputDummy(const std::string &id,
+                bool publishFromCache = false,
+                unsigned int computePeriod = 1) :
+            OutputNode(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod)
     { }
 
     size_t call_count = 0;
@@ -71,14 +73,16 @@ class OutputDummyEdge : public SimpleOutputEdge<boost::python::object, OutputDum
 
 public:
 
-    OutputDummyEdge(const std::string &keyword, const std::string &id) :
-            SimpleOutputEdge(keyword, id, id)
+    OutputDummyEdge(const std::string &keyword, const std::string &id,
+                    bool publishFromCache = false,
+                    unsigned int computePeriod = 1) :
+            SimpleOutputEdge<boost::python::object, OutputDummy>(keyword, id, id, publishFromCache, computePeriod)
     {}
 
 protected:
 
     OutputDummy* makeNewNode() override
-    { return new OutputDummy(this->_id); }
+    { return new OutputDummy(this->_id, this->_publishFromCache, this->_computePeriod); }
 };
 
 #endif //OUTPUT_DUMMY_H

@@ -28,6 +28,7 @@ Here is a short description of the files participating in the experiment after r
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here".
 - braitenberg.py - contains the setup of the neuronal network running the experiment. Used by the \ref nest_engine "NEST engine".
 - husky_world.sdf - simulation world file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by the \ref gazebo_engine "Gazebo engine".
+- husky.sdf - husky robot file in <a href="http://sdformat.org/">Simulation Description Format</a>. Used by the \ref gazebo_engine "Gazebo engine".
 - cam_pf.py - preprocessing function which takes images acquired by the robot and detect levels of red. 
 The result is stored in a \ref datapacks_json JsonDataPack which can be accessed by other transceiver functions in the experiment.
 - brain_stimulation_tf.py - takes the JsonDataPack produced by the preprocessing function described above and estimulates the NEST neural network in function of the detected red values.
@@ -95,6 +96,16 @@ Here is a short description of all files that are located in the example directo
 - from_gym.py - transceiver function which converts feedback observation data from OpenAI
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
 
+\subsection pysim_bullet Example for Bullet simulation
+
+This experiment implements a dummy python controller for a model of a car in Bullet.
+
+Here is a short description of all files that are located in the example directory "bullet_control":
+- bullet_simulator.py - contains the setup of the Bullet simulation, including initialize, runLoop, reset, and shutdown
+- controller.py - transceiver function which receives car position and feedbacks response action
+- simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
+
+
 \subsection pysim_mujoco Example for Mujoco simulation
 
 This experiment implements a dummy python controller for an easy Mujoco model of a swing pole.
@@ -118,5 +129,20 @@ Here is a short description of all files that are located in the example directo
 - send_cmd.py - transceiver function that converts output from the Python controller into simulation commands
 - rec_joints.py - transceiver function which converts feedback muscle data from OpenSim
 - simulation_config.json - simulation configuration file. An explanation of the simulation configuration can be found \ref simulation_configuration "here"
+
+\section getting_started_multi_robot Multi robot experiment
+
+This experiment shows how multiple robots simulated in a single Gazebo Engine can be controlled in an NRPCore experiment.
+
+The experiment is a vairant of the \ref getting_started_experiment_husky experiment described above in this page.
+In this case two husky robots are spawn in the Gazebo simulated world.
+Each of them is controlled by a NEST JSON Engine with names "husky_brain_1" and "husky_brain_2", each of them running the same Spiking Neural Network.
+
+As in the single robot version of the experiment, TFs are used to process and rely camera data from Gazebo to NEST, and to process NEST model "output" and to translate into robot joint commands.
+
+\code{.sh}
+cd examples/husky_braitenberg_multi_robot
+NRPCoreSim -c simulation_config.json
+\endcode
 
 */

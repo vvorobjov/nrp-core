@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,25 +43,7 @@ class EngineLauncherInterface;
 class EngineClientInterface
         : public PtrTemplates<EngineClientInterface>
 {
-        /*! \brief DataPackInterfaceConstSharedPtr comparison. Used for set sorting */
-        struct CompareDevInt : public std::less<>
-        {
-            public: bool operator()(const DataPackInterfaceConstSharedPtr &lhs, const DataPackInterfaceConstSharedPtr &rhs) const
-            {   return lhs->name() < rhs->name();   }
-
-            public: bool operator()(const DataPackInterfaceConstSharedPtr &lhs, const std::string &name) const
-            {   return lhs->name() < name;  }
-
-            public: bool operator()(const std::string &name, const DataPackInterfaceConstSharedPtr &rhs) const
-            {   return name < rhs->name();  }
-        };
-
     public:
-        using datapack_identifiers_set_t = std::set<DataPackIdentifier>;
-        using datapacks_t = std::vector<DataPackInterfaceConstSharedPtr>;
-        using datapacks_set_t = std::set<DataPackInterfaceConstSharedPtr, CompareDevInt>;
-        using datapacks_ptr_t = std::vector<DataPackInterface*>;
-
         explicit EngineClientInterface(ProcessLauncherInterface::unique_ptr &&launcher);
         virtual ~EngineClientInterface();
 
@@ -153,36 +135,12 @@ class EngineClientInterface
         virtual void runLoopStepAsyncGet(SimulationTime timeOut) = 0;
 
         /*!
-         * \brief Gets requested datapacks from engine and updates _datapackCache with the results
-         * Uses getDataPacksFromEngine override for the actual communication
-         * \param datapackNames All requested names. NOTE: can also include IDs of other engines. A check must be added that only the corresponding IDs are retrieved
-         * \return Returns all datapacks returned by the engine
-         */
-        const datapacks_t &updateDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers);
-
-        /*!
-         * \brief get cached engine datapacks
-         */
-        constexpr const datapacks_t &getCachedDataPacks() const
-        {   return this->_datapackCache;    }
-
-        /*!
          * \brief Sends datapacks to engine
          * \param datapacksArray Array of datapacks that will be send to the engine
          * \return Returns SUCCESS if all datapacks could be handles, ERROR otherwise
          * \throw Throws on error
          */
-        virtual void sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray) = 0;
-
-        /*!
-         * \brief Update _datapackCache from datapacks
-         *
-         * If the datapack with a particular name is already in the cache, the function will
-         * replace it. If the datapack isn't in the cache, the function will insert it.
-         *
-         * \param devs DataPacks to insert
-         */
-        void updateCachedDataPacks(datapacks_set_t &&devs);
+        virtual void sendDataPacksToEngine(const datapacks_set_t &dataPacks) = 0;
 
         /*!
          * \brief Gets requested datapacks from engine
@@ -190,7 +148,7 @@ class EngineClientInterface
          * \return Returns all requested datapacks
          * \throw Throws on error
          */
-        virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) = 0;
+        virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) = 0;
 
 protected:
 
@@ -198,11 +156,6 @@ protected:
          * \brief Process Launcher. Will be used to stop process at end
          */
         ProcessLauncherInterface::unique_ptr _process;
-
-        /*!
-         * \brief Engine datapack cache. Stores retrieved datapacks
-         */
-        datapacks_t _datapackCache;
 };
 
 using EngineClientInterfaceSharedPtr = EngineClientInterface::shared_ptr;
@@ -305,6 +258,7 @@ class EngineClient
             // setting process start and env params to an empty vector since this can't be done from json schema
             setDefaultProperty<std::vector<std::string>>("EngineProcStartParams", std::vector<std::string>());
             setDefaultProperty<std::vector<std::string>>("EngineEnvParams", std::vector<std::string>());
+            setDefaultProperty<nlohmann::json>("EngineExtraConfigs", nlohmann::json(json::value_t::object));
         }
 
         ~EngineClient() override = default;

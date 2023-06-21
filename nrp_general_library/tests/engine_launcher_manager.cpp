@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public:
     virtual const std::vector<std::string> engineProcStartParams() const override
     { return std::vector<std::string>(); }
 
-    virtual void sendDataPacksToEngine(const datapacks_ptr_t &) override
+    virtual void sendDataPacksToEngine(const datapacks_set_t &) override
     {}
 
     virtual SimulationTime runLoopStepCallback(SimulationTime) override
@@ -62,12 +62,12 @@ public:
     }
 
 
-    virtual datapacks_set_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
+    virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override
     {
-        datapacks_set_t retVal;
+        datapacks_vector_t retVal;
         for(const auto &devID : datapackIdentifiers)
         {
-            retVal.emplace(new DataPackInterface(devID));
+            retVal.push_back(std::shared_ptr<DataPackInterface>(new DataPackInterface(devID)));
         }
 
         return retVal;

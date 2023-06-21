@@ -1,4 +1,4 @@
-/*! \page datatransfer_engine NRP DataTransfer Engine
+/*! \page datatransfer_engine DataTransfer Engine
 
 The DataTransfer Engine brings data logging and streaming capabilities to NRP-core.
 It enables users to log experiment data to file for further offline anaylisis or to stream it over the network for, e.g., remote data visualization and experiment monitoring.
@@ -38,10 +38,16 @@ The DataTransfer Engine processes every incoming datapack and tries to save its 
 Protobuf message types that have *repeated* fields cannot be logged to files, but can still be streamed.
 
 Additionally, two Protobuf message types are provided with special formatting support for logging into the file: *Dump.String* and *Dump.ArrayFloat*.
-*Dump.String* has a single field *string_stream* of string type.
-*Dump.ArrayFloat* can be used to transfer arrays as explained below.
+See below for more details
 
-\subsection dump_array_float Logging arrays with Dump.ArrayFloat
+\subsection dump_proto Dump Protobuf message types
+
+\include dump_msgs.proto
+
+- *Dump.String* has a single field *string_stream* of string type.
+- *Dump.ArrayFloat* can be used to transfer arrays as explained below.
+
+\subsubsection dump_array_float Logging arrays with Dump.ArrayFloat
 
 The *Dump.ArrayFloat* Protobuf message contains two fields:
 - float_stream: repeated float field containing the array data.
@@ -63,14 +69,16 @@ In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples ex
 
 \subsection logging_address Logging and streaming address
 
-Finally, about where datapacks are logged and streamed:
-- datapacks will always be logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter.
-- datapacks are published to an *nrp/<simulationID>/data/<datapack_name>* MQTT topic as serialized protobuf objects.
-The type of the streamed protobuf message is published once to the topic *nrp/<simulationID>/data/<_data_name>/type*. The data topic address (i.e. *nrp/<simulationID>/data/<_data_name>*) is also published once to the topic *nrp/<simulationID>/data*. 
+When logging to file is enabled, datapacks are always logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter of the Engine.
 
-Aditionally:
-- a welcome message is published once to the topic *nrp/<simulationID>/welcome* 
-- the experiment simulation time is published every timestep to the topic *nrp/<simulationID>/time*.
+When Data Streaming with MQTT is enabled, datapacks are published to an *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<datapack_name>* MQTT topic as serialized protobuf objects, being <MQTTPrefix> and <simulationID> configuration parameters of the Engine.
+Whenever the Engine is reset, a message with the text "reset" is published through that topic.
+The type of the streamed protobuf message is published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<_data_name>/type*. 
+The data topic address (i.e. *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<_data_name>*) is also published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/data*.
+
+Aditionally, a welcome message is published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/welcome* and the experiment simulation time is published every timestep to the topic *nrp/<simulationID>/time*.
+
+MQTT messages published only once, i.e. the welcome message, datapack data topic addresses and datapack types, are always retained.
 
 
 \section engine_datatransfer_config_section Engine Configuration Parameters
@@ -106,7 +114,8 @@ To use this engine in an experiment, set `EngineType` to <b>"datatransfer_grpc_e
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
 <tr><td>MQTTBroker<td>Address of the MQTT broker<td>string<td>localhost:1883<td><td>
 <tr><td>dataDirectory<td>Path to the storage of file streams<td>string<td>data<td><td>
-<tr><td>simulationID<td>A simulation identifier to be added to MQTT topics published by this Engine<td>string<td>0<td><td>
+<tr><td>MQTTPrefix<td>Prefix to MQTT topics published by this Engine<td>string<td><td><td>
+<tr><td>simulationID<td>Simulation identifier to be added to MQTT topics published by this Engine<td>string<td>0<td><td>
 <tr><td>streamDataPackMessage<td>If true the engine will stream DataPackMessages, if false it will stream their contained data<td>boolean<td>true<td><td>
 <tr><td>dumps<td>List of datapacks for transfer<td>dumpItem<td>[]<td><td>X
 </table>

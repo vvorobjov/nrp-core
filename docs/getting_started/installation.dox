@@ -14,11 +14,9 @@ NRP-core has only been tested on <b>Ubuntu 20.04</b> at the moment, and therefor
 
 NRP-core only supports <b>NEST 3</b>.
 
-As part of the installation process NEST 3 is built and installed. If you have an existing installation of NEST we recommend you to uninstall it before installing NRP-core. In case you still want to use your installed version, you can avoid the installation process to build and install NEST by changing the value of <i>ENABLE_NEST</i> from <i>FULL</i> to <i>CLIENT</i> in the root CMakeLists.txt file:
-
-\code{.sh}
-set(ENABLE_NEST CLIENT)
-\endcode
+As part of the installation process NEST 3 is built and installed.
+If you have an existing installation of NEST and don't NRP-Core to mess with your environment add the parameter *-DBUILD_NEST_ENGINE_SERVER=OFF* to your NRP-Core cmake command.
+The NEST Engine won't be built in this case but still can be used from a docker container in experiments.
 
 In any case, be aware that NEST 2.x is incompatible with NRP-core.
 
@@ -66,8 +64,13 @@ This flag system allows to configure the resulting nrp-core depending on which s
 \section installation_environment Setting the environment
 
 In order to properly set the environment to run experiments with NRP-core, please make sure to add the lines below to your ~/.bashrc file
-\skip Start of setting environment
-\until End of setting environment
+\code{.sh}
+export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
+export NRP_DEPS_INSTALL_DIR="/home/${USER}/.local/nrp_deps"
+source  ${NRP_INSTALL_DIR}/bin/.nrp_env
+. /usr/share/gazebo-11/setup.sh
+. /opt/ros/noetic/setup.bash
+\endcode
 
 \section installation_sim Steps for installing additional simulators
 This section includes installation steps for simulators that may be used with \ref python_json_engine and \ref pysim_engine.
@@ -75,7 +78,7 @@ The \ref pysim_engine "PySim engine" allows to connect a set of simulators with 
 
 \subsection installation_sim_tvb Installation of The Virtual Brain
 
-The instructions below install TVB root and data directly from git repositiories.
+The instructions below install TVB root and data directly from git repositories.
 It is also possible to install them via pip, but then certain features and data sets may not be accessible.
 Complete instructions can be found at <a href="https://github.com/the-virtual-brain/tvb-root">tvb-root</a> and <a href="https://github.com/the-virtual-brain/tvb-data">tvb-data</a>
 repository pages.
@@ -107,6 +110,14 @@ For OpenAI installation (complete instructions at <a href="https://gym.openai.co
 
 \code{.sh}
 pip install gym pygame
+\endcode
+
+\subsection installation_sim_bullet Bullet installation
+
+For Bullet installation (complete instructions at <a href="https://pybullet.org/wordpress/">https://pybullet.org/wordpress/</a>):
+
+\code{.sh}
+pip install pybullet
 \endcode
 
 \subsection installation_sim_mujoco Mujoco installation
@@ -237,5 +248,6 @@ echo 'export LD_LIBRARY_PATH=$HOME/opensim/install/lib/:$LD_LIBRARY_PATH' >> .ba
 source $HOME/.bashrc
 
 \endcode
+
 
 */

@@ -1,41 +1,41 @@
 /*! \page pysim_engine PySim Engine
 
-This engine is based on the \ref python_json_engine and exploits python APIs for different simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) to interface simulations with NRP-core. The main difference between a PySim engine and a standard Python JSON engine is the way the Python APIs of several given simulators are called from a so-called \ref simulator_manager interface. As a whole, the PySim engine still runs a simulator model that specified the engine configuration and manages the synchronization and data exchange with other engines participating in the same experiment.
+This engine is a special case engine of the \ref python_json_engine to link python APIs for different simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>, and <a href="https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.jxof6bt5vhut#">Bullet </a>) with NRP-core. The main difference between a PySim engine and a standard Python JSON engine is the way the Python APIs of several given simulators are called from a so-called \ref simulator_manager interface. The \ref simulator_manager packs different simulators into the same kinds of data interface to make it easier for using and combining different simulators in NRP_Core. As a whole, the PySim engine still runs a simulator model that specified the engine configuration and manages the synchronization and data exchange with other engines participating in the same experiment.
 
 In that sense, it is used in a manner very similar to the Python JSON Engine (please refer to this \ref python_engine_guide "guide" for details on how to use it). Additionally, there are example experiments in the folder *examples/pysim_examples* that can be used as a reference for implementing experiments including this engine.
 
 Similarly to the Python JSON Engine, the engine behavior in each experiment is implemented by subclassing a Python class *PySimEngineScript* and overriding the hook methods:
 - `initialize()`: executed when the engine is initialized
-- `run_loop()`: executed when the engine is requested to advance its simulation (from EngineClient::runLoopStep)
+- `run_loop()`: executed when the engine is requested to advance its simulation (Same as EngineScript.runLoop of \ref python_json_engine )
 - `shutdown()`: executed when the engine is requested to shutdown
 - `reset()`: executed when the engine is requested to reset.
 
-In this engine, several simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>) with python API are wrapped as functions in type of \ref python_json_engine can apply. It includes shutdown, reset, runLoop, and calling model properties. The interaction with the wrapped simulators is performed by an instance of the class \ref simulator_manager, which is stored in PySimEngineScript in the attribute self.sim_manager. This attribute must be "manually" called from the PySimEngineScript subclass in order to advance, modify or get information from the different simulators. As an example of this use, the script implementing PySimEngineScript in experiment *examples/pysim_examples/opensim_control* is listed below:
+In this engine, several simulators (<a href="https://gym.openai.com/docs#">OpenAI </a>, <a href="https://mujoco.readthedocs.io/en/latest/APIreference.html#">Mujoco </a>, <a href="https://simtk.org/api_docs/opensim/api_docs#">OpenSim </a>, and <a href="https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.jxof6bt5vhut#">Bullet </a>)  with python API are wrapped as functions in type of \ref python_json_engine can apply. It includes shutdown, reset, runLoop, and calling model properties and standardizes the simulation process. The simulation launch with heavy timing cost is executed in the background of the initialize() function. In run_loop(), the interaction with the wrapped simulators is performed by an instance of the class \ref simulator_manager, which is stored in PySimEngineScript in the attribute self.sim_manager. This attribute must be "manually" called from the PySimEngineScript subclass in order to advance, modify or get information from the different simulators. As an example of this use, the script implementing PySimEngineScript in experiment examples/pysim_examples/opensim_control is listed below:
 
 \include pysim_examples/opensim_control/server.py
 
 \section simulator_manager SimulatorManager
 
-The SimulatorManager is a python class that acts as a bridge to connect NRP-core and any of the simulators supported by the Pysim Engine (OpenSim, Mujoco, OpenAI) through the Python API of the former. 
+The SimulatorManager is a python class that packs different simulators (OpenSim, Mujoco, OpenAI,and Bullet)  into the same interface and acts as a bridge to connect NRP-core and any of the supported simulators through the Python API.
 
-It processes requests for simulation initialization, reset, shutdown, run step, and data retrival. 
-
-When instantiated, it loads the simulation model specified in the engine configuration. Additionally, a controller is attached to actuators for the model in simulator.
+It processes requests for simulation initialization, reset, shutdown, run_step, and data retrieval. When instantiated, it loads the simulation model specified in the engine configuration. Additionally, the SimulatorManager receives action for the run step of the simulator and observation data requirement in a run loop of the pysim engine. The observation data covers a variety of commonly used data types of the supported simulator. And users can based on simulators' documents add more customized data types in the simulator APIs in "nrp_pysim_engines/nrp_pysim_engine/python".
 
 The following functions are provided by SimulatorManager to interact with the simulator:
 
-- `run_step(action)`: advances the simulation by the engine timestep as specified in the engine configuration. Takes as input an array of floats. The length of the array must be equal to the number of controlled elements ( such as muscles in Opensim) in the model. 
+- `run_step(action)`: advances the simulation by the engine timestep as specified in the engine configuration. Takes as input an array of floats or dictionary. The length of input data must be equal to the number of controlled elements (such as muscles in Opensim) in the model. 
 - `reset()`: resets the simulation
 - `shutdown()`: shutdowns the simulation
 - `get_model_properties(p_type)`: returns a list with the names of model's elements of the type specified by *p_type*. The latter can take multiple possible values.
   - OpenAI: "Property" (the names of the observed elements)
+  - Bullet: "Body", "Joint", "Link"
   - Mujoco: "body", "joint", "geom", "site", "light", "camera", "actuator", "sensor", "tendon", and "mesh"
   - Opensim: "Joint" (the elements in the model `JointSet`) and "Force" (the elements in the model `ForceSet`)
-- `get_model_all_properties(p_type)`: returns a dictionary with the value of elements of the type specified by *p_type*. The latter can take multiple possible values.
+- `get_model_all_properties(p_type)`: returns a dictionary with the value of all elements of the type specified by *p_type*. The latter can take multiple possible values.
   - OpenAI: the same with `p_type` in `get_model_properties`
+  - Bullet: the same with `p_type` in `get_model_properties`
   - Mujoco: supports all `get_<p_type>` in <a href="https://gym.openai.com/docs#">Mujoco Python API </a>
   - Opensim: the same with `p_type` in `get_model_properties`
-- `get_model_property(p_name, p_type)`: returns the observed value for `p_name`, and the `p_type` is the same with `p_type` in `get_model_all_properties`
+- `get_model_property(p_name, p_type)`: returns the observed value for required the element `p_name`, and the `p_type` is the data type of the required element and is the same with `p_type` in `get_model_all_properties`
 - `get_sim_time()`: returns the simulation time in seconds
 
 \section opensim_json_datapacks DataPacks

@@ -29,6 +29,30 @@ services:
 
 
 
+    nrp-xpra-gazebo:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-ubuntu20-env${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/gazebo.cmake
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-ubuntu20${NRP_CORE_TAG}
+        command: bash
+
+
+
+    nrp-xpra-gazebo-nest:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        command: bash
+
+
+
     nrp-gazebo-nest:
         build:
             context: .

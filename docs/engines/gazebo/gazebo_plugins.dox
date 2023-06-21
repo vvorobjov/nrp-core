@@ -3,7 +3,10 @@
 
 A set of plugins is provided to integrate gazebo in a NRP-core simulation. NRPGazeboCommunicationPlugin register the engine with the SimulationManager and handle control requests for advancing the gazebo simulation or shutting it down. Its use is mandatory in order to run the engine. 
 
-The rest of plugins handle datapack communication for a particular datapack type. Each of them allows to register datapacks of a concrete type which can then be accessed in TransceiverFunctions. From the list of gazebo_datapacks \ref gazebo_datapacks "supported datapacks", GazeboJointDataPack is the only one which can be used to affect the gazebo simulation, as explained below. The others, though they can be sent to the gazebo engine, will have no effect. That is, they are only useful for getting information from the simulation. 
+The rest of plugins handle datapack communication for a particular datapack type. Each of them allows to register datapacks of a concrete type which can then be accessed in TransceiverFunctions. 
+From the list of gazebo_datapacks \ref gazebo_datapacks "supported datapacks", GazeboJointDataPack and GazeboModelDataPack are the only ones which can be used to affect the gazebo simulation, as explained below. The others, though they can be sent to the gazebo engine, will have no effect. That is, they are only useful for getting information from the simulation.
+
+Datapacks registered from the Gazebo Engine plugins can be accessed by the scoped name of the Gazebo element related to the datapack up to the model name. The details of expected datapack names are described below for each of the plugins.
 
 gRPC and JSON versions are provided for each of the plugins described below. Both versions behaves the same and are configured in the same way. From a user perspective they differ only in their names. gRPC plugins are named `NRPGazeboGrpcSuffixName` and JSON plugins `NRPGazeboJSONSuffixName`. For simplicity, the documentation below refers only to the gRPC versions.
 
@@ -20,21 +23,28 @@ General communication plugin. Sets up a gRPC server and waits for NRP commands
 
 \section NRPGazeboGrpcCameraPlugin
 
-Adds a GazeboCameraDataPack datapack. The example below registers a datapack called 'camera_datapack'. This can then be accessed by TransceiverFunctions under that name
+Adds a GazeboCameraDataPack datapack. The example below registers a datapack called 'my_model::my_link::camera_sensor_name'. This can then be accessed by TransceiverFunctions under that name.
 \code{.xml}
-<sensor name='camera' type='camera'>
-	...
-	<plugin name='camera_datapack' filename='NRPGazeboGrpcCameraControllerPlugin.so'/>
-	...
-</sensor>
+<model name="my_model">
+  <link name="my_link">
+    ...
+    <sensor name='camera_sensor_name' type='camera'>
+	  ...
+	  <plugin name='camera_plugin_name' filename='NRPGazeboGrpcCameraControllerPlugin.so'/>
+	  ...
+    </sensor>
+  </link>
+    ...
+</model>
 \endcode
 
 \section NRPGazeboGrpcLinkPlugin
-Adds GazeboLinkDataPack datapacks for each link in the given model. The example below registers four datapacks under the name of their respective links names
+Adds GazeboLinkDataPack datapacks for each link in the given model. The example below registers four datapacks under the name of their respective links names with the model name as a prefix.
+For example, the datapack associated with the link "back_left_link" can be accessed from TFs with the name "my_model::back_left_link".
 \code{.xml}
-<model>
+<model name="my_model">
 	...
-	<plugin name="link_plugin" filename="NRPGazeboGrpcLinkControllerPlugin.so" />
+	<plugin name="link_plugin_name" filename="NRPGazeboGrpcLinkControllerPlugin.so" />
 	...
 	<link name="back_left_link">...</link>
 	<link name="back_right_link">...</link>
@@ -45,19 +55,19 @@ Adds GazeboLinkDataPack datapacks for each link in the given model. The example 
 \endcode
 
 \section NRPGazeboGrpcJointPlugin
-Adds GazeboJointDataPack datapacks. In this case only those joints that are explicitly named in the plugin will be registered and made available to the NRP. The example below registers four datapacks under the name of their respective joints. 
+Adds GazeboJointDataPack datapacks. In this case only those joints that are explicitly named in the plugin will be registered and made available to the NRP. The example below registers four datapacks under the name of their respective joints with the model name as a prefix (e.g. "my_model::back_left_joint" in the example below).
 
 In contrast to the plugins described above, when using NRPGazeboGrpcJointPlugin datapacks can be used to set a target state for the referenced joint. For each of the joint specified in the plugin configuration a PID controller is set. Incoming datapacks are used to adjust the controller target value. Two target types are supported: <b>position</b> and <b>velocity</b>.  
 
 \code{.xml}
-<model>
+<model name="my_model">
 	...
 	<joint name="back_left_joint">...</joint>
 	<joint name="back_right_joint">...</joint>
 	<joint name="front_left_joint">...</joint>
 	<joint name="front_right_joint">...</joint>
 	...
-	<plugin name='husky' filename='NRPGazeboGrpcJointControllerPlugin.so'>
+	<plugin name='joint_plugin_name' filename='NRPGazeboGrpcJointControllerPlugin.so'>
 		<back_left_joint   P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
 		<back_right_joint  P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
 		<front_left_joint  P='10' I='0' D='0' Type='velocity' Target='0' IMax='0' IMin='0'/>
@@ -66,5 +76,17 @@ In contrast to the plugins described above, when using NRPGazeboGrpcJointPlugin 
 	...
 </model>
 \endcode
+
+\section NRPGazeboGrpcModelPlugin
+Adds a GazeboModelDataPack datapack for the model in which the plugin is used. It can be accessed with the model name (e.g. "model_name" in the example below)
+
+\code{.xml}
+<model name="model_name">
+	...
+	<plugin name="model_plugin_name" filename="NRPGazeboGrpcModelControllerPlugin.so" />
+</model>
+\endcode
+
+The created datapack can both be retrieved from the Engine, which will contain the current position and velocity of the model in the simulation, or sent to the Engine. In the latter case the datapack is used to set the position and/or velocity of the model. It depends on which fields of the datapack protobuf message are field (position, rotation, linearVelocity, angularVelocity).
 
  */

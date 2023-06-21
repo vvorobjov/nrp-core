@@ -55,12 +55,29 @@ Attempting to retrieve the data from an empty DataPack will result in an excepti
 A method "isEmpty" is provided to check whether a DataPack is empty or not before attempting to access its data:
 
 \code{.py}
-if(not datapack.isEmpty()):
+if not datapack.isEmpty():
 	# It's safe to get the data
 	print(datapack.data)
 else:
 	# This will raise an exception
 	print(datapack.data)
+\endcode
+
+
+\section stale_datapacks Checking if a DataPack contains the most recent data
+
+It may happen that certain DataPacks that are available to Preprocessing and Transceiver functions will not be updated on every simulation iteration.
+For example, this will be the case whenever the engines that take part in the simulation run at different frequencies.
+It may be wasteful to perform processing of the same data multiple times.
+The DataPack objects have a flag, called `isUpdated` that allows to check if they contain the most recent data.
+It will be set to true only on the simulation iteration,on which the DataPack has been created (for example returned from a Preprocessing Function) or received (for example from an Engine).
+The flag can be accessed from Preprocessing, Transceiver, and Status Functions in the following way:
+
+\code{.py}
+if datapack.isUpdated():
+	# Perform some operations, because the DataPack has just been updated
+else:
+	# The DataPack is 'stale', i.e. it was updated in one of the previous simulation iterations
 \endcode
 
 
@@ -99,10 +116,9 @@ def transceiver_function(datapack1, datapack2):
 	print(datapack2.data)
 \endcode
 
-When passed as TF arguments, DataPacks behave at all effect as read-only objects.
-Even though it is possible to modify their data or to add new attributes to them inside of a TransceiverFunction,
-these changes will have no effect outside of the TransceiverFunction.
-
+By default, all input DataPacks are passed to Transceiver Functions by value, i.e. the function receives a copy of the original DataPack object.
+This is a safety measure implemented to prevent accidental modifications of DataPacks available to other Functions and Engines.
+The policy can be changed by setting the \ref simulation_schema "DataPackPassingPolicy" configuration parameter.
 
 \subsection datapacks_tfs_output DataPacks as output of transceiver functions
 
@@ -270,7 +286,7 @@ datapack.data.json_type()
 Please be aware that methods specific to 'object' type for accessing or setting elements will raise an error when used with an 'array' type and otherwise.
 
 
-\subsection datapacks_protobuf Protobuf datapacks
+\subsection datapacks_protobuf Protobuf DataPacks
 
 In contrast with JsonDataPack, which can wrap any nlohmann::json C++ object, a Python wrapper class is generated for each Protobuf definition.
 For example, for the *Camera* message listed below (which is used by the \ref gazebo_engine), a python class *GazeboCameraDataPack* is generated.
@@ -292,20 +308,61 @@ This class contains a *data* attribute which is of type *GazeboCamera* and gives
 The generated Python classes match the original Protobuf Python API as described in the <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated">protobuf documentation</a>.
 There are some known limitations with respect to the original Protobuf Python API which are listed below with references to the protobuf documentation:
 
-1. Well Known Types not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">ref</a>
+1. <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#wkt">Well Known Types</a> partially supported - \ref datapacks_protobuf_generic.
 2. Repeated Message field not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#repeated-message-fields">ref</a>
 3. Map field type not supported <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#map-fields">ref</a>
 4. Only basic Enum support. To set or get *Enum* fields only *int* can be used. *Enum constants* can't be accessed from python <a href="https://developers.google.com/protocol-buffers/docs/reference/python-generated#enum">ref</a>
 5. The *Message* Python wrapper only supports a subset of the methods listed <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html">here</a>. These are: 'Clear', 'ClearField', 'HasField', 'IsInitialized' and 'WhichOneof'.
 
-Finally, these Python wrappers are automatically generated in the NRP-core build process. See this \ref tutorial_add_proto_definition "guide" to know how to add custom message definitions so they become afterwards available to Engines and TFs.
+Finally, these Python wrappers are automatically generated in the NRP-core build process for Protobuf message definitions used by Engines shipped with NRPCore.
+These can be found in the folder *nrp-core-msgs/protobuf/engine_proto_defs*.
+See this \ref tutorial_add_proto_definition "guide" to know how to compile additional messages so they become afterwards available to Engines and TFs.
+
+\subsubsection datapacks_protobuf_generic Generic protobuf DataPacks and wrappers for well-known protobuf types
+
+A set of generic DataPacks is provided with NRP Core.
+These DataPacks allow to exchange most of the data types available in protobuf, and they can be used to pass arrays of arbitrary size.
+The data part of the generic DataPacks has the following structure:
+
+\code{.proto}
+message Array*
+{
+    repeated * array = 1;
+    repeated uint32 shape = 2;
+}
+\endcode
+
+With the asterisk replacing concrete types.
+
+Another generic DataPack type that is provided with NRP Core is the image DataPack, based on the NrpGenericProto::Image type:
+
+\code{.proto}
+message Image
+{
+    uint32     height      = 1;
+    uint32     width       = 2;
+    uint32     step        = 3;
+    IMAGE_TYPE type        = 4;
+    bool       isBigEndian = 5;
+    bytes      data        = 6;
+}
+\endcode
+
+The definitions of the protobuf messages used by the DataPacks can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/nrp_generic.proto`.
+
+A subset of wrappers that mimic the (<a href="https://protobuf.dev/reference/protobuf/google.protobuf/">well-known protobuf types</a>) is also available to use.
+Unfortunately, at the moment it is not possible to use the official wrappers directly, and one must use the wrappers provided with NRP Core.
+The messages can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/wrappers.proto`.
+
+An example use of the generic DataPacks, as well as the wrappers, can be found in the `examples/generic_proto_test` directory.
 
 \subsection datapacks_rosmsg ROS msg datapacks
 
-Similarly to Protobuf datapacks, a Python wrapper class is generated for each ROS msg definition. 
+Similarly to Protobuf datapacks, a Python wrapper class is generated for each ROS msg definition used in NRP-Core.
 For example, for a message of type `Pose` from package `geometry_msgs`, a python class *PoseDataPack* is generated.
 This class contains a *data* attribute which is of type *Pose* and gives access to the wrapped datapack data. 
 The generated Python bindings can be found under the Python module `nrp_core.data.nrp_ros`. For example, in the case of the `Pose` message:
+
 \code
 from nrp_core.data.nrp_ros.geometry_msgs import PoseDataPack
 p = PoseDataPack("name","engine")
@@ -319,27 +376,12 @@ By default Python bindings are generated for all message types in the next ROS p
 - sensor_msgs
 
 Any message definition contained in these packages can be used in TransceiverFunctions directly.
-It is also possible to generate Python bindings for messages in other ROS packages by adding them to the variable `NRP_CATKIN_PACKAGES` defined in the root `CMakeLists.txt` file.
-Also, this guide: \ref tutorial_add_ros_msg_definition, explains how to extend `nrp_ros_msgs` with new message definitions.
+It is also possible to generate Python bindings for messages defined in other ROS packages.
+For more information can be found \ref guide_ros_in_nrp_core "here".
 
-The generated binding classes match the original ROS Python API with only one exception. In ROS Python, fields of type `array` are stored in objects of type `list` while in the case of the Python binding generated by NRP-core a new class is created for each `array field`. 
-To illustrate the former, consider the case of `UInt64MultiArray` message defined in the `std_msgs` package:
-
-\code{.msg}
-# msg definition in std_msgs package
-MultiArrayLayout  layout        # specification of data layout
-uint64[]          data          # array of data
-\endcode
-
-In ROS Python the field `data` is stored in a `list`, while in the NRP-core Python wrapper class it is stored in a new Python class of type `UInt64MultiArray_data`:
-
-\code{.py}
-import nrp_core.data.nrp_ros.std_msgs as nrp_std
-a = nrp_std.UInt64MultiArray()
-type(a.data) # output is <class 'nrp_core.data.nrp_ros.std_msgs.UInt64MultiArray_data'>
-\endcode
-
-This new class behaves similarly to a Python `list`. It supports `append` and `extend` methods for adding new data. Its elements can  accessed by index or iterated and `len` will return the number of elements.
+<b>NOTE:</b> At this moment there is no Engine implementation which can use ROS datapacks. 
+The only way of interacting with other ROS nodes in NRP-Core is by using a Computational Graph in your experiment instead of Transceiver Functions to rely data between Engines.
+See this  \ref fti_loop_with_computational_graph "page" for more information at this regard. 
 
 \section datapacks_implementation Implementation details
 

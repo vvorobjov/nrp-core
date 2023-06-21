@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,9 @@ public:
             _label(label)
     {}
 
+    std::string typeStr() const override
+    { return "FromSpinnaker"; }
+
     ~InputSpinnakerNode()
     {
         NRPSpinnakerProxy* spProxy = &(NRPSpinnakerProxy::getInstance());
@@ -53,6 +56,9 @@ public:
             spProxy->stopSpinnaker();
         }
     }
+
+
+protected:
 
     void configure() override
     {
@@ -69,9 +75,6 @@ public:
 //        _msgTemp.reserve(InputNode::_queueSize);
 //        _msgStore.reserve(InputNode::_queueSize);
     }
-
-
-protected:
 
     /*!
      * \brief Called when raw UDP data is received

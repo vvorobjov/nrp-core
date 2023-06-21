@@ -4,7 +4,7 @@
 	"SimulationTimeout": 10,
 	"DataPackProcessor": "cg",
 	"SimulationLoop": "EventLoop",
-	"ConnectROS": {},
+	"ROSNode": {},
 	"EngineConfigs": [
 		{
 			"EngineType": "nest_json",
@@ -14,6 +14,7 @@
 		}
 	],
 	"ComputationalGraph": ["cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
+	"EventLoop": { "Timestep": 0.1 },
 	"ExternalProcesses" : [
 		{"ProcCmd": "roslaunch husky_world.launch"}
 	]

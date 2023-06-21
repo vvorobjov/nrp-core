@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@
 
 #include "nrp_general_library/engine_interfaces/datapack_controller.h"
 #include "nrp_protobuf/engine_grpc.grpc.pb.h"
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
+#include "nrp_protobuf/proto_ops/protobuf_ops.h"
 
+#include "spdlog/sinks/rotating_file_sink.h"
 #include "nrp_general_library/utils/nrp_logger.h"
 
 #ifdef MQTT_ON
@@ -37,7 +39,7 @@
  * \brief DataPackController class for processing streaming messages
  *
  * The instance of the class in created for every DataPack to be processed by the engine.
- * Dpending on the DataPack, the contoller instance is configured when receiving the first message.
+ * Depending on the DataPack, the controller instance is configured when receiving the first message.
  */
 class StreamDataPackController
     : public DataPackController<google::protobuf::Message>
@@ -50,7 +52,8 @@ class StreamDataPackController
          * \param[in] engineName The engine name
          */
         StreamDataPackController(const std::string & datapackName,
-                                 const std::string & engineName);
+                                 const std::string & engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps);
 
 #ifdef MQTT_ON
         /*!
@@ -64,6 +67,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::string &baseDir,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                  const std::string &mqttBaseTopic);
@@ -78,6 +82,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
                                  const std::string &mqttBaseTopic);
 #endif
@@ -91,6 +96,7 @@ class StreamDataPackController
          */
         StreamDataPackController(const std::string &datapackName,
                                  const std::string &engineName,
+                                 const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::string &baseDir);
 
         /*!
@@ -239,9 +245,12 @@ class StreamDataPackController
         const unsigned int NRP_MAX_LOG_FILE_SIZE = 1024 * 1024 * 5;
 
         /*!
-         * \brief the max number of the rotating stream files (0 - not restricted)
+         * \brief the max number of the rotating stream files (0 - 200000)
+         * A number greater than 200000 will throw an exception
          */
-        const unsigned int NRP_MAX_LOG_FILE_N = std::numeric_limits<unsigned int>::max();
+        const unsigned int NRP_MAX_LOG_FILE_N = 200000;
+
+        const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& _protoOps;
 };
 
 #endif // STREAM_DATATRANSFER_GRPC_DATAPACK_CONTROLLER_SERVER_H

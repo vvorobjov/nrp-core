@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,6 +53,11 @@ FTILoopSimManager::~FTILoopSimManager()
     }
 }
 
+bool FTILoopSimManager::hasSimulationTimedOut() const
+{
+    return (this->_simTimeout >= SimulationTime::zero() && this->_loop->getSimTime() >= this->_simTimeout);
+}
+
 void FTILoopSimManager::initializeCB()
 {
     if(this->_loop == nullptr)
@@ -83,24 +88,25 @@ void FTILoopSimManager::stopCB()
     _stopLoop = true;
 }
 
-bool FTILoopSimManager::runUntilTimeOutCB()
+bool FTILoopSimManager::runUntilDoneOrTimeoutCB()
 {
     std::function condition = [&] () {
-        return hasSimTimedOut(this->_loop->getSimTime(),
+        return this->_simulationDataManager.getDoneFlag() ||
+               hasSimTimedOut(this->_loop->getSimTime(),
                               toSimulationTime<unsigned, std::ratio<1>>(int(this->_simConfig->at("SimulationTimeout"))));
     };
 
-    return runSimulationUntilCondition(condition, nlohmann::json());
+    return runSimulationUntilCondition(condition);
 }
 
-bool FTILoopSimManager::runCB(unsigned numIterations, const nlohmann::json & json)
+bool FTILoopSimManager::runCB(unsigned numIterations)
 {
     unsigned iteration = 0;
     std::function condition = [&] () {
         return (numIterations > 0 && iteration++ >= numIterations);
     };
 
-    return runSimulationUntilCondition(condition, json);
+    return runSimulationUntilCondition(condition);
 }
 
 void FTILoopSimManager::shutdownCB()
@@ -111,7 +117,7 @@ void FTILoopSimManager::shutdownCB()
     }
 }
 
-bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condition, const nlohmann::json & json)
+bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condition)
 {
     if(this->_loop == nullptr)
         return false;
@@ -125,7 +131,7 @@ bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condi
         if(hasCondition)
             break;
 
-        this->runSimulationOnce(json);
+        this->runSimulationOnce();
     }
 
     this->_loop->waitForEngines();
@@ -133,22 +139,17 @@ bool FTILoopSimManager::runSimulationUntilCondition(std::function<bool ()> condi
     return hasCondition;
 }
 
-void FTILoopSimManager::runSimulationOnce(const nlohmann::json & json)
+void FTILoopSimManager::runSimulationOnce()
 {
     if(this->_loop != nullptr)
-        this->_loop->runLoop(this->_timeStep, json);
+        this->_loop->runLoop(this->_timeStep);
     else
         throw NRPException::logCreate("Simulation must be initialized before calling runLoop");
 }
 
-const std::string & FTILoopSimManager::getStatus()
-{
-    return this->_loop->getStatus();
-}
-
 FTILoop FTILoopSimManager::createSimLoop()
 {
-   this->_timeStep = toSimulationTime<float, std::ratio<1>>(this->_simConfig->at("SimulationTimestep"));
+    this->_timeStep = SimulationTime::max();
 
     DataPackProcessor::engine_interfaces_t engines;
     auto &engineConfigs = this->_simConfig->at("EngineConfigs");
@@ -186,9 +187,14 @@ FTILoop FTILoopSimManager::createSimLoop()
         {
             throw NRPException::logCreate(e, "Failed to launch engine:  \"" + engineName + "\"");
         }
-    }
 
-    return FTILoop(this->_simConfig, engines);
+        if(this->_timeStep > toSimulationTimeFromSeconds(engineConfig.at("EngineTimestep").get<double>()))
+        {
+            this->_timeStep = toSimulationTimeFromSeconds(engineConfig.at("EngineTimestep").get<double>());
+        }
+    }
+    NRPLogger::debug("Simulation Timestep is: "+ std::to_string(fromSimulationTime<double, std::ratio<1>>(this->_timeStep)));
+    return FTILoop(this->_simConfig, engines, &this->_simulationDataManager);
 }
 
 bool FTILoopSimManager::hasSimTimedOut(const SimulationTime &simTime, const SimulationTime &simTimeout)

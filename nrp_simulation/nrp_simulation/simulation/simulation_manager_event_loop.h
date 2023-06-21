@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,10 @@ class EventLoopSimManager
 
         ~EventLoopSimManager() = default;
 
-        const std::string & getStatus() override
+        bool hasSimulationTimedOut() const override
         {
-            return _status;
+            // TODO Not sure how to implement this...
+            return false;
         }
 
     private:
@@ -59,8 +60,8 @@ class EventLoopSimManager
         void initializeCB() override;
         bool resetCB() override;
         void stopCB() override;
-        bool runUntilTimeOutCB() override;
-        bool runCB(unsigned numIterations, const nlohmann::json & clientData) override;
+        bool runUntilDoneOrTimeoutCB() override;
+        bool runCB(unsigned numIterations) override;
         void shutdownCB() override;
 
         bool runUntilMilliseconds(const std::chrono::milliseconds& eTout);
@@ -74,9 +75,6 @@ class EventLoopSimManager
 
         /*! \brief Simulation loop */
         std::shared_ptr<EventLoop> _loop;
-
-        std::string _status = "";
-
         std::chrono::milliseconds _timeout;
         std::chrono::milliseconds _timestep;
 };

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,11 @@ public:
             InputNode<MSG_TYPE>(id)
     {}
 
+    std::string typeStr() const override
+    { return "RosSubscriber"; }
+
+protected:
+
     void configure() override
     {
         // creates ROS subscriber
@@ -58,15 +63,12 @@ public:
             rosProxy->subscribe(this->id(), callback);
         else
             NRPLogger::warn("From InputROSNode \"" + this->id() +
-            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Check your experiment configuration");
+                            "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Add \"ROSNode\" parameter to your experiment configuration");
 
         // reserves memory space for storing incoming msgs
         _msgTemp.reserve(InputNode<MSG_TYPE>::_queueSize);
         _msgStore.reserve(InputNode<MSG_TYPE>::_queueSize);
     }
-
-
-protected:
 
     /*!
      * \brief callback function used in the ROS subscriber

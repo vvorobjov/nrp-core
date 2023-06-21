@@ -1,0 +1,12 @@
+syntax = "proto3";
+ 
+package MyPackage;
+ 
+/*
+ * Message used for testing
+ */
+message MyMessage
+{
+    uint32 integer = 1;
+    string str     = 2;
+}

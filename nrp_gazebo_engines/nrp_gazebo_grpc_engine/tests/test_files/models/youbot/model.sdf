@@ -1,7 +1,9 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
   <model name="youbot">
-    <pose>0 0 0.09 0 0 0</pose>
+    <plugin name="youbot" filename="NRPGazeboGrpcJointControllerPlugin.so">
+            <base_footprint_joint P=10 I=0 D=0 Type="position" Target=0 IMax=0 IMin=0 />
+    </plugin>
     <link name="base_footprint">
       <pose>0 0 0 0 0 0</pose>
       <inertial>

@@ -103,6 +103,14 @@ It has a virtual method `"void sendSingleMsg(const std::string& id, const DATA* 
 OutputNode is templated with a parameter `DATA` which specifies the data type the node can handle. That is, all the input ports in the node will be of type `<T_IN, DATA>`.
 The class has a method `getOrRegisterInput<T_IN>(const std::string& id)` which allows to create ports in the node.
 
+Finally, Output Nodes can be configured with two properties:
+- ComputePeriod: property specifying the number of graph cycles that passes between executions of this node. E.g. if it is set to 1, the node is executed every cycle, if it is set to 2, every other cycle, and so on.
+- publishFromCache: it is a boolean property. If it is set to 'true' the node will cache received messages in each cycle and in the next cycle, if no new messages were received, it will publish the same messages from the cache. If this property is set to 'false' the node will only publish fresh messages received in each cycle.
+
+Using these two properties it is possible to make a node to publish messages at a fixed frequency, which might be desirable in robot control applications. 
+Given the frequency at which the Computational Graph is run, it is possible to specify the publishing frequency by setting 'ComputePeriod' to the desired value. 
+Then, by setting 'publishFromCache' to 'true' it is assured that the node will always publish even if no new messages were received.
+
 \subsubsection functional_node Functional Nodes
 
 This type of node is used to process incoming events and send other.
@@ -165,14 +173,29 @@ If the Population is a SpikeSourcePoisson, this will have an array of objects ca
 MQTT nodes enable to connect the Computational Graph with MQTT topics.
 
 InputMQTTNode implements an InputNode which subscribes to an MQTT topic and makes incoming messages available through an OutputPort.
-Incoming messages can be injected into the graph in three data formats:
-- As strings containing the corresponding MQTT messages payload
-- As JSON objects, which content is set from the MQTT message payload
-- As any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core"
+Incoming messages can be injected into the graph in the following data formats:
+- Strings containing the corresponding MQTT messages payload
+- JSON objects, which content is set from the MQTT message payload
+- Any of the protobuf message types \ref datapacks_protobuf "precompiled with NRP-Core"
+- \ref datapacks "Datapacks" storing either a JSON object or a Protobuf message
 
 The node is templated with the type of object incoming MQTT messages should be converted to.
 
 OutputMQTTNode implements an OutputNode which publishes incoming messages to an MQTT topic. As in the case of InputMQTTNode, it can accept either strings, JSON objects or protobuf messages, which are set as payload in an MQTT message and published.
+
+\subsubsection time_nodes Time Nodes
+
+This class encompasses nodes which can be used to input system time information into the Computational Graph.
+Currently there are two nodes available: InputClockNode and InputIterationNode. Both stream messages of type *unsigned long*.
+
+InputClockNode streams a message through its only port, *clock*, containing the current "system time" in milliseconds.
+The meaning of system time is different depending on whether the Computational Graph is operated by an EventLoop or a FTILoop.
+See this \ref event_loop_configuration "page" for more information about the possible ways of using a Computational Graph in NRP-Core.
+If an EventLoop is used to manage the runtime execution of the graph, InputClockNode sends the current value of the internal (real-time) clock of the EventLoop, wrt the instant in which the EventLoop started.
+If a FTILoop is used instead, InputClockNode sends the current simulation time, identically as the \ref functions_time_iteration "@SimulationTime" decorator in TransceiverFunctions.
+
+InputIterationNode streams a message through port *iteration* containing the current iteration number.
+In this case the content of the message is similar if the graph is operated either by an EventLoop of a FTILoop: the number of times the loop has been executed.
 
 \section graph_layers Execution Order of Nodes in the Graph
 
@@ -180,9 +203,11 @@ In each cycle of the Event Loop, all the nodes in the graph are executed in orde
 This order is directly defined by the edges between nodes present in the graph.
 
 Since edges in the graph represent connections through which messages are sent, they impose precedence constraints in the execution order of nodes they connect.
-In each event loop cycle, the source node in an edge must always be executed before the target node. This basic rule ensures that all nodes are always executed with the latest data available.
+In each event loop cycle, the source node in an edge must always be executed before the target node. 
+This basic rule ensures that all nodes are always executed with the latest data available.
 
-Additionally, we want all the I/O operations in the graph to be executed at the beginning and at the end of the graph execution respectively. This can be translated as that all the Input nodes are executed first, then all Functional Nodes and finally all Output Nodes.
+Additionally, we want all the I/O operations in the graph to be executed at the beginning and at the end of the graph execution respectively. 
+This can be translated as that all the Input nodes are executed first, then all Functional Nodes and finally all Output Nodes.
 
 The former constraints indirectly allow to divide the graph in layers which must be executed sequentially and in order.
 These constraints can be translated in the next set of rules which completely define the graph layer structure:
@@ -195,6 +220,27 @@ All the nodes in each layer can be executed in parallel.
 In the image below a Computational Graph and its division in layers is depicted:
 
 \image html computational_graph_overview.png "Graph Layers"
+
+\section graph_exec_modes Computational Graph Execution Modes
+
+In the section above it was described the order in which nodes in the Computational Graph are executed each cycle, understanding that to execute a node means to call its 'compute()' function.
+Additionally, it is possible to filter out a subset of the graph nodes from being executed in each cycle, according to some pre-specified logic.
+This possibility can be accessed by changing the execution mode of the Computational Graph.
+
+Currently, the execution modes available are: 'ALL_NODES' and 'OUTPUT_DRIVEN'.
+In 'ALL_NODES' execution mode all nodes in the graph are executed in the order specified in the section above, i.e. there is no filtering.
+In 'OUTPUT_DRIVEN' mode only those Functional Nodes connected to Output Nodes which will be executed in the current cycle are executed.
+Output Nodes have 'ComputePeriod' property which can be used to define with which periodicity they are executed.
+See \ref output_node "here" for more details.
+
+The behavior described above for the 'OUTPUT_DRIVEN' mode, is concreted in the list of steps listed below, which are executed at the beginning of each cycle:
+- The subset of the output nodes in the graph which should be executed in this cycle is collected
+- For each of these nodes, the subset of functional nodes connected to them, directly or indirectly, is collected
+- All of these subsets of nodes are marked to be executed in this cycle
+- Input nodes are always executed independently of to which functional or output nodes are connected, so new input to the graph is always processed
+
+It must be noted that the different execution modes affect which nodes will be called to execute in each cycle, but each of these nodes will still execute according to \ref node_policies "their own policies".
+
 
 \section graph_data_policies Data Management in the Computational Graph
 
@@ -217,7 +263,7 @@ These rules, which are described below, should be preserved by all node implemen
   <li>Nodes must ensure that pointers published through a given port are valid and the pointed data doesn't change until a new pointer is published through the same port.</li>
 </ol>
 
-InputPort, FunctionalNode and OutputNode have been implemented to preserve these rules. But developers implementing new Input Node types must be careful of respecting rules `1.b`, `2.a` and `2.b`.
+InputPort, FunctionalNode and OutputNode have been implemented to preserve these rules. But developers implementing new InputNode types must be careful of respecting rules `1.b`, `2.a` and `2.b` in order to avoid memory leaks or unexpected runtime errors.
 
 \subsection graph_data_conversion Data Conversion in Input Ports
 
@@ -286,10 +332,11 @@ This means that if the node is not executed it won't publish any new pointers, b
 
 \subsection output_node_policies Output Node
 
-Output Nodes have a single execution policy, with the name `MsgPublishPolicy`. It tells how the node publishes out cached messages.
+Output Nodes have a single execution policy, with the name `PublishFormatPolicy`. It tells how the node publishes out cached messages.
 If set to `SERIES`, the node publishes each message individually and sequentially. If set to 'BATCH', it publishes all cached messages as a batch in a single message.
 
-Output Nodes always consume their cached messages every loop cycle. That is, they publish all messages cached in each loop cycle and clear their cache afterwards.
+Output Nodes can be configured to publish only new messages arrived in the current cycle or to cache the last message and re-publish it in next cycles if no new message arrives. 
+This option is described in more detail above in this /ref output_node "section".
 
 \section graph_fsm Computational Graph Lifecycle
 

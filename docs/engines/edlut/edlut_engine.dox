@@ -1,0 +1,90 @@
+/*! \page edlut_engine EDLUT Engine
+
+The EDLUT Engine brings the possibility to connect the EDLUT simulator to NRP-core.
+
+The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and it accepts two distinct Datapack types which are described \ref edlut_engine_datapacks "below": EdlutDataSpikesDatapack and EdlutDataCurrentsDatapack.
+
+By default there are two datapacks registered for data exchange with an EDLUT engine: "spikes_datapack" and "currents_datapack".
+"spikes_datapack" is of type EdlutDataSpikesDatapack and allows users to both inject spikes into the simulated Neural Network and read spikes from it. 
+"currents_datapack" is of type EdlutDataCurrentsDatapack and can only be used for injecting currents into the simulated Neural Network.
+When "currents_datapack" is requested from the Engine, an empty datapack is returned.
+
+When using the "spikes_datapack" to read spikes, which is done by using it as an input argument of a TF, the datapack contains all spike events that occurred in the EDLUT simulation during the last timestep. The "spikes_time" attribute of the datapack stores an array of spike times, while the "neuron_indexes" attribute contains an array with the indexes of the neurons that produced the spikes.
+
+On the other hand, when the "spikes_datapack" is used to inject spikes into the simulated neural network, typically when it is returned from a TF, the "spikes_time" and "neuron_indexes" attributes must be used to precisely specify which neurons should spike and when the spike events should occur. It is important to note that the "spikes_time" values must be expressed in the global simulation timeframe, rather than being relative to the current simulation time. To achieve the desired behavior, the current simulation time and the length of the Engine timestep must be considered and taken into account when computing the values of the "spikes_time" array.
+
+Similarly, the "currents_datapack" can be used to inject currents into the simulated neural network. 
+In this case, there are also "spikes_time" and "neuron_indexes" attributes in the datapack, which still indicate which neurons should spike and when the event should occur. 
+However, there is an additional attribute,"current_values", which specifies the amplitude of the spike, behaving the latter as a current.
+
+\section edlut_engine_datapacks EDLUT Datapacks
+
+This gRPC implementation uses \ref datapacks_protobuf. Below is shown the protobuf message definition used by the EDLUT Engine:
+
+\include edlut_msgs.proto
+
+<table>
+<caption id="physics_link_attributes_table">EdlutDataSpikesDatapack Attributes</caption>
+<tr><th>Attribute        <th>Description                              <th>Python Type                   <th>C type
+<tr><td>spikes_time      <td>Spikes Firing Time                       <td>numpy.array(numpy.float32)    <td>std::array<float>
+<tr><td>neuron_indexes   <td>Neuron Indexes Firing                    <td>numpy.array(numpy.uint32)     <td>std::array<uint32>
+</table>
+
+<table>
+<caption id="physics_link_attributes_table">EdlutDataCurrentsDatapack Attributes</caption>
+<tr><th>Attribute        <th>Description                              <th>Python Type                   <th>C type
+<tr><td>time             <td>Simulation Time                          <td>float                         <td>float
+<tr><td>spikes_time      <td>Spikes Firing Time                       <td>numpy.array(numpy.float32)    <td>std::array<float>
+<tr><td>neuron_indexes   <td>Neuron Indexes Firing                    <td>numpy.array(numpy.uint32)     <td>std::array<uint32>
+<tr><td>current_values   <td>Current Values                           <td>numpy.array(numpy.float32)    <td>std::array<float>
+</table>
+
+Each of these attributes can be accessed under their respective names from the *data* attribute of both Edlut Datapack types.
+
+\section engine_edlut_config_section Engine Configuration Parameters
+
+This Engine type parameters are defined in EDLUT schema (listed \ref engine_edlut_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas and thus inherits all parameters from them.
+
+To use this engine in an experiment, set `EngineType` to <b>"edlut_grpc_engine"</b>.
+
+- Parameters inherited from \ref engine_base_schema "EngineBase" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>EngineName<td>Name of the engine<td>string<td><td>X<td>
+<tr><td>EngineType<td>Engine type. Used by EngineLauncherManager to select the correct engine launcher<td>string<td><td>X<td>
+<tr><td>EngineProcCmd<td>Engine Process Launch command<td>string<td><td><td>
+<tr><td>EngineProcStartParams<td>Engine Process Start Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineEnvParams<td>Engine Process Environment Parameters<td>string<td>[]<td><td>X
+<tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
+<tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
+<tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+</table>
+
+- Parameters inherited from the \ref engine_grpc "EngineGRPC" schema:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>ServerAddress<td>gRPC Server address. Should this address already be in use, simulation initialization will fail<td>string<td>localhost:9004<td><td>
+</table>
+
+- Parameters specific to this engine type:
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>NetworkFile<td>Path to the storage of file with the architecture of the network<td>string<td><td>X<td>
+<tr><td>WeightsFile<td>Path to the storage of file containing initial weights of neurons<td>string<td><td>X<td>
+<tr><td>NumThreads<td>Number of threads used for parallel computing<td>integer<td>1<td><td>
+<tr><td>SensorialDelay<td>Sensorial delay needed by EDLUT to compensate delays in communication and compute future spikes<td>float<td>0.00<td><td>
+<tr><td>SaveWeightsPeriod<td>Period of time to save synaptic weights in a file<td>float<td>0.00<td><td>
+</table>
+
+\section engine_edlut_schema Schema
+
+As explained above, the schema used by the EDLUT engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
+
+\include engines/engines_edlut.json
+
+
+
+*/

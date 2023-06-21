@@ -1,0 +1,39 @@
+set(PROJECT_NAME "@PROJECT_NAME@")
+set(HEADER_DIRECTORY "@HEADER_DIRECTORY@")
+set(NAMESPACE_NAME "${PROJECT_NAME}")
+
+cmake_minimum_required(VERSION 3.16)
+project("${PROJECT_NAME}")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+set (CMAKE_CXX_STANDARD 17)
+
+include(GNUInstallDirs)
+
+# Path to .proto file(s) to be compiled
+if(NOT DEFINED PROTO_FILES_PATH)
+    set(PROTO_FILES_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
+# Find dependencies
+find_package(NRPGeneralLibrary REQUIRED)
+find_package(NRPProtobuf REQUIRED)
+
+# Variables used to configure and generate the output libraries
+set(NRP_PROTO_CMAKE_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@/${HEADER_DIRECTORY}/cmake")
+set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+set(NRP_PROTO_PYTHON_CMAKE_DATA_DIR "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}")
+set(NRP_PROTO_PYTHON_INSTALL_DIR "${PYTHON_INSTALL_DIR_REL}")
+
+# Include cmake file doing the targets and installs definitions
+include(${NRP_PROTO_CMAKE_DIR}/NRPProtoFile.cmake)
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+)
+install(FILES ${NRP_PROTO_PYTHON_FILES_TARGETS}
+        DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")

@@ -1,8 +1,8 @@
 {"python_base" : {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Python Json Engine Base",
-    "description": "Python Json Engine Base Configuration",
-    "$id": "#PythonJSONEngineBase",
+    "title": "Python Engine Base",
+    "description": "Python Engine Base Configuration",
+    "$id": "#PythonEngineBase",
     "allOf": [
       { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
       {
@@ -10,11 +10,6 @@
           "PythonFileName" : {
             "type": "string",
             "description": "Path to the python script containing the engine definition"
-          },
-          "ServerOptions" : {
-            "type": "string",
-            "default": "",
-            "description": "Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - \"{'key1': value, 'key2': 'value_str'}\". The full list of options can be found at the official page - https://docs.gunicorn.org/en/stable/settings.html."
           }
         },
         "required": ["PythonFileName"]
@@ -30,7 +25,26 @@
       { "$ref": "#/python_base" },
       {
         "properties": {
-          "EngineType": { "enum": ["python_json"] }
+          "EngineType": { "enum": ["python_json"] },
+          "ServerOptions" : {
+            "type": "string",
+            "default": "",
+            "description": "Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - \"{'key1': value, 'key2': 'value_str'}\". The full list of options can be found at the official page - https://docs.gunicorn.org/en/stable/settings.html."
+          }
+        }
+      }
+    ]
+  },
+  "python_grpc" : {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Python Grpc Engine",
+    "description": "Python Grpc Engine Configuration",
+    "$id": "#PythonGRPCEngine",
+    "allOf": [
+      { "$ref": "#/python_base" },
+      {
+        "properties": {
+          "EngineType": { "enum": ["python_grpc"] }
         }
       }
     ]
@@ -47,8 +61,13 @@
           "EngineType": {
             "enum": ["py_sim"]
           },
+          "ServerOptions" : {
+            "type": "string",
+            "default": "",
+            "description": "Additional options that will be used by the server (gunicorn) on startup. The string should contain a Python dictionary in the following format - \"{'key1': value, 'key2': 'value_str'}\". The full list of options can be found at the official page - https://docs.gunicorn.org/en/stable/settings.html."
+          },
           "Simulator": {
-            "enum": ["Opensim","OpenAI","Mujoco"],
+            "enum": ["Opensim","OpenAI","Mujoco","Bullet"],
             "description": "The simulators that are supported"
           },
           "WorldFileName": {

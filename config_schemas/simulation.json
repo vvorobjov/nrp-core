@@ -15,16 +15,11 @@
       "default": 0,
       "description": "Experiment Timeout (in seconds). It refers to simulation time."
     },
-    "SimulationTimestep" : {
-      "type" : "number",
-      "default": 0.01,
-      "description": "Time in seconds the simulation advances in each Simulation Loop. It refers to simulation time."
-    },
     "DataPackProcessor" : {
       "type" : "string",
       "enum" :  ["tf", "cg"],
       "default": "tf",
-      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computation Graph (cg)"
+      "description": "Framework used to process and rely datapack data between engines. Available options are the TF framework (tf) and Computational Graph (cg). Only used if \"SimulationLoop\" parameter is set to \"FTILoop\" (default)"
     },
     "ProcessLauncherType" : {
       "type" : "string",
@@ -52,25 +47,27 @@
       "description": "Status Function that will be used in the experiment"
     },
     "ComputationalGraph" : {
-      "type" : "array",
+      "type": "array",
       "items": "string",
-      "description": "List of filenames defining the ComputationalGraph that will be used in the experiment"
+      "description": "List of filenames defining the CG nodes and connections"
     },
-    "EventLoopTimeout" : {
-      "type" : "number",
-      "description": "Event loop timeout (in seconds). 0 means no timeout. If not specified 'SimulationTimeout' is used instead"
+    "EventLoop" : {
+      "$ref": "json://nrp-core/event_loop.json#/event_loop",
+      "description": "Event Loop configuration parameters. Only used if \"SimulationLoop\" parameter is set to \"EventLoop\""
     },
-    "EventLoopTimestep" : {
-      "type" : "number",
-      "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency. If not specified 'SimulationTimestep' is used instead"
-    },
-    "ConnectROS" : {
+    "ROSNode" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/ROSNode",
       "description": "If this parameter is present a ROS node is started by NRPCoreSim"
     },
-    "ConnectMQTT" : {
+    "MQTTNode" : {
       "$ref": "json://nrp-core/nrp_connectors.json#/MQTTClient",
       "description": "If this parameter is present an MQTT client is instantiated and connected"
+    },
+    "FunctionArgumentsPassingMethod" : {
+      "type" : "string",
+      "enum" :  ["value", "reference"],
+      "default": "value",
+      "description": "Method used for passing DataPacks into Preprocessing, Transceiver, and Status Functions. Passing by reference should be more performant, but extra care must be taken to not alter data used by other Functions and Engines."
     }
   },
   "required": []

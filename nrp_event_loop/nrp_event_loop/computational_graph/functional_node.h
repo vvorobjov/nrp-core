@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,33 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
+/*!
+ * \brief Non-abstract, non-templated base class for the FunctionalNode class
+ *
+ * Its existence is necessary for storing and manipulating functional nodes in the creation of Computaional Graph edges
+ */
+class FunctionalNodeBase : public ComputationalNode {
+public:
+
+    FunctionalNodeBase(const std::string &id) :
+            ComputationalNode(id, ComputationalNode::Functional)
+    {}
+
+    /*!
+     * \brief Returns an InputPort by id.
+     */
+    virtual Port* getInputById(const std::string& /*id*/) { return nullptr; };
+
+    /*!
+     * \brief Returns an OutputPort by id.
+     */
+    virtual Port* getOutputById(const std::string& /*id*/) { return nullptr; };
+
+
+    void configure() override {};
+    void compute() override {};
+};
+
 
 template<typename, typename>
 class FunctionalNode;
@@ -42,9 +69,11 @@ class FunctionalNode;
  *
  * It stores an std::function object, '_function' which is called in the node 'compute' method and which inputs and
  * outputs can be connected to input and output ports respectively
+ *
+ * _function return value is bool, which is used to decide whether to send outputs or not
  */
 template<typename... INPUT_TYPES, typename... OUTPUT_TYPES>
-class FunctionalNode<std::tuple<INPUT_TYPES...>, std::tuple<OUTPUT_TYPES...> > : public ComputationalNode {
+class FunctionalNode<std::tuple<INPUT_TYPES...>, std::tuple<OUTPUT_TYPES...> > : public FunctionalNodeBase {
 
 protected:
 
@@ -67,40 +96,6 @@ protected:
 
 
 public:
-
-    /*!
-     * \brief Configure. Print warnings if node is not fully connected.
-     */
-    void configure() override
-    {
-        if(boundInputPorts() < std::tuple_size_v<inputs_t>) {
-            std::stringstream s;
-            s << "Functional node " << this->id() << " has been declared with " << std::tuple_size_v<inputs_t> <<
-              " inputs, but only " << boundInputPorts() << " are bounded" << std::endl;
-            NRPLogger::info(s.str());
-        }
-
-        if(boundOutputPorts() < std::tuple_size_v<outputs_t>) {
-            std::stringstream s;
-            s << "Functional node " << this->id() << " has been declared with " << std::tuple_size_v<outputs_t>
-                      <<
-                      " outputs, but only " << boundOutputPorts() << " are bounded" << std::endl;
-            NRPLogger::info(s.str());
-        }
-    }
-
-    /*!
-     * \brief Compute. Execute '_function' and send its outputs out
-     */
-    void compute() override final
-    {
-        if(_execPolicy == FunctionalNodePolicies::ExecutionPolicy::ALWAYS || _hasNew) {
-            _function(_params);
-            sendOutputs();
-        }
-
-        _hasNew = false;
-    }
 
     /*!
      * \brief Creates an InputPort and connect it to an input specified by N. Returns the created port.
@@ -153,7 +148,7 @@ public:
     /*!
      * \brief Returns an InputPort by id.
      */
-    Port* getInputById(const std::string& id)
+    Port* getInputById(const std::string& id) override
     {
         for(auto& e : _inputPorts)
             if (e && e->id() == id)
@@ -216,14 +211,17 @@ public:
     /*!
      * \brief Returns an OutputPort by id.
      */
+    Port* getOutputById(const std::string& id) override
+    { return getOutputByIdTuple(id); }
+
     template <std::size_t N = 0>
-    Port* getOutputById(const std::string& id)
+    Port* getOutputByIdTuple(const std::string& id)
     {
         if constexpr (N < sizeof...(OUTPUT_TYPES)) {
             if (std::get<N>(_outputPorts) && std::get<N>(_outputPorts)->id() == id)
                 return std::get<N>(_outputPorts).get();
             else
-                return getOutputById<N+1>(id);
+                return getOutputByIdTuple<N+1>(id);
         }
 
         std::stringstream s;
@@ -236,10 +234,45 @@ public:
 protected:
 
     /*!
+     * \brief Configure. Print warnings if node is not fully connected.
+     */
+    void configure() override
+    {
+        if(boundInputPorts() < std::tuple_size_v<inputs_t>) {
+            std::stringstream s;
+            s << "Functional node " << this->id() << " has been declared with " << std::tuple_size_v<inputs_t> <<
+              " inputs, but only " << boundInputPorts() << " are bounded" << std::endl;
+            NRPLogger::info(s.str());
+        }
+
+        if(boundOutputPorts() < std::tuple_size_v<outputs_t>) {
+            std::stringstream s;
+            s << "Functional node " << this->id() << " has been declared with " << std::tuple_size_v<outputs_t>
+              <<
+              " outputs, but only " << boundOutputPorts() << " are bounded" << std::endl;
+            NRPLogger::info(s.str());
+        }
+    }
+
+    /*!
+     * \brief Compute. Execute '_function' and send its outputs out
+     */
+    void compute() override final
+    {
+        if(_execPolicy == FunctionalNodePolicies::ExecutionPolicy::ALWAYS || _hasNew) {
+            // Execute _function and send outputs if _function returns true
+            if(_function(_params))
+                sendOutputs();
+        }
+
+        _hasNew = false;
+    }
+
+    /*!
      * \brief Constructor
      */
-    FunctionalNode(const std::string &id, std::function<void(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
-            ComputationalNode(id, ComputationalNode::Functional),
+    FunctionalNode(const std::string &id, std::function<bool(params_t&)> f, FunctionalNodePolicies::ExecutionPolicy policy = FunctionalNodePolicies::ExecutionPolicy::ON_NEW_INPUT) :
+            FunctionalNodeBase(id),
             _function(f),
             _execPolicy(policy)
     { initInputs(); }
@@ -303,10 +336,13 @@ protected:
     /*! \brief function performing main computation in this node */
     params_t _params;
     /*! \brief function performing main computation in this node. It sets the output part of _params from its input part */
-    std::function<void(params_t&)> _function;
+    std::function<bool(params_t&)> _function;
 
     friend class FunctionalNodeFactory;
     friend class ComputationalNodes_FUNCTIONAL_NODE_Test;
+    friend class ComputationalNodes_FUNCTIONAL_NODE_FACTORY_Test;
+    friend class ComputationalGraphPythonNodes_PYTHON_FUNCTIONAL_NODE_Test;
+    friend class ComputationalGraphPythonNodes_PYTHON_DECORATORS_BASIC_Test;
 
 private:
 

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,15 @@ public:
     /*!
      * \brief Constructor
      */
-    OutputSpinnakerNode(const std::string &id, const std::string &label) :
-            OutputNode(id),
+    OutputSpinnakerNode(const std::string &id, const std::string &label,
+                        bool publishFromCache = false,
+                        unsigned int computePeriod = 1) :
+            OutputNode(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 0, computePeriod),
             _label(label)
     { }
+
+    std::string typeStr() const override
+    { return "ToSpinnaker"; }
 
     ~OutputSpinnakerNode()
     {
@@ -89,15 +94,18 @@ class OutputSpinnakerEdge : public SimpleOutputEdge<nlohmann::json, OutputSpinna
 
 public:
 
-    OutputSpinnakerEdge(const std::string &keyword, const std::string &label) :
-            SimpleOutputEdge<nlohmann::json, OutputSpinnakerNode>(keyword, label+"_output", label),
+    OutputSpinnakerEdge(const std::string &keyword, const std::string &label,
+                        bool publishFromCache = false,
+                        unsigned int computePeriod = 1) :
+            SimpleOutputEdge<nlohmann::json, OutputSpinnakerNode>(keyword, label+"_output", label,
+                                                                  publishFromCache, computePeriod),
             _label(label)
     {}
 
 protected:
 
     OutputSpinnakerNode* makeNewNode() override
-    { return new OutputSpinnakerNode(this->_id, _label); }
+    { return new OutputSpinnakerNode(this->_id, _label, this->_publishFromCache, this->_computePeriod); }
 
 private:
 

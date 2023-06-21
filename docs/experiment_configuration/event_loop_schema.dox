@@ -1,0 +1,34 @@
+/*! \page event_loop_schema Event Loop Schema
+
+The Event Loop implements asynchronous interaction between simulations in NRP-core. It can be used in NRP-core experiments as an alternative to the default FTILoop.
+Additional information can be found in this \ref event_loop "page".
+In order to use it in an experiment the "SimulationLoop" parameter must be set to "EventLoop" in the experiment configuration file.
+
+Below is a list of all the parameters needed to configure the EventLoop.
+
+\section event_loop_schema_parameters Parameters
+
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array<th>Values
+<tr><td>ExecutionMode<td>\ref graph_exec_modes "Execution Mode" that will be used when running the Event Loop<td>enum<td>"AllNodes"<td><td><td>"AllNodes", "OutputDriven"
+<tr><td>Timeout<td>Event loop timeout (in seconds). 0 means no timeout<td>integer<td>0<td><td><td>
+<tr><td>Timestep<td>Time in seconds the event loop advances in each loop<td>number<td>0.01<td><td><td>
+<tr><td>TimestepWarnThreshold<td>Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the "Timestep" parameter<td>number<td>0.001<td><td><td>
+</table>
+
+\section event_loop_schema_example Example
+
+\code{.py}
+{
+    "ExecutionMode": "OutputDriven",
+    "Timeout": 10,
+    "Timestep": 0.02,
+    "TimestepWarnThreshold": 0.002
+}
+\endcode
+
+\section event_loop_schema_schema Schema
+
+\include event_loop.json
+
+*/

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@
 
 #include <gazebo/gazebo.hh>
 #include <string_view>
+#include <nlohmann/json.hpp>
+
+#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 
 namespace gazebo
 {
@@ -53,6 +56,21 @@ namespace gazebo
              * \brief Engine name, read from program opts
              */
             std::string _engineName;
+
+        /*!
+         * \brief Path to Protobuf Plugins, read from program opts
+         */
+        std::string _protobufPluginsPath;
+
+        /*!
+         * \brief List of Protobuf Plugins, read from program opts
+         */
+        nlohmann::json _protobufPlugins;
+
+        /*!
+         * \brief Pointer to the grpc server managing the communication with nrp-core
+         */
+        std::unique_ptr<EngineGrpcServer> _grpcServer;
     };
 
     GZ_REGISTER_SYSTEM_PLUGIN(NRPCommunicationPlugin)

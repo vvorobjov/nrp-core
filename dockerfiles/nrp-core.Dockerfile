@@ -24,10 +24,14 @@ COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies/apt/requirements.cle.txt 
 RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
 
 # If this image will be used for TVB integration, then flask==1.1.4 is needed and after markupsafe (included in flask) has to be downgraded to 2.0.1
-RUN pip install grpcio-tools pytest psutil flask gunicorn flask_cors mpi4py docopt docker
+RUN pip install "grpcio-tools>=1.49.1" pytest psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=1.26,<2.0" paho-mqtt
 
 # Experiments
 RUN pip install opencv-python
+
+# Install python_on_whales for the example of invoking nrp-core remotely with compose (See guides/remote_docker_compose.dox)
+# Needed for tests
+RUN pip install python-on-whales pyyaml
 
 # Install Documentation dependencies
 

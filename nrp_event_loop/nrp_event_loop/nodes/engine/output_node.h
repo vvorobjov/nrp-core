@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@
 #include "nrp_event_loop/computational_graph/output_node.h"
 #include "nrp_event_loop/python/output_edge.h"
 
-#include "nrp_event_loop/utils/graph_utils.h"
-
 /*!
  * \brief Output node used to connect the computational graph with an EngineClient
  */
@@ -44,38 +42,40 @@ public:
     /*!
      * Constructor
      */
-    OutputEngineNode(const std::string &id, const std::string &engineName) :
-            OutputNode(id, OutputNodePolicies::SERIES, 1),
+    OutputEngineNode(const std::string &id, const std::string &engineName,
+                     bool publishFromCache = false,
+                     unsigned int computePeriod = 1) :
+            OutputNode(id, OutputNodePolicies::PublishFormatPolicy::SERIES, publishFromCache, 1, computePeriod),
             _engineName(engineName)
     { }
+
+    std::string typeStr() const override
+    { return "ToEngine"; }
 
     /*!
      * Returns all datapacks stored in the node and clears the cache
      */
-    std::vector<DataPackInterface*> getDataPacks()
+    datapacks_set_t getDataPacks()
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
-        std::vector<DataPackInterface*> devs;
-        for(auto &[id, dev] : _dataStore)
-            devs.push_back(dev);
+        datapacks_set_t dataPacks;
+        for(auto &[id, dataPackRawPtr] : _dataStore)
+            dataPacks.insert(DataPackInterfaceConstSharedPtr(dataPackRawPtr));
         _dataStore.clear();
 
-        return devs;
+        return dataPacks;
     }
 
 protected:
 
-    void sendSingleMsg(const std::string& id, const DataPackInterfacePtr * data) override
+    void sendSingleMsg(const std::string& /*id*/, const DataPackInterfacePtr * data) override
     {
         std::lock_guard<std::mutex> lock(_dataMutex);
 
         // OutputNode already checks for nullptr, but since we have a double pointer here an extra check is needed
         if(!(*data))
             return;
-        if(id != (*data)->name())
-            NRPLogger::info("In OutputEngineNode '" + this->_engineName + "'. Datapack with Id '" + (*data)->name() +
-            "' was sent to port '" + id + "' and will not be accepted due to this mismatch. Please check your graph configuration ");
         else if(_engineName != (*data)->engineName())
             NRPLogger::info("In OutputEngineNode '" + this->_engineName + "'. Received datapack with Id '" + (*data)->name() +
                             "' linked to Engine '" + (*data)->engineName() + "'. This node only accept datapacks linked to Engine '" +
@@ -101,13 +101,15 @@ private:
 
 };
 
+
 class OutputEngineEdge : public SimpleOutputEdge<DataPackInterface*, OutputEngineNode> {
 
 public:
 
     OutputEngineEdge(const std::string &keyword, const std::string &address) :
-            SimpleOutputEdge(keyword, extractNodePortFromAddress(address).first+"_output", extractNodePortFromAddress(address).second),
-            _engineName(extractNodePortFromAddress(address).first)
+            SimpleOutputEdge<DataPackInterface*, OutputEngineNode>(keyword, ComputationalNode::parseNodeAddress(address, false).first+"_output",
+                             "anonymous_port"+std::to_string(port_n++), false, 1),
+            _engineName(ComputationalNode::parseNodeAddress(address, false).first)
     {}
 
 protected:
@@ -118,6 +120,8 @@ protected:
 private:
 
     std::string _engineName;
+
+    static size_t port_n;
 };
 
 

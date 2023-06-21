@@ -1,0 +1,46 @@
+{
+	"SimulationName": "iCub Visual Tracking experiment",
+	"SimulationDescription": "In this experiment the iCub robot performs a Visual Tracking task",
+	"SimulationTimeout": 10,
+	"EngineConfigs": [
+		{
+			"EngineType": "gazebo_grpc",
+			"EngineName": "gazebo",
+			"GazeboWorldFile": "virtual_room.sdf",
+			"GazeboSDFModels": [
+				{
+					"Name": "iCub",
+					"File": "icub.sdf",
+					"InitPose": "0 0 0.644 0 0 -1.570796"
+				},
+				{
+					"Name": "Target",
+					"File": "target.sdf",
+					"InitPose": "0 2.42 1.2 1.6 0 0"
+				}
+
+			],
+			"EngineProcStartParams": ["--verbose"]
+		},
+		{
+			"EngineType": "nest_json",
+			"EngineName": "nest",
+			"NestInitFileName": "braitenberg.py",
+			"EngineEnvParams": ["PYNEST_QUIET=1"]
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "move_target",
+			"FileName": "move_target.py"
+		},
+		{
+			"Name": "mot_tf",
+			"FileName": "mot_tf.py"
+		},
+		{
+			"Name": "eye_sensor_transmit",
+			"FileName": "eye_sensor_transmit.py"
+		}
+	]
+}

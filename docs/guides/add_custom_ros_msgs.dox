@@ -1,31 +1,69 @@
-/*! \page tutorial_add_ros_msg_definition Adding new ROS message definitions
+/*! \page guide_ros_in_nrp_core Connecting with ROS from NRP-Core Experiments
 
-This guide shows how to extend the ROS message definitions available in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and ROS Engines.
+The implemented mechanism to interact with ROS from NRP-Core experiments is via \ref ros_nodes "ROS nodes" in the \ref computational_graph "Computational Graph" (these nodes are a type of node in the graph, not to be confused with ROS nodes in the ROS architecture).
+This \ref python_graph "page" describes how to define Computational Graphs in Python.
+And this \ref event_loop_configuration "page" contains information on how to configure experiments to use a Computational Graph instead of Transceiver Functions.
 
-The ROS messages definitions are stored in a <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">separate repository</a>, in the *nrp_ros_msgs* directory. This repository is checked out as a git submodule during CMake project configuration into *nrp-core-msgs* folder. You can skip the automatic checkout by setting `-D GIT_SUBMODULE=OFF` when calling CMake, then you should manually make sure that the messages definitions on their place in *nrp-core-msgs* folder.
+Please notice, that in order to connect an NRP-Core experiment with ROS and being able to subscribe and publish to topics from the Computational Graph, the parameter *ROSNode* must be included in the experiment configuration (more information \ref nrp_connectors_schema "here").
 
-The process of adding the new definitions is very simple and consists of these steps:
+A complete example experiment using Computational Graph ROS nodes can be found in the folder `examples/event_loop_examples/husky_braitenberg_ros` in the nrp-core repository.
 
-1. Add your new message definitions into a separate `.msg` file. Refer to <a href="http://wiki.ros.org/action/show/msg?action=show&redirect=ROS%2FMessage_Description_Language">creating a ROS msg guide</a> to check available possibilities.
-2. Place the new `.msg` file in the folder `nrp-core-msgs/nrp_ros_msgs/msg`. In this way your message definitions will be automatically compiled during the NRP-core build process. Also the Python bindings required (see \ref datapacks_rosmsg section) to use these new msg classes in transceiver functions will be generated and compiled.
-3. Add the new `.msg` to `add_message_files()` FILES in `nrp-core-msgs/nrp_ros_msgs/CMakeLists.txt` so it is compiled:
+Finally, NRP-Core instantiates and stores C++ ROS message objects internally, but the Computational Graph is coded in Python and only those ROS message types for which compatible Python bindings has been generated can be used in experiments.
+
+Below this line there is information on how to generate Python bindings for ROS message definitions so they can be used in NRP-Core experiments and some noticeable differences with the native ROS messages Python API.
+
+\section generating_ros_python_bindings Generating Python bindings for ROS messages
+
+By default Python bindings are generated for all message types in the next ROS packages:
+- nrp_ros_msgs (package containing NRP-core ROS message definitions)
+- std_msgs
+- geometry_msgs
+- sensor_msgs
+
+In order to generate Python bindings for ROS message types defined in other ROS packages, the names of the latter must be pass to cmake by defining the variable `NRP_ROS_MSGS_PACKAGES`.
+Therefore, in order to generate Python bindings for new ROS messages *it is needed to re-configure and build NRP-Core*.
+
+As an example, if you would like to use ROS msgs from the ROS packages `navigation_msgs` and `my_ros_package` in an NRP-Core experiments, NRP-Core should be configured with the command below:
+
 \code
-add_message_files(
-  FILES
-  Test.msg
-)
+cmake [other options] -DNRP_ROS_MSGS_PACKAGES=navigation_msgs;my_ros_package ..
 \endcode
-4. If needed, extend DEPENDENCIES in generates_messages() function with the necessary packages your messages depend on:
-\code
-generate_messages(DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
+
+The generated Python bindings can be found under the Pythonmodule `nrp_core.data.nrp_ros`. E.g.
+
+\code{.py}
+from  nrp_core.data.nrp_ros.navigation_msgs import Path
+p = Path()
 \endcode
-5. Again only if needed, add these dependencies to `package.xml`:
-\code
-<build_depend>std_msgs</build_depend>
-<run_depend>std_msgs</run_depend>
+
+If any of the packages listed in `NRP_ROS_MSGS_PACKAGES` does not exist in the ROS environment, there will be a cmake error.
+
+\section ros_python_bindings_differences API differences between native Python ROS messages and generated Python bindings
+
+The generated binding classes match the original ROS Python API with only one exception. 
+In ROS Python, fields of type `array` are stored in objects of type `list` while in the case of the Python binding generated by NRP-core a new class is created for each `array field`.
+To illustrate the former, consider the case of `UInt64MultiArray` message defined in the `std_msgs` package:
+
+\code{.msg}
+# msg definition in std_msgs package
+MultiArrayLayout  layout        # specification of data layout
+uint64[]          data          # array of data
 \endcode
+
+In ROS Python the field `data` is stored in a `list`, while in the NRP-core Python wrapper class it is stored in a new Python class of type `UInt64MultiArray_data`:
+
+\code{.py}
+import nrp_core.data.nrp_ros.std_msgs as nrp_std
+a = nrp_std.UInt64MultiArray()
+type(a.data) # output is <class 'nrp_core.data.nrp_ros.std_msgs.UInt64MultiArray_data'>
+\endcode
+
+This new class behaves similarly to a Python `list`. 
+It supports `append` and `extend` methods for adding new data. 
+Its elements can  accessed by index or iterated and `len` will return the number of elements.
+But other methods of `list` type are not supported as `index` or `sort`.
+Also attempting to append or extend the object with elements of the wrong type (depending with the array field type) will raise a `TypeError` exception.
+
+Another important difference between native Python ROS messages and the NRP-Core Python bindings counterpart is that Python ROS messages allows to initialize the message fields in the object constructor while the NRP-Core Python bindings only have an empty constructor.
 
 */

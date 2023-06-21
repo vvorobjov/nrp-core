@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,27 +22,33 @@
 
 #include "nrp_link_controller_plugin/nrp_link_controller_plugin.h"
 
-#include "nrp_communication_controller/nrp_communication_controller.h"
+#include "nrp_gazebo_json_engine/engine_server/nrp_communication_controller.h"
 
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/Link.hh>
 
 void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr)
 {
-    auto &commControl = NRPCommunicationController::getInstance();
+    try {
+        auto &commControl = NRPJSONCommunicationController::getInstance();
 
-    // Register a datapack for each link
-    auto links = model->GetLinks();
-    for(const auto &link : links)
-    {
-        const auto datapackName = NRPCommunicationController::createDataPackName(*this, link->GetName());
+        // Register a datapack for each link
+        auto links = model->GetLinks();
+        for (const auto &link: links) {
+            const auto datapackName = NRPJSONCommunicationController::createDataPackName(model->GetName(),
+                                                                                         link->GetName());
 
-        NRPLogger::info("Registering link controller for link [ {} ]", datapackName);
+            NRPLogger::info("Registering Link datapack [ {} ]", datapackName);
 
-        this->_linkInterfaces.push_back(LinkDataPackController(datapackName, link));
-        commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+            this->_linkInterfaces.push_back(LinkDataPackController(datapackName, link));
+            commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+        }
+
+        // Register plugin
+        commControl.registerModelPlugin(this);
     }
-
-    // Register plugin
-    NRPCommunicationController::getInstance().registerModelPlugin(this);
+    catch (NRPException&) {
+        throw NRPException::logCreate("Failed to register Link datapack. Ensure that this NRP JSON Link plugin is "
+                                      "used in conjunction with a gazebo_json Engine in an NRP Core experiment.");
+    }
 }

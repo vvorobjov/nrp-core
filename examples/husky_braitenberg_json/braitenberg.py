@@ -6,6 +6,7 @@ This file contains the setup of the neuronal network running the Husky experimen
 
 import nest
 from nrp_core.engines.nest_json import RegisterDataPack, CreateDataPack
+from nrp_core.engines.nest_json import brain_devices as bd
 
 SENSORPARAMS = {'E_L': -60.5,
                 'C_m': 25.0,
@@ -30,18 +31,6 @@ GO_ON_PARAMS = {'E_L': -60.5,
                 'tau_syn_ex': 2.5,
                 'tau_syn_in': 2.5,
                 'V_m': -60.5}
-
-LEAKY_PARAMS = {
-    'V_th': 1e10,
-    'C_m': 1000.0,
-    'tau_m': 10.0,
-    'tau_syn_ex': 2.,
-    'tau_syn_in': 2.,
-    'E_L': 0.0,
-    'V_reset': 0.0,
-    't_ref': 0.1,
-    'I_e': 0.0
-}
 
 nest.set_verbosity("M_WARNING")
 nest.ResetKernel()
@@ -79,35 +68,16 @@ SYN = {'synapse_model': 'base_synapse', 'weight': WEIGHT_GO_ON_TO_RIGHT_ACTOR, '
 nest.Connect(CIRCUIT[5:6], CIRCUIT[7:8], 'all_to_all', SYN)
 
 # Left side poisson generator
-lpg = CreateDataPack('lpg', 'poisson_generator')
+bd.PoissonSpikeGenerator(nest, 'lpg', CIRCUIT[slice(0, 3, 2)])
 
 # Right side poisson generator
-rpg = CreateDataPack('rpg', 'poisson_generator')
+bd.PoissonSpikeGenerator(nest, 'rpg', CIRCUIT[slice(1, 4, 2)])
 
 # Go poisson generator
-gpg = CreateDataPack('gpg', 'poisson_generator')
-
-# Connect datapacks
-nest.Connect(lpg, CIRCUIT[slice(0, 3, 2)])
-nest.Connect(rpg, CIRCUIT[slice(1, 4, 2)])
-nest.Connect(gpg, CIRCUIT[4])
+bd.PoissonSpikeGenerator(nest, 'gpg', CIRCUIT[4])
 
 # Create and connect leaky integrator cells
-leaky_cells = nest.Create('iaf_psc_exp', 2, LEAKY_PARAMS)
-nest.SetStatus(leaky_cells, {'V_m': LEAKY_PARAMS['E_L']})
-
-nest.Connect(CIRCUIT[6],
-             leaky_cells[0],
-             conn_spec='all_to_all',
-             syn_spec={'synapse_model': 'static_synapse', 'weight': 10.0, 'delay': 0.1})
-
-nest.Connect(CIRCUIT[7],
-             leaky_cells[1],
-             conn_spec='all_to_all',
-             syn_spec={'synapse_model': 'static_synapse', 'weight': 10.0, 'delay': 0.1})
-
-# Register wheel outputs
-RegisterDataPack('actors', leaky_cells)
+bd.LeakyIntegratorAlpha(nest, 'actors', CIRCUIT[6:8], n=2, conn_spec='one_to_one')
 
 # Simulate
 # sd = nest.Create('spike_recorder')

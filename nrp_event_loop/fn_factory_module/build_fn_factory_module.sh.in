@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Vars configured from nrp-core cmake
+FN_FACTORY_MODULE_INSTALL_DIR=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@/@HEADER_DIRECTORY@/cmake/fn_factory_module
+
+# Check arguments
+if ! [ "$#" -ge 1 ]; then
+    echo "Usage: build_fn_module.sh HEADER_FILE_PATH [CMAKE ARGUMENTS]" >&2
+    exit 1
+fi
+
+if ! [ -e "$1" ]; then
+    echo "File [$1] can't be found" >&2
+    exit 1
+fi
+
+HEADER_FILE_PATH="${PWD}/$1"
+shift
+
+# Configure
+rm -rf .build_fn_factory_module
+mkdir .build_fn_factory_module
+cd .build_fn_factory_module
+cp ${FN_FACTORY_MODULE_INSTALL_DIR}/CMakeLists.txt .
+
+cmake -DHEADER_FILE_PATH=${HEADER_FILE_PATH} -DFN_FACTORY_MODULE_INSTALL_DIR=${FN_FACTORY_MODULE_INSTALL_DIR} $@ .
+status=$?
+if [ $status -ne 0 ]; then
+    exit $status
+fi
+
+# build
+make
+status=$?
+if [ $status -ne 0 ]; then
+    exit $status
+fi
+
+if [ -e "libFNFactoryModule.so" ]; then
+    mv libFNFactoryModule.so ..
+fi

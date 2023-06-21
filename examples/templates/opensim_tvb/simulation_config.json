@@ -1,41 +1,42 @@
 {
-	"SimulationName": "tvb_opensim",
-	"SimulationDescription": "Example of a simple interaction between OpenSim and TVB. TVB brain model controls movements of an arm, modelled in OpenSim, in a close-loop manner",
-	"SimulationTimeout": 50,
-	"EngineConfigs": 
-	[
-		{
-			"EngineType": "py_sim",
-			"EngineName": "opensim",
-			"Simulator":"Opensim",
-			"EngineTimestep": 0.01,
-			"PythonFileName": "opensim_engine.py",
-			"WorldFileName":"arm26/arm26_ground_offset.osim",
-			"Visualizer": false
-		},
-		{
-			"EngineType": "python_json",
-			"EngineTimestep": 0.01,
-			"EngineName": "tvb",
-			"PythonFileName": "tvb_engine.py"
-		},
+    "SimulationName": "tvb_opensim",
+    "SimulationDescription": "Example of a simple interaction between OpenSim and TVB. TVB brain model controls movements of an arm, modelled in OpenSim, in a close-loop manner",
+    "SimulationTimeout": 50,
+    "EngineConfigs": 
+    [
+        {
+            "EngineType": "py_sim",
+            "EngineName": "opensim",
+            "Simulator":"Opensim",
+            "EngineTimestep": 0.01,
+            "PythonFileName": "opensim_engine.py",
+            "WorldFileName":"arm26/arm26_ground_offset.osim",
+            "Visualizer": false
+        },
+        {
+            "EngineType": "python_json",
+            "EngineTimestep": 0.01,
+            "EngineName": "tvb",
+            "PythonFileName": "tvb_engine.py"
+        },
         {
             "EngineType": "datatransfer_grpc_engine",
             "EngineName": "datatransfer_engine",
             "MQTTBroker": "localhost:1883",
             "simulationID": "0",
+            "MQTTPrefix": "localhost",
             "dumps": []
         }
-	],
-	"DataPackProcessingFunctions":
-	[
-		{
-			"Name": "rec_joints",
-			"FileName": "rec_joints.py"
-		},
-		{
-			"Name": "send_cmd",
-			"FileName": "send_cmd.py"
-		}
-	]
+    ],
+    "DataPackProcessingFunctions":
+    [
+        {
+            "Name": "rec_joints",
+            "FileName": "rec_joints.py"
+        },
+        {
+            "Name": "send_cmd",
+            "FileName": "send_cmd.py"
+        }
+    ]
 }

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,21 +31,26 @@ using namespace nlohmann;
 void gazebo::NRPLinkControllerPlugin::Load(gazebo::physics::ModelPtr model, sdf::ElementPtr)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-    
-    auto &commControl = NRPCommunicationController::getInstance();
+    try {
+        auto &commControl = CommControllerSingleton::getInstance().engineCommController();
 
-    // Register a datapack for each link
-    auto links = model->GetLinks();
-    for(const auto &link : links)
-    {
-        const auto datapackName = NRPCommunicationController::createDataPackName(*this, link->GetName());
+        // Register a datapack for each link
+        auto links = model->GetLinks();
+        for (const auto &link: links) {
+            const auto datapackName = NRPGazeboCommunicationController::createDataPackName(model->GetName(),
+                                                                                         link->GetName());
 
-        NRPLogger::info("Registering link controller for link [ {} ]", datapackName);
+            NRPLogger::info("Registering Link datapack [ {} ]", datapackName);
 
-        this->_linkInterfaces.push_back(LinkGrpcDataPackController(datapackName, link));
-        commControl.registerDataPack(datapackName, &(this->_linkInterfaces.back()));
+            this->_linkInterfaces.push_back(LinkGrpcDataPackController(datapackName, link));
+            commControl.registerDataPackWithLock(datapackName, &(this->_linkInterfaces.back()));
+        }
+
+        // Register plugin
+        commControl.registerModelPlugin(this);
     }
-
-    // Register plugin
-    commControl.registerModelPlugin(this);
+    catch(NRPException&) {
+        throw NRPException::logCreate("Failed to register Link datapack. Ensure that this NRP Link plugin is "
+                                      "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
+    }
 }

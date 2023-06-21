@@ -21,15 +21,15 @@ void ExampleEngineClient::shutdown()
 
 }
 
-void ExampleEngineClient::sendDataPacksToEngine(const datapacks_ptr_t &datapacksArray)
+void ExampleEngineClient::sendDataPacksToEngine(const datapacks_set_t &dataPacks)
 {
-    (void)datapacksArray;
+    (void)dataPacks;
 }
 
-EngineClientInterface::datapacks_set_t ExampleEngineClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
+datapacks_vector_t ExampleEngineClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
 {
     (void)datapackIdentifiers;
-    return EngineClientInterface::datapacks_set_t();
+    return datapacks_vector_t();
 }
 
 const std::vector<std::string> ExampleEngineClient::engineProcStartParams() const

@@ -9,6 +9,7 @@ For each of these definitions, a datapack Python class is generated, see \ref da
 - GazeboCameraDataPack: contains a camera image
 - GazeboJointDataPack: contains a single joint state information
 - GazeboLinkDataPack: contains a single link state information
+- GazeboModelDataPack: contains a single model state information
 
 In the case of the JSON implementation, even if \ref datapacks_json, the content of the datapacks data will be the same, but stored as a JSON object. This content is summarized below for each datapack type.
 

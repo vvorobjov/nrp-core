@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.3.1)
+set(NRP_VERSION 1.4.0)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -22,8 +22,13 @@ include(CMakeDependentOption)
 # See the section "common NRP-core CMake options" for the explanation about ENABLE_SIMULATOR parameters
 option(ENABLE_NEST "Enable nest-simulator support" ON)
 cmake_dependent_option(BUILD_NEST_ENGINE_SERVER "Build the server part of the nest-simulator engines" ON "ENABLE_NEST" OFF)
+
 option(ENABLE_GAZEBO "Enable Gazebo support" ON)
 cmake_dependent_option(BUILD_GAZEBO_ENGINE_SERVER "Build the server part of the Gazebo engines" ON "ENABLE_GAZEBO" OFF)
+
+option(ENABLE_EDLUT "Enable EDLUT support" ON)
+option(EDLUT_WITH_CUDA "Enable EDLUT with cuda support" OFF)
+cmake_dependent_option(BUILD_EDLUT_ENGINE_SERVER "Build the server part of the EDLUT engine" ON "ENABLE_EDLUT" OFF)
 
 option(COVERAGE "Enables code coverage" OFF)
 option(BUILD_RST "Convert Doxygen documentation into the reStructuredText source files." OFF)
@@ -92,28 +97,6 @@ if(${ENABLE_TESTING})
         add_subdirectory(examples)
     endif()
 endif()
-
-
-##########################################
-## Python 3 libraries
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-
-##########################################
-## Boost Python libraries
-## find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
-add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
-find_package(Boost REQUIRED)
-if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
-    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
-else()
-    set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}" "numpy${Python3_VERSION_MAJOR}")
-endif()
-find_package(Boost REQUIRED COMPONENTS ${BOOST_PYTHON_COMPONENT} filesystem)
-set(BOOST_PYTHON ${BOOST_PYTHON_COMPONENT})
-list(TRANSFORM BOOST_PYTHON PREPEND "Boost::")
-
-set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
-
 
 ##########################################
 ## Doxygen
@@ -184,7 +167,19 @@ endif()
 add_subdirectory(nrp_protobuf)
 
 # ROS
-set(NRP_CATKIN_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "Catkin packages containing msg definitions supported in nrp-core")
+if(NOT DEFINED NRP_ROS_MSGS_PACKAGES)
+    set(NRP_ROS_MSGS_PACKAGES "")
+endif()
+
+set(DEFAULT_NRP_ROS_MSGS_PACKAGES "std_msgs;geometry_msgs;sensor_msgs" CACHE INTERNAL "ROS Catkin packages containing msg definitions supported in nrp-core")
+foreach(PACK ${DEFAULT_NRP_ROS_MSGS_PACKAGES})
+    if(NOT PACK IN_LIST NRP_ROS_MSGS_PACKAGES)
+        list(APPEND NRP_ROS_MSGS_PACKAGES ${PACK})
+    endif()
+endforeach()
+
+message(STATUS "NRP_ROS_MSGS_PACKAGES: ${NRP_ROS_MSGS_PACKAGES}")
+
 if(ENABLE_ROS)
     message(STATUS "Building ROS msgs Python bindings")
     add_definitions(-DROS_ON)
@@ -246,19 +241,32 @@ else()
     message(STATUS "nest-simulator engines will not be built")
 endif()
 
+## EDLUT Engine
+if(ENABLE_EDLUT)
+    message(STATUS "Building EDLUT engine")
+    add_subdirectory(nrp_edlut_grpc_engine)
+else()
+    message(STATUS "EDLUT engine will not be built")
+endif()
+
 ## Python Engine
 add_subdirectory(nrp_python_json_engine)
+add_subdirectory(nrp_python_grpc_engine)
 
 ## Unity gRPC engine
 add_subdirectory(nrp_unity_grpc_engine)
 
 add_subdirectory(nrp_pysim_engines)
 ## Data Transfer Engine
-add_subdirectory("nrp_datatransfer_grpc_engine")
+add_subdirectory(nrp_datatransfer_grpc_engine)
 
 ##########################################
 ## NRP Simulation
 add_subdirectory(nrp_simulation)
+
+##########################################
+## NRP clients
+add_subdirectory(nrp_clients/python)
 
 ##########################################
 ## cppcheck
@@ -336,6 +344,7 @@ endif()
 set(DOXYGEN_EXAMPLE_PATH
         ${DOXYGEN_EXAMPLE_PATH}
         "docs/example_engine"
+        "docs/example_add_proto"
         "examples"
         "config_schemas"
         "nrp_gazebo_engines/nrp_gazebo_json_engine/nrp_gazebo_json_engine/config/gazebo_json_config.h"
@@ -363,6 +372,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/architecture_overview/engine.dox"
         "docs/architecture_overview/nrp_simulation.dox"
         "docs/architecture_overview/plugin_system.dox"
+        "docs/architecture_overview/functions.dox"
         "docs/architecture_overview/process_launcher.dox"
         "docs/architecture_overview/launch_command.dox"
         "docs/architecture_overview/simulation_loop.dox"
@@ -379,6 +389,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/experiment_configuration/engine_schema.dox"
         "docs/experiment_configuration/transceiver_function_schema.dox"
         "docs/experiment_configuration/simulation_schema.dox"
+        "docs/experiment_configuration/event_loop_schema.dox"
         "docs/experiment_configuration/json_schema.dox"
         "docs/experiment_configuration/process_launcher_schema.dox"
         "docs/experiment_configuration/nrp_connectors.dox"
@@ -396,6 +407,8 @@ doxygen_add_docs(nrp_doxygen
         "docs/engines/pysim/pysim_engine.dox"
         "docs/engines/tvb/tvb_engine.dox"
         "docs/engines/datatransfer/datatransfer_engine.dox"
+        "docs/engines/python_grpc/python_grpc_engine.dox"
+        "docs/engines/edlut/edlut_engine.dox"
 
         "docs/getting_started/getting_started.dox"
         "docs/getting_started/installation.dox"
@@ -415,11 +428,14 @@ doxygen_add_docs(nrp_doxygen
         "docs/guides/troubleshooting.dox"
         "docs/guides/docker_compose.dox"
         "docs/guides/docker_daemon.dox"
+        "docs/guides/remote_docker_compose.dox"
 
         "docs/event_loop/event_loop.dox"
         "docs/event_loop/computational_graph.dox"
         "docs/event_loop/python_graph.dox"
         "docs/event_loop/computational_graph_integration.dox"
+        "docs/event_loop/fn_cpp_nodes.dox"
+        "docs/event_loop/async_experiments.dox"
 
         COMMENT "Generating documentation")
 

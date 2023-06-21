@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,25 +44,30 @@ EventLoopSimManager::EventLoopSimManager(const jsonSharedPtr &simulationConfig, 
 void EventLoopSimManager::initializeCB()
 {
     if(this->_loop == nullptr) {
-        // Compute time step and timeout
-        int eTstep;
-        if(this->_simConfig->contains("EventLoopTimestep"))
-            eTstep = 1000 * this->_simConfig->at("EventLoopTimestep").get<float>();
-        else
-            eTstep = 1000 * this->_simConfig->at("SimulationTimestep").get<float>();
+        // Validate configuration
+        auto ELoopConf = this->_simConfig->contains("EventLoop") ?
+                (*(this->_simConfig))["EventLoop"].get<nlohmann::json>() : nlohmann::json::object();
+        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#/event_loop");
 
-        int eTout;
-        if(this->_simConfig->contains("EventLoopTimeout"))
-            eTout = 1000 * this->_simConfig->at("EventLoopTimeout").get<float>();
-        else
-            eTout = 1000 * this->_simConfig->at("SimulationTimeout").get<float>();
+        // Configure Event Loop
+        auto eTstep = ELoopConf.at("Timestep").get<float>();
+        auto eTout  = ELoopConf.at("Timeout").get<float>();
+        auto eTstepWarn = ELoopConf.at("TimestepWarnThreshold").get<float>();
 
-        _timestep = std::chrono::milliseconds(eTstep);
-        _timeout = std::chrono::milliseconds(eTout);
+        _timestep = std::chrono::milliseconds((int)(1000 * eTstep));
+        _timeout = std::chrono::milliseconds((int)(1000 * eTout));
+        auto timestepWarn = std::chrono::milliseconds((int)(1000 * eTstepWarn));
+
+        auto execMode = ELoopConf.at("ExecutionMode") == "OutputDriven"
+                ? ComputationalGraph::ExecMode::OUTPUT_DRIVEN : ComputationalGraph::ExecMode::ALL_NODES;
+
+        std::stringstream info_msg;
+        info_msg << "Creating Event Loop with configuration: timestep=" << _timestep.count() << "(ms), timeout=" << _timeout.count() << "(ms)";
+        NRPLogger::info(info_msg.str());
 
         // Create and initialize EventLoop
-        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep,
-                                        false, this->_simConfig->contains("ConnectROS")));
+        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, timestepWarn, execMode,
+                                        false, this->_simConfig->contains("ROSNode")));
 
         // If there are engines in the configuration, an FTILoop has to be run as well
         if(this->_simConfig->at("EngineConfigs").size() > 0) {
@@ -92,7 +97,7 @@ bool  EventLoopSimManager::runUntilMilliseconds(const std::chrono::milliseconds&
     // start FTILoop
     if(_fTILoopSimManager) {
         std::function<void()> run_ftiloop = [&]() {
-            _fTILoopSimManager->runSimulation(0, nlohmann::json());
+            _fTILoopSimManager->runSimulation(0);
         };
 
         runFuture = std::async(run_ftiloop);
@@ -110,12 +115,13 @@ bool  EventLoopSimManager::runUntilMilliseconds(const std::chrono::milliseconds&
     return true;
 }
 
-bool EventLoopSimManager::runUntilTimeOutCB()
+bool EventLoopSimManager::runUntilDoneOrTimeoutCB()
 {
+    // TODO Is there a 'done' condition?
     return runUntilMilliseconds(_timeout);
 }
 
-bool EventLoopSimManager::runCB(unsigned numIterations, const nlohmann::json & /*clientData*/)
+bool EventLoopSimManager::runCB(unsigned numIterations)
 {
     return runUntilMilliseconds(_timestep * numIterations);
 }

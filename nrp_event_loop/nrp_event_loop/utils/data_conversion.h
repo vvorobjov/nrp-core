@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,8 @@ struct dataConverter<T_IN, bpy::object> {
         }
         catch (const boost::python::error_already_set&) {
             std::string error_msg = "An error occurred while converting C++ data to Python. Please be sure you imported the Python module/s supporting the conversion of this data type";
-            NRPLogger::error(error_msg);
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
     }
 };
@@ -73,9 +72,9 @@ struct dataConverter<bpy::object, T_OUT> {
             d2 = boost::python::extract<T_OUT>(*d1);
         }
         catch (const boost::python::error_already_set&) {
-            NRPLogger::error("An error occurred while converting Python to C++ data");
+            std::string error_msg = "An error occurred while converting Python to C++ data";
             PyErr_Print();
-            boost::python::throw_error_already_set();
+            throw NRPException::logCreate(error_msg);
         }
     }
 };

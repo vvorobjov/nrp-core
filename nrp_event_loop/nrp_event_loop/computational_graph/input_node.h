@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,25 +140,6 @@ public:
     { }
 
     /*!
-     * \brief Compute. Updates and sends stored msgs.
-     */
-    void compute() override final
-    {
-        for(auto& [id, port]: _portMap) {
-            auto hasNewMsgs = this->updatePortData(id);
-
-            if(hasNewMsgs) {
-                if(_msgPublishPolicy == InputNodePolicies::MsgPublishPolicy::LAST)
-                    port.publishLast();
-                else
-                    port.publishAll();
-            }
-            else if(_msgCachePolicy == InputNodePolicies::MsgCachePolicy::CLEAR_CACHE)
-                    port.publishNullandClear();
-        }
-    }
-
-    /*!
      * \brief Registers an Output port with id 'id' with this node
      */
     void registerOutput(const std::string& id)
@@ -199,10 +180,31 @@ public:
 protected:
 
     /*!
+     * \brief Compute. Updates and sends stored msgs.
+     */
+    void compute() override final
+    {
+        for(auto& [id, port]: _portMap) {
+            auto hasNewMsgs = this->updatePortData(id);
+
+            if(hasNewMsgs) {
+                if(_msgPublishPolicy == InputNodePolicies::MsgPublishPolicy::LAST)
+                    port.publishLast();
+                else
+                    port.publishAll();
+            }
+            else if(_msgCachePolicy == InputNodePolicies::MsgCachePolicy::CLEAR_CACHE)
+                port.publishNullandClear();
+        }
+    }
+
+    /*!
      * \brief Updates pointers stored in _portMap for port 'id'
      *
+     * Expected behavior:
      * Implementations of this function must guarantee that data pointers stored in _portMap[id] are valid and will not
-     * change between calls to this function.
+     * change between calls to this function. Even after the function is called again, pointers in _portMap[id] should
+     * still be valid and remain unchanged if the function returns false, i.e., if port 'id' data wasn't changed.
      *
      * @param id key in _portMap which data is asked to be updated
      * @return true if port 'id' has new data, false otherwise
@@ -217,6 +219,9 @@ protected:
     std::map<std::string, DataPortHandle<DATA>> _portMap;
     /*! \brief Maximum number of msgs that the node can store per port */
     size_t _queueSize;
+
+    friend class ComputationalNodes_INPUT_NODE_UPDATE_POLICY_WITH_KEEP_CACHE_Test;
+    friend class ComputationalNodes_INPUT_NODE_UPDATE_POLICY_WITH_CLEAR_CACHE_Test;
 };
 
 

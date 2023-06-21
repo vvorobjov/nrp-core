@@ -28,6 +28,7 @@ set(LIB_SRC_FILES
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
+        nrp_python_json_engine/engine_server/python_module.cpp
 )
 
 # List executable build files
@@ -64,6 +65,8 @@ set(NRP_PYTHON_CMAKE_INSTALL_BINDIR "${NRP_PYTHON_INSTALL_PREFIX}/${CMAKE_INSTAL
 set(NRP_PYTHON_EXECUTABLE ${EXECUTABLE_NAME})
 configure_file(${PYTHON_CMAKE_HEADER_CONFIG_FILE} "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/config/cmake_constants.h" @ONLY)
 
+# Python Module defines
+configure_file("nrp_python_json_engine/engine_server/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py" @ONLY)
 
 ##########################################
 # NRPPythonJSONEngine
@@ -168,14 +171,20 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 
 # Install python module
 install(FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/__init__.py"
+    "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/json_event_loop_engine.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/server_callbacks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/engine_script.py"
     DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
 
+install(TARGETS ${PYTHON_MODULE_NAME}
+        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+
 # Install executable files
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/python_json_engine.py"
-    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/python_json_engine.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_python_json_engine/engine_server/async_python_json_engine.py"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # create cmake version and config files

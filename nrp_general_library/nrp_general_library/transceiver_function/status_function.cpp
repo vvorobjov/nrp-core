@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ TransceiverDataPackInterface::shared_ptr StatusFunction::pySetup(boost::python::
 
     assert(statusFunctionPtr->_tfInterpreterRegistryPtr == nullptr);
 
-    statusFunctionPtr->_tfInterpreterRegistryPtr = StatusFunction::TFInterpreter->registerNewStatusFunction(statusFunctionPtr);
+    statusFunctionPtr->_tfInterpreterRegistryPtr = StatusFunction::_functionManager->registerNewStatusFunction(statusFunctionPtr);
 
     return statusFunctionPtr;
 }
@@ -48,19 +48,19 @@ bool StatusFunction::isPreprocessing() const
     return false;
 }
 
-boost::python::object StatusFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs)
+boost::python::object StatusFunction::runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t /*dataPacks*/)
 {
     boost::python::object retVal = this->_function(*args, **kwargs);
 
     return retVal;
 }
 
-EngineClientInterface::datapack_identifiers_set_t StatusFunction::getRequestedDataPackIDs() const
+datapack_identifiers_set_t StatusFunction::getRequestedDataPackIDs() const
 {
-    return EngineClientInterface::datapack_identifiers_set_t();
+    return datapack_identifiers_set_t();
 }
 
-EngineClientInterface::datapack_identifiers_set_t StatusFunction::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
+datapack_identifiers_set_t StatusFunction::updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const
 {
     return std::move(datapackIDs);
 }

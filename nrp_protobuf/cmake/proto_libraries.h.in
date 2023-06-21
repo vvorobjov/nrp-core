@@ -1,0 +1,6 @@
+#include <string>
+
+namespace nrp_protobuf
+{
+    static const std::string PROTO_LIBRARIES = "@PROTO_OPS_LIBS@";
+} // namespace nrp_protobuf

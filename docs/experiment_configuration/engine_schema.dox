@@ -16,6 +16,7 @@ Regardless of the chosen engine type, there is a set of parameters common to eve
 <tr><td>EngineLaunchCommand<td>\ref configuration_schema "LaunchCommand" with parameters that will be used to launch the engine process<td>object<td>{"LaunchType":"BasicFork"}<td><td>
 <tr><td>EngineTimestep<td>Engine Timestep in seconds<td>number<td>0.01<td><td>
 <tr><td>EngineCommandTimeout<td>Engine Timeout (in seconds). It tells how long to wait for the completion of the engine runStep. 0 or negative values are interpreted as no timeout<td>number<td>0.0<td><td>
+<tr><td>EngineExtraConfigs<td>Engine Extra Configurations which can customize certain engine functionalities. Valid configurations depend on the engine<td>object<td>{}<td><td>
 </table>
 
 \section engine_base_schema_example Example
@@ -45,6 +46,11 @@ In any case, if a value for `EngineProcCmd` is set in the configuration file, it
 \subsection engine_proc_start_params EngineProcStartParams
 
 This parameter contains an array of strings that will be added as arguments to the Engine process launch command. In order to add flexibility in the formatting on these arguments, EngineClient has a dedicated method, EngineClient::engineProcStartParams, in which the `EngineProcStartParams` parameter is read from the configuration file and formatted appropriately. This is a virtual method that <b>every new engine implementation should implement</b>.
+
+\subsection engine_extra_configs EngineExtraConfigs
+
+This parameter stores an object which contains additional configuration parameters specific to certain engines. The validation of the content is left to the engine. Its default value is set in-code to an empty object for every engine type.
+
 
 \subsection additional_engine_configuration Additional Configuration Parameters
 

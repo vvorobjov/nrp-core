@@ -31,9 +31,8 @@ Below is listed an example experiment configuration connecting to both ROS and M
 	"SimulationName": "test_sim",
 	"SimulationDescription": "Just connecting to ROS and MQTT",
 	"SimulationTimeout": 1,
-	"ConnectMQTT": {"ClientName": "myMQTTclient"},
-	"ConnectROS": {"NodeName": "myROSnode"}
-	]
+	"MQTTNode": {"ClientName": "myMQTTclient"},
+	"ROSNode": {"NodeName": "myROSnode"}
 }
 \endcode
 

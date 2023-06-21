@@ -29,11 +29,12 @@
 #include "datatransfer_grpc_engine/config/cmake_constants.h"
 #include "datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.h"
 
+#include "nrp_general_library/config/cmake_constants.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 
 #include "tests/test_env_cmake.h"
 
-#define MQTT_WELCOME "nrp/0/welcome"
+#define MQTT_WELCOME "nrp_simulation/0/welcome"
 
 TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 {
@@ -47,9 +48,9 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
-    EngineGrpcServer::lock_t datapackLock;
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
 
     // Create a client with "connected" status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(true);
@@ -58,23 +59,29 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // The expected calls
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(3));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!", testing::_))
             .Times(1);
-    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!"))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!", testing::_))
             .Times(1);
     // data topics announcements from the DataPack Controller
     for (size_t i = 0; i < engine_config["dumps"].size(); i++){
         nlohmann::json dump = engine_config["dumps"].at(i);
-        EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dump["name"].get<std::string>()))
-                .Times(1);
+        EXPECT_CALL(*nrpMQTTClientMock,
+                    publish(
+                        std::string(MQTT_BASE) + std::string("/0/data"),
+                        std::string(MQTT_BASE) + std::string("/0/data/") + dump["name"].get<std::string>(),
+                        testing::_))
+            .Times(1);
     }
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
+            .Times(1);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
             .Times(1);
 
     // The expected calls (above) are in these operations
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 
     // TODO: The datapack controller is not destroyed and shared ptr survives
     testing::Mock::AllowLeak(nrpMQTTClientMock.get());
@@ -93,9 +100,9 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
-    EngineGrpcServer::lock_t datapackLock;
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
 
     // Create a client with "disconnected" status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(false);
@@ -104,14 +111,16 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     // The expected calls (we do not expect anything to be published)
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(2));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_, testing::_))
             .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
             .Times(0);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
+            .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 }
 
 TEST(TestDatatransferGrpcEngine, ServerBroker)
@@ -126,9 +135,9 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     mqtt_config["MQTTBroker"] = "localhost:1883";
     mqtt_config["ClientName"] = "datatransfer_engine";
 
-    // Launch DataTransferGrpcServer
-    DataTransferGrpcServer engine(engine_config["ServerAddress"], engine_config["EngineName"]);
-    EngineGrpcServer::lock_t datapackLock;
+    // Launch DataTransferEngine
+    DataTransferEngine engine(engine_config["EngineName"],
+                                  NRP_PLUGIN_INSTALL_DIR, engine_config["ProtobufPackages"]);
 
     // We can try connection to non-existent real broker, but it may fail if broker exists
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(mqtt_config);
@@ -136,12 +145,14 @@ TEST(TestDatatransferGrpcEngine, ServerBroker)
     // The expected calls as for disconnected client
     EXPECT_CALL(*nrpMQTTClientMock, isConnected())
             .Times(testing::AtLeast(2));
-    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_))
+    EXPECT_CALL(*nrpMQTTClientMock, publish(testing::_, testing::_, testing::_))
             .Times(0);
     EXPECT_CALL(*nrpMQTTClientMock, disconnect())
             .Times(0);
+    EXPECT_CALL(*nrpMQTTClientMock, clearRetained())
+            .Times(0);
 
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
-    ASSERT_NO_THROW(engine.initialize(engine_config, datapackLock));
-    ASSERT_NO_THROW(engine.shutdown(engine_config));
+    ASSERT_NO_THROW(engine.initialize(engine_config));
+    ASSERT_NO_THROW(engine.shutdown());
 }

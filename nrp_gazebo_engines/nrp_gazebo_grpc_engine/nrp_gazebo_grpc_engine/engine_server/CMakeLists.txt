@@ -10,6 +10,7 @@ set(LIB_SRC_FILES
         camera_datapack_controller.cpp
         joint_datapack_controller.cpp
         link_datapack_controller.cpp
+        model_datapack_controller.cpp
 )
 
 
@@ -46,6 +47,7 @@ target_link_libraries(NRPGazeboGrpcDataPackControllers
     PUBLIC
         ${NRP_GEN_LIB_TARGET}
         ${GAZEBO_LIBRARIES}
+        NRPProtobuf::ProtoGazebo
     PRIVATE
         ${NRP_GAZEBO_GRPC_LIB}
 )

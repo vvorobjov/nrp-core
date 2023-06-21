@@ -31,8 +31,10 @@ The decorator has three arguments:
 Each of the declared outputs can be connected to other nodes using decorators.
 Each of the input arguments of the function can be connected to other nodes too.
 
-The decorated Python function must always return a list with the length equal to the number of declared outputs in the Functional Node decorator.
-Otherwise a runtime error will be triggered.
+The decorated Python function can return either *None* or a list with length equal to the number of declared outputs in the Functional Node decorator.
+Otherwise a runtime error is triggered.
+
+Returning *None* can be used in cases when the function can't produce valid outputs.
 
 \section from_functional_node_decorator @FromFunctionalNode
 
@@ -83,10 +85,10 @@ The decorator has three arguments:
 This decorator creates an OutputEngineNode and connects it to one of the decorated Functional Node outputs.
 It works in a very similar way to the previous one.
 
-The code below extends the previous example by connecting `input_1` in `my_node` to an output `my_datapack` of an OutputEngineNode with id `my_engine`.
+The code below extends the previous example by connecting `output_1` in `my_node` to an OutputEngineNode with id `my_engine`.
 
 \code{.py}
-@ToEngine(keyword="output_1", address="/my_engine/my_datapack")
+@ToEngine(keyword="output_1", address="/my_engine")
 @FromEngine(keyword='input_1', address='/my_engine/my_datapack')
 @FunctionalNode(name="my_node", outputs=['output_1', 'output_2'])
 def my_function(input_1, input_2):
@@ -126,7 +128,7 @@ The decorator has five arguments:
 In this case, a new InputROSNode is created to subscribe to each different topic. 
 From each @RosSubscriber decorator a node with `id` `address` is created, and an OuputPort with id also `address` is added to it.
 
-The value used in the `type` argument of the decorator must be a class from `nrp_core.data.nrp_ros` Python module. These are the ROS message types supported in NRP-core. For more information about which are the message types supported by default see \ref datapacks_rosmsg "here". For information about how to compile NRP-core to support additional ROS message types see \ref tutorial_add_ros_msg_definition "here".
+The value used in the `type` argument of the decorator must be a class from `nrp_core.data.nrp_ros` Python module. These are the ROS message types supported in NRP-core. For more information about which are the message types supported by default see \ref datapacks_rosmsg "here". For information about how to compile NRP-core to support additional ROS message types see \ref guide_ros_in_nrp_core "here".
 
 \section ros_publisher_decorator @RosPublisher
 
@@ -143,7 +145,12 @@ def my_function_2(input_1):
     return [input_1]  
 \endcode
 
-The decorator arguments are analogous to those in `@RosSubscriber`, but in this case message arriving to the created OutputROSNode will be published to `/my_topic`.
+The decorator has the next arguments:
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
+- `address`: tells the ROS topic to publish to.
+- `type`: the ROS message type the ROS topic this node publishes too.
+- `compute_period` (optional): \ref output_node "ComputePeriod" of the node, 1 by default.
+- `publish_from_cache` (optional): \ref output_node "publishFromCache" property of the node, false by default.
 
 It is not possible to subscribe and publish to the same topic from a graph. 
 Attempting to do this will result in having two nodes with the same id, which is not allowed.
@@ -205,6 +212,8 @@ def my_function():
 The decorator has two arguments:
 - `keyword`: specifies the name of the Functional Node output port that the decorator connects.
 - `address`: the SpiNNaker population to send spikes to or update the rates of.
+- `compute_period` (optional): \ref output_node "ComputePeriod" of the node, 1 by default.
+- `publish_from_cache` (optional): \ref output_node "publishFromCache" property of the node, false by default.
 
 In the aforementioned experiment located at `examples/event_loop_examples/husky_braitenberg_spinnaker` can be seen how to use `@ToSpiNNaker` decorator to control the rate of a SpikeSourcePoisson.
 
@@ -235,12 +244,15 @@ The decorator has five arguments:
 - `cache_policy` (optional): the \ref input_node_policies "message cache policy" of the node. Its value must be of type `node_policies.input_node.msg_cache`, an enum with possible values: `clear` and `keep`. Its default value is `keep`.
 - `publish_policy` (optional): the \ref input_node_policies "message publish policy" of the node. Its value must be of type `node_policies.input_node.msg_publish`, an enum with possible values: `last` and `all`. Its default value is `last`.
 
-There are three possible values for the `type` argument of the decorator. These are:
+Below are listed the possible valid values for the `type` argument in the decorator:
 - 'str': incoming messages payload is passed to the connected function as a string
-- 'nrp_core.data.nrp_json.NlohmannJson': payloads are passed as \ref datapacks_json "JSON objects"
-- One of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+- 'nrp_core.data.nrp_json.NlohmannJson': payload is passed as \ref datapacks_json "JSON objects"
+- Any of the protobuf message types compiled with NRP-Core. These can be found under the Python module: 'nrp_core.data.nrp_protobuf'.
+- 'nrp_core.data.nrp_json.JsonDataPack'
+- Any of the protobuf datapack types defined in 'nrp_core.data.nrp_protobuf'
 
-'str' is always safe to use, but in case of using any of the other two types a runtime error will occur if incoming MQTT message can't be converted to that type.
+'str' is always safe to use, but in case of using any of the other types a runtime error will occur if incoming MQTT message can't be converted to that type.
+See the experiment 'examples/event_loop_examples/mqtt_simple' for examples of mqtt decorators using each of the supported types.
 
 \section mqtt_publisher_decorator @MQTTPublisher
 
@@ -265,7 +277,49 @@ def my_function(mqtt_in):
     return [out]
 \endcode
 
-The decorator arguments are analogous to those in `@MQTTSubscriber`, but in this case arringing messages will be published to the topic given by the decorator 'address' parameter.
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
+- `address`: the MQTT topic to publish to.
+- `type`: the data type that published MQTT messages will be converted from (see \ref mqtt_nodes "here").
+- `compute_period` (optional): \ref output_node "ComputePeriod" of the node, 1 by default.
+- `publish_from_cache` (optional): \ref output_node "publishFromCache" property of the node, false by default.
+
+\section clock_decorator @Clock
+
+This decorator creates an InputClockNode and connects it to one of the decorated Functional Node inputs.
+It adds a node and an edge to the Computational Graph.
+
+The code below would create a Functional Node which reads the current system clock and prints it out.
+
+\code{.py}
+@Clock('clock_in')
+@FunctionalNode(name="clock_example", outputs=[], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(clock_in):
+    print("current system time: {}".format(clock_in))
+    return []
+\endcode
+
+As explained in this \ref time_nodes "section", depending on whether the Computational Graph is being managed by an EventLoop or an FTILoop, the InputClockNode will stream either the current value of the internal (real-time) clock of the EventLoop, wrt the time point in which the loop was started, or the current simulation time, in the case of using an FTILoop.
+
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
+
+\section iteration_decorator @Iteration
+
+This decorator creates an InputIterationNode and connects it to one of the decorated Functional Node inputs.
+It adds a node and an edge to the Computational Graph.
+
+The code below would create a Functional Node which reads the current loop iteration number and prints it out.
+
+\code{.py}
+@Iteration('iteration_in')
+@FunctionalNode(name="iteration_example", outputs=[], exec_policy=node_policies.functional_node.exec_policy.always)
+def my_function(iteration_in):
+    print("current loop iteration number: {}".format(iteration_in))
+    return []
+\endcode
+
+Either if the Computational Graph is being managed by an EventLoop or an FTILoop, the InputIterationNode streams the number of times the loop has been run.
+
+- `keyword`: specifies the name of the Functional Node output port that the decorator connects.
 
 \section python_graph_example Putting the Examples Together
 
@@ -273,7 +327,7 @@ To conclude the overview of the available Computational Graph decorators lets pu
 
 \code{.py}
 @RosSubscriber(keyword="input_2", address="/my_topic", type=nrp_core.data.nrp_ros.std_msgs.String)
-@ToEngine(keyword="output_1", address="/my_engine/my_datapack")
+@ToEngine(keyword="output_1", address="/my_engine")
 @FromEngine(keyword='input_1', address='/my_engine/my_datapack')
 @FunctionalNode(name="my_node", outputs=['output_1', 'output_2'])
 def my_function(input_1, input_2):

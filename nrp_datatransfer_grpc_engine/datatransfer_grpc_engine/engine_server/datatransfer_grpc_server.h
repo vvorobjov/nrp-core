@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,32 +23,33 @@
 #ifndef DATATRANSFER_GRPC_SERVER_H
 #define DATATRANSFER_GRPC_SERVER_H
 
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
+#include "nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.h"
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
-#include "nrp_protobuf/dump_msgs.pb.h"
+#include "nrp_protobuf/dump.pb.h"
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
-#define MQTT_BASE "nrp/"
 #endif /*MQTT_ON*/
 
-class DataTransferGrpcServer
-    : public EngineGrpcServer
+class DataTransferEngine
+    : public EngineProtoWrapper
 {
     public:
-        DataTransferGrpcServer(const std::string &serverAddress, const std::string &engineName);
-        ~DataTransferGrpcServer() = default;
+        DataTransferEngine(const std::string &engineName,
+                               const std::string &protobufPluginsPath,
+                               const nlohmann::json &protobufPlugins);
+        ~DataTransferEngine() = default;
 
         /*!
          * \brief Indicates if the simulation was initialized and is running
          */
-        bool initRunFlag() const { return this->_initRunFlag; };
+        virtual bool initRunFlag() const override { return this->_initRunFlag; };
 
         /*!
          * \brief Indicates if shutdown was requested by the client
          */
-        bool shutdownFlag() const { return this->_shutdownFlag; };
+        virtual bool shutdownFlag() const override { return this->_shutdownFlag; };
 
         /*!
          * \brief Runs a single step of the simulation
@@ -71,7 +72,7 @@ class DataTransferGrpcServer
          *
          * \param[in] data Engine configuration data in form of JSON object
          */
-        void initialize(const nlohmann::json &data, EngineGrpcServer::lock_t &datapackLock) override;
+        void initialize(const nlohmann::json &data) override;
 
         /*!
          * \brief Shutdowns the engine
@@ -82,7 +83,7 @@ class DataTransferGrpcServer
          *
          * \param[in] data Additional arguments passed from the client
          */
-        void shutdown(const nlohmann::json &data) override;
+        void shutdown() override;
 
         /*!
          * \brief Resets the engine

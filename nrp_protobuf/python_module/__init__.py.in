@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 # Framework Programme for Research and Innovation under the Specific Grant
 # Agreement No. 945539 (Human Brain Project SGA3).
 
-from .@PYTHON_MODULE_NAME@ import *
+@PROTO_PYTHON_IMPORTS@
 
 # Protobuf don't allow to set default values for fields
 # This is a workaround using nan to let Joint DataPack Controller infer which values have been set
@@ -30,4 +30,3 @@ def new_init(self, name, engine_name):
     self.data.effort = float('NaN')
 
 GazeboJointDataPack.__init__ = new_init
-

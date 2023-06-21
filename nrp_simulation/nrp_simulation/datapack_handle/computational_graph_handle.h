@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
+#include "nrp_event_loop/nodes/time/input_time.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
 
@@ -41,7 +42,8 @@
  */
 struct ComputationalGraphHandle : public DataPackProcessor {
 
-    ComputationalGraphHandle(bool slaveMode = false, bool spinROS = false) :
+    ComputationalGraphHandle(SimulationDataManager * simulationDataManager, bool slaveMode = false, bool spinROS = false) :
+        DataPackProcessor(simulationDataManager),
         _slaveMode(slaveMode),
         _spinROS(spinROS)
     {}
@@ -60,12 +62,21 @@ struct ComputationalGraphHandle : public DataPackProcessor {
      */
     std::map<std::string, OutputEngineNode*> _outputs;
 
+    /*! \brief Pointer to the clock_node of the graph */
+    InputClockNode* _clock = nullptr;
+
+    /*! \brief Pointer to the iteration_node of the graph */
+    InputIterationNode* _iteration = nullptr;
+
+
     void init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines) override
     {
         // Load Computation Graph
         if(!_slaveMode) {
             boost::python::dict globalDict;
-            createPythonGraphFromConfig(simConfig->at("ComputationalGraph"), globalDict);
+            // When controlling the graph set output driven mode to optimize on graph node execution
+            createPythonGraphFromConfig(simConfig->at("ComputationalGraph"),
+                                        ComputationalGraph::ExecMode::OUTPUT_DRIVEN, globalDict);
         }
 
         ComputationalGraphManager& gm = ComputationalGraphManager::getInstance();
@@ -78,9 +89,17 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             if(gm.getNode(input_id) && dynamic_cast<InputEngineNode *>(gm.getNode(input_id)))
                 _inputs[engine->engineName()] = dynamic_cast<InputEngineNode *>(gm.getNode(input_id));
 
-            if(gm.getNode(output_id) && dynamic_cast<OutputEngineNode *>(gm.getNode(output_id)))
-                _outputs[engine->engineName()] = dynamic_cast<OutputEngineNode *>(gm.getNode(output_id));
+            if(gm.getNode(output_id) && dynamic_cast<OutputEngineNode *>(gm.getNode(output_id))) {
+                auto o_node = dynamic_cast<OutputEngineNode *>(gm.getNode(output_id));
+                // setting computePeriod to 0 so node is only executed when linked Engine is synced
+                if(!_slaveMode)
+                    o_node->setComputePeriod(0);
+                _outputs[engine->engineName()] = o_node;
+            }
         }
+
+        // Find Clock and Iteration nodes
+        std::tie(_clock, _iteration) = findTimeNodes();
     }
 
     void updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override
@@ -106,13 +125,23 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             PyGILState_Release(_pyGILState);
     }
 
-    void compute(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/, const nlohmann::json & /*json*/) override
+    void compute(const std::vector<EngineClientInterfaceSharedPtr> & engines) override
     {
         if(!_slaveMode) {
 #ifdef ROS_ON
             if(_spinROS)
                 ros::spinOnce();
 #endif
+            for(auto &engine : engines)
+                if(_outputs.count(engine->engineName()))
+                    _outputs[engine->engineName()]->setDoCompute(true);
+
+            if(_clock)
+                _clock->updateClock(this->_simulationTime);
+
+            if(_iteration)
+                _iteration->updateIteration(this->_simulationIteration);
+
             ComputationalGraphManager::getInstance().compute();
         }
     }
@@ -127,8 +156,6 @@ struct ComputationalGraphHandle : public DataPackProcessor {
                 try {
                     auto devs = _outputs[engine->engineName()]->getDataPacks();
                     engine->sendDataPacksToEngine(devs);
-                    for(auto d : devs)
-                        delete d;
                 }
                 catch (std::exception &e) {
                     throw NRPException::logCreate(e,

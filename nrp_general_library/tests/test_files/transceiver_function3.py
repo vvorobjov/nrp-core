@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ from nrp_core.data.nrp_json import *
 @EngineDataPacks(keyword='datapacks_engine', datapackNames=['datapack2','datapack1'], engineName='engine')
 @TransceiverFunction("engine")
 def transceiver_function(datapacks_engine):
-    test_val1 = datapacks_engine['datapack2'].test_value
-    test_val2 = datapacks_engine['datapack1'].test_value
+    test_val1 = datapacks_engine['datapack2'].data["testValue"]
+    test_val2 = datapacks_engine['datapack1'].data["testValue"]
 
     print(datapacks_engine)
 

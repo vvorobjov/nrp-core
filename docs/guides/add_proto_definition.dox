@@ -1,19 +1,155 @@
-/*! \page tutorial_add_proto_definition Adding new protobuf message definitions
+/*! \page tutorial_add_proto_definition Compiling new protobuf message definitions
 
-This guide shows how to extend the protobuf message definitions available in NRP-core. Afterwards, the new definitions become available to use in TransceiverFunctions and gRPC Engines.
+This guide shows how to to compile and install `.proto` files so they can be used in NRPCore experiments.
+It can be easily done by using the provided Python script, `nrp_compile_protobuf.py`.
+Afterwards the compiled Protobuf message types can be used by gRPC Engines and TFs.
 
-The protobuf messages definitions are stored in a <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">separate repository</a>, in the *protobuf* directory. This repository is checked out as a git submodule during CMake project configuration into *nrp-core-msgs* folder. You can skip the automatic checkout by setting `-D GIT_SUBMODULE=OFF` when calling CMake, then you should manually make sure that the messages definitions on their place in *nrp-core-msgs* folder.
+In order for the script to work it is important that all `.proto` files which are to be compiled have a package specifier as described in the <a href="https://developers.google.com/protocol-buffers/docs/proto#packages">protobuf documentation</a>.
+This package specifier is used to name compiled libraries and header files and generated classes.
+Compiling .proto files without a package specifier leads to a configuration error.
 
-The process of adding the new definitions is very simple and consists only of two steps:
+The script takes two arguments:
+- `--proto_files_path`: path to the `.proto` files which should be compiled. The current working directory by default
+- `--install_dir`: installation directory. By default this is the folder were NRPCore was installed
 
-1. Add your new message definitions into a separate *.proto* file. Refer to <a href="https://developers.google.com/protocol-buffers/docs/proto3">proto3 language guide</a> to check available possibilities.
-2. Place the new *.proto* file in the folder *nrp-core-msgs/protobuf/engine_proto_defs*. In this way your message definitions will be automatically compiled during the NRP-core build process. Also, the Python bindings required (see \ref datapacks_protobuf section) to use these new proto classes in NRP-core will be generated and compiled.
+The script is installed with NRPCore, so it can be directly invoked from the command line. Eg.:
 
+\code{.sh}
+nrp_compile_protobuf.py --help
+\endcode
 
-After completing the aforementioned steps, the new message definitions will be also available to exchange data with gRPC Engines through the *Engine.DataPackMessage* message type.
-This is the message type used by gRPC Engine servers to send data to gRPC Engine clients. It contains a DataPack Id and the data itself, stored in a *data* field of type *Any*. *Any* is a type of field (please refer to the guide listed above for more information) which can store any type of message. Those message types compiled with NRP-Core from the folder *nrp-core-msgs/protobuf/engine_proto_defs* can be sent to gRPC Engine servers wrapped in *Engine.DataPackMessage*.
+will print the script help information.
+
+When executed, it will compile all the `.proto` files found at `proto_files_path` and install the compiled libraries in `install_dir`.
+For a description of the compiled libraries see \ref engine_grpc_protobuf_libraries "here".
+
+Afterwards, the new message definitions will be available to exchange data by gRPC Engines through the *Engine.DataPackMessage* message type.
+This is the message type used by gRPC Engine servers to send data to gRPC Engine clients. 
+It contains a DataPack Id and the data itself, stored in a *data* field of type *Any*. 
+*Any* is a type of field which can store any type of message. 
+Those message types compiled with the provided Python script can be sent to gRPC Engine servers wrapped in *Engine.DataPackMessage*.
 
 The *Engine.DataPackMessage* can be found in the folder *nrp-core-msgs/protobuf/nrp_proto_defs*.
 
-Note, that *nrp-core-msgs* is a git submodule that is by default is checked out during the build. If you want to disable the automatic checkout, please, specify `-DGIT_SUBMODULE=OFF` when calling CMake, but make sure that the folder *nrp-core-msgs* exists and has all the necessary files. 
+\section tutorial_using_proto_grpc Using compiled messages in GRPC Engines
+
+All GRPC Engines use protobuf messages to exchange data between client and server.
+GRPC Engines have a configuration parameter, "ProtobufPackages", which is of type array and contains the list of Protobuf Packages that can be used by the Engine.
+Each of the elements of this array can be the package specifier in any of the .proto files compiled by nrp-core or using the *nrp_compile_protobuf.py* script.
+
+Additionally, the \ref python_grpc_engine can import and use generated Python protobuf modules.
+As described \ref engine_grpc_protobuf_libraries "here", these are named `<package>_pb2.py`, being <package> the package specifier in the .proto file in lowercase.
+
+Modules from .proto files compiled with nrp-core can be found under *nrp_protobuf* package. E.g.:
+
+\code{.py}
+from nrp_protobuf import dump_pb2
+\endcode
+
+Modules compiled using *nrp_compile_protobuf.py* can be imported directly, as in the example below.
+
+\section tutorial_using_proto_tf Using compiled messages in TFs
+
+Python bindings are generated for compiled Protobuf messages which allow to use them in TFs.
+See \ref datapacks_protobuf "here" for more details.
+
+For example, lets say that `nrp_compile_protobuf.py` is used to compile a `.proto` file with package name `MyPackage` and containing one message definition `MyMessage`.
+Then, a Python module with name `mypackage` is generated.
+Containing two classes: `MyPackageMyMessage` which wraps a `MyPackage::MyMessage` c++ object; and `MyPackageMyMessageDataPack`, wrapping a `DataPack<MyPackage::MyMessage>` c++ object.
+This is all that is required to use the new Protobuf message definitions in TFs.
+
+\code{.py}
+from mypackage import MyPackageMyMessageDataPack
+d = MyPackageMyMessageDataPack('model', 'engine')
+type(d.data) # returns <class 'mypackage.MyPackageMyMessage'>
+\endcode
+
+Again, for more details about the Python wrappers generated for Protobuf messages refer to \ref datapacks_protobuf "here".
+
+\section tutorial_using_proto_python Using compiled messages with the Python GRPC Engine
+
+When subclassing \ref python_grpc_engine_script in a Python GRPC Engine, Python modules directly generated by protoc are used (instead of the Python wrappers described above).
+They can be used to register, set and get datapacks, as in the example below taken from the `examples/tf_exchange` experiment.
+
+\include tf_exchange/engine_grpc_1.py
+
+\section tutorial_add_proto_definition_nested_package_name Nested Package Specifiers
+
+As commented above, the package specifier in .proto files is used to name compiled libraries and header files.
+Thus, using the same package specifier in more than one .proto file will lead to one of them overwritting the other.
+In case of wishing to have Protobuf message definitions from multiple .proto files under the same namespace, you can use nested package specifiers instead. As in the code snippet below:
+
+\code{.proto}
+package SuperPackage.MyPackage;
+message MyMessage
+{
+    uint32 somefield = 1;
+}
+\endcode
+
+Compiling this code would generate the following components:
+- a `superpackage_mypackage.pb.h` header file generated by `protoc`.
+- a `libProtoSuperPackageMyPackage.so` library, containing the cpp code generated by `protoc`.
+- a `libNRPProtoSuperPackageMyPackageOps.so` linking to the former one and containing Protobuf conversion functions needed by GRPC Engine clients and servers
+- a `<superpackage_mypackage>.so` library, also linking to `libProtoSuperPackageMyPackage.so` and containing Protobuf Python bindings to use the compiled msgs in Transceiver Functions
+
+\section tutorial_add_proto_definition_example Complete example
+
+Now lets see a full example.
+We'll write and compile a new Protobuf message definition which will be used in a \ref python_grpc_engine to relay data through a TF to a \ref datatransfer_engine, which will log it into a file.
+
+First lets put the code below in a `.proto` file. If the extension is not `.proto` it won't be found by the compilation script.
+
+\include test.proto
+
+Now lets compile the file by executing the script from the folder were the file is contained:
+
+\code{.sh}
+nrp_compile_protobuf.py
+\endcode
+
+After the script execution ends, the package is ready to be used with NRPCore.
+Lets test it by implementing an experiment in which a TF will read datapacks of type `MyMessage` from a \ref python_grpc_engine and send them to an \ref datatransfer_engine which will log them into a file.
+
+We'll first add the experiment configuration file.
+Paste the code below into a file, e.g. `simulation_config.json`:
+
+\include example_simulation_config.json
+
+The line:
+
+\code{.json}
+"ProtobufPackages": ["MyPackage"]
+\endcode
+
+allows the Engines to exchange Protobuf messages from `MyPackage`.
+
+The line: 
+
+\code{.json}
+{"name": "datapack_1", "network": false, "file": true}
+\endcode
+
+declares a DataPack to be logged, which will be send by a TF and will be of type `MyMessage`.
+
+Next lets add "engine_grpc.py" containing the Python Grpc Engine GrpcEngineScript:
+
+\include engine_grpc.py
+
+It registers a datapack "datapack_1" of type *mypackage_pb2.MyMessage* and updates its integer field every time step with the current Engine simulation time.
+This datapack is fetch every time step by the Tf defined below and relayed to the Datatransfer Engine to be logged.
+
+Now lets write the TF.
+Paste this code into a `tf.py` file:
+
+\include tf.py
+
+Finally, lets execute the experiment:
+
+\code{.python}
+NRPCoreSim -c simulation_config.json
+\endcode
+
+After the experiment completes its execution there should be a new file `data/test/<time_stamp>/datapack_1-0.data` with many rows containing the logged data from `datapack_1` datapack. 
+
 */

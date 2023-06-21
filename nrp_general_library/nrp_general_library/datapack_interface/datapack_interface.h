@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@
 #include <string_view>
 #include <memory>
 #include <type_traits>
+#include <vector>
+#include <set>
 
 
 /*!
@@ -52,6 +54,12 @@ struct DataPackIdentifier
     std::string Type;
 
     DataPackIdentifier() = default;
+
+    DataPackIdentifier (const DataPackIdentifier&) = default;
+    DataPackIdentifier& operator= (const DataPackIdentifier&) = default;
+
+    DataPackIdentifier(DataPackIdentifier&& obj) = default;
+    DataPackIdentifier& operator = (DataPackIdentifier&&) = default;
 
     DataPackIdentifier(const std::string &_name, const std::string &_engineName, const std::string &_type);
 
@@ -84,6 +92,12 @@ class DataPackInterface
     public:
         DataPackInterface() = default;
 
+        DataPackInterface (const DataPackInterface&) = default;
+        DataPackInterface& operator= (const DataPackInterface&) = default;
+
+        DataPackInterface(DataPackInterface&& obj) = default;
+        DataPackInterface& operator = (DataPackInterface&&) = default;
+
         template<class DEV_ID_T>
         DataPackInterface(DEV_ID_T &&id)
             : _id(std::forward<DEV_ID_T>(id)){
@@ -106,16 +120,11 @@ class DataPackInterface
         const DataPackIdentifier &id() const;
         void setID(const DataPackIdentifier &id);
 
-        virtual DataPackInterface::const_shared_ptr moveToSharedPtr()
-        {
-            return DataPackInterface::const_shared_ptr(new DataPackInterface(std::move(this->_id)));
-        }
-
         /*!
         * \brief Virtual clone method to support polymorphic copy
         */
         virtual DataPackInterface* clone() const
-        { return new DataPackInterface(this->name(), this->engineName(), this->type()); }
+        { return new DataPackInterface(this->name(), this->engineName(), this->type(), this->isUpdated()); }
 
         /*!
          * \brief Indicates if the datapack contains any data aside from datapack ID
@@ -126,9 +135,28 @@ class DataPackInterface
          */
         bool isEmpty() const;
 
+        /*!
+         * \brief Indicates if the DataPack was created or received on the current simulation iteration
+         *
+         * \retval true  When the DataPack was created or received on the current simulation iteration
+         * \retval false When the DataPack is 'stale' - it was created or received on one of the earlier simulation iterations
+         */
+        bool isUpdated() const;
+
+        /*!
+         * \brief Sets the isUpdated flag to false
+         * TODO This method is obviously non-const, it will be changed in NRRPLT-8589.
+         */
+        void resetIsUpdated() const;
+
     protected:
 
         void setIsEmpty(bool value);
+        DataPackInterface(const std::string &name, const std::string &engineName, const std::string &type, bool isUpdated)
+        : DataPackInterface(name, engineName, type)
+        {
+            this->_isUpdated = isUpdated;
+        }
 
     private:
         /*!
@@ -140,10 +168,57 @@ class DataPackInterface
          * \brief Indicates if the datapack contains any data aside from datapack ID
          */
         bool _isEmpty = true;
+
+        /*!
+         * \brief Indicated if the DataPack was created or received in the current simulation iteration
+         * TODO The mutable qualifier will be removed in NRRPLT-8589.
+         */
+        mutable bool _isUpdated = true;
 };
 
 using DataPackInterfaceSharedPtr      = DataPackInterface::shared_ptr;
 using DataPackInterfaceConstSharedPtr = DataPackInterface::const_shared_ptr;
+
+
+/*!
+ * \brief Custom comparator functor used by sets of DataPack shared pointers
+ *
+ * This is a custom comparator that is used in all sets that store shared pointers
+ * to DataPacks. These sets should compare the content of the pointers, not the pointers
+ * themselves. The comparator uses the ID data of the DataPacks to decide if two pointers
+ * are equal.
+ */
+struct DataPackPointerComparator
+{
+    // Let the container know that we may be comparing with other types than shared_ptr (e.g. DataPackIdentifier)
+    // Needed when operator() is overloaded
+    using is_transparent = std::true_type;
+
+    bool operator() (const std::shared_ptr<const DataPackInterface> & lhs, const std::shared_ptr<const DataPackInterface> & rhs) const
+    {
+        return  lhs->id().Name       <  rhs->id().Name ||
+               (lhs->id().Name       == rhs->id().Name &&
+                lhs->id().EngineName <  rhs->id().EngineName);
+    }
+
+    bool operator() (const std::shared_ptr<const DataPackInterface> & lhs, const DataPackIdentifier & rhs) const
+    {
+        return  lhs->id().Name       <  rhs.Name ||
+               (lhs->id().Name       == rhs.Name &&
+                lhs->id().EngineName <  rhs.EngineName);
+    }
+
+    bool operator() (const DataPackIdentifier & lhs, const std::shared_ptr<const DataPackInterface> & rhs) const
+    {
+        return  lhs.Name       <  rhs->id().Name ||
+               (lhs.Name       == rhs->id().Name &&
+                lhs.EngineName <  rhs->id().EngineName);
+    }
+};
+
+using datapacks_set_t            = std::set<std::shared_ptr<const DataPackInterface>, DataPackPointerComparator>;
+using datapacks_vector_t         = std::vector<std::shared_ptr<const DataPackInterface>>;
+using datapack_identifiers_set_t = std::set<DataPackIdentifier>;
 
 
 #endif // DATAPACK_INTERFACE_H

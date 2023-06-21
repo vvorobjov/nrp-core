@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@
 #include "nrp_grpc_engine_protocol/engine_client/engine_grpc_client.h"
 #include "${engine_name_lowercase}_grpc_engine/config/${engine_name_lowercase}_config.h"
 #include "nrp_general_library/plugin_system/plugin.h"
-#include "nrp_protobuf/test_msgs.pb.h"
+#include "nrp_protobuf/enginetest.pb.h"
 
 class ${engine_name}EngineGrpcClient
-    : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema, EngineTest::TestPayload>
+    : public EngineGrpcClient<${engine_name}EngineGrpcClient, ${engine_name}GrpcConfigConst::EngineSchema>
 {
     public:
         ${engine_name}EngineGrpcClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);

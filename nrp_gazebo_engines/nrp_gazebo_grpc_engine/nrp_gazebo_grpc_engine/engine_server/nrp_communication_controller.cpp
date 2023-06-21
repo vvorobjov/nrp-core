@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,31 +26,19 @@
 
 using namespace nlohmann;
 
-std::unique_ptr<NRPCommunicationController> NRPCommunicationController::_instance = nullptr;
+NRPGazeboCommunicationController::NRPGazeboCommunicationController(const std::string &engineName,
+                                 const std::string &protobufPluginsPath,
+                                 const nlohmann::json &protobufPlugins) :
+        EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins)
+{ }
 
-NRPCommunicationController::~NRPCommunicationController()
-{
-    this->_stepController = nullptr;
-}
-
-NRPCommunicationController &NRPCommunicationController::getInstance()
-{
-    return *(NRPCommunicationController::_instance.get());
-}
-
-NRPCommunicationController &NRPCommunicationController::resetInstance(const std::string &serverURL, const std::string &engineName)
-{
-    NRPCommunicationController::_instance.reset(new NRPCommunicationController(serverURL, engineName));
-    return NRPCommunicationController::getInstance();
-}
-
-void NRPCommunicationController::registerStepController(GazeboStepController *stepController)
+void NRPGazeboCommunicationController::registerStepController(GazeboStepController *stepController)
 {
     lock_t lock(this->_datapackLock);
     this->_stepController = stepController;
 }
 
-SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
+SimulationTime NRPGazeboCommunicationController::runLoopStep(SimulationTime timeStep)
 {
     if(this->_stepController == nullptr)
     {
@@ -62,7 +50,6 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
 
     try
     {
-        // Execute loop step (Note: The _datapackLock mutex has already been set by EngineJSONServer::runLoopStepHandler, so no calls to reading/writing from/to datapacks is possible at this moment)
         return this->_stepController->runLoopStep(timeStep);
     }
     catch(const std::exception &e)
@@ -72,8 +59,10 @@ SimulationTime NRPCommunicationController::runLoopStep(SimulationTime timeStep)
     }
 }
 
-void NRPCommunicationController::initialize(const json &data, lock_t &lock)
+void NRPGazeboCommunicationController::initialize(const json &data)
 {
+    lock_t lock(this->_datapackLock);
+
     double waitTime = data.at("WorldLoadTime");
     if(waitTime <= 0)
         waitTime = std::numeric_limits<double>::max();
@@ -81,8 +70,8 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
     // Allow datapacks to register
     lock.unlock();
 
-    // Wait until world plugin loads and forces a load of all other plugins
-    while(this->_stepController == nullptr ? 1 : !this->_stepController->finishWorldLoading())
+    // Wait until world plugin loads
+    while(this->_stepController == nullptr)
     {
         // Wait for 100ms before retrying
         waitTime -= 0.1;
@@ -93,16 +82,49 @@ void NRPCommunicationController::initialize(const json &data, lock_t &lock)
             lock.lock();
 
             const auto errMsg = "Gazebo Engine was unable to load world file \"" + data.at("GazeboWorldFile").get<std::string>() +
-                    "\" before the specified timeout of " + std::to_string(data.at("WorldLoadTime").get<int>()) +
-                    " seconds. Check for gazebo errors in the output log or set a larger timeout if needed";
+                                "\" before the specified timeout of " + std::to_string(data.at("WorldLoadTime").get<int>()) +
+                                " seconds. Check for gazebo errors in the output log or set a larger timeout if needed";
             throw std::runtime_error(errMsg);
         }
     }
 
+    // Spawn additional models
+    if(data.contains("GazeboSDFModels")) {
+        for (const auto &model: data.at("GazeboSDFModels")) {
+            // Parse pose
+            std::istringstream poseStr(model.at("InitPose").get<std::string>());
+            std::vector<std::string> poseArgs(std::istream_iterator<std::string>{poseStr},
+                                              std::istream_iterator<std::string>());
+            if(poseArgs.size() != 6)
+                throw NRPException::logCreate("Error while parsing SDF model" + model.at("Name").get<std::string>()
+                                              + ". Pose array must contain 6 elements, contains " + std::to_string(poseArgs.size()));
+
+            // Parse args
+            std::vector<std::string> args = {"gz", "model", "--spawn-file=" + model.at("File").get<std::string>(),
+                                             "--model-name=" + model.at("Name").get<std::string>(), "-x", poseArgs[0],
+                                             "-y", poseArgs[1], "-z", poseArgs[2], "-R", poseArgs[3], "-P", poseArgs[4],
+                                             "-Y", poseArgs[5]};
+
+            std::string argsStr;
+            for (auto& a : args)
+                argsStr += a + " ";
+
+            // Exec cmd
+            NRPLogger::info("Spawning model \"" + model.at("Name").get<std::string>() + "\" with command: " + argsStr);
+            this->_stepController->addRequiredModel(model.at("Name").get<std::string>());
+            auto status = system(argsStr.c_str());
+            if(!WIFEXITED(status) || WEXITSTATUS(status) != EXIT_SUCCESS)
+                throw NRPException::logCreate("Spawning model \"" + model.at("Name").get<std::string>() + "\" failed");
+        }
+    }
+
+    // Forces plugins to load
+    this->_stepController->finishWorldLoading(waitTime);
+
     lock.lock();
 }
 
-void NRPCommunicationController::reset()
+void NRPGazeboCommunicationController::reset()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
@@ -118,17 +140,34 @@ void NRPCommunicationController::reset()
     }
     catch(const std::exception &e)
     {
-        NRPLogger::error("NRPCommunicationController::reset: failed to resetWorld()");
+        NRPLogger::error("NRPGazeboCommunicationController::reset: failed to resetWorld()");
 
         throw;
     }
 }
 
-void NRPCommunicationController::shutdown(const json&)
+void NRPGazeboCommunicationController::shutdown()
 {
     // Do nothing
 }
 
-NRPCommunicationController::NRPCommunicationController(const std::string &serverURL, const std::string &engineName)
-    : EngineGrpcServer(serverURL, engineName)
+std::unique_ptr<CommControllerSingleton> CommControllerSingleton::_instance = nullptr;
+
+CommControllerSingleton &CommControllerSingleton::getInstance()
+{
+    if(CommControllerSingleton::_instance)
+        return *(CommControllerSingleton::_instance.get());
+    else
+        throw NRPException::logCreate("Attempting to access CommControllerSingleton singleton, but it has to be"
+                                      " instantiated first");
+}
+
+CommControllerSingleton &CommControllerSingleton::resetInstance(NRPGazeboCommunicationController* engineController)
+{
+    CommControllerSingleton::_instance.reset(new CommControllerSingleton(engineController));
+    return CommControllerSingleton::getInstance();
+}
+
+CommControllerSingleton::CommControllerSingleton(NRPGazeboCommunicationController* engineController)
+    : _controller(engineController)
 {}

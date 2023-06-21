@@ -1,0 +1,9 @@
+{
+	"Timestep": 0.1,
+	"Timeout": 1,
+	"EngineConfig": {
+		"EngineName": "python_1",
+		"PythonFileName": "engine_grpc_1.py",
+		"ProtobufPackages": ["Dump"]
+	}
+}

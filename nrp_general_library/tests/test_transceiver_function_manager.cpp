@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ TestSimpleTransceiverDataPack::TestSimpleTransceiverDataPack(boost::python::api:
     : _fcn(fcn)
 {}
 
-TestOutputDataPack::~TestOutputDataPack() = default;
-
 TestSimpleTransceiverDataPack::~TestSimpleTransceiverDataPack()
 {   this->_tfInterpreterRegistry = nullptr; }
 
@@ -39,36 +37,10 @@ const std::string &TestSimpleTransceiverDataPack::linkedEngineName() const
     return this->_linkedEngine;
 }
 
-boost::python::object TestSimpleTransceiverDataPack::runTf(python::tuple &args, python::dict &kwargs)
+boost::python::object TestSimpleTransceiverDataPack::runTf(python::tuple &args, python::dict &kwargs, datapacks_set_t/* dataPacks*/)
 {   return this->_fcn(*args, **kwargs); }
 
-EngineClientInterface::datapack_identifiers_set_t TestSimpleTransceiverDataPack::updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const
+datapack_identifiers_set_t TestSimpleTransceiverDataPack::updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const
 {   return std::move(datapackIDs);  }
 
-TestInputDataPack::~TestInputDataPack() = default;
-
-DataPackIdentifier TestOutputDataPack::ID(const std::string & name)
-{
-    return DataPackIdentifier(name, "engine", "type");
-}
-
-TestOutputDataPack::TestOutputDataPack()
-    : DataPackInterface(TestOutputDataPack::ID())
-{}
-
-DataPackIdentifier TestInputDataPack::ID()
-{
-    return DataPackIdentifier("in", "engine", "type");
-}
-
-TestInputDataPack::TestInputDataPack()
-    : DataPackInterface(TestInputDataPack::ID())
-{}
-
-TestTransceiverDataPack::~TestTransceiverDataPack()
-{   this->_tfInterpreterRegistry = nullptr; }
-
-const std::string &TestTransceiverDataPack::linkedEngineName() const
-{
-    return this->_linkedEngine;
-}
+// EOF

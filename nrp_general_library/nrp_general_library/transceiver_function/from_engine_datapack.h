@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,14 @@
 
 #include "nrp_general_library/transceiver_function/transceiver_datapack_interface.h"
 
+
+enum DataPackPassingPolicy
+{
+    PASS_BY_VALUE,
+    PASS_BY_REFERENCE
+};
+
+
 /*!
  * \brief Class for input datapacks for transceiver functions, mapped to EngineDataPack python decorator
  */
@@ -34,15 +42,16 @@ class EngineDataPack
         EngineDataPack(const std::string &keyword, const DataPackIdentifier &datapackID, bool isPreprocessed);
         virtual ~EngineDataPack() override = default;
 
-        EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+        datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
     private:
 
         std::string _keyword;
         DataPackIdentifier _datapackID;
         bool _isPreprocessed;
+        DataPackPassingPolicy _DataPackPassingPolicy;
 };
 
 /*!
@@ -55,9 +64,9 @@ public:
     EngineDataPacks(const std::string &keyword, const boost::python::list &datapackListNames, const std::string &engineName, bool isPreprocessed);
     virtual ~EngineDataPacks() override = default;
 
-    EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+    datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+    boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
 private:
 
@@ -65,6 +74,7 @@ private:
     std::vector<DataPackIdentifier> _datapacksIDs;
     std::string _engineName;
     bool _isPreprocessed;
+    DataPackPassingPolicy _DataPackPassingPolicy;
 };
 
 #endif // SINGLE_TRANSCEIVER_DATAPACK_H

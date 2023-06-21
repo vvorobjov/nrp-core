@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,12 +63,12 @@ class TransceiverFunction
          * \param kwargs Python keywords
          * \return Returns result of TF
          */
-        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs) override;
+        boost::python::object runTf(boost::python::tuple &args, boost::python::dict &kwargs, datapacks_set_t dataPacks) override;
 
     protected:
-        EngineClientInterface::datapack_identifiers_set_t getRequestedDataPackIDs() const override;
+        datapack_identifiers_set_t getRequestedDataPackIDs() const override;
 
-        EngineClientInterface::datapack_identifiers_set_t updateRequestedDataPackIDs(EngineClientInterface::datapack_identifiers_set_t &&datapackIDs) const override;
+        datapack_identifiers_set_t updateRequestedDataPackIDs(datapack_identifiers_set_t &&datapackIDs) const override;
 
     private:
         /*!

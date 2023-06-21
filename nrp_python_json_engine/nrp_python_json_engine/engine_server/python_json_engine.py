@@ -2,7 +2,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,12 +87,12 @@ def run_loop():
 
 @app.route('/set_datapacks', methods=["POST"])
 def set_datapack():
-    return jsonify(server_callbacks.set_datapack(request.json))
+    return jsonify(server_callbacks.set_datapacks(request.json))
 
 
 @app.route('/get_datapacks', methods=["POST"])
 def get_datapack():
-    return jsonify(server_callbacks.get_datapack(request.json))
+    return jsonify(server_callbacks.get_datapacks(request.json))
 
 
 @app.route('/reset', methods=["POST"])

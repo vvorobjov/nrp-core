@@ -8,7 +8,7 @@ import cv2
 from nrp_core.event_loop import *
 
 
-@FromEngine(keyword='camera', address='/gazebo/husky_camera::camera')
+@FromEngine(keyword='camera', address='/gazebo/husky::eye_vision_camera::camera')
 @FunctionalNode(name="image_preprocessor", outputs=['processed_image'])
 def detect_red(camera):
     """
@@ -67,9 +67,9 @@ def detect_red(camera):
     processed_image.data["right"] = red_right
     processed_image.data["go_on"] = green_blue
 
-    print("------------------")
-    print("Left Red:  {}".format(processed_image.data["left"]))
-    print("Right Red: {}".format(processed_image.data["right"]))
-    print("Go On:     {}".format(processed_image.data["go_on"]))
+    # print("------------------")
+    # print("Left Red:  {}".format(processed_image.data["left"]))
+    # print("Right Red: {}".format(processed_image.data["right"]))
+    # print("Go On:     {}".format(processed_image.data["go_on"]))
 
     return [processed_image]

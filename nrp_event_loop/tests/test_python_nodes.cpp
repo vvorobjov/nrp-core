@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 
-#include "nrp_event_loop/computational_graph/functional_node_factory.h"
+#include "nrp_event_loop/fn_factory/functional_node_factory.h"
 
 #include "nrp_event_loop/python/functional_node.h"
 
@@ -40,7 +40,11 @@
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
 
+#include "nrp_event_loop/nodes/time/input_time.h"
+
 #include "nrp_general_library/utils/utils.h"
+
+#include "nrp_event_loop/utils/graph_utils.h"
 
 //// Python nodes
 
@@ -154,7 +158,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
     std::shared_ptr<PythonFunctionalNode> fn_p2 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn2.pySetup(wrong_type_f));
 
-    ASSERT_THROW(fn_p2->compute(), boost::python::error_already_set);
+    ASSERT_THROW(fn_p2->compute(), NRPException);
 
     // python function returns less than declared outputs
     bpy::object less_f = test_module_dict["test_less_elements"];
@@ -178,7 +182,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
     std::shared_ptr<PythonFunctionalNode> fn_p5 =
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn5.pySetup(broken_f));
 
-    ASSERT_THROW(fn_p5->compute(), boost::python::error_already_set);
+    ASSERT_THROW(fn_p5->compute(), NRPException);
 
     //// register F2F edge
     // wrong node
@@ -238,6 +242,13 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     fn_p->compute();
     ASSERT_EQ(bpy::len(test_module_dict["msgs"]), 1);
 
+    // return None case
+    msg_got = nullptr;
+    test_module_dict["set_return_none"](bpy::object(true));
+    o_p.publish(&msg_send);
+    ASSERT_NO_THROW(fn_p->compute());
+    ASSERT_EQ(msg_got, nullptr);
+
     // 'always' policy
     auto fn_p_always = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode("function_always"));
     fn_p_always->compute();
@@ -253,14 +264,36 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     // F2F Edge
     ComputationalGraphManager::getInstance().getNode("function3")->compute();
     auto odummy_p2 = dynamic_cast<OutputDummy*>(ComputationalGraphManager::getInstance().getNode("odummy2"));
+    odummy_p2->graphCycleStartCB();
     odummy_p2->compute();
     ASSERT_EQ(bpy::extract<int>(*(odummy_p2->lastData)), 10);
 
+    // execution period
+    ASSERT_EQ(odummy_p->getComputePeriod(), 1);
+    ASSERT_EQ(odummy_p2->getComputePeriod(), 2);
+    odummy_p2->call_count = 0;
+    int n = 0;
+    while(n++ < 4)
+        ComputationalGraphManager::getInstance().compute();
+    ASSERT_EQ(odummy_p2->call_count, 2); // Called 2 times
+
+    // 'publish from cache' policy
+    ASSERT_EQ(odummy_p->publishFromCache(), true);
+    ASSERT_EQ(odummy_p2->publishFromCache(), false);
+
     //// Failing cases
-    ASSERT_THROW(bpy::import("wrong_i_port"), boost::python::error_already_set);
-    ASSERT_THROW(bpy::import("wrong_o_port"), boost::python::error_already_set);
-    ASSERT_THROW(bpy::import("input_no_node"), boost::python::error_already_set);
-    ASSERT_THROW(bpy::import("output_no_node"), boost::python::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_i_port"), bpy::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_o_port"), bpy::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("input_no_node"), bpy::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("output_no_node"), bpy::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_period_connections"), bpy::error_already_set);
+    ComputationalGraphManager::getInstance().clear();
+    ASSERT_THROW(bpy::import("wrong_from_cache_connections"), bpy::error_already_set);
 }
 
 TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
@@ -276,7 +309,7 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     try {
         bpy::import("test_engine_nodes");
     }
-    catch (const boost::python::error_already_set &) {
+    catch (const NRPException &) {
         NRPLogger::error("Test failed when loading test_engine_nodes.py");
         PyErr_Print();
         boost::python::throw_error_already_set();
@@ -293,15 +326,15 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     ASSERT_EQ(req_devs.begin()->Name, "my_data_pack");
     ASSERT_EQ(req_devs.begin()->EngineName, "fake_engine");
 
-    EngineClientInterface::datapacks_set_t dpacks_sent;
-    dpacks_sent.insert(DataPackInterfaceSharedPtr(new DataPackInterface(*(req_devs.begin()))));
+    datapacks_vector_t dpacks_sent;
+    dpacks_sent.push_back(DataPackInterfaceSharedPtr(new DataPackInterface(*(req_devs.begin()))));
     input_p->setDataPacks(dpacks_sent);
 
     ComputationalGraphManager::getInstance().compute();
     auto dpacks_received = output_p->getDataPacks();
     ASSERT_EQ(dpacks_received.size(),1);
-    ASSERT_EQ(dpacks_received[0]->name(), "my_data_pack");
-    ASSERT_EQ(dpacks_received[0]->engineName(), "fake_engine");
+    ASSERT_EQ(dpacks_received.begin()->get()->name(), "my_data_pack");
+    ASSERT_EQ(dpacks_received.begin()->get()->engineName(), "fake_engine");
 
     // cache policy 'keep'
     ComputationalGraphManager::getInstance().compute();
@@ -315,14 +348,114 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     auto input_p_clear = dynamic_cast<InputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_input"));
     auto output_p_clear = dynamic_cast<OutputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_2_output"));
 
-    EngineClientInterface::datapacks_set_t dpacks_sent_clear;
-    dpacks_sent_clear.insert(DataPackInterfaceSharedPtr(new DataPackInterface(*(input_p_clear->requestedDataPacks().begin()))));
+    datapacks_vector_t dpacks_sent_clear;
+    dpacks_sent_clear.push_back(DataPackInterfaceSharedPtr(new DataPackInterface(*(input_p_clear->requestedDataPacks().begin()))));
     input_p_clear->setDataPacks(dpacks_sent_clear);
 
     ComputationalGraphManager::getInstance().compute();
     ASSERT_EQ(output_p_clear->getDataPacks().size(),1);
     ComputationalGraphManager::getInstance().compute();
     ASSERT_EQ(output_p_clear->getDataPacks().size(),0);
+
+    // check that execution period was set correctly, always 1 for output Engine nodes
+    ASSERT_EQ(output_p->getComputePeriod(), 1);
+}
+
+TEST(ComputationalGraphPythonNodes, TIME_NODES) {
+    // Setup required elements
+    namespace bpy = boost::python;
+    ComputationalGraphManager::resetInstance();
+    Py_Initialize();
+    PyImport_ImportModule(EVENT_LOOP_MODULE_NAME_STR);
+    appendPythonPath(TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH);
+
+    //// Test normal case
+    // load graph and configure nodes
+    try {
+        bpy::import("test_time_nodes");
+    }
+    catch (const NRPException &) {
+        NRPLogger::error("Test failed when loading test_time_nodes.py");
+        PyErr_Print();
+        boost::python::throw_error_already_set();
+    }
+
+    auto& gm = ComputationalGraphManager::getInstance();
+    gm.configure();
+
+    // Find nodes
+    InputIterationNode* _iteration = nullptr;
+    InputClockNode* _clock = nullptr;
+    std::tie(_clock, _iteration) = findTimeNodes();
+
+    ASSERT_NE(_clock, nullptr);
+    ASSERT_NE(_iteration, nullptr);
+
+    auto clockPort = _clock->getSinglePort("clock");
+    auto iterPort = _iteration->getSinglePort("iteration");
+
+    ASSERT_NE(clockPort, nullptr);
+    ASSERT_NE(iterPort, nullptr);
+
+    auto clockOut = dynamic_cast<OutputDummy*>(gm.getNode("clock_out"));
+    auto iterOut = dynamic_cast<OutputDummy*>(gm.getNode("iteration_out"));
+
+    // Check time nodes send expected messages
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 0);
+    ASSERT_EQ(iterOut->call_count, 0);
+
+    _iteration->updateIteration(0);
+    _clock->updateClock(SimulationTime(0));
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 1);
+    ASSERT_EQ(iterOut->call_count, 1);
+    ASSERT_EQ(bpy::extract<ulong>(*(clockOut->lastData)), 0);
+    ASSERT_EQ(bpy::extract<ulong>(*(iterOut->lastData)), 0);
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 1);
+    ASSERT_EQ(iterOut->call_count, 1);
+
+    _iteration->updateIteration(1);
+    _clock->updateClock(SimulationTime(10000000));
+
+    gm.compute();
+
+    ASSERT_EQ(clockOut->call_count, 2);
+    ASSERT_EQ(iterOut->call_count, 2);
+    ASSERT_EQ(bpy::extract<ulong>(*(clockOut->lastData)), 10);
+    ASSERT_EQ(bpy::extract<ulong>(*(iterOut->lastData)), 1);
+}
+
+TEST(ComputationalGraphPythonNodes, TIME_NODES_RESERVED_NAMES) {
+    // Setup required elements
+    namespace bpy = boost::python;
+    ComputationalGraphManager::resetInstance();
+    Py_Initialize();
+    PyImport_ImportModule(EVENT_LOOP_MODULE_NAME_STR);
+    appendPythonPath(TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH);
+
+    //// Test normal case
+    // load graph and configure nodes
+    try {
+        bpy::import("test_time_nodes_reserved_names");
+    }
+    catch (const NRPException &) {
+        NRPLogger::error("Test failed when loading test_time_nodes.py");
+        PyErr_Print();
+        boost::python::throw_error_already_set();
+    }
+
+    auto &gm = ComputationalGraphManager::getInstance();
+    gm.configure();
+
+    // Find nodes
+    ASSERT_ANY_THROW(findTimeNodes());
 }
 
 // EOF

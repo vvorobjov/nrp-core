@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,13 @@ NRPMQTTProxy &NRPMQTTProxy::resetInstance(const nlohmann::json& clientParams)
     return NRPMQTTProxy::getInstance();
 }
 
-void NRPMQTTProxy::publish(const std::string& address, const std::string& msg)
-{ _mqttClient->publish(address, msg); }
+void NRPMQTTProxy::publish(const std::string& address, const std::string& msg, bool retained)
+{
+    if(_doBypassBroker)
+        _mqttClient->publishDirect(address, msg);
+    else
+        _mqttClient->publish(address, msg, retained);
+}
 
 void NRPMQTTProxy::subscribe(const std::string& address, const std::function<void (const std::string&)>& callback)
 { _mqttClient->subscribe(address, callback); }
@@ -47,9 +52,20 @@ NRPMQTTProxy::NRPMQTTProxy(const nlohmann::json& clientParams) :
         this->publish("nrp/welcome", "NRP-core is connected!");
 }
 
+bool NRPMQTTProxy::isConnected()
+{
+    if(_doBypassBroker)
+        return true;
+    else
+        return _mqttClient->isConnected();
+}
+
 void NRPMQTTProxy::disconnect()
 {
     if(_mqttClient->isConnected())
         this->publish("nrp/welcome", "Bye! NRP-core is disconnecting!");
     _mqttClient->disconnect();
 }
+
+void NRPMQTTProxy::clearRetained()
+{ _mqttClient->clearRetained(); }
