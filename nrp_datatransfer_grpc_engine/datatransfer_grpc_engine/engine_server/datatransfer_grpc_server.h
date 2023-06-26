@@ -121,6 +121,11 @@ class DataTransferEngine
         std::string _engineName;
 
         /*!
+         * \brief Name of the MQTT client
+         */
+        std::string _mqttClientName;
+
+        /*!
          * \brief The list of the names of the associated DataPacks
          */
         std::vector< std::string > _dataPacksNames;

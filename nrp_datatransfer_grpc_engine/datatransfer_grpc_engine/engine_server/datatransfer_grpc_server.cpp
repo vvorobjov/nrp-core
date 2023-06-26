@@ -32,7 +32,7 @@ DataTransferEngine::DataTransferEngine(const std::string &engineName,
                                      const std::string &protobufPluginsPath,
                                      const nlohmann::json &protobufPlugins)
     : EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins),
-    _engineName(engineName)
+    _engineName(engineName), _mqttClientName(engineName)
 {
     _dataPacksNames.clear();
 }
@@ -62,11 +62,20 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
 
     bool mqttConnected = false;
 #ifdef MQTT_ON
+    // Topic: MQTT_BASE/simulationID
+    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
+    if (data.contains("MQTTPrefix")){
+        // Topic: MQTTPrefix/MQTT_BASE/simulationID
+        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
+        this->_mqttClientName = std::string(data.at("MQTTPrefix")) + std::string("_") + this->_mqttClientName;
+    }
+    this->_mqttBase += std::string(data.at("simulationID"));
+
     nlohmann::json mqtt_config;
     // If client doesn't exist yet, then create one
     if (!_mqttClient){
         mqtt_config["MQTTBroker"] = data.at("MQTTBroker");
-        mqtt_config["ClientName"] = _engineName;
+        mqtt_config["ClientName"] = this->_mqttClientName;
         _mqttClient = std::make_shared<NRPMQTTClient>(mqtt_config);
     }
     else
@@ -74,14 +83,6 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
         NRPLogger::info("Using preset MQTT client connection");
     }
     mqttConnected = _mqttClient->isConnected();
-
-    // Topic: MQTT_BASE/simulationID
-    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
-    if (data.contains("MQTTPrefix")){
-        // Topic: MQTTPrefix/MQTT_BASE/simulationID
-        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
-    }
-    this->_mqttBase += std::string(data.at("simulationID"));
 
     if(!mqttConnected)
     {
