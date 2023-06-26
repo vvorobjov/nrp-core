@@ -229,27 +229,32 @@ void NrpCoreServer::prepareTrajectory(NrpCore::Trajectory * trajectory)
 
             trajectoryMessage->set_dataindex(trajectoryIndex);
             trajectoryMessage->mutable_data()->PackFrom(strdata);
+            trajectoryIndex++;
         }
         else
         {
             // We assume that it's a proto DataPack
-            NrpCore::TrajectoryMessage * trajectoryMessage = trajectory->add_prototrajectorymessages();
-
+            NrpCore::TrajectoryMessage trajectoryMessage = NrpCore::TrajectoryMessage();
+            std::atomic<bool> isSet(false);
             for(auto& mod : _protoOps) {
                 try {
-                    mod->setTrajectoryMessageFromInterface(*((*trajectoryElement).get()), trajectoryMessage);
+                    mod->setTrajectoryMessageFromInterface(*((*trajectoryElement).get()), &trajectoryMessage);
+                    isSet = true;
                 }
                 catch (NRPException &) {
                     // this just means that the module couldn't process the request, try with the next one
                 }
             }
 
-            // TODO How to check for failure in message packing?
+            if(isSet)
+            {
+                trajectoryMessage.set_dataindex(trajectoryIndex);
+                trajectory->add_prototrajectorymessages();
+                trajectory->mutable_prototrajectorymessages(trajectory->prototrajectorymessages_size() - 1)->CopyFrom(trajectoryMessage);
 
-            trajectoryMessage->set_dataindex(trajectoryIndex);
+                trajectoryIndex++;
+            }
         }
-
-        trajectoryIndex++;
     }
 
     this->_manager->getSimulationDataManager().clearTrajectory();
