@@ -63,7 +63,7 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
 
     auto eTstep = config.at("Timestep").get<float>();
     auto eTout  = config.at("Timeout").get<float>();
-    auto eTstepWarn = config.at("TimestepWarnThreshold").get<float>();
+    auto eTstepWarn = config.at("RealTimeDeltaThres").get<float>();
 
     _timestep = std::chrono::milliseconds((int)(1000 * eTstep));
     _timeout = std::chrono::milliseconds((int)(1000 * eTout));

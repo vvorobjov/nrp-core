@@ -54,7 +54,7 @@ The configuration of Asynchronous Engine executable is defined in EventLoopEngin
 <tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array<th>Values
 <tr><td>Timeout<td>Event loop timeout (in seconds). 0 means no timeout<td>integer<td>0<td><td><td>
 <tr><td>Timestep<td>Time in seconds the event loop advances in each loop<td>number<td>0.01<td><td><td>
-<tr><td>TimestepWarnThreshold<td>Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the "Timestep" parameter<td>number<td>0.001<td><td><td>
+<tr><td>RealTimeDeltaThres<td>Threshold (in seconds) above which it is considered that the Event Loop violated the real time constraint specified by the "Timestep" parameter<td>number<td>0.001<td><td><td>
 <tr><td>EngineConfig<td>Configuration of the Engine run by the Event Loop<td>\ref engine_base_schema "#EngineBase"<td><td>X<td><td>
 <tr><td>MQTTConfig<td>Configuration of the MQTT client used to send/receive datapacks<td>\ref mqtt_connector_schema_parameters "#MQTTClient"<td><td><td><td>
 <tr><td>ProcessLastMsg<td>if true, only the last message received through a topic during the last step is processed<td>bool<td>true<td><td><td>

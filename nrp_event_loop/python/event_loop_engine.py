@@ -196,7 +196,7 @@ def run_event_loop_engine_app(parse_config_f: callable, engine_wrapper_c: Type[E
 
     engine = engine_wrapper_c()
     ele = event_loop_engine_c(config["Timestep"],
-                                  config["TimestepWarnThreshold"],
+                                  config["RealTimeDeltaThres"],
                                   config["DataQueueSize"],
                                   config["ProcessLastMsg"],
                                   config["EngineConfig"],

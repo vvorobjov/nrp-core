@@ -52,7 +52,7 @@ void EventLoopSimManager::initializeCB()
         // Configure Event Loop
         auto eTstep = ELoopConf.at("Timestep").get<float>();
         auto eTout  = ELoopConf.at("Timeout").get<float>();
-        auto eTstepWarn = ELoopConf.at("TimestepWarnThreshold").get<float>();
+        auto eTstepWarn = ELoopConf.at("RealTimeDeltaThres").get<float>();
 
         _timestep = std::chrono::milliseconds((int)(1000 * eTstep));
         _timeout = std::chrono::milliseconds((int)(1000 * eTout));

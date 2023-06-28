@@ -16,10 +16,10 @@
         "default": 0.01,
         "description": "Time length (in seconds) of each loop, i.e it is the inverse of the Event Loop frequency"
       },
-      "TimestepWarnThreshold": {
+      "RealTimeDeltaThres": {
         "type" : "number",
         "default": 0.001,
-        "description": "Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the \"Timestep\" parameter"
+        "description": "Threshold (in seconds) above which it is considered that the Event Loop violated the real time constraint specified by the \"Timestep\" parameter"
       }
     }
   },

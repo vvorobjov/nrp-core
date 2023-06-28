@@ -42,12 +42,12 @@ TEST(EventLoop, EVENT_LOOP) {
     Py_Initialize();
 
     std::chrono::milliseconds timestep(10);
-    std::chrono::milliseconds timestepThres(1);
+    std::chrono::milliseconds rtDeltaThres(1);
     nlohmann::json graph_config;
     std::stringstream py_file;
     py_file << TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH << "/test_time_nodes.py";
     graph_config.push_back(py_file.str());
-    EventLoop e_l(graph_config, timestep, timestepThres, ComputationalGraph::ALL_NODES, true, false);
+    EventLoop e_l(graph_config, timestep, rtDeltaThres, ComputationalGraph::ALL_NODES, true, false);
 
     // run loop once
     auto now = std::chrono::steady_clock::now();

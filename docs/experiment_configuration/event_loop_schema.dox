@@ -13,7 +13,7 @@ Below is a list of all the parameters needed to configure the EventLoop.
 <tr><td>ExecutionMode<td>\ref graph_exec_modes "Execution Mode" that will be used when running the Event Loop<td>enum<td>"AllNodes"<td><td><td>"AllNodes", "OutputDriven"
 <tr><td>Timeout<td>Event loop timeout (in seconds). 0 means no timeout<td>integer<td>0<td><td><td>
 <tr><td>Timestep<td>Time in seconds the event loop advances in each loop<td>number<td>0.01<td><td><td>
-<tr><td>TimestepWarnThreshold<td>Threshold (in seconds) above which a warning message is printed at runtime everytime the Event Loop can't run at the frequency specified in the "Timestep" parameter<td>number<td>0.001<td><td><td>
+<tr><td>RealTimeDeltaThres<td>Threshold (in seconds) above which it is considered that the Event Loop violated the real time constraint specified by the "Timestep" parameter<td>number<td>0.001<td><td><td>
 </table>
 
 \section event_loop_schema_example Example
@@ -23,7 +23,7 @@ Below is a list of all the parameters needed to configure the EventLoop.
     "ExecutionMode": "OutputDriven",
     "Timeout": 10,
     "Timestep": 0.02,
-    "TimestepWarnThreshold": 0.002
+    "RealTimeDeltaThres": 0.002
 }
 \endcode
 
