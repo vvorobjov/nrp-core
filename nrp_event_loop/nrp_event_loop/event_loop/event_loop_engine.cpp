@@ -45,6 +45,16 @@ void EventLoopEngine::initializeCB()
     if(!_mqttProxy || !_mqttProxy->isConnected())
         throw NRPException::logCreate("EventLoopEngine failed to connect to MQTT. Ensure that the MQTT broker is running and check the engine configuration");
 
+    auto stepConf = this->_engineConfig.at("EngineTimestep").get<float>();
+    auto stepELE = fromSimulationTime<float, std::ratio<1>>(std::chrono::duration_cast<SimulationTime>(this->_timestep));
+    if(stepConf != stepELE) {
+        NRPLogger::info(
+                "Engine Timestep parameter " + std::to_string(stepConf) +
+                " overwritten to " + std::to_string(stepELE) +
+                " to match EventLoop time step");
+        this->_engineConfig["EngineTimestep"] = stepELE;
+    }
+
     this->_engineWrapper->initialize(this->_engineConfig);
 
     using std::placeholders::_1;

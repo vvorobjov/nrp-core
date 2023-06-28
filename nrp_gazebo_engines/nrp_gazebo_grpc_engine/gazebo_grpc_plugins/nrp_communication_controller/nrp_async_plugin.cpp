@@ -75,11 +75,6 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
 
     GazeboEngineGrpcNRPClient client(config.at("EngineConfig"), ProcessLauncherInterface::unique_ptr{});
 
-    if(client.engineConfig().at("EngineTimestep").get<float>() != eTstep)
-        NRPLogger::info("Engine Timestep parameter " + std::to_string(client.engineConfig().at("EngineTimestep").get<float>()) +
-                        " overwritten to " + std::to_string(eTstep) +
-                        " to match EventLoop time step");
-
     _engineName = client.engineName();
     _protobufPluginsPath = client.engineConfig().at("ProtobufPluginsPath").get<std::string>();
     _protobufPlugins = client.engineConfig().at("ProtobufPackages");

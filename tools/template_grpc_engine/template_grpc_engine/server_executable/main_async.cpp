@@ -67,11 +67,6 @@ int main(int argc, char * argv[])
 
     ${engine_name}EngineGrpcClient client(config.at("EngineConfig"), ProcessLauncherInterface::unique_ptr{});
 
-    if(client.engineConfig().at("EngineTimestep").get<float>() != eTstep)
-        NRPLogger::info("Engine Timestep parameter " + std::to_string(client.engineConfig().at("EngineTimestep").get<float>()) +
-                        " overwritten to " + std::to_string(eTstep) +
-                        " to match EventLoop time step");
-
     const auto protobufPluginsPath = client.engineConfig().at("ProtobufPluginsPath").get<std::string>();
     const auto protobufPlugins = client.engineConfig().at("ProtobufPackages");
 
