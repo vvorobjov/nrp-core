@@ -20,6 +20,11 @@
         "type" : "number",
         "default": 0.001,
         "description": "Threshold (in seconds) above which it is considered that the Event Loop violated the real time constraint specified by the \"Timestep\" parameter"
+      },
+      "LogRTInfo": {
+        "type" : "boolean",
+        "default" : false,
+        "description" : "If true step duration info is logged into a file"
       }
     }
   },

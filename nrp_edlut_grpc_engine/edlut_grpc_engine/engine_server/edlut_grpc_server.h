@@ -34,6 +34,9 @@
 #include "simulation/EventQueue.h"
 #include "simulation/SaveWeightsEvent.h"
 
+#include <thread>
+#include <future>
+
 class EdlutEngine
     : public EngineProtoWrapper
 {
@@ -98,6 +101,10 @@ class EdlutEngine
          */
         static SimulationTime _simulationTime;
 
+        void handleRTDelta(const SimulationTime timeDelta) override;
+
+        void rtClockUpdate(const SimulationTime newClock) override;
+
 
     private:
 
@@ -156,8 +163,7 @@ class EdlutEngine
          */
         float _sensorialDelay;
 
-
-
+        std::future<void> _watchdog;
 
 };
 

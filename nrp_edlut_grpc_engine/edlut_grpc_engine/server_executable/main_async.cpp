@@ -60,6 +60,7 @@ int main(int argc, char * argv[])
     auto timestep = std::chrono::milliseconds((int)(1000 * eTstep));
     auto timeout = std::chrono::milliseconds((int)(1000 * eTout));
     auto timestepWarn = std::chrono::milliseconds((int)(1000 * eTstepWarn));
+    auto logRTInfo = config.at("LogRTInfo").get<bool>();
 
     std::stringstream info_msg;
     info_msg << "Creating Event Loop with configuration: timestep=" << timestep.count() << "(ms), timeout=" << timeout.count() << "(ms)";
@@ -81,7 +82,7 @@ int main(int argc, char * argv[])
     EventLoopEngine engine(timestep, timestepWarn,
                            config.at("DataQueueSize").get<size_t>(),
                                    config.at("ProcessLastMsg").get<bool>(),
-                                           client.engineConfig(), wrapper);
+                                           client.engineConfig(), wrapper, true, logRTInfo);
 
     // add sigint handle
     stop_handler = [&] (int) {

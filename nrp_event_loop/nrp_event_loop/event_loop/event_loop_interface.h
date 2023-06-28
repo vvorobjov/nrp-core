@@ -27,6 +27,7 @@
 #include <future>
 
 #include <nlohmann/json.hpp>
+#include <fstream>
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -42,17 +43,14 @@ class EventLoopInterface
         /*!
          * \brief Constructor
          */
-        EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres);
+        EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
+                           bool delegateRTControl = false,
+                           bool logRTInfo = false);
 
         /*!
          * \brief Initialize loop
          */
         virtual void initialize();
-
-        /*!
-         * \brief Run a single loop
-         */
-        void runLoopOnce(const std::chrono::time_point<std::chrono::steady_clock>& startTime);
 
         /*!
          * \brief Run loop
@@ -111,10 +109,21 @@ class EventLoopInterface
          */
         virtual void shutdownCB() = 0;
 
+        /*!
+         * \brief Callback used to pass runtime deviations with the targeted runtime frequency
+         */
+        virtual void realtimeDeltaCB(std::chrono::milliseconds deviation) = 0;
+
         /*! \brief timestep of the event loop  */
         std::chrono::milliseconds _timestep;
-        /*! \brief allowed time deviation in event loop timestep execution before printing a warning message */
-        std::chrono::milliseconds _timestepThres;
+        /*! \brief allowed real time deviation in event loop timestep execution before considering that RT constraints are violated
+         *
+         *  Currently used only to print a warning message to the user
+         */
+        std::chrono::milliseconds _rtDeltaThres;
+        /*! \brief If true EventLoopInterface don't attempt to control RT execution, it delegates to derived classes
+         */
+        bool _delegateRTControl;
         /*! \brief current time clock  */
         std::chrono::milliseconds _currentTime = std::chrono::milliseconds(0);
         /*! \brief stores the number of times the loop has been run */
@@ -135,6 +144,29 @@ class EventLoopInterface
         std::atomic<bool> _doRun;
         /*! \brief flag telling if the event loop has been initialized */
         bool _isInitialized = false;
+
+    private:
+
+        bool _logRTInfo;
+        std::shared_ptr<std::ofstream> _fileLogger;
+
+        void initFileLogger(const std::string& loggerName)
+        {
+            if(_fileLogger)
+                return;
+
+            _fileLogger.reset(new std::ofstream());
+            _fileLogger->open(loggerName);
+        }
+
+        void closeFileLogger()
+        {
+            if(_fileLogger) {
+                _fileLogger->flush();
+                _fileLogger->close();
+                _fileLogger.reset();
+            }
+        }
 };
 
 

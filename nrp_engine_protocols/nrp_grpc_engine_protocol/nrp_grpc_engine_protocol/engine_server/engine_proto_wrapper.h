@@ -164,6 +164,27 @@ class EngineProtoWrapper
      */
     virtual SimulationTime runLoopStep(const SimulationTime timeStep) = 0;
 
+    /*!
+     * \brief Let the Engine perform corrective actions to handle deviations with realtime constraints
+     *
+     * It is only called when the Engine is run async in realtime. It is called after each runLoopStep
+     *
+     * \param[in] timeDelta Difference between the time performed to execute the last runLoopStep and the expected time
+     *                      given the Engine configuration timestep. Positive values means slower than realtime
+     */
+    virtual void handleRTDelta(const SimulationTime /*timeDelta*/)
+    {}
+
+    /*!
+    * \brief callback called each step with the value of the realtime clock
+    *
+    * It is only called when the Engine is run async in realtime. It is called before each runLoopStep
+    *
+    * \param[in] newClock current value of the realtime clock
+    */
+    virtual void rtClockUpdate(const SimulationTime /*newClock*/)
+    {}
+
     void setDataPacks(const EngineGrpc::SetDataPacksRequest & data)
     {
         const auto numDataPacks = data.datapacks_size();

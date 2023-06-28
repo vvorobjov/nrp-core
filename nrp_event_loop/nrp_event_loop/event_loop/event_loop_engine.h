@@ -42,9 +42,11 @@ class EventLoopEngine : public EventLoopInterface
         /*!
          * \brief Constructor
          */
-        EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+        EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                         size_t storeCapacity, bool doProcessLast,
-                        const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper);
+                        const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
+                        bool delegateRTControl = false,
+                        bool logRTInfo = false);
 
         ~EventLoopEngine();
 
@@ -55,6 +57,8 @@ class EventLoopEngine : public EventLoopInterface
         void runLoopCB() override;
 
         void shutdownCB() override;
+
+        void realtimeDeltaCB(std::chrono::milliseconds deviation) override;
 
     private:
 

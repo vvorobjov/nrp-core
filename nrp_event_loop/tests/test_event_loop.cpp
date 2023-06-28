@@ -51,7 +51,7 @@ TEST(EventLoop, EVENT_LOOP) {
 
     // run loop once
     auto now = std::chrono::steady_clock::now();
-    e_l.runLoopOnce(now);
+    e_l.runLoop(timestep);
     auto time_lapse = std::chrono::steady_clock::now() - now;
 
     auto clockOut = dynamic_cast<OutputDummy*>(ComputationalGraphManager::getInstance().getNode("clock_out"));

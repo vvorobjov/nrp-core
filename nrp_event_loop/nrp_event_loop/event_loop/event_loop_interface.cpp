@@ -22,18 +22,15 @@
 
 #include "nrp_event_loop/event_loop/event_loop_interface.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
+#include <algorithm>
 
-
-EventLoopInterface::EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres) :
-    _timestep(timestep),
-    _timestepThres(timestepThres)
+EventLoopInterface::EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
+                                       bool delegateRTControl, bool logRTInfo) :
+        _timestep(timestep),
+        _rtDeltaThres(rtDeltaThres),
+        _delegateRTControl(delegateRTControl),
+        _logRTInfo(logRTInfo)
 { }
-
-void EventLoopInterface::runLoopOnce(const std::chrono::time_point<std::chrono::steady_clock>& startTime)
-{
-    this->runLoopCB();
-    std::this_thread::sleep_until(startTime + _timestep);
-}
 
 void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
 {
@@ -46,29 +43,64 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
     bool useTimeout = timeout != std::chrono::milliseconds(0);
 
     _iterations = 0L;
+    _currentTime = std::chrono::milliseconds(0);
     auto startLoopTime = std::chrono::steady_clock::now();
     auto startStepTime = startLoopTime;
-    auto lastStartStepTime = startLoopTime;
-    auto lastStepDuration = startStepTime - lastStartStepTime;
+    auto endStepTime = startLoopTime;
+    auto stepDuration = endStepTime - startStepTime;
+
+    long int stepDurationInt = 0;
+    long int stepDurationAverage = 0;
+    long int stepDurationMin = _timestep.count();
+    long int stepDurationMax = 0;
+
+    if(_logRTInfo)
+        // TODO: name should be a parameter or somehow unique and representative of this event loop instance
+        initFileLogger(".event_loop_rt.log");
 
     while(_doRun) {
+        // Mark step start time
         startStepTime = std::chrono::steady_clock::now();
-        lastStepDuration = startStepTime - lastStartStepTime;
-        _currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(startStepTime - startLoopTime);
+        // Run loop computations
+        this->runLoopCB();
+        // Control step duration, threshold and rt deviation
+        endStepTime = std::chrono::steady_clock::now();
+        _currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(endStepTime - startLoopTime);
+        _iterations++;
+        stepDuration = endStepTime -  startStepTime;
+        auto rtDev = stepDuration - _timestep;
+
+        if(_logRTInfo) {
+            stepDurationInt =  std::chrono::duration_cast<std::chrono::milliseconds>(stepDuration).count();
+            stepDurationAverage += stepDurationInt;
+            stepDurationMax = std::max(stepDurationMax, stepDurationInt);
+            stepDurationMin = std::min(stepDurationMin, stepDurationInt);
+            // TODO: it would be better to do the logging in a separate thread, to avoid delays when ofstream buffer flush
+            (*_fileLogger) << _iterations << " " << _currentTime.count() << " " << stepDurationInt << "\n";
+        }
 
         if(useTimeout && _currentTime >= timeout)
             break;
 
-        if(lastStepDuration > _timestep + _timestepThres) {
-            NRPLogger::warn("Event Loop can't run at the target frequency. Actual step duration: " +
-            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(lastStepDuration).count()) +
-            " (ms). Target step duration: " + std::to_string(_timestep.count()) + " (ms).");
+//        if(rtDev > _rtDeltaThres) {
+//            NRPLogger::warn("Event Loop can't run at the target frequency. Actual step duration: " +
+//                            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(stepDuration).count()) +
+//                            " (ms). Target step duration: " + std::to_string(_timestep.count()) + " (ms).");
+//        }
+
+        if(!_delegateRTControl) {
+            // TODO: add average window parameter and probably change sleep_until by sleep_for and move to derived classes?
+            realtimeDeltaCB(std::chrono::duration_cast<std::chrono::milliseconds>(rtDev));
+            std::this_thread::sleep_until(startStepTime + _timestep);
         }
+    }
 
-        runLoopOnce(startStepTime);
-
-        lastStartStepTime = startStepTime;
-        _iterations++;
+    if(_logRTInfo) {
+        NRPLogger::info("Event Loop Step Duration stats. average: " +
+                        std::to_string(stepDurationAverage/_iterations) + " (ms). max: " +
+                        std::to_string(stepDurationMax) + " (ms). min: " +
+                        std::to_string(stepDurationMin) + " (ms).");
+        closeFileLogger();
     }
 
     _doRun = false;

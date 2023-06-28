@@ -45,7 +45,7 @@ class EventLoop : public EventLoopInterface
         /*!
          * \brief Constructor
          */
-        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                   ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
                   bool ownGIL = true, bool spinROS = false);
 
@@ -58,6 +58,10 @@ class EventLoop : public EventLoopInterface
         void runLoopCB() override;
 
         void shutdownCB() override;
+
+        // no corrective actions are implemented yet
+        void realtimeDeltaCB(std::chrono::milliseconds /*deviation*/) override
+        { }
 
     private:
     

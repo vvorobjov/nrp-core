@@ -29,9 +29,9 @@
 
 #include "nrp_event_loop/utils/graph_utils.h"
 
-EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                      ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
-        EventLoopInterface(timestep, timestepThres),
+        EventLoopInterface(timestep, rtDeltaThres),
     _graph_config(graph_config),
     _execMode(execMode),
     _ownGIL(ownGIL),

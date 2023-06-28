@@ -89,6 +89,7 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
     _eleConfig["storeCapacity"] = config.at("DataQueueSize").get<size_t>();
     _eleConfig["doProcessLast"] = config.at("ProcessLastMsg").get<bool>();
     _eleConfig["engineConfig"] = client.engineConfig();
+    _eleConfig["LogRTInfo"] = config.at("LogRTInfo").get<bool>();
 
     // Start ELE
     this->startELE();
@@ -126,7 +127,9 @@ void gazebo::NRPGazeboAsyncPlugin::startELE()
     _ele.reset(new EventLoopEngine(_timestep, _timestepWarn,
                                    _eleConfig["storeCapacity"].get<size_t>(),
                                    _eleConfig["doProcessLast"].get<bool>(),
-                                   _eleConfig["engineConfig"], newController));
+                                   _eleConfig["engineConfig"], newController,
+                                   false,
+                                   _eleConfig["LogRTInfo"].get<bool>()));
 
     CommControllerSingleton::resetInstance(newController);
 

@@ -23,10 +23,11 @@
 #include "nrp_event_loop/event_loop/event_loop_engine.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
-EventLoopEngine::EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+EventLoopEngine::EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                                  size_t storeCapacity, bool doProcessLast,
-                                 const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper) :
-        EventLoopInterface(timestep, timestepThres),
+                                 const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
+                                 bool delegateRTControl, bool logRTInfo) :
+        EventLoopInterface(timestep, rtDeltaThres, delegateRTControl, logRTInfo),
         _datapackPub(new EngineGrpc::DataPackMessage()),
         _storeCapacity(storeCapacity),
         _doProcessLast(doProcessLast),
@@ -55,6 +56,10 @@ void EventLoopEngine::initializeCB()
         this->_engineConfig["EngineTimestep"] = stepELE;
     }
 
+    // TODO: quick hack to let engine wrapper know if it should handle rt execution itself, find a better way
+    if(_delegateRTControl)
+        this->_engineConfig["HandleRTControl"] = true;
+
     this->_engineWrapper->initialize(this->_engineConfig);
 
     using std::placeholders::_1;
@@ -69,6 +74,10 @@ void EventLoopEngine::initializeCB()
 
 void EventLoopEngine::runLoopCB()
 {
+    // Updates clock
+    if(_delegateRTControl)
+        this->_engineWrapper->rtClockUpdate(std::chrono::duration_cast<SimulationTime>(_currentTime));
+
     // Set datapacks
     {
         lock_t lock(this->_datapackLock);
@@ -100,6 +109,9 @@ void EventLoopEngine::shutdownCB()
     lock_t lock(this->_datapackLock);
     this->_engineWrapper->shutdown();
 }
+
+void EventLoopEngine::realtimeDeltaCB(std::chrono::milliseconds deviation)
+{ this->_engineWrapper->handleRTDelta(deviation); }
 
 void EventLoopEngine::topic_callback(const std::string& dpName, const std::string& msgStr)
 {
