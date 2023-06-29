@@ -12,11 +12,15 @@
 		}
 	],
 	"ComputationalGraph": ["cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
-	"EventLoop": { "Timestep": 0.1},
+	"EventLoop": { "Timestep": 0.1, "Timeout":  5},
 	"ExternalProcesses" : [
 		{
 			"ProcCmd": "gzserver",
-			"ProcStartParams": ["--config=engine_async_conf.json", "--loglevel=info", "--verbose", "-s", "NRPGazeboAsyncPlugin.so", "--seed", "0", "husky_world.sdf"]
+			"ProcStartParams": ["--config=gazebo_async_conf.json", "--loglevel=info", "--verbose", "-s", "NRPGazeboAsyncPlugin.so", "--seed", "0", "husky_world.sdf"]
+		},
+		{
+			"ProcCmd": "NRPDataTransferEngineAsync",
+			"ProcStartParams": ["--config=datatransfer_async_conf.json", "--loglevel=debug"]
 		}
 	]
 }

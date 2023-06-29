@@ -6,7 +6,7 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "DataTransfer_grpc")
 set(EXECUTABLE_NAME "NRPDataTransferEngineExecutable")
-set(EXECUTABLE_ASYNC_NAME "DataTransferEngineAsync")
+set(EXECUTABLE_ASYNC_NAME "NRPDataTransferEngineAsync")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")

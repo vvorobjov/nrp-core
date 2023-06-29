@@ -207,7 +207,7 @@ class EngineProtoWrapper
                     devInterface->second->handleDataPackData(*protoMsg);
                 else
                     throw NRPException::logCreate("In Engine \"" + this->getEngineName() + "\", unable to deserialize datapack \"" +
-                                                  dataPack.datapackid().datapackname() + "\" using any of the NRP-Core Protobuf plugins" +
+                                                  dataPack.datapackid().datapackname() + "\" using any of the NRP-Core Protobuf plugins " +
                                                   "specified in the engine configuration: [" + _protoOpsStr + "]. Ensure that the parameter " +
                                                   "\"ProtobufPackages\" is properly set in the Engine configuration");
             }

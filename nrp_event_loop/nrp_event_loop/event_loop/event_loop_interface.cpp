@@ -100,6 +100,7 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
                         std::to_string(stepDurationAverage/_iterations) + " (ms). max: " +
                         std::to_string(stepDurationMax) + " (ms). min: " +
                         std::to_string(stepDurationMin) + " (ms).");
+        // TODO: if the process is stopped with signint is the log file closed properly?
         closeFileLogger();
     }
 

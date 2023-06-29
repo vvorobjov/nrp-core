@@ -4,6 +4,7 @@ from nrp_core.event_loop import *
 
 
 @MQTTPublisher(keyword="back_left_j", address="gazebo/set/husky::back_left_joint", type=GazeboJointDataPack)
+@MQTTPublisher(keyword="back_left_j", address="data_transfer/set/husky::back_left_joint", type=GazeboJointDataPack)
 @MQTTPublisher(keyword="back_right_j", address="gazebo/set/husky::back_right_joint", type=GazeboJointDataPack)
 @MQTTPublisher(keyword="front_left_j", address="gazebo/set/husky::front_left_joint", type=GazeboJointDataPack)
 @MQTTPublisher(keyword="front_right_j", address="gazebo/set/husky::front_right_joint", type=GazeboJointDataPack)
