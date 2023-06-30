@@ -90,6 +90,7 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
     _eleConfig["doProcessLast"] = config.at("ProcessLastMsg").get<bool>();
     _eleConfig["engineConfig"] = client.engineConfig();
     _eleConfig["LogRTInfo"] = config.at("LogRTInfo").get<bool>();
+    _eleConfig["UseGlobalClock"] = config.at("UseGlobalClock").get<bool>();
 
     // Start ELE
     this->startELE();
@@ -129,7 +130,8 @@ void gazebo::NRPGazeboAsyncPlugin::startELE()
                                    _eleConfig["doProcessLast"].get<bool>(),
                                    _eleConfig["engineConfig"], newController,
                                    false,
-                                   _eleConfig["LogRTInfo"].get<bool>()));
+                                   _eleConfig["LogRTInfo"].get<bool>(),
+                                   _eleConfig["UseGlobalClock"].get<bool>()));
 
     CommControllerSingleton::resetInstance(newController);
 

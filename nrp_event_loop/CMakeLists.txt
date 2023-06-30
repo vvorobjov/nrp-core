@@ -263,6 +263,13 @@ if(ENABLE_MQTT)
             NRPProtobuf::ProtoEdlutData
             )
 
+    # Link Event Loop target
+    target_link_libraries(${LIBRARY_NAME}
+            PUBLIC
+            ${NRP_MQTT_PROXY_TARGET}
+
+            PRIVATE
+            )
 endif()
 
 # SPINNAKER nodes target

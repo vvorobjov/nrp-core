@@ -25,6 +25,11 @@
         "type" : "boolean",
         "default" : false,
         "description" : "If true step duration info is logged into a file"
+      },
+      "UseGlobalClock" : {
+        "type" : "boolean",
+        "default" : false,
+        "description" : "If true Event Loops will synchronized their clocks through a global time reference published to MQTT"
       }
     }
   },

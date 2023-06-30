@@ -47,7 +47,7 @@ class EventLoop : public EventLoopInterface
          */
         EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                   ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
-                  bool ownGIL = true, bool spinROS = false);
+                  bool ownGIL = true, bool spinROS = false, bool syncTimeRef = false);
 
         ~EventLoop();
 

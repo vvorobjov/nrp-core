@@ -30,13 +30,14 @@
 #include "nrp_event_loop/utils/graph_utils.h"
 
 EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
-                     ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
-        EventLoopInterface(timestep, rtDeltaThres),
+                     ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS, bool syncTimeRef) :
+        EventLoopInterface(timestep, rtDeltaThres, false, false, syncTimeRef),
     _graph_config(graph_config),
     _execMode(execMode),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
 {
+    _isTimeSyncMaster = true;
     this->initialize();
 }
 

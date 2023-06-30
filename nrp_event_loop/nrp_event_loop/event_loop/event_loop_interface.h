@@ -22,6 +22,10 @@
 #ifndef EVENT_LOOP_INTERFACE_H
 #define EVENT_LOOP_INTERFACE_H
 
+#ifdef MQTT_ON
+#include "nrp_mqtt_proxy/nrp_mqtt_proxy.h"
+#endif
+
 #include <chrono>
 #include <thread>
 #include <future>
@@ -45,7 +49,8 @@ class EventLoopInterface
          */
         EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                            bool delegateRTControl = false,
-                           bool logRTInfo = false);
+                           bool logRTInfo = false,
+                           bool syncTimeRef = false);
 
         /*!
          * \brief Initialize loop
@@ -136,6 +141,8 @@ class EventLoopInterface
          */
         bool isRunningNotAsync();
 
+        bool _isTimeSyncMaster = false;
+
     private:
 
         /*! \brief future state of the event loop thread run async  */
@@ -144,6 +151,18 @@ class EventLoopInterface
         std::atomic<bool> _doRun;
         /*! \brief flag telling if the event loop has been initialized */
         bool _isInitialized = false;
+
+        bool _syncTimeRef;
+
+#ifdef MQTT_ON
+
+        const std::string EVENT_LOOP_TIME_REF_MQTT_TOPIC = "nrp_event_loop/time_ref";
+
+        void sendTimeRef(const std::chrono::time_point<std::chrono::system_clock>& timeRef);
+
+        std::chrono::time_point<std::chrono::system_clock> waitForTimeRef();
+
+#endif
 
     private:
 

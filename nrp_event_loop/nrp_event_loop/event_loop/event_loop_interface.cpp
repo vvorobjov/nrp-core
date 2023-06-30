@@ -25,10 +25,11 @@
 #include <algorithm>
 
 EventLoopInterface::EventLoopInterface(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
-                                       bool delegateRTControl, bool logRTInfo) :
+                                       bool delegateRTControl, bool logRTInfo, bool syncTimeRef) :
         _timestep(timestep),
         _rtDeltaThres(rtDeltaThres),
         _delegateRTControl(delegateRTControl),
+        _syncTimeRef(syncTimeRef),
         _logRTInfo(logRTInfo)
 { }
 
@@ -44,7 +45,18 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
 
     _iterations = 0L;
     _currentTime = std::chrono::milliseconds(0);
-    auto startLoopTime = std::chrono::steady_clock::now();
+    auto startLoopTime = std::chrono::system_clock::now();
+    if(_syncTimeRef) {
+#ifdef MQTT_ON
+        if(_isTimeSyncMaster)
+            sendTimeRef(startLoopTime);
+        else
+            startLoopTime = waitForTimeRef();
+#else
+        throw NRPException::logCreate("EventLoop was requested to use a global time reference, which requires MQTT for synchronization. But nrp-core has been compiled without MQTT support.");
+#endif
+    }
+
     auto startStepTime = startLoopTime;
     auto endStepTime = startLoopTime;
     auto stepDuration = endStepTime - startStepTime;
@@ -60,11 +72,11 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
 
     while(_doRun) {
         // Mark step start time
-        startStepTime = std::chrono::steady_clock::now();
+        startStepTime = std::chrono::system_clock::now();
         // Run loop computations
         this->runLoopCB();
         // Control step duration, threshold and rt deviation
-        endStepTime = std::chrono::steady_clock::now();
+        endStepTime = std::chrono::system_clock::now();
         _currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(endStepTime - startLoopTime);
         _iterations++;
         stepDuration = endStepTime -  startStepTime;
@@ -172,3 +184,44 @@ bool EventLoopInterface::isRunning()
 
 bool EventLoopInterface::isRunningNotAsync()
 { return _doRun; }
+
+#ifdef MQTT_ON
+
+void EventLoopInterface::sendTimeRef(const std::chrono::time_point<std::chrono::system_clock>& timeRef)
+{
+    auto mqttProxy = &(NRPMQTTProxy::getInstance());
+    if(!mqttProxy || !mqttProxy->isConnected())
+        throw NRPException::logCreate("EventLoop failed to connect to MQTT. Ensure that the MQTT broker is running and check the engine configuration");
+
+    auto timeRefStr = std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(
+            timeRef.time_since_epoch()).count());
+
+    NRPLogger::debug("Sent time reference: " + timeRefStr);
+
+    mqttProxy->publish(EVENT_LOOP_TIME_REF_MQTT_TOPIC,
+                       timeRefStr, true);
+}
+
+std::chrono::time_point<std::chrono::system_clock> EventLoopInterface::waitForTimeRef()
+{
+    auto mqttProxy = &(NRPMQTTProxy::getInstance());
+    if(!mqttProxy || !mqttProxy->isConnected())
+        throw NRPException::logCreate("EventLoop failed to connect to MQTT. Ensure that the MQTT broker is running and check the engine configuration");
+
+    std::string timeRefStr = "";
+    bool gotTimeRef = false;
+    mqttProxy->subscribe(EVENT_LOOP_TIME_REF_MQTT_TOPIC, [&] (const std::string& msg) {
+        timeRefStr = msg;
+        gotTimeRef = true;
+    });
+
+    while(!gotTimeRef)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    NRPLogger::debug("Got time reference: " + timeRefStr);
+
+    long timeRefLong = std::stol(timeRefStr);
+    return std::chrono::time_point<std::chrono::system_clock>(std::chrono::microseconds(timeRefLong));
+}
+
+#endif

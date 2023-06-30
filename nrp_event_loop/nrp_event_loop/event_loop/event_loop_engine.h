@@ -46,7 +46,8 @@ class EventLoopEngine : public EventLoopInterface
                         size_t storeCapacity, bool doProcessLast,
                         const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
                         bool delegateRTControl = false,
-                        bool logRTInfo = false);
+                        bool logRTInfo = false,
+                        bool syncTimeRef = false);
 
         ~EventLoopEngine();
 

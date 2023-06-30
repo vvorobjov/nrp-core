@@ -26,14 +26,14 @@
 EventLoopEngine::EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                                  size_t storeCapacity, bool doProcessLast,
                                  const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
-                                 bool delegateRTControl, bool logRTInfo) :
-        EventLoopInterface(timestep, rtDeltaThres, delegateRTControl, logRTInfo),
+                                 bool delegateRTControl, bool logRTInfo, bool syncTimeRef) :
+        EventLoopInterface(timestep, rtDeltaThres, delegateRTControl, logRTInfo, syncTimeRef),
         _datapackPub(new EngineGrpc::DataPackMessage()),
         _storeCapacity(storeCapacity),
         _doProcessLast(doProcessLast),
         _engineWrapper(engineWrapper),
         _engineConfig(engineConfig)
-{ }
+{ _isTimeSyncMaster = false; }
 
 EventLoopEngine::~EventLoopEngine()
 { this->shutdown(); }
