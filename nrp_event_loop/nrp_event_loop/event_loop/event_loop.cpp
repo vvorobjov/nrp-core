@@ -100,3 +100,8 @@ void EventLoop::shutdownCB()
 {
     ComputationalGraphManager::getInstance().clear();
 }
+
+std::string EventLoop::getLoggerBaseName()
+{
+    return "computational_graph";
+}

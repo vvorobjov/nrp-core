@@ -80,6 +80,10 @@ class EventLoop : public EventLoopInterface
         /*! \brief Pointer to the iteration_node of the graph */
         InputIterationNode* _iteration = nullptr;
 
+    protected:
+
+        std::string getLoggerBaseName() override;
+
 };
 
 

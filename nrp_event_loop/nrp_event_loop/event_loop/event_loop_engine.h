@@ -99,6 +99,10 @@ class EventLoopEngine : public EventLoopInterface
         /*! \brief mutex object used to protect data read/write operations */
         mutex_t _datapackLock;
 
+    protected:
+
+        std::string getLoggerBaseName() override;
+
 };
 
 

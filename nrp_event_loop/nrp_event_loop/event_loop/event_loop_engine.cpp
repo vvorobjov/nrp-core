@@ -148,3 +148,7 @@ std::string EventLoopEngine::datapackTopicGet(const std::string& dpName)
 
 std::string EventLoopEngine::datapackTopicSet(const std::string& dpName)
 { return  this->_engineWrapper->getEngineName() + "/set/" + dpName; }
+
+std::string EventLoopEngine::getLoggerBaseName()
+{ return this->_engineWrapper->getEngineName(); }
+

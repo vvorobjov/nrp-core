@@ -66,9 +66,10 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
     long int stepDurationMin = _timestep.count();
     long int stepDurationMax = 0;
 
-    if(_logRTInfo)
-        // TODO: name should be a parameter or somehow unique and representative of this event loop instance
-        initFileLogger(".event_loop_rt.log");
+    if(_logRTInfo) {
+        initFileLogger();
+        (*_fileLogger) << "Iteration CurrentTime StepDuration\n";
+    }
 
     while(_doRun) {
         // Mark step start time
@@ -107,7 +108,7 @@ void EventLoopInterface::runLoop(std::chrono::milliseconds timeout)
         }
     }
 
-    if(_logRTInfo) {
+    if(_logRTInfo && _iterations) {
         NRPLogger::info("Event Loop Step Duration stats. average: " +
                         std::to_string(stepDurationAverage/_iterations) + " (ms). max: " +
                         std::to_string(stepDurationMax) + " (ms). min: " +
@@ -215,8 +216,11 @@ std::chrono::time_point<std::chrono::system_clock> EventLoopInterface::waitForTi
         gotTimeRef = true;
     });
 
-    while(!gotTimeRef)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while(!gotTimeRef) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if(!_doRun)
+            return std::chrono::system_clock::now();
+    }
 
     NRPLogger::debug("Got time reference: " + timeRefStr);
 

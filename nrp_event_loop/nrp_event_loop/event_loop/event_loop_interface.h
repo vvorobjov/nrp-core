@@ -29,9 +29,27 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <filesystem>
 
 #include <nlohmann/json.hpp>
 #include <fstream>
+
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+inline std::string getCurrentDateAsString() {
+    // Get the current time
+    auto now = std::chrono::system_clock::now();
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+
+    // Convert the time to a string with the desired format
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time), "%y%m%d_%H%M%S");
+    return ss.str();
+}
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions
@@ -164,18 +182,28 @@ class EventLoopInterface
 
 #endif
 
+    protected:
+
+        virtual std::string getLoggerBaseName() = 0;
+
     private:
 
         bool _logRTInfo;
         std::shared_ptr<std::ofstream> _fileLogger;
 
-        void initFileLogger(const std::string& loggerName)
+        void initFileLogger()
         {
             if(_fileLogger)
                 return;
 
+            std::filesystem::path logDir("." + getLoggerBaseName());
+            std::filesystem::path logFile(getCurrentDateAsString() + ".log");
+            std::filesystem::path logPath = logDir / logFile;
+
+            std::filesystem::create_directories(logDir);
+
             _fileLogger.reset(new std::ofstream());
-            _fileLogger->open(loggerName);
+            _fileLogger->open(logPath);
         }
 
         void closeFileLogger()
