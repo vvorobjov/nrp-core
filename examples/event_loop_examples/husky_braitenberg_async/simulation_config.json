@@ -12,7 +12,7 @@
 		}
 	],
 	"ComputationalGraph": ["cam_fn.py", "mot_fn.py", "brain_stimulation_fn.py"],
-	"EventLoop": { "Timestep": 0.1, "Timeout": 11, "UseGlobalClock": true},
+	"EventLoop": { "Timestep": 0.1, "Timeout": 5, "LogRTInfo": true, "UseGlobalClock": true},
 	"ExternalProcesses" : [
 		{
 			"ProcCmd": "gzserver",

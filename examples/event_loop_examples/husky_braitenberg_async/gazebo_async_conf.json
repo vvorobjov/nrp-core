@@ -1,7 +1,7 @@
 {
 	"Timestep": 0.1,
-	"Timeout":  10,
 	"UseGlobalClock": true,
+	"LogRTInfo": true,
 	"EngineConfig": {
 		"EngineName": "gazebo",
 		"GazeboWorldFile": "",
