@@ -62,6 +62,7 @@ void EventLoopSimManager::initializeCB()
                 ? ComputationalGraph::ExecMode::OUTPUT_DRIVEN : ComputationalGraph::ExecMode::ALL_NODES;
 
         auto useGlobalClock = ELoopConf.at("UseGlobalClock").get<bool>();
+        auto logRTInfo = ELoopConf.at("LogRTInfo").get<bool>();
 
         std::stringstream info_msg;
         info_msg << "Creating Event Loop with configuration: timestep=" << _timestep.count() << "(ms), timeout=" << _timeout.count() << "(ms)";
@@ -69,7 +70,7 @@ void EventLoopSimManager::initializeCB()
 
         // Create and initialize EventLoop
         this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, timestepWarn, execMode,
-                                        false, this->_simConfig->contains("ROSNode"), useGlobalClock));
+                                        false, this->_simConfig->contains("ROSNode"), logRTInfo, useGlobalClock));
 
         // If there are engines in the configuration, an FTILoop has to be run as well
         if(this->_simConfig->at("EngineConfigs").size() > 0) {
