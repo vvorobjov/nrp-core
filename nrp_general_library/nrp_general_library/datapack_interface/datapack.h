@@ -45,6 +45,10 @@ public:
     : DataPackInterface(createID(name, engineName)), data(new DATA_TYPE())
     { this->setIsEmpty(false); }
 
+    DataPack()
+    : DataPackInterface(createID("", "")), data(new DATA_TYPE())
+    { this->setIsEmpty(false); }
+
     DataPack (const DataPack&) = delete;
     DataPack& operator= (const DataPack&) = delete;
 
