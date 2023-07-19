@@ -20,17 +20,20 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
+#include <algorithm>
 #include "nrp_event_loop/event_loop/event_loop_engine.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 EventLoopEngine::EventLoopEngine(std::chrono::milliseconds timestep, std::chrono::milliseconds rtDeltaThres,
                                  size_t storeCapacity, bool doProcessLast,
                                  const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
-                                 bool delegateRTControl, bool logRTInfo, bool syncTimeRef) :
+                                 bool delegateRTControl, bool logRTInfo, bool syncTimeRef,
+                                 std::vector<std::string> publishDatapacks) :
         EventLoopInterface(timestep, rtDeltaThres, delegateRTControl, logRTInfo, syncTimeRef),
         _datapackPub(new EngineGrpc::DataPackMessage()),
         _storeCapacity(storeCapacity),
         _doProcessLast(doProcessLast),
+        _datapackPubNames(publishDatapacks),
         _engineWrapper(engineWrapper),
         _engineConfig(engineConfig)
 { _isTimeSyncMaster = false; }
@@ -63,13 +66,21 @@ void EventLoopEngine::initializeCB()
     this->_engineWrapper->initialize(this->_engineConfig);
 
     using std::placeholders::_1;
-    _datapackNames = this->_engineWrapper->getNamesRegisteredDataPacks();
-    for(const auto& dpName : _datapackNames) {
+    auto datapackNames = this->_engineWrapper->getNamesRegisteredDataPacks();
+    for(const auto& dpName : datapackNames) {
         NRPLogger::info("Subscribing to topic: " + datapackTopicSet(dpName));
         _mqttProxy->subscribe(datapackTopicSet(dpName), std::bind(&EventLoopEngine::topic_callback, this, dpName, _1));
         _datapackStore.emplace(dpName, std::vector<EngineGrpc::DataPackMessage>());
         _datapackStore[dpName].reserve(_storeCapacity);
     }
+
+    if(_datapackPubNames.empty())
+        _datapackPubNames = datapackNames;
+    else
+        for(const auto& dpName : _datapackPubNames)
+            if ( std::find(datapackNames.begin(), datapackNames.end(), dpName) == datapackNames.end() )
+                throw NRPException::logCreate("EventLoopEngine was configured to publish datapack \"" + dpName + 
+                            "\" but it is not registered in the Engine.");
 }
 
 void EventLoopEngine::runLoopCB()
@@ -95,7 +106,7 @@ void EventLoopEngine::runLoopCB()
     // Advance Engine
     this->_engineWrapper->runLoopStep(std::chrono::duration_cast<SimulationTime>(this->_timestep));
     // Get and publish datapacks
-    for(const auto& dpName : _datapackNames) {
+    for(const auto& dpName : _datapackPubNames) {
         _datapackPub->clear_datapackid();
         _datapackPub->clear_data();
         if(this->_engineWrapper->getDataPack(dpName, _datapackPub.get()))

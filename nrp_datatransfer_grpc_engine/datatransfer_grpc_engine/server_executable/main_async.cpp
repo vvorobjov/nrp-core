@@ -63,6 +63,9 @@ int main(int argc, char * argv[])
     auto logRTInfo = config.at("LogRTInfo").get<bool>();
     auto useGlobalClock = config.at("UseGlobalClock").get<bool>();
 
+    json_utils::setDefault<std::vector<std::string>>(config, "PublishDatapacks",  std::vector<std::string>());
+    auto publishDatapacks = config.at("PublishDatapacks").get<std::vector<std::string>>();
+
     std::stringstream info_msg;
     info_msg << "Creating Event Loop with configuration: timestep=" << timestep.count() << "(ms), timeout=" << timeout.count() << "(ms)";
     NRPLogger::info(info_msg.str());
@@ -83,7 +86,8 @@ int main(int argc, char * argv[])
     EventLoopEngine engine(timestep, timestepWarn,
                            config.at("DataQueueSize").get<size_t>(),
                                    config.at("ProcessLastMsg").get<bool>(),
-                                           client.engineConfig(), wrapper, false, logRTInfo, useGlobalClock);
+                                           client.engineConfig(), wrapper, false, logRTInfo, useGlobalClock,
+                                           publishDatapacks);
 
     // add sigint handle
     stop_handler = [&] (int) {

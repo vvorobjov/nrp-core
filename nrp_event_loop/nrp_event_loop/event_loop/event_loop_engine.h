@@ -47,7 +47,8 @@ class EventLoopEngine : public EventLoopInterface
                         const nlohmann::json &engineConfig, EngineProtoWrapper* engineWrapper,
                         bool delegateRTControl = false,
                         bool logRTInfo = false,
-                        bool syncTimeRef = false);
+                        bool syncTimeRef = false,
+                        std::vector<std::string> publishDatapacks = std::vector<std::string>());
 
         ~EventLoopEngine();
 
@@ -74,7 +75,7 @@ class EventLoopEngine : public EventLoopInterface
         std::shared_ptr<EngineGrpc::DataPackMessage> _datapackPub;
         size_t _storeCapacity;
         bool _doProcessLast;
-        std::vector<std::string> _datapackNames;
+        std::vector<std::string> _datapackPubNames;
         NRPMQTTProxy* _mqttProxy;
 
         /*!

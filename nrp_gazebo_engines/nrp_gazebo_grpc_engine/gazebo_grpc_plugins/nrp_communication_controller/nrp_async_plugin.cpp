@@ -60,6 +60,7 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
     nlohmann::json config(json_utils::parseJSONFile(configFile));
     json_utils::setDefault<std::string>(config.at("EngineConfig"), "EngineType", GazeboGrpcConfigConst::EngineType);
     json_utils::validateJson(config, "json://nrp-core/event_loop.json#/event_loop_engine");
+    json_utils::setDefault<std::vector<std::string>>(config, "PublishDatapacks",  std::vector<std::string>());
 
     auto eTstep = config.at("Timestep").get<float>();
     auto eTout  = config.at("Timeout").get<float>();
@@ -91,6 +92,7 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
     _eleConfig["engineConfig"] = client.engineConfig();
     _eleConfig["LogRTInfo"] = config.at("LogRTInfo").get<bool>();
     _eleConfig["UseGlobalClock"] = config.at("UseGlobalClock").get<bool>();
+    _eleConfig["PublishDatapacks"] = config.at("PublishDatapacks").get<std::vector<std::string>>();
 
     // Start ELE
     this->startELE();
@@ -131,7 +133,8 @@ void gazebo::NRPGazeboAsyncPlugin::startELE()
                                    _eleConfig["engineConfig"], newController,
                                    false,
                                    _eleConfig["LogRTInfo"].get<bool>(),
-                                   _eleConfig["UseGlobalClock"].get<bool>()));
+                                   _eleConfig["UseGlobalClock"].get<bool>(),
+                                   _eleConfig["PublishDatapacks"].get<std::vector<std::string>>()));
 
     CommControllerSingleton::resetInstance(newController);
 

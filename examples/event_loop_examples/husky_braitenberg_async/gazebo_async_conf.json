@@ -2,6 +2,7 @@
 	"Timestep": 0.1,
 	"UseGlobalClock": true,
 	"LogRTInfo": true,
+	"PublishDatapacks": ["husky::eye_vision_camera::camera"],
 	"EngineConfig": {
 		"EngineName": "gazebo",
 		"GazeboWorldFile": "",

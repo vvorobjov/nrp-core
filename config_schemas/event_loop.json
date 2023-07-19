@@ -79,6 +79,11 @@
             "type" : "integer",
             "default": 1,
             "description": "Maximum number of messages received through a topic which are stored each step"
+          },
+          "PublishDatapacks" : {
+            "type" : "array",
+            "items": "string",
+            "description": "Subset of the registered datapacks that will be published by the engine, if not set or empty all registered datapacks will be published."
           }
         },
         "required": ["EngineConfig"]
