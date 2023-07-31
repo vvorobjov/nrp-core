@@ -28,6 +28,13 @@
 #include "nrp_simulation/simulation/simulation_manager.h"
 
 /*!
+ * \brief Creates a simulation loop using the engines specified in the config file
+ */
+std::pair<FTILoopSharedPtr,SimulationTime> createFTILoop(jsonSharedPtr simConfig, SimulationDataManager* simManager, 
+                                                         EngineLauncherManagerConstSharedPtr  engineLauncherManager,
+                                                         MainProcessLauncherManager::const_shared_ptr  processLauncherManager);
+
+/*!
  * \brief Implementation of SimulationManager which manages an FTILoop
  */
 class FTILoopSimManager
@@ -71,11 +78,6 @@ class FTILoopSimManager
         SimulationTime _timeStep;
         /*! \brief Used to process stop loop requests */
         std::atomic<bool> _stopLoop;
-
-        /*!
-         * \brief Creates a simulation loop using the engines specified in the config file
-         */
-        FTILoop createSimLoop();
 
         /*!
          * \brief Run the Simulation Loop for one timestep
