@@ -21,6 +21,7 @@ include(GNUInstallDirs)
 set(LIB_SRC_FILES
     nrp_simulation/simulation/nrp_core_server.cpp
     nrp_simulation/simulation/fti_loop.cpp
+    nrp_simulation/simulation/event_loop.cpp
     nrp_simulation/simulation/simulation_manager.cpp
     nrp_simulation/simulation/simulation_manager_fti.cpp
     nrp_simulation/simulation/simulation_manager_event_loop.cpp

@@ -24,18 +24,17 @@
 #include "ros/ros.h"
 #endif
 
-#include "nrp_event_loop/event_loop/event_loop.h"
+#include "nrp_simulation/simulation/event_loop.h"
 #include "nrp_general_library/utils/nrp_exceptions.h"
 
 #include "nrp_event_loop/utils/graph_utils.h"
 
-EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
-                     ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
+EventLoop::EventLoop(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+                     FTILoopSharedPtr ftiLoop,SimulationTime simTimeStep, bool ownGIL) :
         EventLoopInterface(timestep, timestepThres),
-    _graph_config(graph_config),
-    _execMode(execMode),
-    _ownGIL(ownGIL),
-    _spinROS(spinROS)
+    _ftiLoop(ftiLoop),
+    _simTimeStep(simTimeStep),
+    _ownGIL(ownGIL)
 {
     this->initialize();
 }
@@ -49,8 +48,8 @@ void EventLoop::initializeCB()
         _pyGILState = PyGILState_Ensure();
 
     try {
-        boost::python::dict globalDict;
-        createPythonGraphFromConfig(_graph_config, _execMode, globalDict);
+        _ftiLoop->initLoop();
+        std::tie(_clock, _iteration) = findTimeNodes();
     }
     catch (std::exception& e) {
         if(!_ownGIL)
@@ -59,10 +58,9 @@ void EventLoop::initializeCB()
         throw;
     }
 
-    std::tie(_clock, _iteration) = findTimeNodes();
-
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);
+
 }
 
 void EventLoop::runLoopCB()
@@ -70,19 +68,14 @@ void EventLoop::runLoopCB()
     if(!_ownGIL)
         _pyGILState = PyGILState_Ensure();
 
-#ifdef ROS_ON
-    if(_spinROS)
-        ros::spinOnce();
-#endif
-
-    if(_clock)
+    try {
+        if(_clock)
         _clock->updateClock(_currentTime);
 
-    if(_iteration)
-        _iteration->updateIteration(_iterations);
+        if(_iteration)
+            _iteration->updateIteration(_iterations);
 
-    try {
-        ComputationalGraphManager::getInstance().compute();
+        _ftiLoop->runLoop(_simTimeStep);
     }
     catch (std::exception& e) {
         if(!_ownGIL)
@@ -97,5 +90,5 @@ void EventLoop::runLoopCB()
 
 void EventLoop::shutdownCB()
 {
-    ComputationalGraphManager::getInstance().clear();
+    _ftiLoop->shutdownLoop();
 }

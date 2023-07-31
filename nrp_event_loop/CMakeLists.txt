@@ -35,7 +35,6 @@ set(LIB_SRC_FILES
         nrp_event_loop/fn_factory/functional_node_factory.cpp
         nrp_event_loop/fn_factory/functional_node_factory_manager.cpp
 
-        nrp_event_loop/event_loop/event_loop.cpp
         nrp_event_loop/event_loop/event_loop_interface.cpp
 
         nrp_event_loop/python/functional_node.cpp

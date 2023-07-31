@@ -33,6 +33,8 @@
 
 #include "nrp_general_library/utils/python_interpreter_state.h"
 
+#include "nrp_simulation/simulation/fti_loop.h"
+
 #include <nlohmann/json.hpp>
 
 /*!
@@ -45,9 +47,8 @@ class EventLoop : public EventLoopInterface
         /*!
          * \brief Constructor
          */
-        EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
-                  ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES,
-                  bool ownGIL = true, bool spinROS = false);
+        EventLoop(std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
+                  FTILoopSharedPtr ftiLoop,SimulationTime simTimeStep, bool ownGIL = false);
 
         ~EventLoop();
 
@@ -61,14 +62,12 @@ class EventLoop : public EventLoopInterface
 
     private:
     
-        /*! \brief Configuration of the Computational Graph run by this EventLoop  */
-        nlohmann::json _graph_config;
-        /*! \brief Execution mode the event loop will use */
-        ComputationalGraph::ExecMode _execMode;
+        /*! \brief FTILoop controlled by this EventLoop */
+        FTILoopSharedPtr _ftiLoop;
+        /*! \brief Timestep of the internal FTILoop */
+        SimulationTime _simTimeStep;
         /*! \brief true if the EventLoop is assumed to always owns the GIL, false if it is shared with other threads  */
         bool _ownGIL;
-        /*! \brief if true ros::spin is called in every loop  */
-        bool _spinROS;
         /*! \brief GIL state object used to request the GIL ownership when needed  */
         PyGILState_STATE _pyGILState;
         /*! \brief Pointer to the clock_node of the graph */
