@@ -24,7 +24,7 @@
 
 #include "nrp_general_library/engine_interfaces/engine_launcher_manager.h"
 #include "nrp_general_library/process_launchers/process_launcher_manager.h"
-#include "nrp_event_loop/event_loop/event_loop.h"
+#include "nrp_simulation/simulation/event_loop.h"
 #include "nrp_simulation/simulation/simulation_manager_fti.h"
 #include "nrp_simulation/simulation/simulation_manager.h"
 
@@ -66,8 +66,6 @@ class EventLoopSimManager
 
         bool runUntilMilliseconds(const std::chrono::milliseconds& eTout);
 
-        /*! \brief SimulationManager fTILoopSimManager*/
-        std::shared_ptr<FTILoopSimManager> _fTILoopSimManager;
         /*! \brief engineLauncherManager */
         EngineLauncherManagerConstSharedPtr  _engineLauncherManager;
         /*! \brief processLauncherManager */

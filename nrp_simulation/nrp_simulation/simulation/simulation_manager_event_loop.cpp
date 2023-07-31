@@ -58,23 +58,21 @@ void EventLoopSimManager::initializeCB()
         _timeout = std::chrono::milliseconds((int)(1000 * eTout));
         auto timestepWarn = std::chrono::milliseconds((int)(1000 * eTstepWarn));
 
-        auto execMode = ELoopConf.at("ExecutionMode") == "OutputDriven"
-                ? ComputationalGraph::ExecMode::OUTPUT_DRIVEN : ComputationalGraph::ExecMode::ALL_NODES;
-
         std::stringstream info_msg;
         info_msg << "Creating Event Loop with configuration: timestep=" << _timestep.count() << "(ms), timeout=" << _timeout.count() << "(ms)";
         NRPLogger::info(info_msg.str());
 
-        // Create and initialize EventLoop
-        this->_loop.reset(new EventLoop(this->_simConfig->at("ComputationalGraph"), _timestep, timestepWarn, execMode,
-                                        false, this->_simConfig->contains("ROSNode")));
+        // Create fti loop
+        if(this->_simConfig->at("DataPackProcessor") != "cg")
+            throw NRPException::logCreate("Event Loop can only run a Computational Graph, not TFs. Please modify your experiment to use a Computational Graph and set the \"DataPackProcessor\" config parameter to \"cg\".");
+        // TODO: little hack to pass execution mode to ComputationalGraphHandle
+        (*(this->_simConfig))["ExecutionMode"] = ELoopConf.at("ExecutionMode");
+        auto [ftiLoop, ftiTimestep] = createFTILoop(this->_simConfig, nullptr, 
+                                                               this->_engineLauncherManager,
+                                                               this->_processLauncherManager);
 
-        // If there are engines in the configuration, an FTILoop has to be run as well
-        if(this->_simConfig->at("EngineConfigs").size() > 0) {
-            _fTILoopSimManager.reset(new FTILoopSimManager(this->_simConfig, this->_engineLauncherManager,
-                                                           this->_processLauncherManager));
-            _fTILoopSimManager->initializeSimulation();
-        }
+        // Create and initialize EventLoop
+        this->_loop.reset(new EventLoop(_timestep, timestepWarn, ftiLoop, ftiTimestep));
     }
     else
         throw NRPException::logCreate("EventLoop already initialized");
@@ -92,25 +90,8 @@ void EventLoopSimManager::stopCB()
 
 bool  EventLoopSimManager::runUntilMilliseconds(const std::chrono::milliseconds& eTout)
 {
-    std::future<void> runFuture;
-
-    // start FTILoop
-    if(_fTILoopSimManager) {
-        std::function<void()> run_ftiloop = [&]() {
-            _fTILoopSimManager->runSimulation(0);
-        };
-
-        runFuture = std::async(run_ftiloop);
-    }
-
     // run EventLoop
     _loop->runLoop(eTout);
-
-    // stop FTILoop
-    if(_fTILoopSimManager) {
-        _fTILoopSimManager->stopSimulation();
-        runFuture.wait();
-    }
 
     return true;
 }
@@ -131,9 +112,5 @@ void EventLoopSimManager::shutdownCB()
     if(this->_loop != nullptr) {
         this->_loop->shutdown();
         this->_loop.reset();
-    }
-    if(_fTILoopSimManager) {
-        _fTILoopSimManager->shutdownSimulation();
-        _fTILoopSimManager.reset();
     }
 }
