@@ -84,7 +84,6 @@ set(TEST_SRC_FILES
         tests/test_nodes.cpp
         tests/test_computational_graph.cpp
         tests/test_python_nodes.cpp
-        tests/test_event_loop.cpp
 )
 
 set(ROS_TEST_SRC_FILES

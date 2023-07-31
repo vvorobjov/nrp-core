@@ -40,6 +40,7 @@ set(EXEC_SRC_FILES
 # List testing build files
 set(TEST_SRC_FILES
     tests/fti_loop.cpp
+    tests/test_event_loop.cpp
     tests/simulation_parameters.cpp
     tests/simulation_manager.cpp
     tests/fti_simulation_manager.cpp

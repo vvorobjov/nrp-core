@@ -27,7 +27,10 @@
 
 #include <gtest/gtest.h>
 
-#include "nrp_event_loop/event_loop/event_loop.h"
+#include "nrp_general_library/utils/python_interpreter_state.h"
+
+#include "nrp_simulation/simulation/fti_loop.h"
+#include "nrp_simulation/simulation/event_loop.h"
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 #include "nrp_event_loop/nodes/dummy/output_dummy.h"
@@ -42,12 +45,21 @@ TEST(EventLoop, EVENT_LOOP) {
     Py_Initialize();
 
     std::chrono::milliseconds timestep(10);
+    auto simTimestep = std::chrono::duration_cast<SimulationTime>(timestep);
     std::chrono::milliseconds timestepThres(1);
-    nlohmann::json graph_config;
+    auto config = std::make_shared<nlohmann::json>();
+    (*config)["SimulationLoop"] = "EventLoop";
+    (*config)["DataPackProcessor"] = "cg";
+    (*config)["ComputationalGraph"] = nlohmann::json::array();
     std::stringstream py_file;
     py_file << TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH << "/test_time_nodes.py";
-    graph_config.push_back(py_file.str());
-    EventLoop e_l(graph_config, timestep, timestepThres, ComputationalGraph::ALL_NODES, true, false);
+    (*config)["ComputationalGraph"].push_back(py_file.str());
+
+    const char *procName = "test";
+    PythonInterpreterState pyState(1, const_cast<char**>(&procName), true);
+
+    FTILoopSharedPtr simLoop(new FTILoop(config, {}, nullptr));
+    EventLoop e_l(timestep, timestepThres, simLoop, simTimestep);
 
     // run loop once
     auto now = std::chrono::steady_clock::now();
