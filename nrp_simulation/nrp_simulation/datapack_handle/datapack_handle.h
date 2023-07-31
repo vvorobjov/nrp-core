@@ -25,8 +25,6 @@
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_general_library/utils/time_utils.h"
-#include "nrp_general_library/transceiver_function/function_manager.h"
-#include "nrp_simulation/datapack_handle/simulation_data_manager.h"
 
 /*!
  * \brief Helper class for FTILoop encapsulating the datapack operations between Engines in a simulation loop
@@ -37,10 +35,7 @@ public:
 
     using engine_interfaces_t = std::vector<EngineClientInterfaceSharedPtr>;
 
-    DataPackProcessor() = delete;
-    DataPackProcessor(SimulationDataManager * simulationDataManager):
-        _simulationDataManager(simulationDataManager)
-    {}
+    DataPackProcessor() = default;
 
     virtual ~DataPackProcessor() = default;
 
@@ -111,7 +106,6 @@ public:
         NRP_LOG_TIME("after_run_tfs");
         sendDataPacksToEngines(engines);
         NRP_LOG_TIME("after_send_datapacks");
-        this->_simulationDataManager->startNewIteration();
     }
 
     void setSimulationTime(SimulationTime simulationTime)
@@ -126,7 +120,6 @@ public:
 
 protected:
 
-    SimulationDataManager * _simulationDataManager;
     SimulationTime _simulationTime = SimulationTime::zero();
     unsigned long _simulationIteration = 0L;
 };

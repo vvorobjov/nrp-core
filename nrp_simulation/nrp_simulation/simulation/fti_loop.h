@@ -27,6 +27,7 @@
 #include "nrp_general_library/utils/json_schema_utils.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
+#include "nrp_simulation/datapack_handle/simulation_data_manager.h"
 
 /*!
  * \brief Manages simulation loop. Runs physics and brain interface, and synchronizes them via Transfer Functions

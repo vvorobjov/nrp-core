@@ -187,6 +187,8 @@ void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInter
             throw NRPException::logCreate(e, "Failed to send datapacks to engine \"" + engine->engineName() + "\"");
         }
     }
+
+    this->_simulationDataManager->startNewIteration();
 }
 
 void TFManagerHandle::executePreprocessingFunctions(FunctionManager &tfManager,

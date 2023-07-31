@@ -25,6 +25,7 @@
 #include "nrp_general_library/transceiver_function/function_manager.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
+#include "nrp_simulation/datapack_handle/simulation_data_manager.h"
 
 
 /*!
@@ -35,7 +36,7 @@ class TFManagerHandle : public DataPackProcessor {
 public:
 
     TFManagerHandle(SimulationDataManager * simulationDataManager):
-        DataPackProcessor(simulationDataManager)
+        _simulationDataManager(simulationDataManager)
         {}
 
     void init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines) override;
@@ -119,6 +120,8 @@ private:
 
     /*! \brief  FunctionManager handling datapack operations */
     FunctionManager _functionManager;
+
+    SimulationDataManager * _simulationDataManager;
 };
 
 #endif // TF_MANAGER_HANDLE_H

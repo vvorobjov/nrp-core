@@ -42,14 +42,14 @@
  */
 struct ComputationalGraphHandle : public DataPackProcessor {
 
-    ComputationalGraphHandle(SimulationDataManager * simulationDataManager, bool slaveMode = false, bool spinROS = false) :
-        DataPackProcessor(simulationDataManager),
-        _slaveMode(slaveMode),
-        _spinROS(spinROS)
+    ComputationalGraphHandle(bool spinROS = false,
+                            ComputationalGraph::ExecMode execMode = ComputationalGraph::ExecMode::ALL_NODES) :
+        _spinROS(spinROS),
+        _execMode(execMode)
     {}
 
-    bool _slaveMode;
     bool _spinROS;
+    ComputationalGraph::ExecMode _execMode;
     PyGILState_STATE _pyGILState;
 
     /*!
@@ -72,12 +72,10 @@ struct ComputationalGraphHandle : public DataPackProcessor {
     void init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines) override
     {
         // Load Computation Graph
-        if(!_slaveMode) {
-            boost::python::dict globalDict;
+        boost::python::dict globalDict;
             // When controlling the graph set output driven mode to optimize on graph node execution
             createPythonGraphFromConfig(simConfig->at("ComputationalGraph"),
-                                        ComputationalGraph::ExecMode::OUTPUT_DRIVEN, globalDict);
-        }
+                                        _execMode, globalDict);
 
         ComputationalGraphManager& gm = ComputationalGraphManager::getInstance();
 
@@ -92,21 +90,18 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             if(gm.getNode(output_id) && dynamic_cast<OutputEngineNode *>(gm.getNode(output_id))) {
                 auto o_node = dynamic_cast<OutputEngineNode *>(gm.getNode(output_id));
                 // setting computePeriod to 0 so node is only executed when linked Engine is synced
-                if(!_slaveMode)
-                    o_node->setComputePeriod(0);
+                o_node->setComputePeriod(0);
                 _outputs[engine->engineName()] = o_node;
             }
         }
 
         // Find Clock and Iteration nodes
-        std::tie(_clock, _iteration) = findTimeNodes();
+        if(simConfig->at("SimulationLoop") != "EventLoop")
+            std::tie(_clock, _iteration) = findTimeNodes();
     }
 
     void updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override
     {
-        if(_slaveMode)
-            _pyGILState = PyGILState_Ensure();
-
         try
         {
             for(auto &engine : engines)
@@ -120,37 +115,29 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             // TODO: Handle failure on datapack retrieval
             throw;
         }
-
-        if(_slaveMode)
-            PyGILState_Release(_pyGILState);
     }
 
     void compute(const std::vector<EngineClientInterfaceSharedPtr> & engines) override
     {
-        if(!_slaveMode) {
 #ifdef ROS_ON
-            if(_spinROS)
-                ros::spinOnce();
+        if(_spinROS)
+            ros::spinOnce();
 #endif
-            for(auto &engine : engines)
-                if(_outputs.count(engine->engineName()))
-                    _outputs[engine->engineName()]->setDoCompute(true);
+        for(auto &engine : engines)
+            if(_outputs.count(engine->engineName()))
+                _outputs[engine->engineName()]->setDoCompute(true);
 
-            if(_clock)
-                _clock->updateClock(this->_simulationTime);
+        if(_clock)
+            _clock->updateClock(this->_simulationTime);
 
-            if(_iteration)
-                _iteration->updateIteration(this->_simulationIteration);
+        if(_iteration)
+            _iteration->updateIteration(this->_simulationIteration);
 
-            ComputationalGraphManager::getInstance().compute();
-        }
+        ComputationalGraphManager::getInstance().compute();
     }
 
     void sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override
     {
-        if(_slaveMode)
-            _pyGILState = PyGILState_Ensure();
-
         for(const auto &engine : engines)
             if(_outputs.count(engine->engineName())) {
                 try {
@@ -162,9 +149,6 @@ struct ComputationalGraphHandle : public DataPackProcessor {
                                                   "Failed to send datapacks to engine \"" + engine->engineName() + "\"");
                 }
             }
-
-        if(_slaveMode)
-            PyGILState_Release(_pyGILState);
     }
 };
 
