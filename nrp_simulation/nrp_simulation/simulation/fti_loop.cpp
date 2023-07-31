@@ -172,6 +172,10 @@ void FTILoop::runLoop(SimulationTime runLoopTime)
     if(this->_engineQueue.empty())
     {
         NRPLogger::debug("FTILoop::runLoop: _engineQueue is empty");
+        this->_devHandler->setSimulationTime(this->_simTime);
+        this->_devHandler->setSimulationIteration(this->_simIteration);
+        this->_devHandler->datapackCycle({});
+        this->_simIteration++;
         this->_simTime = loopStopTime;
         return;
     }
