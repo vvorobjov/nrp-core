@@ -18,10 +18,6 @@ public class PoseEstimationScenario : PerceptionScenario<PoseEstimationScenarioC
     {
         m_ShouldIterate = true;
     }
-    public void letItGo()
-    {
-        base.IncrementIteration();
-    }
     protected override void IncrementIteration()
     {
         base.IncrementIteration();

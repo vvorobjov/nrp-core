@@ -8,18 +8,22 @@
 			"EngineType": "unity_grpc_engine",
 			"EngineName": "unity",
 			"EngineCommandTimeout": 20,
-			"EngineTimestep": 0.2,
+			"EngineTimestep": 0.1,
 			"EngineProcCmd": "unity/cube.x86_64",
 			"ServerAddress": "localhost:50051",
-			"ProtobufPackages": ["UnityProto"]
+			"ProtobufPackages": ["NrpGenericProto"]
+
 		},
 		{
 			"EngineType": "python_grpc",
 			"EngineName": "python_dumper",
-			"EngineTimestep": 0.2,
+			"EngineTimestep": 0.1,
 			"ServerAddress":"localhost:2345",
 			"PythonFileName": "write_to_disc.py",
-			"ProtobufPackages": ["UnityProto"]
+			"ProtobufPackages": ["NrpGenericProto"],
+			"dumps":[
+                {"name": "image", "network": false, "file": true}
+            ]
 		}
 	],
 	"DataPackProcessingFunctions":

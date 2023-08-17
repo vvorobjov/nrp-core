@@ -31,7 +31,7 @@ using System.Text;
 using System.Threading;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using UnityProto;
+using NrpGenericProto;
 using UnityEngine.Perception.GroundTruth;
 using UnityEngine.Perception.Randomization.Scenarios;
 using UnityEngine.Perception.Randomization.Randomizers;
@@ -59,6 +59,8 @@ class CommunicationServiceController : MonoBehaviour
     /// The ip address on which the server is registered, usually localhost when both client and server are on the same machine, can be a configurable parameter in future
     /// </summary>
     private string _ipAddress = "localhost";
+
+    private string _engineName = "unity";
 
     /// <summary>
     /// Port on which the server should be listening, it should be accessable from outside if clients are supposed to connect from different machine, can be a configurable parameter in future
@@ -90,6 +92,9 @@ class CommunicationServiceController : MonoBehaviour
     /// </summary>
     private long _totalSimulatedTime = 0;
     private long _shutdownCounter = 0;
+
+    private int resolutionWidth = 650;
+    private int resolutionHeight = 400;
 
 
     /// ===========================Data holders for the requests and responses of the procedures, necessary for syncing the data between the main Untty thread and the server thread
@@ -163,27 +168,34 @@ class CommunicationServiceController : MonoBehaviour
         return (long)_timeStepController.RunGame(_runLoopStepRequest.TimeStep);
     }
 
+    private DataPackMessage createDataPack(string dataPackName, string engineName, Google.Protobuf.IMessage message)
+    {
+        DataPackMessage dataPack = new DataPackMessage();
+        dataPack.DataPackId = new DataPackIdentifier();
+        dataPack.DataPackId.DataPackName = dataPackName;
+        dataPack.DataPackId.EngineName   = engineName;
+        dataPack.Data = Any.Pack(message);
+        return dataPack;
+    }
+
     private List<DataPackMessage> getDataPacksUser()
     {
         List<DataPackMessage> dataPacks = new List<DataPackMessage>();
 
         // Image Section
 
+        byte[] frameBytes = _imageSender.GetCurrentFrame(resolutionHeight, resolutionHeight);
+        NrpGenericProto.Image imageProto = new NrpGenericProto.Image();
 
-        byte[] frameBytes = _imageSender.GetCurrentFrame();
+        imageProto.Height = Convert.ToUInt32(resolutionHeight);
+        imageProto.Width = Convert.ToUInt32(resolutionWidth);
+        imageProto.Data = Google.Protobuf.ByteString.CopyFrom(frameBytes);
 
-        UnityProto.BImage imageProto = new UnityProto.BImage();
-        imageProto.Image = Google.Protobuf.ByteString.CopyFrom(frameBytes);
 
-        DataPackMessage imageDataPack = new DataPackMessage();
-        imageDataPack.DataPackId = new DataPackIdentifier();
+        dataPacks.Add(createDataPack("image", _engineName, imageProto));
 
-        imageDataPack.DataPackId.DataPackName = "image";
-        imageDataPack.DataPackId.DataPackType = "frame";
-        imageDataPack.DataPackId.EngineName   = "unity";
-        imageDataPack.Data = Any.Pack(imageProto);
+        // Sensor section
 
-        dataPacks.Add(imageDataPack);
 
 
         return dataPacks;
