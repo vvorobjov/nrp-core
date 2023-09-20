@@ -64,12 +64,14 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
 #ifdef MQTT_ON
     // Topic: MQTT_BASE/simulationID
     this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
-    if (data.contains("MQTTPrefix")){
+    if (data.contains("MQTTPrefix") && data.at("MQTTPrefix").is_string() && data.at("MQTTPrefix") != ""){
         // Topic: MQTTPrefix/MQTT_BASE/simulationID
         this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
         this->_mqttClientName = std::string(data.at("MQTTPrefix")) + std::string("_") + this->_mqttClientName;
     }
     this->_mqttBase += std::string(data.at("simulationID"));
+
+    NRPLogger::debug("Using the MQTT topics base \"{}\"", this->_mqttBase);
 
     nlohmann::json mqtt_config;
     // If client doesn't exist yet, then create one
