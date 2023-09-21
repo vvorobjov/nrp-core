@@ -1,0 +1,103 @@
+{
+    "SimulationName": "tf_exchange_mqtt_dump_test",
+    "SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
+    "SimulationTimeout": 1,
+    "EngineConfigs": [
+        {
+            "EngineType": "python_json",
+            "EngineName": "python_1",
+            "PythonFileName": "engine_1.py"
+        },
+        {
+            "EngineType": "python_json",
+            "EngineName": "python_2",
+            "PythonFileName": "engine_2.py"
+        },
+        {
+            "EngineType": "datatransfer_grpc_engine",
+            "EngineName": "datatransfer_engine",
+            "MQTTBroker": "localhost:1883",
+            "simulationID": "0",
+            "streamDataPackMessage": true,
+			"ProtobufPackages": ["Dump", "Wrappers", "NrpGenericProto"],
+            "MQTTPrefix": "localhost",
+            "dumps": [
+                {
+                    "name": "datapack_DumpString",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_ArrayFloat_1d",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_ArrayFloat_2d",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_ArrayFloat_3d",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_ArrayFloat_4d",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersBoolValue",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersBytesValue",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersFloatValue",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersDoubleValue",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersInt32Value",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersInt64Value",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_WrappersStringValue",
+                    "network": true,
+                    "file": false
+                },
+                {
+                    "name": "datapack_NrpGenericProtoArrayBool",
+                    "network": true,
+                    "file": false
+                }
+            ]
+        }
+    ],
+    "DataPackProcessingFunctions": [
+        {
+            "Name": "tf_datatransfer",
+            "FileName": "tf_datatransfer.py"
+        },
+        {
+            "Name": "tf_1",
+            "FileName": "tf_1.py"
+        }
+    ]
+}

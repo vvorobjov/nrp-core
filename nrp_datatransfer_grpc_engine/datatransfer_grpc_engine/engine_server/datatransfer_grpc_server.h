@@ -137,11 +137,26 @@ class DataTransferEngine
         std::shared_ptr< NRPMQTTClient > _mqttClient;
 
         /*!
-         * \brief mpqtt topics name base
+         * \brief mqtt topics name base
          */
         std::string _mqttBase;
 
+        /*!
+         * \brief mqtt topics list
+         */
+        nlohmann::json _mqttDataTopics;
+
+        /*!
+         * \brief publish mqtt topics list to broker
+         */
+        void publishDataTopics();
+
 public:
+        /*!
+         * \brief mqtt topics list
+         */
+        void updateDataTopics(const std::string &topic, const std::string &type);
+
         /*!
          * \brief Set predefined NRPMQTTClient (for testing purposes)
          */

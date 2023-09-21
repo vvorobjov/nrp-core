@@ -35,6 +35,11 @@ DataTransferEngine::DataTransferEngine(const std::string &engineName,
     _engineName(engineName), _mqttClientName(engineName)
 {
     _dataPacksNames.clear();
+
+#ifdef MQTT_ON
+    // Clear topics names
+    _mqttDataTopics = nlohmann::json::array();
+#endif
 }
 
 SimulationTime DataTransferEngine::runLoopStep(SimulationTime timeStep)
@@ -92,6 +97,8 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
     }
     else {      
         _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!", true);
+        // publish empty data topics list 
+        publishDataTopics();
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -111,11 +118,26 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
             this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir));
         }
 #ifdef MQTT_ON
-        else if (fileDump && netDump){
-            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir, _mqttClient, this->_mqttBase));
+        else if (fileDump && netDump)
+        {
+            this->registerDataPack(datapackName,
+                                   new StreamDataPackController(datapackName,
+                                                                this->_engineName,
+                                                                this->_protoOps,
+                                                                dataDir,
+                                                                _mqttClient,
+                                                                this->_mqttBase,
+                                                                std::bind(&DataTransferEngine::updateDataTopics, this, std::placeholders::_1, std::placeholders::_2)));
         }
-        else if (!fileDump && netDump){
-            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, _mqttClient, this->_mqttBase));
+        else if (!fileDump && netDump)
+        {
+            this->registerDataPack(datapackName,
+                                   new StreamDataPackController(datapackName,
+                                                                this->_engineName,
+                                                                this->_protoOps,
+                                                                _mqttClient,
+                                                                this->_mqttBase,
+                                                                std::bind(&DataTransferEngine::updateDataTopics, this, std::placeholders::_1, std::placeholders::_2)));
         }
 #endif
         else {
@@ -172,6 +194,35 @@ bool DataTransferEngine::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > clien
     _mqttClient = client;
 
     return _mqttClient->isConnected();
+}
+
+void DataTransferEngine::updateDataTopics(const std::string &topic, const std::string &type)
+{
+    NRPLogger::debug("Updating the MQTT topics list {}:{}", topic, type);
+
+    auto it = std::find_if(_mqttDataTopics.begin(), _mqttDataTopics.end(), [&topic](const nlohmann::json& element) {
+        return element["topic"] == topic;
+    });
+
+    if (it != _mqttDataTopics.end()) {
+        // topic found, update the type
+        (*it)["type"] = type;
+    } else {
+        // topic not found, add new dictionary
+        nlohmann::json newElement = { {"topic", topic}, {"type", type} };
+        _mqttDataTopics.push_back(newElement);
+    }
+
+    // publish topics to broker
+    publishDataTopics();
+}
+
+void DataTransferEngine::publishDataTopics()
+{
+    NRPLogger::debug("Publishing the MQTT topics list");
+    if (_mqttClient->isConnected()){
+        _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopics.dump(), true);
+    }
 }
 #endif
 

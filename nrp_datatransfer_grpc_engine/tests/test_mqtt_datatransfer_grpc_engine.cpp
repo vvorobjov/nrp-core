@@ -35,6 +35,7 @@
 #include "tests/test_env_cmake.h"
 
 #define MQTT_WELCOME "nrp_simulation/0/welcome"
+#define MQTT_DATA "nrp_simulation/0/data"
 
 TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 {
@@ -42,11 +43,6 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
     nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
     json_utils::validateJson(engine_config, "json://nrp-core/engines/engine_datatransfer.json#/engine_datatransfer_base");
-
-    // MQTT client config
-    nlohmann::json mqtt_config;
-    mqtt_config["MQTTBroker"] = "localhost:1883";
-    mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferEngine
     DataTransferEngine engine(engine_config["EngineName"],
@@ -61,15 +57,32 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
             .Times(testing::AtLeast(3));
     EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "NRP-core is connected!", testing::_))
             .Times(1);
+        // Check that the topics list is cleared
+    EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_DATA, "[]", testing::_))
+            .Times(1);
     EXPECT_CALL(*nrpMQTTClientMock, publish(MQTT_WELCOME, "Bye! NRP-core is disconnecting!", testing::_))
             .Times(1);
-    // data topics announcements from the DataPack Controller
+    // check that the data topics list is appended and updated
+    nlohmann::json jsonList = nlohmann::json::array();
     for (size_t i = 0; i < engine_config["dumps"].size(); i++){
         nlohmann::json dump = engine_config["dumps"].at(i);
+        std::string topic = std::string(MQTT_DATA) + std::string("/") + dump["name"].get<std::string>();
+        jsonList.push_back(
+                    {{"topic", topic},
+                     {"type", ""}});
+            EXPECT_CALL(*nrpMQTTClientMock,
+                        publish(
+                            MQTT_DATA,
+                            jsonList.dump(),
+                            testing::_))
+                .Times(1);
+    }
+    for (size_t i = 0; i < engine_config["dumps"].size(); i++){
+        jsonList.at(i)["type"] = "Data.Type";
         EXPECT_CALL(*nrpMQTTClientMock,
                     publish(
-                        std::string(MQTT_BASE) + std::string("/0/data"),
-                        std::string(MQTT_BASE) + std::string("/0/data/") + dump["name"].get<std::string>(),
+                        MQTT_DATA,
+                        jsonList.dump(),
                         testing::_))
             .Times(1);
     }
@@ -81,6 +94,12 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
     // The expected calls (above) are in these operations
     ASSERT_NO_THROW(engine.setNRPMQTTClient(nrpMQTTClientMock));
     ASSERT_NO_THROW(engine.initialize(engine_config));
+    // Update topics list
+    for (size_t i = 0; i < engine_config["dumps"].size(); i++){
+        nlohmann::json dump = engine_config["dumps"].at(i);
+        std::string topic = std::string(MQTT_DATA) + std::string("/") + dump["name"].get<std::string>();
+        engine.updateDataTopics(topic, "Data.Type");
+    }
     ASSERT_NO_THROW(engine.shutdown());
 
     // TODO: The datapack controller is not destroyed and shared ptr survives
@@ -94,11 +113,6 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
     auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
     nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
     json_utils::validateJson(engine_config, "json://nrp-core/engines/engine_datatransfer.json#/engine_datatransfer_base");
-
-    // MQTT client config
-    nlohmann::json mqtt_config;
-    mqtt_config["MQTTBroker"] = "localhost:1883";
-    mqtt_config["ClientName"] = "datatransfer_engine";
 
     // Launch DataTransferEngine
     DataTransferEngine engine(engine_config["EngineName"],
