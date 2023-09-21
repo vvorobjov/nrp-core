@@ -27,14 +27,16 @@ NRPCoreSim -c simulation_config.json -p "NRPGazeboGrpcEngine.so,NRPNestJSONEngin
 
 \section cli_override_simulation_parameters CLI for overriding configuration file
 
-Parameters in the simulation configuration file can be overridden from NRPCoreSim using the input parameter `-o` followed by the pair `ParameterName=NewValue`. 
+Parameters in the simulation configuration file can be overridden from NRPCoreSim using the input parameter `-o` followed by the pair `ParameterName=<NewValue>`. 
 Multiple `-o` paramaters can be passed to NRPCoreSim. Similarly, several pairs separated by comma `,` can be passed after the input parameter `-o`. Consequently, neither `ParameterName` nor `NewValue` can contain commas.
 
-Nested parameters are supported as well, you can separate nesting levels with dots, e.g. `ParentParameter.ChildParameter=NewValue`.
+Nested parameters are supported as well, you can separate nesting levels with dots, e.g. `ParentParameter.ChildParameter=<NewValue>`.
 As many levels of nesting as required can be specified.
 Two cases are supported:
 - `ParentParameter` is a dictionary: in this case `ChildParameter` is expected to be a key in the dictionary
-- `ParentParameter` is an array: `ChildParameter` is an integer indicating the index of the array to be overridden.
+- `ParentParameter` is an array: `ChildParameter` is an integer indicating the index of the array to be overridden, or a pair Key:Value that is used for the searching of a required element.
+
+The `<NewValue>` is parsed as JSON, thus, the proper numerical or boolean values can be substituted into the configuration file. In case a string is used as the new value, then it should be enclosed in escaped double quotes.
 
 As an example, if the configuration to override parameters from looks like:
 
@@ -52,7 +54,7 @@ As an example, if the configuration to override parameters from looks like:
   ],
   "DictName" :
   {
-    "ImportantParameter": "value1",
+    "ImportantParameter": 1,
     "NonImportantParameter": "value2"
   }
 }
@@ -61,7 +63,7 @@ As an example, if the configuration to override parameters from looks like:
 then the following command
 
 \code{.sh}
-NRPCoreSim -c simulation_config.json -o SimpleParameter=NewValue,DictName.ImportantParameter=VAL -o ListName.1.NestedParameter1=value0 -o ListName.0.NestedParameter2.2=D
+NRPCoreSim -c simulation_config.json -o SimpleParameter=\"NewValue\",DictName.ImportantParameter=2 -o ListName.NestedParameter1:value3.NewParameter1=false -o ListName.0.NestedParameter2.2=\"D\"
 \endcode
 
 will override the simulation configuration as 
@@ -75,18 +77,18 @@ will override the simulation configuration as
       "NestedParameter2": ["A", "B", "D"]
     },
     {
-      "NestedParameter1": "value0"
+      "NestedParameter1": "value0",
+      "NewParameter1": false
     }
   ],
   "DictName" :
   {
-    "ImportantParameter": "VAL",
+    "ImportantParameter": 2,
     "NonImportantParameter": "value2"
   }
 }
 \endcode
 
-Finally, please note that only parameters explicitly present in the simulation configuration file can be overridden.
 \ref default_parameters "Default parameters" in the simulation configuration schema can't be overridden. 
 
 \section server_mode Server Mode

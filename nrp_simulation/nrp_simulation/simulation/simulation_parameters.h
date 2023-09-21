@@ -85,6 +85,11 @@ struct SimulationParams
     static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";
     using ParamLogDirT = std::string;
 
+    static constexpr std::string_view ParamLogConfig = "l";
+    static constexpr std::string_view ParamLogConfigLong = "l,logconfig";
+    static constexpr std::string_view ParamLogConfigDesc = "Print the simulation config in use to DEBUG log";
+    using ParamLogConfigT = bool;
+
     static constexpr std::string_view ParamMode = "m";
     static constexpr std::string_view ParamModeLong = "m,mode";
     static constexpr std::string_view ParamModeDesc = "Operational mode, standalone or server";

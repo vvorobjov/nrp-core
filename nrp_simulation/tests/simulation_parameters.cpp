@@ -45,15 +45,23 @@ static std::vector<const char*> createStartParamPtr(const std::vector<std::strin
     return retVal;
 }
 
-TEST(SimulationParametersTest, OptParser)
+auto parseStartParams(auto &optParser, const std::vector<std::string> &startParamDat) {
+    auto startParams = createStartParamPtr(startParamDat);
+    int argc = static_cast<int>(startParams.size());
+    char **argv = const_cast<char**>(startParams.data());
+    return optParser.parse(argc, argv);
+}
+
+jsonSharedPtr parseStartParamsAndGetConfig(auto &optParser, const std::vector<std::string> &startParamDat) {
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    return SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
+}
+
+TEST(SimulationParametersTest, ValidParametersAreParsedWithoutExceptions)
 {
     auto optParser(SimulationParams::createStartParamParser());
 
-    const char *pPyArgv = "simtest";
-    PythonInterpreterState pyInterp(1, const_cast<char**>(&pPyArgv));
-
     std::vector<std::string> startParamDat;
-    std::vector<const char*> startParams;
 
     // Test valid parameters
     startParamDat = {"nrp_server",
@@ -64,274 +72,227 @@ TEST(SimulationParametersTest, OptParser)
                     std::string("--") + SimulationParams::ParamFileLogLevelLong.data(), "trace",
                     std::string("--") + SimulationParams::ParamLogDirLong.data(), ""};
 
-    startParams = createStartParamPtr(startParamDat);
 
-    int argc = static_cast<int>(startParams.size());
-    char **argv = const_cast<char**>(startParams.data());
-
-    ASSERT_NO_THROW(optParser.parse(argc, argv));
-
-    // Test invalid options
-    startParams = {"nrp_server", "-fdsafdaf"};
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    ASSERT_THROW(optParser.parse(argc, argv), cxxopts::OptionParseException);
-
-    startParamDat = {"nrp_server", std::string("-") + SimulationParams::ParamSimCfgFile.data()};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    ASSERT_THROW(optParser.parse(argc, argv), cxxopts::OptionParseException);
+    ASSERT_NO_THROW(parseStartParams(optParser, startParamDat));
 }
 
-TEST(SimulationParametersTest, SetupExperimentConfig)
+TEST(SimulationParametersTest, InvalidOptionCausesParseException) {
+    auto optParser = SimulationParams::createStartParamParser();
+
+    std::vector<std::string> startParamDat = {"nrp_server", "-fdsafdaf"};
+    ASSERT_THROW(parseStartParams(optParser, startParamDat), cxxopts::OptionParseException);
+}
+
+TEST(SimulationParametersTest, MissingOptionValueCausesParseException) {
+    auto optParser = SimulationParams::createStartParamParser();
+    std::vector<std::string> startParamDat = {"nrp_server", std::string("-") + SimulationParams::ParamSimCfgFile.data()};
+    ASSERT_THROW(parseStartParams(optParser, startParamDat), cxxopts::OptionParseException);
+}
+
+TEST(SimulationParametersTest, NoSimulationFilePassedReturnsNull)
+{
+    auto optParser(SimulationParams::createStartParamParser());
+    std::vector<std::string> startParamDat = {"nrp_server"};
+    ASSERT_EQ(parseStartParamsAndGetConfig(optParser, startParamDat), nullptr);
+}
+
+TEST(SimulationParametersTest, NonExistentFileThrowsException)
+{
+    auto optParser = SimulationParams::createStartParamParser();
+    std::vector<std::string> startParamDat = {
+        "nrp_server",
+        std::string("-") + SimulationParams::ParamSimCfgFile.data(),
+        "noFile.json"};
+    ASSERT_THROW(parseStartParamsAndGetConfig(optParser, startParamDat), std::invalid_argument);
+}
+
+TEST(SimulationParametersTest, InvalidJSONConfigFileThrowsException)
+{
+    auto optParser = SimulationParams::createStartParamParser();
+    std::vector<std::string> startParamDat = {
+        "nrp_server",
+        std::string("-") + SimulationParams::ParamSimCfgFile.data(),
+        TEST_INVALID_JSON_FILE};
+    ASSERT_THROW(parseStartParamsAndGetConfig(optParser, startParamDat), std::invalid_argument);
+}
+
+TEST(SimulationParametersTest, ValidJSONConfigFileReturnsNonNull)
+{
+    auto optParser = SimulationParams::createStartParamParser();
+    std::vector<std::string> startParamDat = {
+        "nrp_server",
+        std::string("-") + SimulationParams::ParamSimCfgFile.data(),
+        TEST_SIM_SIMPLE_CONFIG_FILE};
+    ASSERT_NE(parseStartParamsAndGetConfig(optParser, startParamDat), nullptr);
+}
+
+TEST(SimulationParametersTest, AddsParametersToConfig)
 {
     auto optParser(SimulationParams::createStartParamParser());
 
-    // Test no simulation file passed
-    std::vector<std::string> startParamDat;
-    std::vector<const char*> startParams = {"nrp_server"};
-    int argc = static_cast<int>(startParams.size());
-    char **argv = const_cast<char**>(startParams.data());
+    // Test non-existing simulation argument
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "SomeNewParameter=\"SomeNewValue\"",
+         std::string("-") + SimulationParams::ParamSimParam.data(), "SomeParameter.NestedParameter=\"SomeValue\""};
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-        ASSERT_EQ(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), nullptr);
-    }
-
-    // Test non-existent file
-    startParamDat = {"nrp_server",
-                   std::string("-") + SimulationParams::ParamSimCfgFile.data(), "noFile.json"};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-        ASSERT_THROW(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), std::invalid_argument);
-    }
-
-    // Test invalid JSON config file
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_INVALID_JSON_FILE};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-        ASSERT_THROW(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), std::invalid_argument);
-    }
-
-    // Test valid JSON config file
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        ASSERT_NE(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), nullptr);
-    }
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+    ASSERT_EQ(simConfig->at("SomeNewParameter").get<std::string>(), "SomeNewValue");
+    ASSERT_EQ(simConfig->at("SomeParameter").at("NestedParameter").get<std::string>(), "SomeValue");
 }
 
-
-TEST(SimulationParametersTest, OverrideExperimentConfig)
+TEST(SimulationParametersTest, ModifiesParametersInConfig)
 {
     auto optParser(SimulationParams::createStartParamParser());
 
-    // Test invalid simulation argument
-    std::vector<std::string> startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "SomeInvalidParameter=SomeInvalidValue"};
-    std::vector<const char*> startParams = createStartParamPtr(startParamDat);
+    // Test existing simulation argument
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "SimulationName=\"NewName\""};
 
-    int argc = static_cast<int>(startParams.size());
-    char **argv = const_cast<char**>(startParams.data());
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+    ASSERT_EQ(simConfig->at("SimulationName").get<std::string>(), "NewName");
+}
 
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::invalid_argument);
-    }
-
-    // Test valid simulation argument
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "SimulationName=NewName"};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
-        ASSERT_EQ(simConfig->at("SimulationName").get<std::string>(), "NewName");
-    }
+TEST(SimulationParametersTest, CLIModifiesNestetParsInConfig)
+{
+    auto optParser(SimulationParams::createStartParamParser());
 
     // Test valid nested simulation argument and comma separation
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0.EngineName=NewName,EngineConfigs.0.EngineType=NewType"};
-    startParams = createStartParamPtr(startParamDat);
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0.EngineName=\"NewName\",EngineConfigs.0.EngineType=\"NewType\"",
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.EngineName:NewName.NewKey=\"NewValue\"",
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0.NewBool=false",
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0.NewInt=13"};
 
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
-        ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineName").get<std::string>(), "NewName");
-        ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineType").get<std::string>(), "NewType");
-    }
-
-    // Test invalid nested simulation argument
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.EngineName=NewName"};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::logic_error);
-    }
-
-    // Test valid list element override with empty dictionary 
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0={}"};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
-        ASSERT_TRUE(simConfig->at("EngineConfigs").at(0).empty());
-    }
-
-    // Test invalid nested simulation argument list id
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
-                     std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.10.EngineName=NewName"};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
-
-        EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
-        ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::out_of_range);
-    }
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+    ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineName").get<std::string>(), "NewName");
+    ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineType").get<std::string>(), "NewType");
+    ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("NewKey").get<std::string>(), "NewValue");
+    ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("NewBool").get<bool>(), false);
+    ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("NewInt").get<int>(), 13);
 }
 
-TEST(SimulationParametersTest, SetupExperimentDirectory)
+TEST(SimulationParametersTest, ChangeArrayToElementThrows)
+{
+    auto optParser(SimulationParams::createStartParamParser());
+
+    // Test invalid nested simulation argument
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.EngineName=\"NewName\""};
+
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
+
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::logic_error);
+}
+
+TEST(SimulationParametersTest, AddsEmptyObjectToConfig)
+{
+    auto optParser(SimulationParams::createStartParamParser());
+
+    // Test valid list element override with empty dictionary
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.0={}"};
+
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
+
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
+    ASSERT_TRUE(simConfig->at("EngineConfigs").at(0).empty());
+}
+
+TEST(SimulationParametersTest, EditingNonexistingArrayElementThrows)
+{
+    auto optParser(SimulationParams::createStartParamParser());
+
+    // Test invalid nested simulation argument list id
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE,
+         std::string("-") + SimulationParams::ParamSimParam.data(), "EngineConfigs.10.EngineName=\"NewName\""};
+
+    auto startParamVals(parseStartParams(optParser, startParamDat));
+    jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
+
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::out_of_range);
+}
+
+TEST(SimulationParametersTest, InvalidWorkingDirThrows)
 {
     auto optParser(SimulationParams::createStartParamParser());
 
     // Test invalid experiment directory
-    std::vector<std::string> startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamExpDir.data(), "non/existing/directory"};
-    std::vector<const char*> startParams = createStartParamPtr(startParamDat);
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamExpDir.data(), "non/existing/directory"};
 
-    int argc = static_cast<int>(startParams.size());
-    char **argv = const_cast<char**>(startParams.data());
+    ASSERT_THROW(parseStartParamsAndGetConfig(optParser, startParamDat), std::invalid_argument);
+}
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-        ASSERT_THROW(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), std::invalid_argument);
-    }
+TEST(SimulationParametersTest, ValidWorkingDir)
+{
+    auto optParser(SimulationParams::createStartParamParser());
 
     // Test valid example directory
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
-    startParams = createStartParamPtr(startParamDat);
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
 
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
+    ASSERT_NO_THROW(parseStartParamsAndGetConfig(optParser, startParamDat));
+}
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-        ASSERT_NO_THROW(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals));
-    }
+TEST(SimulationParametersTest, ValidWorkingDirAndConfig)
+{
+    auto optParser(SimulationParams::createStartParamParser());
 
     // Test valid JSON config file and valid example directory
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).filename(),
-                     std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
-    startParams = createStartParamPtr(startParamDat);
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).filename(),
+         std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
 
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
+    ASSERT_NE(parseStartParamsAndGetConfig(optParser, startParamDat), nullptr);
 
-    {
-        auto startParamVals(optParser.parse(argc, argv));
+    startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE};
 
-        ASSERT_NE(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), nullptr);
-    }
+    ASSERT_NE(parseStartParamsAndGetConfig(optParser, startParamDat), nullptr);
+}
 
-    // Test valid JSON config file with absolute path
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), TEST_SIM_SIMPLE_CONFIG_FILE};
-    startParams = createStartParamPtr(startParamDat);
-
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-
-        ASSERT_NE(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), nullptr);
-    }
+TEST(SimulationParametersTest, ValidWorkingDirAndInvalidConfigThrow)
+{
+    auto optParser(SimulationParams::createStartParamParser());
 
     // Test invalid JSON config file and valid example directory
-    startParamDat = {"nrp_server",
-                     std::string("-") + SimulationParams::ParamSimCfgFile.data(), "noFile.json",
-                     std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
-    startParams = createStartParamPtr(startParamDat);
+    std::vector<std::string> startParamDat =
+        {"nrp_server",
+         std::string("-") + SimulationParams::ParamSimCfgFile.data(), "noFile.json",
+         std::string("-") + SimulationParams::ParamExpDir.data(), std::filesystem::path(TEST_SIM_SIMPLE_CONFIG_FILE).parent_path()};
 
-    argc = static_cast<int>(startParams.size());
-    argv = const_cast<char**>(startParams.data());
-
-    {
-        auto startParamVals(optParser.parse(argc, argv));
-        ASSERT_THROW(SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals), std::invalid_argument);
-    }
+    ASSERT_THROW(parseStartParamsAndGetConfig(optParser, startParamDat), std::invalid_argument);
 }

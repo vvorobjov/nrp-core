@@ -225,6 +225,12 @@ int main(int argc, char *argv[])
     // Validate the resulting config
     SimulationManager::validateConfig(simConfig);
 
+    // Log config
+    if (startParams[SimulationParams::ParamLogConfig.data()].as<SimulationParams::ParamLogConfigT>())
+    {
+        NRPLogger::debug("Working with the config:\n {}", simConfig->dump(2));
+    }
+
     // List of plugin to load
     auto pluginsList = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
 
