@@ -26,14 +26,16 @@
 #include "nrp_gazebo_grpc_engine/nrp_client/gazebo_engine_grpc_nrp_client.h"
 #include "nrp_event_loop/event_loop/event_loop_engine_opts_parser.h"
 
+namespace {
+    std::function<void(int)> stop_handler;
+    void signal_handler(int signal) {
+        stop_handler(signal);
+    }
+}
+
 gazebo::NRPGazeboAsyncPlugin::~NRPGazeboAsyncPlugin()
 {
-    if(this->_ele)
-        _ele->shutdown();
-
-    auto& mqttProxy = NRPMQTTProxy::getInstance();
-    mqttProxy.clearRetained();
-    mqttProxy.disconnect();
+    // this->shutdown();
 }
 
 void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
@@ -95,12 +97,24 @@ void gazebo::NRPGazeboAsyncPlugin::Load(int argc, char **argv)
 
     // Start ELE
     this->startELE();
+
+    // Register signal handler
+    stop_handler = [this](int signal) {
+        NRPLogger::info("NRP Async plugin: Received temination signal. Shutting down...");
+        this->shutdown();
+        gazebo::shutdown();
+        std::raise(signal);
+    };
+
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 }
 
 void gazebo::NRPGazeboAsyncPlugin::Reset()
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
-    _ele->shutdown();
+    if(this->_ele)
+        _ele->shutdown();
     NRPMQTTProxy::getInstance().clearRetained();
     this->startELE();
 }
@@ -124,8 +138,17 @@ void gazebo::NRPGazeboAsyncPlugin::startELE()
     NRPLogger::debug("NRP Async plugin: starting Engine");
 
     // Start server
-    // TODO: what will happen after timeout?
     _ele->runLoopAsync(_timeout, true);
 
     NRPLogger::info("NRP Async plugin: Engine started. Waiting for input...");
+}
+
+void gazebo::NRPGazeboAsyncPlugin::shutdown()
+{
+    if(this->_ele)
+        _ele->shutdown();
+
+    auto& mqttProxy = NRPMQTTProxy::getInstance();
+    mqttProxy.clearRetained();
+    mqttProxy.disconnect();
 }

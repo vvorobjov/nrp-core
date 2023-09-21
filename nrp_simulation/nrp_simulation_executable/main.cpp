@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 
         NrpCoreServer server(serverAddress, std::move(manager));
 
-        // In server mode ignore SIGINT, otherwise shut the server down nicely
+        // In server mode ignore SIGINT if slave, otherwise shut the server down nicely
         if(isSlave)
             signal(SIGINT, SIG_IGN);
         else {
@@ -326,6 +326,7 @@ int main(int argc, char *argv[])
                 server.stopServerLoop();
             };
             signal(SIGINT, signal_handler);
+            signal(SIGTERM, signal_handler);
         }
 
         server.runServerLoop();
@@ -343,6 +344,7 @@ int main(int argc, char *argv[])
                 NRPLogger::warn("Interruption Signal received. But the simulation is not running, signal will be ignored");
         };
         signal(SIGINT, signal_handler);
+        signal(SIGTERM, signal_handler);
 
         if(res.currentState != SimulationManager::SimState::Failed)
             manager->runSimulationUntilDoneOrTimeout();
@@ -359,6 +361,10 @@ int main(int argc, char *argv[])
     // Force flush stdout and stderr in Python, when output is redirected Python might fail to do it automatically
     if(enginesFD >= 0)
         boost::python::exec("import sys; sys.stdout.flush(); sys.stderr.flush()");
+
+    // Stop external processes
+    for(auto &proc : extProcs)
+        proc->stopProcess(60);
 
 #ifdef MQTT_ON
     NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());

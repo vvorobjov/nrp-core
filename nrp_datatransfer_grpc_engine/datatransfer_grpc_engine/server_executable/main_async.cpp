@@ -94,6 +94,7 @@ int main(int argc, char * argv[])
         engine.stopLoop();
     };
     signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
     // Start the server
     engine.initialize();

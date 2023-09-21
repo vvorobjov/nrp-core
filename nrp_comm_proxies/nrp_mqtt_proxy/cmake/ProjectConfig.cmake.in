@@ -1,4 +1,14 @@
 @PACKAGE_INIT@
 
+set(ENV{CMAKE_PREFIX_PATH} "$ENV{NRP_DEPS_INSTALL_DIR}:$ENV{CMAKE_PREFIX_PATH}")
+message(STATUS "Using CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH}")
+
+find_package(eclipse-paho-mqtt-c 1.3.8 REQUIRED)
+find_package(PahoMqttCpp 1.2.0 REQUIRED)
+find_package(NRPGeneralLibrary REQUIRED)
+find_package(NRPProtobuf REQUIRED)
+
+set(NRP_MQTT_PROXY_TARGET @NRP_MQTT_PROXY_TARGET@)
+
 include(${CMAKE_CURRENT_LIST_DIR}/@LIB_EXPORT_NAME@.cmake)
 

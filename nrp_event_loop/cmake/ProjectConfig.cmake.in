@@ -1,6 +1,11 @@
 @PACKAGE_INIT@
 
-find_package(NRPGeneralLibrary REQUIRED)
+option(ENABLE_MQTT "Enable MQTT support" @ENABLE_MQTT@)
+if(ENABLE_MQTT)
+    find_package(NRPMQTTProxy REQUIRED)
+else()
+    find_package(NRPGeneralLibrary REQUIRED)
+endif()
 
 set(NRP_EVENT_LOOP_TARGET @NRP_EVENT_LOOP_TARGET@)
 

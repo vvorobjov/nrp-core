@@ -191,7 +191,7 @@ endif()
 
 # Spinnaker
 if(ENABLE_SPINNAKER)
-    message(STATUS "Building Spinnaker support")
+    message(STATUS "Building with Spinnaker support")
     add_definitions(-DSPINNAKER_ON)
 else()
     message(STATUS "Spinnaker support will not be built")
