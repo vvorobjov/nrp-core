@@ -53,6 +53,8 @@ inline void createPythonGraphFromConfig(const nlohmann::json &config, const Comp
             throw NRPException::logCreate("Loading of computation graph file \"" + fileName + "\" failed: the file doesn't exist.");
     }
 
+    gm.graphLoadComplete();
+
     gm.configure();
 }
 

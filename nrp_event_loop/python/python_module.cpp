@@ -3,6 +3,7 @@
 #include <boost/python/enum.hpp>
 
 #include "nrp_event_loop/computational_graph/computational_node_policies.h"
+#include "nrp_event_loop/computational_graph/functional_node.h"
 #include "nrp_event_loop/python/functional_node.h"
 #include "nrp_event_loop/nodes/dummy/input_dummy.h"
 #include "nrp_event_loop/nodes/dummy/output_dummy.h"
@@ -101,7 +102,7 @@ BOOST_PYTHON_MODULE(EVENT_LOOP_PYTHON_MODULE_NAME)
     // basic decorators
     bpy::class_<FunctionalNodeBase, std::shared_ptr<FunctionalNodeBase>>("FunctionalNodeBase", bpy::no_init);
 
-    bpy::class_<PythonFunctionalNode>("FunctionalNode",
+    bpy::class_<PythonFunctionalNode, bpy::bases<FunctionalNodeBase>>("FunctionalNode",
                                       bpy::init<const std::string &, const boost::python::list &, FunctionalNodePolicies::ExecutionPolicy>(
                                               (bpy::arg("name"),
                                                       bpy::arg("outputs"),

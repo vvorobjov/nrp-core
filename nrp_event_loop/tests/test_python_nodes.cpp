@@ -46,6 +46,8 @@
 
 #include "nrp_event_loop/utils/graph_utils.h"
 
+#include "tests/test_files/helper_classes.h"
+
 //// Python nodes
 
 TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
@@ -117,6 +119,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn_2.pySetup(test_function_2));
 
     fn_p_2->registerF2FEdge("i_1", "/f_n/o_2");
+    ComputationalGraphManager::getInstance().graphLoadComplete(); // needed to actually create the edge
     fn_p_2->configure();
 
     const std::string* msg_got4 = nullptr;
@@ -191,7 +194,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn_3.pySetup(test_function_2));
 
     fn_p_3->registerF2FEdge("i_1", "/wrong_node/o_2");
-    ASSERT_THROW( fn_p_3->configure();, NRPException);
+    ASSERT_THROW( ComputationalGraphManager::getInstance().graphLoadComplete();, NRPException);
 
     // wrong port
     PythonFunctionalNode fn_4("f_n_4", outputs2);
@@ -199,8 +202,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_FUNCTIONAL_NODE)
             bpy::extract<std::shared_ptr<PythonFunctionalNode>>(fn_4.pySetup(test_function_2));
 
     fn_p_4->registerF2FEdge("i_1", "/f_n/wrong_port");
-    ASSERT_THROW( fn_p_4->configure();, NRPException);
-
+    ASSERT_THROW( ComputationalGraphManager::getInstance().graphLoadComplete();, NRPException);
 }
 
 TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
@@ -217,6 +219,7 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     bpy::object test_module(bpy::import("test_decorators"));
     bpy::dict test_module_dict(test_module.attr("__dict__"));
 
+    ComputationalGraphManager::getInstance().graphLoadComplete();
     ComputationalGraphManager::getInstance().configure();
 
     // FN decorator
@@ -296,6 +299,71 @@ TEST(ComputationalGraphPythonNodes, PYTHON_DECORATORS_BASIC)
     ASSERT_THROW(bpy::import("wrong_from_cache_connections"), bpy::error_already_set);
 }
 
+TEST(ComputationalGraphPythonNodes, F2F_EDGES) {
+    // Setup required elements
+    namespace bpy = boost::python;
+    ComputationalGraphManager::resetInstance();
+    Py_Initialize();
+    PyImport_ImportModule(EVENT_LOOP_MODULE_NAME_STR);
+    PyImport_ImportModule("sys");
+    appendPythonPath(TEST_EVENT_LOOP_PYTHON_FUNCTIONS_MODULE_PATH);
+
+    // load nodes
+    try {
+        bpy::import("test_f2fedges");
+    }
+    catch (const NRPException &) {
+        NRPLogger::error("Test failed when loading test_f2fedges.py");
+        PyErr_Print();
+        boost::python::throw_error_already_set();
+    }
+
+    // Create f2f edges. Normal case
+    auto& cgm = ComputationalGraphManager::getInstance();
+    auto int_to_int = dynamic_cast<FunctionalNodeBase*>(cgm.getNode("int_to_int"));
+    auto int_to_obj = dynamic_cast<FunctionalNodeBase*>(cgm.getNode("int_to_obj"));
+    auto obj_to_obj = dynamic_cast<FunctionalNodeBase*>(cgm.getNode("obj_to_obj"));
+    auto obj_to_int = dynamic_cast<FunctionalNodeBase*>(cgm.getNode("obj_to_int"));
+
+    int_to_obj->registerF2FEdge("i1", "/int_to_int/o1");
+    obj_to_obj->registerF2FEdge("i1", "/int_to_obj/o1");
+    obj_to_int->registerF2FEdge("i1", "/obj_to_obj/o1");
+
+    cgm.graphLoadComplete();
+    cgm.configure();
+
+    // Connect I/O ports
+    auto i_pn = dynamic_cast<InputPort<int, int>*>(int_to_int->getInputById("i1"));
+    auto o_pn = dynamic_cast<OutputPort<int>*>(obj_to_int->getOutputById("o1"));
+
+    TestNode n1("input", ComputationalNode::Input);
+    TestNode n2("output", ComputationalNode::Output);
+
+    int msg_send = 1;
+    const int* msg_got = nullptr;
+    std::function<void(const int*)> f = [&](const int* a) { msg_got = a; };
+
+    OutputPort<int> o_p("output_port", &n1);
+    InputPort<int, int> i_p("input_port", &n2, f);
+
+    i_p.subscribeTo(o_pn);
+    i_pn->subscribeTo(&o_p);
+
+    // Send msg and compute graph
+    o_p.publish(&msg_send);
+    cgm.compute();
+    ASSERT_EQ(*msg_got, msg_send);
+
+    // f2f wrong type error
+    int_to_obj->registerF2FEdge("i1", "/obj_to_obj/o1");
+    ASSERT_THROW( cgm.graphLoadComplete();, NRPException);
+    int_to_obj->clearEdgeRequests();
+
+    obj_to_int->registerF2FEdge("i1", "/int_to_int/o1");
+    ASSERT_THROW( cgm.graphLoadComplete();, NRPException);
+    obj_to_int->clearEdgeRequests();
+}
+
 TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
     // Setup required elements
     namespace bpy = boost::python;
@@ -315,7 +383,9 @@ TEST(ComputationalGraphPythonNodes, ENGINE_NODES) {
         boost::python::throw_error_already_set();
     }
 
+    ComputationalGraphManager::getInstance().graphLoadComplete();
     ComputationalGraphManager::getInstance().configure();
+    
 
     // check results
     auto input_p = dynamic_cast<InputEngineNode*>(ComputationalGraphManager::getInstance().getNode("fake_engine_input"));

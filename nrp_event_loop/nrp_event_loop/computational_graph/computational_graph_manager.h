@@ -140,6 +140,15 @@ public:
     }
 
     /*!
+     * \brief Function to be called externally after all nodes has been added to the graph
+     */
+    void graphLoadComplete()
+    {
+        for(const auto& node : _nodes)
+            node.second->graphLoadedCB();
+    }
+
+    /*!
      * \brief Resets ComputationalGraphManager
      */
     void clear()

@@ -484,8 +484,9 @@ if(ENABLE_EXAMPLES_TESTING)
             set_tests_properties("${EXAMPLE}_BuildFNModule" PROPERTIES DEPENDS "${EXAMPLE}_BuildProto")
         endif()
 
-        # TODO: these two examples needs roscore and mqtt broker, also doesn't have a timeout
-        if(NOT "${EXAMPLE}" STREQUAL "ros_nodes_std_bool" AND NOT "${EXAMPLE}" STREQUAL "mqtt_nodes_str_protobuf")
+        # TODO: 'ros_nodes_std_bool' needs roscore, 'mqtt_nodes_str_protobuf' mqtt broker, also doesn't have a timeout
+        # In 'fn_to_fn_edges' config file is not named 'simulation_config.json'
+        if(NOT "${EXAMPLE}" STREQUAL "ros_nodes_std_bool" AND NOT "${EXAMPLE}" STREQUAL "mqtt_nodes_str_protobuf" AND NOT "${EXAMPLE}" STREQUAL "fn_to_fn_edges")
             # NOTE: not very useful, because NRPCoreSim always ends without an exception
             add_test(
                     NAME "${EXAMPLE}_Test"
@@ -493,6 +494,35 @@ if(ENABLE_EXAMPLES_TESTING)
                     WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
 
             set_tests_properties("${EXAMPLE}_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+        elseif("${EXAMPLE}" STREQUAL "fn_to_fn_edges")
+            add_test(
+                NAME "${EXAMPLE}_cpp2cpp_config_Test"
+                COMMAND NRPCoreSim -c cpp2cpp_config.json
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_cpp2cpp_config_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+
+            add_test(
+                NAME "${EXAMPLE}_py2cpp_config_Test"
+                COMMAND NRPCoreSim -c py2cpp_config.json
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_py2cpp_config_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+
+            add_test(
+                NAME "${EXAMPLE}_cpp2py_config_Test"
+                COMMAND NRPCoreSim -c cpp2py_config.json
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_cpp2py_config_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+
+            add_test(
+                NAME "${EXAMPLE}_py2py_config_Test"
+                COMMAND NRPCoreSim -c py2py_config.json
+                WORKING_DIRECTORY "${EXAMPLES_DIR}/${EXAMPLE}")
+
+            set_tests_properties("${EXAMPLE}_py2py_config_Test" PROPERTIES DEPENDS "${EXAMPLE}_BuildFNModule")
+
         endif()
     endforeach()
 endif()

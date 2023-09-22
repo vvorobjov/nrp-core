@@ -237,6 +237,7 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH_MANAGER)
     auto i_p = n11_p->getOrRegisterInput<TestMsg>("input");
 
     cgm.registerEdge(o_p, i_p);
+    cgm.graphLoadComplete();
     cgm.configure();
     cgm.compute();
 

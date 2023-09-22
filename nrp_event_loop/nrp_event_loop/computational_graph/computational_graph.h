@@ -66,9 +66,8 @@ public:
      */
     void insert_edge(const vertex &a, const vertex& b)
     {
-        // TODO: should throw exception if graph configured or configuring. Find a solution for python F2FEdge
         if(this->_state > GraphState::EMPTY)
-            NRPLogger::debug("Inserting edges while the graph is being configured or is configured can cause non defined behavior");
+            throw NRPException::logCreate("Inserting edges while the graph is being configured or is configured is not allowed");
 
         // Enforce edge rules
         if(a == b)
@@ -158,7 +157,7 @@ public:
 
         // Inform OutputNodes that it is a new execution cycle, currently they are the only type of nodes using this
         // information
-        sendCycleStartEvent();
+        sendCycleStartSignal();
         
         try {
             // TODO: each of these loops could be possibly parallelized
@@ -209,7 +208,7 @@ public:
 
 private:
 
-    void sendCycleStartEvent()
+    void sendCycleStartSignal()
     {
         // Inform OutputNodes that it is a new execution cycle, currently they are the only type of nodes using this
         // information
