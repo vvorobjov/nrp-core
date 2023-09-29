@@ -166,6 +166,7 @@ TEST(EventLoop, EVENT_LOOP_ENGINE) {
 
     // storeCapacity and doProcessLast
     engine->holdRun = true;
+    std::this_thread::sleep_for(1s);
     d.set_str("test_2_value");
     m.mutable_data()->PackFrom(d);
     NRPMQTTProxy::getInstance().publish(dpSubTopic, m.SerializeAsString());

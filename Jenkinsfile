@@ -181,8 +181,7 @@ pipeline {
                         build job: '/Deploy_nrp_core_docs', parameters: [
                             string(name: 'BRANCH_NAME', value:"${env.TOPIC_BRANCH}"),
                             string(name: 'BASE_BRANCH_NAME', value:"development"),
-                            string(name: 'ADMIN_SCRIPT_BRANCH', value:"nrp-core"),
-                            string(name: 'DOCUMENTATION_REF', value:"nrp-core"),
+                            string(name: 'DOCUMENTATION_REF', value:"development"),
                             booleanParam(name: 'DEPLOY', value: true),
                             booleanParam(name: 'RELEASE', value: false),
                             booleanParam(name: 'LATEST', value: false)], wait: false

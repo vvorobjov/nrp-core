@@ -201,10 +201,10 @@ The other loggers (in engine servers) try to fetch the settings from the shared 
 5. If something goes wrong with the shared object, the logger is initialized with the default settings (only a message is given, that it couldn’t load settings, the process is not terminated).
 
 Here are the optional console parameters that are used to define the logger settings:
-- `-l,--loglevel <VAL>` defines the general log level;
 - `--cloglevel <VAL>` defines the console log level;
 - `--floglevel <VAL>` defines the file log level;
 - `--logdir <VAL>` defines the directory for the log files;
+- `-l,--logconfig` print the simulation configuration to DEBUG log;
 
 The values for the level parameters can be any of `trace`, `debug`, `info`, `warn`, `error`, `critical`.
 

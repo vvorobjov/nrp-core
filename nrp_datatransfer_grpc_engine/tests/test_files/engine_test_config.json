@@ -4,6 +4,7 @@
     "ServerAddress": "localhost:9006",
     "MQTTBroker": "localhost:13874",
     "dumps":[
-        {"name": "datapack1", "network": true, "file": true}
+        {"name": "datapack1", "network": true, "file": true},
+        {"name": "datapack2", "network": true, "file": true}
     ]
 }

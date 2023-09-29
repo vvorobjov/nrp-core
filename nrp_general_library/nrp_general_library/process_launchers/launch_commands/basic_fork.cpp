@@ -158,10 +158,10 @@ pid_t BasicFork::stopProcess(unsigned int killWait)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    NRPLogger::debug("BasicFork::stopProcess(...): The process with PID {} is to be terminated", this->_PID);
-
     if(this->_PID > 0)
     {
+        NRPLogger::debug("BasicFork::stopProcess({}): The process with PID {} is to be terminated", killWait, this->_PID);
+
         // Send SIGTERM to gracefully stop the process
         kill(this->_PID, SIGTERM);
 
@@ -188,8 +188,10 @@ pid_t BasicFork::stopProcess(unsigned int killWait)
         while(std::chrono::system_clock::now() < end);
 
         // Force shutdown
-        if(!pKilled)
+        if(!pKilled) {
+            NRPLogger::debug("The process with PID {} is to be killed", this->_PID);
             kill(this->_PID, SIGKILL);
+        }
 
         this->_PID = -1;
     }
@@ -202,6 +204,8 @@ LaunchCommandInterface::ENGINE_RUNNING_STATUS BasicFork::getProcessStatus()
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
     // Check if process was already stopped before
+    // TODO: should it not return stopped in this case? The changing PID to -1 strategy here and in stopProcess should be reviewed
+    //  e.g. where else is getProcessStatus() called? 
     if(this->_PID < 0)
         return ENGINE_RUNNING_STATUS::RUNNING;
 

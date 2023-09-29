@@ -30,6 +30,7 @@
 #include "nrp_event_loop/computational_graph/computational_node.h"
 #include "nrp_event_loop/computational_graph/input_port.h"
 #include "nrp_event_loop/computational_graph/output_port.h"
+#include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 
 #include "nrp_general_library/utils/nrp_logger.h"
 
@@ -48,16 +49,129 @@ public:
     /*!
      * \brief Returns an InputPort by id.
      */
-    virtual Port* getInputById(const std::string& /*id*/) { return nullptr; };
+    virtual Port* getInputById(const std::string& /*id*/) { return nullptr; }
 
     /*!
      * \brief Returns an OutputPort by id.
      */
-    virtual Port* getOutputById(const std::string& /*id*/) { return nullptr; };
+    virtual Port* getOutputById(const std::string& /*id*/) { return nullptr; }
 
 
-    void configure() override {};
-    void compute() override {};
+    // TODO: throw 'not implemented' in empty virtual and override functions
+    void configure() override {}
+    void compute() override {}
+
+    /*!
+     * \brief Request the registration of an edge between an output port in another functional node an i_port input port in this node
+     * 
+     * Creating edges between FNs requires that all FNs has been created. Thus the edges are only created from 'graphLoadedCB' callback,
+     * which is called externally when all nodes have been created.
+     * 
+     * A ComputationalGraphManager is used to access other nodes, so this function assumes that a ComputationalGraphManager has 
+     * been instantiated and it is been used to store and manage graph nodes, this is the usual case.
+     */
+    void registerF2FEdge(const std::string& i_port, const std::string& address)
+    { _f2fEdges[i_port] = address; }
+
+protected:
+
+    void graphLoadedCB() override
+    { createF2FEdges(); }
+
+    /*!
+     * \brief Create an edge in the graph between this node 'port_id' input port and o_port
+     */
+    virtual void createEdge(const std::string& /*port_id*/, Port* /*out_port*/)
+    { }
+
+    void clearEdgeRequests()
+    { _f2fEdges.clear(); }
+
+    friend class ComputationalGraphPythonNodes_F2F_EDGES_Test;
+
+private:
+
+    /*!
+     * \brief Process the F2F registration requests
+     */
+    void createF2FEdges()
+    {
+        // Create edges to other functional nodes
+        for (auto& [in_port, address]: _f2fEdges) {
+            std::string node_id, out_port;
+            std::tie(node_id, out_port) = parseNodeAddress(address);
+            createF2FEdge(in_port, node_id, out_port);
+        }
+
+        // Clear registered edges
+        clearEdgeRequests();
+    }
+
+    void createF2FEdge(const std::string & in_port, const std::string & node_id, const std::string & out_port)
+    { 
+        std::string address = "/" + node_id + "/" + out_port;
+
+        // Get the other node
+        FunctionalNodeBase* node = dynamic_cast<FunctionalNodeBase*>(ComputationalGraphManager::getInstance().getNode(node_id));
+        if(!node)
+            throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                          "'. A Functional node with name '" + node_id + "' could not be found in the computational graph. Be sure that the edge"
+                                                                                          " address is correctly formatted and the connected node exists.");
+        
+        // Get output port
+        Port* o_port = node->getOutputById(out_port);
+        if(!o_port)
+            throw NRPException::logCreate("While creating the F2F edge '" + address +
+                                          "'. Functional node '" + node_id + "' doesn't have a declared output '"+ out_port +"'. Be sure that the edge"
+                                                                                                                              " address is correctly formatted and the specified output exists.");
+
+        // Create edge
+        createEdge(in_port, o_port);
+    }
+
+    /*! \brief requested edges from another FunctionalNode to this node */
+    std::map<std::string, std::string> _f2fEdges;
+};
+
+/*!
+ * \brief Helper class used to implement a F2FEdge Python decorator
+ */
+class F2FEdge {
+public:
+
+    F2FEdge(const std::string &keyword, const std::string &address) :
+            _keyword(keyword),
+            _address(address)
+    {  }
+
+    /*!
+     * \brief __call__ function in the decorator
+     *
+     * It receives a Python object wrapping a PythonFunctionalNode and add an F2FEdge to it
+     */
+    boost::python::object pySetup(const boost::python::object& obj)
+    {
+        // Register edge in FN
+        try {
+            std::shared_ptr<FunctionalNodeBase> f = boost::python::extract<std::shared_ptr<FunctionalNodeBase> >(
+                    obj);
+            f->registerF2FEdge(_keyword, _address);
+        }
+        catch (const boost::python::error_already_set&) {
+            std::string error_msg = "An error occurred while creating the F2FEdge '" + _address +
+            "'. Check that Functional Node definition is correct";
+            PyErr_Print();
+            throw NRPException::logCreate(error_msg);
+        }
+
+        // Returns FunctionalNode
+        return obj;
+    }
+
+protected:
+
+    std::string _keyword;
+    std::string _address;
 };
 
 
@@ -232,6 +346,48 @@ public:
     }
 
 protected:
+
+    /*!
+     * \brief Create an edge in the graph between this node 'port_id' input port and o_port
+     */
+    void createEdge(const std::string& port_id, Port* out_port) override
+    { createEdgeTuple(port_id, out_port); }
+
+    template <std::size_t N = 0>
+    void createEdgeTuple(const std::string& port_id, Port* out_port)
+    {
+        std::stringstream error_msg;
+        error_msg << "In Functional node '" << this->id() << "'. Error While creating edge to port '" << port_id << "'. ";
+
+        if constexpr (N < sizeof...(INPUT_TYPES)) {
+            if (_inputPorts.at(N) && _inputPorts.at(N)->id() == port_id) {
+                // Try cast ports
+                // Limitation: this will only work if InputPort T_IN = T_OUT. 
+                // When creating input ports T_IN is lost, no way to recover it.
+                // Currently this is the only case supported by createFNFactoryModule though
+                InputPort<input_n_t<N>, input_n_t<N>>* in_port = dynamic_cast<InputPort<input_n_t<N>, input_n_t<N>>*>(_inputPorts.at(N).get());
+                OutputPort<input_n_t<N>>* o_port = dynamic_cast<OutputPort<input_n_t<N>>*>(out_port);
+
+                if(!in_port) {
+                    error_msg << "The port T_IN and T_OUT types are not equal. Currently this is the only supported case.";
+                    throw NRPException::logCreate(error_msg.str());
+                }
+                else if(!o_port) {
+                    error_msg << "Attempt to connect to port '" << out_port->id() << "', but they are of different types.";
+                    throw NRPException::logCreate(error_msg.str());
+                }
+
+                ComputationalGraphManager::getInstance().registerEdge<input_n_t<N>, input_n_t<N>>(o_port, in_port);
+
+            }
+            else
+                createEdgeTuple<N+1>(port_id, out_port);
+        }
+        else {
+            error_msg << "This port is not registered in the node.";
+            throw NRPException::logCreate(error_msg.str());
+        }
+    }
 
     /*!
      * \brief Configure. Print warnings if node is not fully connected.

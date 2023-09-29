@@ -76,6 +76,8 @@ namespace gazebo
         std::shared_ptr<NRPLogger> _logger;
 
         void startELE();
+
+        void shutdown();
     };
 
     GZ_REGISTER_SYSTEM_PLUGIN(NRPGazeboAsyncPlugin)

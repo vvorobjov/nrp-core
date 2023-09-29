@@ -1,0 +1,5 @@
+{
+  "ComputationalGraph": ["cpp_source.py", "py_sink.py"],
+  "SimulationLoop": "EventLoop",
+  "EventLoop": {"Timeout": 1, "Timestep": 0.1}
+}

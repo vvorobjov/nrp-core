@@ -162,16 +162,13 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 # Install python module
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+
+
+
 install(FILES "nrp_pysim_engine/python/SimManager.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-install(FILES "nrp_pysim_engine/python/OpensimLib.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-install(FILES "nrp_pysim_engine/python/OpenAIGymLib.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-install(FILES "nrp_pysim_engine/python/MujocoLib.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
-install(FILES "nrp_pysim_engine/python/BulletLib.py"
-        DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")
+install(DIRECTORY "nrp_pysim_engine/python/" DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}" FILES_MATCHING PATTERN "*Lib.py")
+install(DIRECTORY "nrp_pysim_engine/python/train_lib/" DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}" FILES_MATCHING PATTERN "*.py")
 
 install(TARGETS ${PYTHON_MODULE_NAME}
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}/engines/${PYTHON_MODULE_NAME}")

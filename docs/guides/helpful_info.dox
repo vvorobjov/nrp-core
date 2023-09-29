@@ -29,6 +29,32 @@ cd models
 
 Now it should be possible to run the Husky experiments!
 
+
+\section tutorial_helpful_info_gazebo_recording Recording progress and generating videos of Gazebo simulation
+
+To record progress of a simulation in Gazebo, the following command line arguments can be used:
+- `-r` - enables recording of simulation state data. By default, the data is saved in `$HOME/.gazebo/log/` directory
+- `--record_path <path>` - absolute path in which to store the recorded data
+
+These options should be added to the Gazebo engine configuration section in the simulation configuration, under the
+`EngineProcStartParams` parameter:
+\code
+"EngineProcStartParams": ["--verbose -r --record_path=/home/nrp/nrp-core/examples/husky_braitenberg"]
+\endcode
+
+In order to replay the simulation, gazebo executable should be called with the recording arguments mentioned above replaced with
+`-u -p <log_file>`, and with the rest of arguments matching exactly the arguments used during the recording:
+
+\code
+gazebo --verbose -u -p state.log --engine=gazebo --serverurl=localhost:9004 --protobuf_plugins_path=/home/nrp/.local/nrp/lib --protobuf_plugins='["Gazebo"]' -s NRPGazeboGrpcCommunicationPlugin.so --seed 0 husky_world.sdf
+\endcode
+
+The full command can be printed during NRPCoreSim execution by adding `--cloglevel=debug` argument.
+
+It is possible to record a video by clicking the `Record a video` button visible on the top right part of the gazebo GUI during the replay of simulation.
+
+More information about gazebo logging can be found at the following <a href="https://classic.gazebosim.org/tutorials?cat=tools_utilities&tut=logging_playback">page</a>.
+
 \section time_profile_tools Time Profiling NRPCore Experiments
 
 Some basic tools are included for time profiling the execution of NRPCore experiments.

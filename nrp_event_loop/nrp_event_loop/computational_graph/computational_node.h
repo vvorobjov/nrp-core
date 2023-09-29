@@ -136,7 +136,14 @@ protected:
     virtual void graphCycleStartCB()
     { }
 
+    /*!
+     * \brief Function called by the Computational Graph to nodes that the graph has been completely loaded
+     */
+    virtual void graphLoadedCB()
+    { }
+
     friend class ComputationalGraph;
+    friend class ComputationalGraphManager;
     friend class ComputationalGraphPythonNodes_PYTHON_DECORATORS_BASIC_Test;
 
 private:

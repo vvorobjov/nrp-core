@@ -27,6 +27,7 @@
 #include "nrp_general_library/plugin_system/plugin.h"
 
 #include <future>
+#include <string>
 #include <unistd.h>
 
 /*!
@@ -61,6 +62,7 @@ class NestEngineServerNRPClient
 
         using population_mapping_t = std::map<std::string, std::string>;
 
+        using get_connection_population_mapping_t = std::map<std::string, std::pair<std::string,std::string> >;
 
         virtual datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers) override;
 
@@ -92,6 +94,15 @@ class NestEngineServerNRPClient
          */
         std::string _serverAddress;
 
+        /*!
+         * \brief Contains connections returned by server after loading the brain file as
+         * a JSON dictionary with the following format:
+         * {"connection_name": {"source": "a_pop_name", "target": "another_pop_name"}}
+         *
+         * Source and target populations are stored by name, they should be in "populations".
+         */
+        get_connection_population_mapping_t _getConnectionsPopulationToArgs;
+
         bool runStepFcn(SimulationTime timestep);
 
         /*!
@@ -108,6 +119,7 @@ class NestEngineServerNRPClient
          * \return Reference to JSON array of datapack IDs, as string
          */
         const std::string & getDataPackIdList(const std::string & datapackName) const;
+
 };
 
 using NestEngineServerNRPClientLauncher = NestEngineServerNRPClient::EngineLauncher<NestServerConfigConst::EngineType>;

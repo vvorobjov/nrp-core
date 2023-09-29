@@ -1,89 +1,102 @@
 /*! \page datatransfer_engine DataTransfer Engine
 
-The DataTransfer Engine brings data logging and streaming capabilities to NRP-core.
-It enables users to log experiment data to file for further offline anaylisis or to stream it over the network for, e.g., remote data visualization and experiment monitoring.
+The DataTransfer Engine provides data logging and streaming capabilities to NRP-core.
+It enables users to log experiment data to a file for further offline analysis or to stream it over the network for, e.g., remote data visualization and experiment monitoring.
 
-The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and, therefore, accepts \ref datapacks_protobuf "Protobuf DataPacks".
+The engine's implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and thus accepts \ref datapacks_protobuf "Protobuf DataPacks".
 
-In transceiver functions, users can fetch datapacks from other engines and process them or send them directly to the DataTransfer Engine where they will be logged or streamed.
-Which datapacks are accepted by the engine and how are they processed (i.e. whether they are logged or streamed or both) is specified in the engine json configuration.
-See \ref engine_datatransfer_config_section "below" for more details about the engine configuration parameters.
+In transceiver functions, users can fetch datapacks from other engines, process them, or send them directly to the DataTransfer Engine, where they will be logged or streamed.
+Which datapacks are accepted by the engine and how they are processed (i.e., whether they are logged, streamed, or both) is specified in the engine's JSON configuration.
+See the \ref engine_datatransfer_config_section "section below" for more details on the engine configuration parameters.
 
-In the folder *examples/husky_braitenberg_dump* insterested users can find a complete experiment using the DataTransfer Engine.
+In the simulation configuration file *examples/husky_braitenberg/simulation_config_data_transfer.json*, interested users can find a complete experiment using the DataTransfer Engine.
 
 \section datatransfer_engine_streaming Enabling Data Streaming with MQTT
 
-As commented above, besides from logging to file, the DataTransfer Engine allows to stream datapacks over the network.
-For this purpose the MQTT protocol is used.
+As mentioned above, besides logging to a file, the DataTransfer Engine also allows streaming datapacks over the network.
+For this purpose, the MQTT protocol is used.
 
-In order to enable data streaming from NRP-core, the Paho MQTT library must be installed beforehand as described in \ref installation.
-Additionally, the Engine will need to connect to an MQTT broker and the latter's address specified in the engine configuration.
+To enable data streaming from NRP-core, the Paho MQTT library must be installed as described in \ref installation.
+Additionally, the Engine will need to connect to an MQTT broker, and the broker's address must be specified in the engine configuration.
 
-In case of needing to bring up your own MQTT broker, below are provided commands to quickly set one up and run it from docker.
-The commands should be run from the NRP-core source root folder.
+If you need to set up your own MQTT broker, commands are provided below to quickly set one up and run it using Docker.
+These commands should be run from the NRP-core source root folder.
 
 \code{.sh}
 sudo docker pull eclipse-mosquitto
 sudo docker run -it -p 1883:1883 -v ${PWD}/examples/husky_braitenberg/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
 \endcode
 
-The resulting MQTT broker will be listening to port *1883*.
-If a different port is wished, it can be specified in *examples/husky_braitenberg/mosquitto.conf* or in other mosquitto configuration file.
+The resulting MQTT broker will listen on port *1883*.
+If you wish to use a different port, you can specify it in *examples/husky_braitenberg/mosquitto.conf* or in another mosquitto configuration file.
 
 \section datatransfer_engine_datapacks DataPacks
 
-The DataTransfer Engine processes every incoming datapack and tries to save its "data" field to file and/or send it to and MQTT broker, depending on the experiment configuration.
+The DataTransfer Engine processes every incoming datapack and tries to save its "data" field to a file and/or send it to an MQTT broker, depending on the experiment configuration.
 
 \ref datapacks_protobuf "Protobuf DataPacks", containing any protobuf message type, can be sent to the DataTransfer Engine for logging or streaming, with some limitations.
-Protobuf message types that have *repeated* fields cannot be logged to files, but can still be streamed.
+Protobuf message types with *repeated* fields cannot be logged to files but can still be streamed.
 
-Additionally, two Protobuf message types are provided with special formatting support for logging into the file: *Dump.String* and *Dump.ArrayFloat*.
-See below for more details
+Additionally, two Protobuf message types are provided with special formatting support for logging to a file: *Dump.String* and *Dump.ArrayFloat*.
+See below for more details.
 
 \subsection dump_proto Dump Protobuf message types
 
 \include dump_msgs.proto
 
-- *Dump.String* has a single field *string_stream* of string type.
+- *Dump.String* has a single field *string_stream* of the string type.
 - *Dump.ArrayFloat* can be used to transfer arrays as explained below.
 
 \subsubsection dump_array_float Logging arrays with Dump.ArrayFloat
 
 The *Dump.ArrayFloat* Protobuf message contains two fields:
-- float_stream: repeated float field containing the array data.
-- dims: repeated integer field specifying the dimensions of the array.
+- float_stream: a repeated float field containing the array data.
+- dims: a repeated integer field specifying the dimensions of the array.
 
-The number of elements in the *dims* field specifies the number of dimensions of the array, and the value of each element the number of elements of the array in that dimension.
+The number of elements in the *dims* field specifies the number of dimensions of the array, and the value of each element indicates the number of elements of the array in that dimension.
 
 The DataTransfer engine supports arrays of one or two dimensions.
 If *dims* is not set or has one element, the array is treated as 1-dimensional.
 If it has two, the array is treated as 2-dimensional.
-In this case the first element indicates the number of rows of the array and the second element the number of columns (*r* and *c* in the explanation below).
-The formatting of 3- or more-dimensional arrays is not supported, if *dims* has a number of elements other than 2, then *float_stream* is formatted as a 1-dimensional array.
+In this case, the first element indicates the number of rows of the array and the second element the number of columns (*r* and *c* in the explanation below).
+The formatting of 3- or more-dimensional arrays is not supported; if *dims* has a number of elements other than 2, then *float_stream* is formatted as a 1-dimensional array.
 
-When the engine is requested to log to file a *Dump.ArrayFloat* message *r* lines are printed to the logged file, each of them containing *c* elements from *float_stream*.
-In case the size of *float_stream* is greater than the specified dimensions (i.e. than r * c), the remaining data (not fitting into the number of rows multiplied by the number of columns) is truncated and not printed.
-In case the total size of *float_stream* is smaller, then the remaining "space" of the array is printed empty.
+When the engine is requested to log a *Dump.ArrayFloat* message to a file, *r* lines are printed, each containing *c* elements from *float_stream*.
+If the size of *float_stream* is greater than the specified dimensions (i.e., greater than r * c), the excess data (not fitting into the number of rows multiplied by the number of columns) is truncated and not printed.
+If the total size of *float_stream* is smaller, then the remaining "space" of the array is printed empty.
 
-In the file *examples/husky_braitenberg_dump/tf_1.py* are given some examples examples for constructing *Dump.ArrayFloat*.
+Examples of constructing *Dump.ArrayFloat* are given in the file *examples/husky_braitenberg_dump/tf_1.py*.
 
 \subsection logging_address Logging and streaming address
 
-When logging to file is enabled, datapacks are always logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter of the Engine.
+When logging to a file is enabled, datapacks are always logged to a file `<dataDirectory>/<timestamp>/<datapack_name>.data`, where <dataDirectory> is a configuration parameter of the Engine.
 
-When Data Streaming with MQTT is enabled, datapacks are published to an *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<datapack_name>* MQTT topic as serialized protobuf objects, being <MQTTPrefix> and <simulationID> configuration parameters of the Engine.
-Whenever the Engine is reset, a message with the text "reset" is published through that topic.
-The type of the streamed protobuf message is published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<_data_name>/type*. 
-The data topic address (i.e. *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<_data_name>*) is also published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/data*.
+When Data Streaming with MQTT is enabled, datapacks are published to an *<MQTTPrefix>/nrp_simulation/<simulationID>/data/<datapack_name>* MQTT topic as serialized protobuf objects. <MQTTPrefix> and <simulationID> are configuration parameters of the Engine.
+Whenever the Engine is reset, a message with the text "reset" is published to that topic.
 
-Aditionally, a welcome message is published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/welcome* and the experiment simulation time is published every timestep to the topic *nrp/<simulationID>/time*.
+The list of available data topics, along with their corresponding data types, is published to a dedicated topic: *<MQTTPrefix>/nrp_simulation/<simulationID>/data*. The format for this information is provided below:
 
-MQTT messages published only once, i.e. the welcome message, datapack data topic addresses and datapack types, are always retained.
+\code{.json}
+[
+  {
+    "topic": "<MQTTPrefix>/nrp_simulation/<simulationID>/data/<datapack_name1>",
+    "type": "<Data.Type1>"
+  },
+  {
+    "topic": "<MQTTPrefix>/nrp_simulation/<simulationID>/data/<datapack_name2>",
+    "type": "<Data.Type2>"
+  },
+  ...
+]
+\endcode
 
+Upon initialization of the data topic (i.e., before the simulation begins), the `type` value is left blank. It is subsequently updated once the engine determines the data type, which typically occurs when the first message for that topic is sent.
+
+Additionally, a welcome message is published once to the topic *<MQTTPrefix>/nrp_simulation/<simulationID>/welcome*.
 
 \section engine_datatransfer_config_section Engine Configuration Parameters
 
-This Engine type parameters are defined in DataTransfer schema (listed \ref engine_datatransfer_schema "here"), which in turn is based on \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas and thus inherits all parameters from them.
+This Engine type's parameters are defined in the DataTransfer schema (listed \ref engine_datatransfer_schema "here"), which in turn is based on the \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas, inheriting all parameters from them.
 
 To use this engine in an experiment, set `EngineType` to <b>"datatransfer_grpc_engine"</b>.
 
@@ -132,7 +145,7 @@ To use this engine in an experiment, set `EngineType` to <b>"datatransfer_grpc_e
 
 \section engine_datatransfer_schema Schema
 
-As explained above, the schema used by the DataTransfer engine inherits from \ref engine_base_schema "EngineBase" and \ref  engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is given below:
+As explained above, the schema used by the DataTransfer engine inherits from the \ref engine_base_schema "EngineBase" and \ref engine_comm_protocols_schema "EngineGRPC" schemas. A complete schema for the configuration of this engine is provided below:
 
 \include engines/engine_datatransfer.json
 

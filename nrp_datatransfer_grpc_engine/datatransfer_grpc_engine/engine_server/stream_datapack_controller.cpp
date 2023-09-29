@@ -58,16 +58,16 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
                                                     const std::string &engineName,
                                                     const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                                    const std::string &mqttBaseTopic)
+                                                    const std::string &mqttBaseTopic,
+                                                    MQTTTopicsUpdateCallbackType topicsUpdateCallback)
     : StreamDataPackController(datapackName, engineName, protoOps)
 {
     _netDump = true;
     _mqttClient = mqttClient;
+    _topicsUpdateCallback = topicsUpdateCallback;
     this->_mqttBase = std::string(mqttBaseTopic);
     _mqttDataTopic = std::string(this->_mqttBase + "/data/" + datapackName);
-    _mqttTypeTopic = std::string(this->_mqttBase + "/data/" + datapackName + "/type");
-    // announce topic
-    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic, true);
+    _topicsUpdateCallback(_mqttDataTopic, "");
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
@@ -75,8 +75,9 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
                                                     const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::string &baseDir,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                                    const std::string &mqttBaseTopic)
-    : StreamDataPackController(datapackName, engineName, protoOps, mqttClient, mqttBaseTopic)
+                                                    const std::string &mqttBaseTopic,
+                                                    MQTTTopicsUpdateCallbackType topicsUpdateCallback)
+    : StreamDataPackController(datapackName, engineName, protoOps, mqttClient, mqttBaseTopic, topicsUpdateCallback)
 {
     _fileDump = true;
     _baseDir = baseDir;
@@ -118,13 +119,6 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
     if (!this->_initialized) {
         msg = data.GetTypeName();
 
-#ifdef MQTT_ON
-        // Stream msg type
-        if (_netDump){
-            _mqttClient->publish(_mqttTypeTopic, msg, true);
-        }
-#endif
-
         // Check EngineGrpc.DataPackMessage case. Only relevant for file dump
         if(msg == "EngineGrpc.DataPackMessage") {
             this->_isDataPackMessage = true;
@@ -146,6 +140,13 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
                                               "' in engine '" +
                                               dataPack.datapackid().enginename() + "'");
         }
+
+#ifdef MQTT_ON
+        // Stream msg type
+        if (_netDump){
+            this->_topicsUpdateCallback(this->_mqttDataTopic, msg);
+        }
+#endif
 
         // Check message type case. Only relevant for file dump
         if (_fileDump){

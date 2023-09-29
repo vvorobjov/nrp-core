@@ -63,6 +63,7 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         bpy::object test_module(bpy::import("test_ros_nodes"));
         bpy::dict test_module_dict(test_module.attr("__dict__"));
 
+        ComputationalGraphManager::getInstance().graphLoadComplete();
         ComputationalGraphManager::getInstance().configure();
 
         // check results

@@ -32,9 +32,14 @@ DataTransferEngine::DataTransferEngine(const std::string &engineName,
                                      const std::string &protobufPluginsPath,
                                      const nlohmann::json &protobufPlugins)
     : EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins),
-    _engineName(engineName)
+    _engineName(engineName), _mqttClientName(engineName)
 {
     _dataPacksNames.clear();
+
+#ifdef MQTT_ON
+    // Clear topics names
+    _mqttDataTopics = nlohmann::json::array();
+#endif
 }
 
 SimulationTime DataTransferEngine::runLoopStep(SimulationTime timeStep)
@@ -62,11 +67,22 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
 
     bool mqttConnected = false;
 #ifdef MQTT_ON
+    // Topic: MQTT_BASE/simulationID
+    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
+    if (data.contains("MQTTPrefix") && data.at("MQTTPrefix").is_string() && data.at("MQTTPrefix") != ""){
+        // Topic: MQTTPrefix/MQTT_BASE/simulationID
+        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
+        this->_mqttClientName = std::string(data.at("MQTTPrefix")) + std::string("_") + this->_mqttClientName;
+    }
+    this->_mqttBase += std::string(data.at("simulationID"));
+
+    NRPLogger::debug("Using the MQTT topics base \"{}\"", this->_mqttBase);
+
     nlohmann::json mqtt_config;
     // If client doesn't exist yet, then create one
     if (!_mqttClient){
         mqtt_config["MQTTBroker"] = data.at("MQTTBroker");
-        mqtt_config["ClientName"] = _engineName;
+        mqtt_config["ClientName"] = this->_mqttClientName;
         _mqttClient = std::make_shared<NRPMQTTClient>(mqtt_config);
     }
     else
@@ -75,20 +91,14 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
     }
     mqttConnected = _mqttClient->isConnected();
 
-    // Topic: MQTT_BASE/simulationID
-    this->_mqttBase = std::string(MQTT_BASE) + std::string("/");
-    if (data.contains("MQTTPrefix")){
-        // Topic: MQTTPrefix/MQTT_BASE/simulationID
-        this->_mqttBase = std::string(data.at("MQTTPrefix")) + std::string("/") + this->_mqttBase;
-    }
-    this->_mqttBase += std::string(data.at("simulationID"));
-
     if(!mqttConnected)
     {
         NRPLogger::warn("NRPCoreSim is not connected to MQTT, Network data streaming will be disabled. Check your experiment configuration");
     }
     else {      
         _mqttClient->publish(this->_mqttBase + "/welcome", "NRP-core is connected!", true);
+        // publish empty data topics list 
+        publishDataTopics();
     }
 #else
     NRPLogger::info("No MQTT support. Network streaming disabled.");
@@ -108,11 +118,26 @@ void DataTransferEngine::initialize(const nlohmann::json &data)
             this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir));
         }
 #ifdef MQTT_ON
-        else if (fileDump && netDump){
-            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, dataDir, _mqttClient, this->_mqttBase));
+        else if (fileDump && netDump)
+        {
+            this->registerDataPack(datapackName,
+                                   new StreamDataPackController(datapackName,
+                                                                this->_engineName,
+                                                                this->_protoOps,
+                                                                dataDir,
+                                                                _mqttClient,
+                                                                this->_mqttBase,
+                                                                std::bind(&DataTransferEngine::updateDataTopics, this, std::placeholders::_1, std::placeholders::_2)));
         }
-        else if (!fileDump && netDump){
-            this->registerDataPack(datapackName, new StreamDataPackController(datapackName, this->_engineName, this->_protoOps, _mqttClient, this->_mqttBase));
+        else if (!fileDump && netDump)
+        {
+            this->registerDataPack(datapackName,
+                                   new StreamDataPackController(datapackName,
+                                                                this->_engineName,
+                                                                this->_protoOps,
+                                                                _mqttClient,
+                                                                this->_mqttBase,
+                                                                std::bind(&DataTransferEngine::updateDataTopics, this, std::placeholders::_1, std::placeholders::_2)));
         }
 #endif
         else {
@@ -169,6 +194,35 @@ bool DataTransferEngine::setNRPMQTTClient(std::shared_ptr< NRPMQTTClient > clien
     _mqttClient = client;
 
     return _mqttClient->isConnected();
+}
+
+void DataTransferEngine::updateDataTopics(const std::string &topic, const std::string &type)
+{
+    NRPLogger::debug("Updating the MQTT topics list {}:{}", topic, type);
+
+    auto it = std::find_if(_mqttDataTopics.begin(), _mqttDataTopics.end(), [&topic](const nlohmann::json& element) {
+        return element["topic"] == topic;
+    });
+
+    if (it != _mqttDataTopics.end()) {
+        // topic found, update the type
+        (*it)["type"] = type;
+    } else {
+        // topic not found, add new dictionary
+        nlohmann::json newElement = { {"topic", topic}, {"type", type} };
+        _mqttDataTopics.push_back(newElement);
+    }
+
+    // publish topics to broker
+    publishDataTopics();
+}
+
+void DataTransferEngine::publishDataTopics()
+{
+    NRPLogger::debug("Publishing the MQTT topics list");
+    if (_mqttClient->isConnected()){
+        _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopics.dump(), true);
+    }
 }
 #endif
 

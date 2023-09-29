@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.4.0)
+set(NRP_VERSION 1.4.1)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -191,7 +191,7 @@ endif()
 
 # Spinnaker
 if(ENABLE_SPINNAKER)
-    message(STATUS "Building Spinnaker support")
+    message(STATUS "Building with Spinnaker support")
     add_definitions(-DSPINNAKER_ON)
 else()
     message(STATUS "Spinnaker support will not be built")
