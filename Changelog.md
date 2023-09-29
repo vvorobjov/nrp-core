@@ -231,3 +231,41 @@
 19. Separate the NRP-Core Python client as an independent Python module which can be installed and used standalone, without installing the rest of NRP-Core:
     * [Pull request #172](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/172)
 
+## NRPCore 1.4.1 (2023-09-29)
+
+1. Bug fixes:
+    * [Pull request #193](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/193)
+    * [Pull request #195](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/195)
+    * [Pull request #194](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/194)
+    * [Pull request #196](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/196)
+    * [Pull request #197](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/197)
+    * [Pull request #198](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/198)
+    * [Pull request #199](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/199)
+    * [Pull request #208](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/208)
+    * [Pull request #204](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/204)
+
+2. Added a script for building the full chain of images:
+    * [Pull request #203](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/203)
+
+3. Simulation configuration CLI interface enhancements:
+    * [Pull request #205](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/205)
+
+4. Added support for connecting precompiled C++ functional nodes in the computational graph using the decorator FromFunctionalNode. Before only Python Functional Nodes could be connected:
+    * [Pull request #209](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/209)
+
+5. Added support for in-engine distributed learning. Implemented a new Pysim Engine leveraging StableBaselines for the forementioned purpose along with an example on how to use it:
+    * [Pull request #170](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/170)
+
+6. A few improvements regarding the MQTT topics formatting used by the DataTransfer Engine to publish datapacks:
+    * [Pull request #200](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/200)
+    * [Pull request #202](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/202)
+    * [Pull request #206](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/206)
+
+7. Added section about recording of Gazebo simulations to docs:
+    * [Pull request #163](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/163)
+
+8. Several improvements on the NEST server Engine:
+    * [Pull request #201](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/201)
+    * [Pull request #207](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/207)
+    * [Pull request #210](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/210)
+
