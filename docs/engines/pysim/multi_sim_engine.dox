@@ -1,0 +1,48 @@
+/*! \page multi_sim_engine Parallel Reinforcement Learning with Multiple Engines
+
+\image html launch_multi_engine.png "Launch process" width=800px
+
+This page describes the process to apply NRP in Parallel Learning. The figure shows the launch process of different engines executed in different threads or computation nodes.
+
+According to the \ref python_client "Python API of NRP-Core", this implementation launches a Python main script first. After that, this Python main script will launch several isomorphism NRP-Core and a learning thread. The main script will collect datasets from NRP-Cores and send them to the learning thread. The learning thread will continuously learn the dataset and return the learned policy. Based on the learned policy, the main script sends policy parameters to NRP-Cores to update the policy for training. In this context, each NRP-Core launches a decision engine and several simulation engines in an independent thread or nodes.  The simulation engines continuously provide training data based on interaction with the decision engine. The decision engine is used to generate actions based on the updated policy and observation data. Also, the decision data will collect the training data and feedback to the NRP-Core so that can be used in the main script.
+
+As an example of this use, the script learning in parallel in experiment examples/pysim_examples/multi_nrp is listed below:
+
+\include pysim_examples/multi_nrp/train.py
+
+\section Nrp_Cores NrpCores
+
+The NrpCores is a Python class that launches a single Nrp-Core and runs step by step. When launching a Nrp-Core, it requires a special simulation configuration file to define the used decision engine and simulation engines. If users want to launch the engines in remote computation nodes, the \ref running_example_docker_compose "docker launcher" can be employed in the configuration file. For each running step, this class completes the data communication between the main script and the engines.
+
+\section Launch_NRPs LaunchNRPs
+
+The LaunchNRPs is a Python class that launches a learning thread and multiple Nrp-Cores in forks. Notably, this class default defines the policy of the learning thread as 'MlpPolicy' of a PPO trainer from <a href="https://stable-baselines3.readthedocs.io/en/master/">stable-baselines 3</a>. If the user wants to change a different policy, it should change in the library of this class.
+
+The following functions are provided by LaunchNRPs to do the parallel learning:
+
+- `__init__(env_name, config_json, thread_num, batch_size)`: this is the constructor function of the Python class. In the initialization of the class multiple isomorphic Nrp-Cores are launched to learn parallel. 'env_name' presents the employed environment in training and is defined by the OpenAI Gym. 'config_json' is the configuration file for the multiple isomorphic Nrp-Cores and can be reused when launching such Nrp-Cores at the same time. 'thread_num' presents the number of isomorphic Nrp-Cores that used to learn in parallel and 'batch_size' is the parameter referring the learning process.
+- `running()`: this function does the parallel learning using a hidden flag system. The shutdown of the learning process replies to the shutdown of engines and can be defined in the simulation configuration files by the relationship of the time step.
+- `shutdown()`: this function is executed when the simulation is shutdown. After that, a learned model will be saved.
+
+\section engine_opensim_config_section Engine Configuration Parameters
+
+In this learning process, the simulation configuration file can be reused to launch multiple isomorphic Nrp-Cores with the decision engine and simulation engines. The parameters for engines employed in this learning process are inherited from the \ref python_grpc_engine. The special parameters corresponding to simulations refer to the \ref pysim_engine.
+
+- Parameters specific to the engine for making decision:
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>WorldFileName<td>A parameter corresponding to the defined environment to ensure the same policy of learning<td>string<td><td>X<td>
+<tr><td>EngineNumber<td>A parameter corresponding to the simulation engines that used to learn in parallel<td>int<td><td>X<td>
+<tr><td>StepNumber<td>The maximum learning step for each episode<td>int<td><td>X<td></table>
+
+- Parameters specific to the engine for making decision:
+<table>
+<tr><th>Name<th>Description<th>Type<th>Default<th>Required<th>Array
+<tr><td>framework<td>A parameter to define the executor in the PySim Engine to make sure the data type referring to the learning process<td>string<td>'stable_baselines3'<td>X<td>
+<tr><td>env_number<td>the number of executing vectorization environments  defined in the stable-baselines 3<td>int<td>1<td>X<td>
+</table>
+
+As an example, the reused configuration file including a decision engine and two simulation engines is listed below:
+
+\include pysim_examples/multi_nrp/env_engines/simulation_config_train.json
+*/
