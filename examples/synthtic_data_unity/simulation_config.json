@@ -1,7 +1,7 @@
 {
 	"SimulationName": "unity",
 	"SimulationDescription": "Unity engine test",
-	"SimulationTimeout": 100,
+	"SimulationTimeout": 5,
 	"EngineConfigs":
 	[
 		{
@@ -22,7 +22,11 @@
 			"PythonFileName": "write_to_disc.py",
 			"ProtobufPackages": ["NrpGenericProto"],
 			"dumps":[
-                {"name": "image", "network": false, "file": true}
+                {"name": "image", "network": false, "file": true},
+				{"name": "cameraSensorStrings", "network": false, "file": true},
+				{"name": "cameraSensorFloats", "network": false, "file": true},
+				{"name": "cameraSensorInts", "network": false, "file": true},
+				{"name": "cameraSensorBools", "network": false, "file": true}
             ]
 		}
 	],
