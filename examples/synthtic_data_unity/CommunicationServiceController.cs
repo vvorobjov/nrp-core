@@ -1,7 +1,7 @@
 /*
  * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2022-2023 Josip Josifovski, Krzysztof Lebioda
+ * Copyright 2022-2023 Josip Josifovski, Krzysztof Lebioda, Vahid Zolfaghari 
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,15 @@ using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using NrpGenericProto;
 using UnityEngine.Perception.GroundTruth;
-using UnityEngine.Perception.Randomization.Scenarios;
+using UnityEngine.Perception.Settings;
 using UnityEngine.Perception.Randomization.Randomizers;
+using UnityEngine.Perception.GroundTruth.DataModel;
+using MyCustomNamespace;
+using System.Net;
+using Unity.Simulation;
+using Newtonsoft.Json.Linq;
+using System.Reflection.Emit;
+
 
 /// <summary>
 /// Enum for the possible remote proedures calls, new ones to be added if the game should support more
@@ -49,7 +56,11 @@ class CommunicationServiceController : MonoBehaviour
     private ServiceProcedure _invokedProcedure;
 
     private readonly object _locker = new object();
+    private readonly object _annotation_locker = new object();
+    private readonly object _frame_locker = new object();
 
+    private readonly object _metric_locker = new object();
+    private readonly object _metadata_locker = new object();
     /// <summary>
     /// gRPC server responsible for listening to requests and providing responses
     /// </summary>
@@ -78,10 +89,7 @@ class CommunicationServiceController : MonoBehaviour
     private TimeStepController _timeStepController;
 
 
-    /// <summary>
-    /// Catches unity camera and returns current frame
-    /// </summary>
-    private ImageSender _imageSender;
+
     /// <summary>
     /// A handle that is used to block the thread which recieves the remote procedure call until the procedure is executed in the main Unity thread (necessary as UnityEngine calls have to run in the main thread)
     /// </summary>
@@ -95,7 +103,16 @@ class CommunicationServiceController : MonoBehaviour
 
     private int resolutionWidth = 650;
     private int resolutionHeight = 400;
+    
+    private JToken AnnotationData;
 
+    private string _frameKey;
+    private string _frameExtenstion;
+    private byte[] _frameValue;
+
+    private JToken Metadata;
+
+    private List<JToken> MetricData = new List<JToken>();
 
     /// ===========================Data holders for the requests and responses of the procedures, necessary for syncing the data between the main Untty thread and the server thread
     private InitializeRequest _initializeRequest = null;
@@ -115,8 +132,13 @@ class CommunicationServiceController : MonoBehaviour
 
     private GetDataPacksRequest _getDataPacksRequest = null;
     private GetDataPacksReply _getDataPacksReply = null;
+    // private Object myendpoint;
     public PoseEstimationScenario scenario;
 
+    public Camera myCamera; 
+    private PerceptionCamera  myPerceptionCamera;
+
+    RgbSensorDefinition _rgbSensorDefinition ; 
 
     /// ===============================================================================================================================================================================
 
@@ -131,8 +153,11 @@ class CommunicationServiceController : MonoBehaviour
         StartServer();
         Debug.Log("[CommControl] gRPC Server started");
 
-        _imageSender = FindObjectOfType<ImageSender>();
+        myPerceptionCamera = myCamera.GetComponent<PerceptionCamera>();
+        
         _timeStepController = FindObjectOfType<TimeStepController>();
+        // myendpoint = PerceptionSettings.endpoint.Clone();
+        
     }
 
     private void initializeUser(string simulationConfigJson)
@@ -161,7 +186,7 @@ class CommunicationServiceController : MonoBehaviour
     {
         // User-defined runLoop code should go here
 
-        scenario.letItGo();
+        // scenario.letItGo();
         scenario.Move();
 
 
@@ -178,25 +203,139 @@ class CommunicationServiceController : MonoBehaviour
         return dataPack;
     }
 
+    // public void SetMetaData(JToken _data)
+    // {
+    //     lock(_metadata_locker)
+    //     {
+    //         Metadata = _data;
+    //     }
+    // }
+
+    public void SetMetricData(JToken _data)
+    { 
+        lock(_metric_locker)
+        {
+            MetricData.Add(_data);
+        }
+        
+    }
+    public void SetAnnotationData(JToken _data)
+    { 
+        lock (_annotation_locker)
+        {
+            AnnotationData = _data ;
+        }
+        
+    }
+
+    public void SetFrameData(string key, string extension, byte[] value)
+    { 
+        lock (_frame_locker)
+        {
+            _frameKey = key ;
+            _frameExtenstion = extension;
+            _frameValue = value;
+        }
+        
+    }
+
     private List<DataPackMessage> getDataPacksUser()
     {
+        // m_SensorDef = myperceptionCamera.GetModelType();
         List<DataPackMessage> dataPacks = new List<DataPackMessage>();
 
         // Image Section
-
-        byte[] frameBytes = _imageSender.GetCurrentFrame(resolutionHeight, resolutionHeight);
+        
+        
         NrpGenericProto.Image imageProto = new NrpGenericProto.Image();
 
         imageProto.Height = Convert.ToUInt32(resolutionHeight);
         imageProto.Width = Convert.ToUInt32(resolutionWidth);
-        imageProto.Data = Google.Protobuf.ByteString.CopyFrom(frameBytes);
+        
+        imageProto.Data = Google.Protobuf.ByteString.CopyFrom(_frameValue);
+        // framesent++;
+        // Debug.Log("current frame number = " + framesent);
 
+        
 
         dataPacks.Add(createDataPack("image", _engineName, imageProto));
 
+        
         // Sensor section
 
+        //  Strings 
+        NrpGenericProto.ArrayString SensorStringsTypeProto = new NrpGenericProto.ArrayString();
+        
+        // SensorStringsTypeProto.Array.Add(m_SensorDef);   
+        SensorStringsTypeProto.Array.Add(myPerceptionCamera.m_SensorDefinition.modelType);
+        SensorStringsTypeProto.Array.Add(myPerceptionCamera.id);
+        SensorStringsTypeProto.Array.Add(myPerceptionCamera.m_SensorDefinition.modality);
+        SensorStringsTypeProto.Array.Add(myPerceptionCamera.description);
+        SensorStringsTypeProto.Array.Add(myPerceptionCamera.captureTriggerMode.ToString());
 
+            //Annotation part 
+        SensorStringsTypeProto.Array.Add(AnnotationData.Value<string>("@type"));
+        SensorStringsTypeProto.Array.Add(AnnotationData.Value<string>("id"));
+        SensorStringsTypeProto.Array.Add(AnnotationData.Value<string>("description"));
+        foreach (var _label in AnnotationData["spec"].Children()) 
+        { 
+            SensorStringsTypeProto.Array.Add(_label.Value<string>("label_id"));
+            SensorStringsTypeProto.Array.Add(_label.Value<string>("label_name"));
+        }
+            // Metric part
+        foreach(JToken _metric in MetricData)
+        {
+            SensorStringsTypeProto.Array.Add(_metric.Value<string>("@type"));
+            SensorStringsTypeProto.Array.Add(_metric.Value<string>("id"));
+            SensorStringsTypeProto.Array.Add(_metric.Value<string>("description"));
+        }
+            // MetaData
+        // SensorStringsTypeProto.Array.Add(Metadata.Value<string>("unityVersion"));
+        // SensorStringsTypeProto.Array.Add(Metadata.Value<string>("perceptionVersion"));
+        // SensorStringsTypeProto.Array.Add(Metadata.Value<string>("renderPipeline"));
+        // SensorStringsTypeProto.Array.Add(Metadata.Value<string>("simulationStartTime"));
+        // SensorStringsTypeProto.Array.Add(Metadata.Value<string>("simulationEndTime"));
+        // foreach (string _sensor in Metadata["sensors"].Children()) 
+        // {
+        //     SensorStringsTypeProto.Array.Add(_sensor);
+        // }
+
+        // foreach (string _metricCollector in Metadata["metricCollectors"].Children()) 
+        // {
+        //     SensorStringsTypeProto.Array.Add(_metricCollector);
+        // }
+
+        // foreach(JToken _annotators in Metadata["annotators"])
+        // {
+        //     SensorStringsTypeProto.Array.Add(_annotators.Value<string>("name"));
+        //     SensorStringsTypeProto.Array.Add(_annotators.Value<string>("type"));
+        // }
+        
+
+        dataPacks.Add(createDataPack("cameraSensorStrings", _engineName, SensorStringsTypeProto));
+
+        //  Floats
+        NrpGenericProto.ArrayFloat SensorFloatsTypeProto = new NrpGenericProto.ArrayFloat();
+
+        SensorFloatsTypeProto.Array.Add(myPerceptionCamera.firstCaptureFrame);
+        SensorFloatsTypeProto.Array.Add(myPerceptionCamera.simulationDeltaTime);
+
+        dataPacks.Add(createDataPack("cameraSensorFloats", _engineName, SensorFloatsTypeProto));
+        
+        // ints 
+        NrpGenericProto.ArrayInt32 SensorIntsTypeProto = new NrpGenericProto.ArrayInt32();
+
+        SensorIntsTypeProto.Array.Add(myPerceptionCamera.framesBetweenCaptures);
+        // SensorIntsTypeProto.Array.Add(Metadata.Value<int>("totalFrames"));
+        // SensorIntsTypeProto.Array.Add(Metadata.Value<int>("totalSequences"));
+        dataPacks.Add(createDataPack("cameraSensorInts", _engineName, SensorIntsTypeProto));
+        // Booleans
+
+        NrpGenericProto.ArrayBool SensorBoolsTypeProto = new NrpGenericProto.ArrayBool();
+
+        SensorBoolsTypeProto.Array.Add(myPerceptionCamera.m_SensorDefinition.manualSensorsAffectTiming);
+
+        dataPacks.Add(createDataPack("cameraSensorBools", _engineName, SensorBoolsTypeProto));
 
         return dataPacks;
     }
