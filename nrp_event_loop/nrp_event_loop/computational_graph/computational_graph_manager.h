@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,6 +137,15 @@ public:
         for(const auto& node : _nodes)
             if(!node.second->isVisited())
                 NRPLogger::warn("Graph node \"" + node.second->id() + "\" is disconnected. It will not be executed.");
+    }
+
+    /*!
+     * \brief Function to be called externally after all nodes has been added to the graph
+     */
+    void graphLoadComplete()
+    {
+        for(const auto& node : _nodes)
+            node.second->graphLoadedCB();
     }
 
     /*!

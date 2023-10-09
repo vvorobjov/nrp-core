@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ void ${engine_name}GrpcDataPackController::handleDataPackData(const google::prot
 {
     // In order to access the data from the message, you need to cast it to the proper type
 
-    std::cout << "TF output data: " << dynamic_cast<const EngineTest::TestPayload &>(data).str() << std::endl;
+    std::cout << "Message Received: " << dynamic_cast<const EngineTest::TestPayload &>(data).integer() << std::endl;
 }
 
 google::protobuf::Message * ${engine_name}GrpcDataPackController::getDataPackInformation()

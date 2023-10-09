@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import unittest
 from nrp_core.data.nrp_protobuf import *
 
 import nrp_core.engines.python_grpc.grpc_server_callbacks as server_callbacks
-import engine_grpc_pb2 as python_grpc_engine_pb2
-from nrp_core.data.nrp_protobuf import dump_pb2
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
+from nrp_protobuf import dump_pb2
 import json
 
 
@@ -233,10 +233,10 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json)
         # Set the data
-        server_callbacks.set_datapack(self.set_datapack_data)
+        server_callbacks.set_datapacks(self.set_datapack_data)
 
         # Retrieve the data. It should match the data that was set.
-        datapacks = server_callbacks.get_datapack(self.get_datapack_data)
+        datapacks = server_callbacks.get_datapacks(self.get_datapack_data)
         get_json = dump_pb2.String()
         datapacks.dataPacks[0].data.Unpack(get_json)
         self.assertEqual(get_json.string_stream, self.test_str)
@@ -249,7 +249,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Unregistered DataPack .*"):
-            server_callbacks.set_datapack(self.set_datapack_data)
+            server_callbacks.set_datapacks(self.set_datapack_data)
 
     def test_set_datapack_malformed(self):
         """
@@ -259,7 +259,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Unregistered DataPack .*"):
-            server_callbacks.set_datapack(self.set_datapack_data)
+            server_callbacks.set_datapacks(self.set_datapack_data)
 
     def test_set_data_err_msg(self):
         """
@@ -288,7 +288,7 @@ class TestGrpcServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
-            server_callbacks.get_datapack(self.get_datapack_data)
+            server_callbacks.get_datapacks(self.get_datapack_data)
 
     def test_get_datapack_incorrect_engine_name(self):
         """
@@ -303,7 +303,7 @@ class TestGrpcServer(unittest.TestCase):
         temp_json.dataPackType = DumpStringDataPack.getType()
         temp_json.engineName = "other_engine_name"
         with self.assertRaisesRegex(Exception, "Requesting DataPack .* from incorrect engine .*"):
-            server_callbacks.get_datapack(request_json)
+            server_callbacks.get_datapacks(request_json)
 
 
 if __name__ == '__main__':

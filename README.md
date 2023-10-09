@@ -34,20 +34,20 @@ sudo apt remove python3-flask python3-flask-cors
 # By installing flask version 1.1.4 markupsafe library (included with flask) has to be downgraded to version 2.0.1 to run properly with gunicorn
 # You can install that version with 
 # pip install flask==1.1.4 gunicorn markupsafe==2.0.1
-pip install flask gunicorn
+pip install flask gunicorn paho-mqtt
 
 # required by nest-server (which is built and installed along with nrp-core)
 sudo apt install python3-restrictedpython uwsgi-core uwsgi-plugin-python3 
 pip install flask_cors mpi4py docopt
 
 # required by nrp-server, which uses gRPC python bindings
-pip install grpcio-tools pytest psutil docker
+pip install "grpcio-tools>=1.49.1" pytest psutil docker
 
 # Required for using docker with ssh
 pip install paramiko
 
-# Python package of python_on_whales is required if want to invoke nrp-core remotely with compose (See guides/remote_docker_compose.dox)
-pip install python-on-whales
+# The Python packages 'python_on_whales' and 'pyyaml' are optionally required to invoke nrp-core remotely with the Docker Compose (see guides/remote_docker_compose.dox for details).
+pip install python-on-whales pyyaml
 
    
 # 4- Installing ROS

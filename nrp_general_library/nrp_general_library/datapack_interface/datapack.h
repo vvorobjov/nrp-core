@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ public:
 
     DataPack (const DataPack&) = delete;
     DataPack& operator= (const DataPack&) = delete;
+
+    DataPack(DataPack&& obj) = default;
+    DataPack& operator = (DataPack&&) = default;
 
     /*!
      * \brief Returns type of the datapack class

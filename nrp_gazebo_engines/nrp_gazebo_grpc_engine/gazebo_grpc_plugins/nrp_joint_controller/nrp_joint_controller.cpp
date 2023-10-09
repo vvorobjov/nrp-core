@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -127,18 +127,18 @@ void gazebo::NRPJointController::Load(gazebo::physics::ModelPtr model, sdf::Elem
         }
 
         // Create datapack
-        const auto datapackName = NRPGRPCCommunicationController::createDataPackName(model->GetName(), joint->GetName());
+        const auto datapackName = NRPGazeboCommunicationController::createDataPackName(model->GetName(), joint->GetName());
 
         NRPLogger::info("Registering Joint datapack [ {} ]", datapackName);
         this->_jointDataPackControllers.push_back(JointGrpcDataPackController(jointName, joint, jointControllerPtr));
         try {
-            auto &commControl = NRPGRPCCommunicationController::getInstance();
-            commControl.registerDataPack(datapackName, &(this->_jointDataPackControllers.back()));
+            auto &commControl = CommControllerSingleton::getInstance().engineCommController();
+            commControl.registerDataPackWithLock(datapackName, &(this->_jointDataPackControllers.back()));
             // Register plugin in communication controller
             commControl.registerModelPlugin(this);
         }
         catch(NRPException&) {
-            throw NRPException::logCreate("Failed to register Joint datapack. Ensure that this NRP gRPC Joint plugin is "
+            throw NRPException::logCreate("Failed to register Joint datapack. Ensure that this NRP Joint plugin is "
                                           "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
         }
     }

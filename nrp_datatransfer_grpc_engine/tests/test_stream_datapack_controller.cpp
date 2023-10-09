@@ -29,29 +29,37 @@
 
 #include "tests/test_env_cmake.h"
 
+// Mock class
+class MockUpdateDataTopics {
+public:
+    MOCK_METHOD2(call, void(const std::string&, const std::string&));
+};
+
 TEST(TestDatatransferGrpcEngine, StreamDataPackController)
 {
     // Mock NRPMQTTClient with connected status
     auto nrpMQTTClientMock = std::make_shared<NRPMQTTClientMock>(true);
 
+    MockUpdateDataTopics mockUpdateDataTopics;
+
+    ::testing::InSequence sequence;
+
     std::string dataPackName = "datapack1";
-    
-    // Expected to announce the topic data address in StreamDataPackController constructor
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data", "nrp/0/data/" + dataPackName, testing::_))
+
+    // The expected behavior is to update the list of topics with empty topic type
+    EXPECT_CALL(mockUpdateDataTopics, call("nrp_simulation/0/data/" + dataPackName, ""))
         .Times(1);
 
     // Launch StreamDataPackController
     std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>> dummyOps;
-    StreamDataPackController controller(dataPackName, "datatransfer_engine", dummyOps, nrpMQTTClientMock, "nrp/0");
+    StreamDataPackController controller(dataPackName, "datatransfer_engine", dummyOps, nrpMQTTClientMock, "nrp_simulation/0", std::bind(&MockUpdateDataTopics::call, &mockUpdateDataTopics, std::placeholders::_1, std::placeholders::_2));
 
     // Create a simple DataPack load
     Dump::String data;
     data.set_string_stream("test");
 
-    // The expected behavior is to send message and type to corresponding topics
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName, testing::_, testing::_))
-        .Times(1);
-    EXPECT_CALL(*nrpMQTTClientMock, publish("nrp/0/data/" + dataPackName + "/type", "Dump.String", testing::_))
+    // The expected behavior is to update the list of topics
+    EXPECT_CALL(mockUpdateDataTopics, call("nrp_simulation/0/data/" + dataPackName, "Dump.String"))
         .Times(1);
 
     ASSERT_NO_THROW(controller.handleDataPackData(data));

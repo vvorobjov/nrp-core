@@ -46,6 +46,10 @@
 				{"name": "test_datapack2", "network": true, "file": true},
 				{"name": "test_datapack3", "network": true, "file": true},
 				{"name": "husky::back_left_joint", "network": true, "file": true}
+			],
+			"ProtobufPackages":[
+				"Gazebo",
+				"Dump"
 			]
 		}
 	],

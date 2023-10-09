@@ -51,6 +51,17 @@ services:
         depends_on:
         - base-env
 
+    xpra-gazebo-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-ubuntu20-env${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-ubuntu20-env${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - gazebo-env
+
 
     gazebo-nest-env:
         build:
@@ -62,6 +73,18 @@ services:
         command: bash
         depends_on:
         - nest-env
+
+
+    xpra-gazebo-nest-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - gazebo-nest-env
 
 
     nrp-gazebo-nest-env:

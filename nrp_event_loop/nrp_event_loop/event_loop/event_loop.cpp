@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,9 +31,8 @@
 
 EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::milliseconds timestep, std::chrono::milliseconds timestepThres,
                      ComputationalGraph::ExecMode execMode, bool ownGIL, bool spinROS) :
+        EventLoopInterface(timestep, timestepThres),
     _graph_config(graph_config),
-    _timestep(timestep),
-    _timestepThres(timestepThres),
     _execMode(execMode),
     _ownGIL(ownGIL),
     _spinROS(spinROS)
@@ -42,80 +41,9 @@ EventLoop::EventLoop(const nlohmann::json &graph_config, std::chrono::millisecon
 }
 
 EventLoop::~EventLoop()
-{
-    this->shutdown();
-}
+{ this->shutdown(); }
 
-void EventLoop::runLoopOnce(const std::chrono::time_point<std::chrono::steady_clock>& startTime)
-{
-    if(!_ownGIL)
-        _pyGILState = PyGILState_Ensure();
-
-#ifdef ROS_ON
-    if(_spinROS)
-        ros::spinOnce();
-#endif
-
-    try {
-        ComputationalGraphManager::getInstance().compute();
-    }
-    catch (std::exception& e) {
-        if(!_ownGIL)
-            PyGILState_Release(_pyGILState);
-
-        throw;
-    }
-
-    if(!_ownGIL)
-        PyGILState_Release(_pyGILState);
-
-    std::this_thread::sleep_until(startTime + _timestep);
-}
-
-void EventLoop::runLoop(std::chrono::milliseconds timeout)
-{
-    NRPLogger::debug("Starting Event Loop");
-
-    _doRun = true;
-    bool useTimeout = timeout != std::chrono::milliseconds(0);
-
-    auto startLoopTime = std::chrono::steady_clock::now();
-    auto startStepOld = startLoopTime;
-    auto startStepNew = startLoopTime;
-    auto stepDuration = startStepNew - startStepOld;
-
-    while(_doRun) {
-        startStepNew = std::chrono::steady_clock::now();
-        stepDuration = startStepNew - startStepOld;
-
-        if(useTimeout && startStepNew - startLoopTime >= timeout)
-            break;
-
-        if(stepDuration > _timestep + _timestepThres) {
-            NRPLogger::warn("Event Loop can't run at the target frequency. Actual step duration: " +
-            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(stepDuration).count()) +
-            " (ms). Target step duration: " + std::to_string(_timestep.count()) + " (ms).");
-        }
-
-        runLoopOnce(startStepNew);
-
-        startStepOld = startStepNew;
-    }
-
-    NRPLogger::debug("Completed Event Loop");
-}
-
-void EventLoop::runLoopAsync(std::chrono::milliseconds timeout)
-{
-    if(!this->isRunning()) {
-        NRPLogger::debug("EventLoop was started");
-        _runFuture = std::async(&EventLoop::runLoop, this, timeout);
-    }
-    else
-        NRPLogger::info("EventLoop is already running. You must shut it down before running it again");
-}
-
-void EventLoop::initialize()
+void EventLoop::initializeCB()
 {
     if(!_ownGIL)
         _pyGILState = PyGILState_Ensure();
@@ -131,36 +59,43 @@ void EventLoop::initialize()
         throw;
     }
 
+    std::tie(_clock, _iteration) = findTimeNodes();
+
     if(!_ownGIL)
         PyGILState_Release(_pyGILState);
 }
 
-void EventLoop::shutdown()
+void EventLoop::runLoopCB()
 {
-    NRPLogger::debug("Shutting down EventLoop");
-    this->stopLoop();
+    if(!_ownGIL)
+        _pyGILState = PyGILState_Ensure();
+
+#ifdef ROS_ON
+    if(_spinROS)
+        ros::spinOnce();
+#endif
+
+    if(_clock)
+        _clock->updateClock(_currentTime);
+
+    if(_iteration)
+        _iteration->updateIteration(_iterations);
+
+    try {
+        ComputationalGraphManager::getInstance().compute();
+    }
+    catch (std::exception& e) {
+        if(!_ownGIL)
+            PyGILState_Release(_pyGILState);
+
+        throw;
+    }
+
+    if(!_ownGIL)
+        PyGILState_Release(_pyGILState);
+}
+
+void EventLoop::shutdownCB()
+{
     ComputationalGraphManager::getInstance().clear();
-    NRPLogger::debug("EventLoop was shut down");
-}
-
-void EventLoop::stopLoop()
-{
-    NRPLogger::debug("Stopping EventLoop");
-    _doRun = false;
-    this->waitForLoopEnd();
-    NRPLogger::debug("EventLoop stopped");
-}
-
-void EventLoop::waitForLoopEnd()
-{
-    if(this->isRunning())
-        _runFuture.wait();
-}
-
-bool EventLoop::isRunning()
-{
-    if(!_runFuture.valid())
-        return false;
-    else
-        return _runFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready;
 }

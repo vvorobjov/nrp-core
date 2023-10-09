@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@
 
 #include "nrp_general_library/utils/nrp_exceptions.h"
 #include "nrp_general_library/utils/python_error_handler.h"
-
-#include "nrp_event_loop/utils/graph_utils.h"
 
 #include "nrp_event_loop/computational_graph/functional_node.h"
 
@@ -172,43 +170,36 @@ public:
     OutputPort<bpy::object>* getOutput(const std::string& id)
     { return dynamic_cast<OutputPort<bpy::object>*>(getOutputByIdTuple<N>(id)); }
 
-    /*!
-     * \brief Request the registration of an edge between an output port in another functional node an i_port input port in this node
-     */
-    void registerF2FEdge(const std::string& i_port, const std::string& address)
-    { _f2fEdges[i_port] = address; }
-
 protected:
+
+    /*!
+     * \brief Create an edge in the graph between this node 'port_id' input port and o_port
+     */
+    void createEdge(const std::string& port_id, Port* out_port) override
+    {
+        // Get output port
+        OutputPort<bpy::object>* o_port = dynamic_cast<OutputPort<bpy::object>*>(out_port);
+        if(!o_port) {
+            std::stringstream error_msg;
+            error_msg << "In Functional node '" << this->id() << "'. Error While creating edge to port '" << port_id << "'. ";
+            error_msg << "Attempt to connect to port '" << out_port->id() << "', but they are of different types.";
+            throw NRPException::logCreate(error_msg.str());
+        }                                                                                                                
+
+        // Get input port
+        // NOTE: part of the code duplicated here and in FunctionalNode implementation of this function is due to
+        // the different way of accessing input ports
+        InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
+
+        // Register edge
+        ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
+    }
 
     /*!
      * \brief Configure this node
      */
     void configure() override
     {
-        // Create edges to other functional nodes
-        for (auto& [port_id, address]: _f2fEdges) {
-            std::string name, property;
-            std::tie(name, property) = parseCGAddress(address);
-
-            // Get ports
-            PythonFunctionalNode* node = dynamic_cast<PythonFunctionalNode*>(ComputationalGraphManager::getInstance().getNode(name));
-            if(!node)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                                              "'. A Functional node with name '" + name + "' could not be found in the computational graph. Be sure that the edge"
-                                                                                          " address is correctly formatted and the connected node exists.");
-
-            OutputPort<bpy::object>* o_port = node->getOutput(property);
-            if(!o_port)
-                throw NRPException::logCreate("While creating the F2F edge '" + address +
-                                              "'. Functional node '" + name + "' doesn't have a declared output '"+ property +"'. Be sure that the edge"
-                                                                                                                              " address is correctly formatted and the specified output exists.");
-
-            InputPort<bpy::object, bpy::object>* i_port = this->getOrRegisterInput<bpy::object>(port_id);
-
-            // Register edge
-            ComputationalGraphManager::getInstance().registerEdge<bpy::object, bpy::object>(o_port, i_port);
-        }
-
         // check unbound inputs and outputs and print warning
         for(size_t i=0; i < _iPortIds.size(); ++i)
             if(!getInputByIndex(i)) {
@@ -303,8 +294,6 @@ private:
     std::shared_ptr<PythonFunctionalNode> moveToSharedPtr()
     { return std::shared_ptr<PythonFunctionalNode>(new PythonFunctionalNode(std::move(static_cast<PythonFunctionalNode&>(*this)))); }
 
-    /*! \brief declared edges from another FunctionalNode to this node */
-    std::map<std::string, std::string> _f2fEdges;
     /*! \brief declared inputs in this node */
     std::vector<std::string> _iPortIds;
     /*! \brief map _iPortIds id with its corresponding index in _inputs */
@@ -317,48 +306,6 @@ private:
     std::array< const bpy::object**, input_s > _inputs;
     /*! \brief array of pointers to the output part of _params. The pointers are set in setOutputPtrs */
     std::array< bpy::object*, output_s > _outputs;
-};
-
-
-/*!
- * \brief Helper class used to implement a F2FEdge Python decorator
- */
-class F2FEdge {
-public:
-
-    F2FEdge(const std::string &keyword, const std::string &address) :
-            _keyword(keyword),
-            _address(address)
-    {  }
-
-    /*!
-     * \brief __call__ function in the decorator
-     *
-     * It receives a Python object wrapping a PythonFunctionalNode and add an F2FEdge to it
-     */
-    boost::python::object pySetup(const boost::python::object& obj)
-    {
-        // Register edge in FN
-        try {
-            std::shared_ptr<PythonFunctionalNode> f = boost::python::extract<std::shared_ptr<PythonFunctionalNode> >(
-                    obj);
-            f->registerF2FEdge(_keyword, _address);
-        }
-        catch (const boost::python::error_already_set&) {
-            std::string error_msg = "An error occurred while creating the F2FEdge '" + _address +
-            "'. Check that Functional Node definition is correct";
-            PyErr_Print();
-            throw NRPException::logCreate(error_msg);
-        }
-
-        // Returns FunctionalNode
-        return obj;
-    }
-
-protected:
-
-    std::string _keyword;
-    std::string _address;
 };
 
 

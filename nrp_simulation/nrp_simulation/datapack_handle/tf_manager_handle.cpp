@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,6 +80,56 @@ void TFManagerHandle::init(const jsonSharedPtr &simConfig, const engine_interfac
     this->loadStatusFunction(simConfig);
 }
 
+void TFManagerHandle::postEngineActivityHelper(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+{
+    const auto requestedDataPackIDs = this->_functionManager.getRequestedDataPackIDs();
+
+    for(auto &engine : engines)
+    {
+        try
+        {
+            auto dataPacks = engine->getDataPacksFromEngine(requestedDataPackIDs);
+            this->_simulationDataManager->pushToTrajectory(dataPacks);
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Failed to get datapacks from engine \"" + engine->engineName() + "\"");
+        }
+    }
+}
+
+void TFManagerHandle::postEngineInit(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    this->postEngineActivityHelper(engines);
+}
+
+void TFManagerHandle::preEngineReset(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+
+    for(const auto &engine : engines)
+    {
+        try
+        {
+            auto dataPacks = this->_simulationDataManager->getEngineDataPacks(engine->engineName());
+            engine->sendDataPacksToEngine(dataPacks);
+            // Prevents "pushing back" the same DataPacks to the main script during postEngineReset()
+            this->_simulationDataManager->clear();
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Failed to send datapacks to engine \"" + engine->engineName() + "\"");
+        }
+    }
+}
+
+void TFManagerHandle::postEngineReset(const std::vector<EngineClientInterfaceSharedPtr> &engines)
+{
+    NRP_LOGGER_TRACE("{} called", __FUNCTION__);
+    this->postEngineActivityHelper(engines);
+}
+
 void TFManagerHandle::updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines)
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
@@ -129,7 +179,7 @@ void TFManagerHandle::sendDataPacksToEngines(const std::vector<EngineClientInter
     {
         try
         {
-            auto dataPacks = this->_simulationDataManager->getEngineDataPacks(engine->engineName());    
+            auto dataPacks = this->_simulationDataManager->getEngineDataPacks(engine->engineName());
             engine->sendDataPacksToEngine(dataPacks);
         }
         catch(std::exception &e)

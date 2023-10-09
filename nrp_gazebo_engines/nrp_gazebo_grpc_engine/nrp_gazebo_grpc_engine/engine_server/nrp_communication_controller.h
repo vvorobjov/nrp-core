@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@
 #ifndef NRP_COMMUNICATION_CONTROLLER_H
 #define NRP_COMMUNICATION_CONTROLLER_H
 
-#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
-
 #include "nrp_gazebo_grpc_engine/config/gazebo_grpc_config.h"
 #include "nrp_gazebo_grpc_engine/engine_server/gazebo_step_controller.h"
 
 #include "nrp_protobuf/gazebo.pb.h"
+#include "nrp_grpc_engine_protocol/engine_server/engine_proto_wrapper.h"
 
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
@@ -37,43 +36,34 @@
 #include <memory>
 
 /*!
- * \brief Manages communication with the NRP. Uses a GRPC server to send/receive data
+ * \brief Manages communication with the NRP
+ *
+ * Implementation of EngineProtoWrapper to manage a Gazebo Engine
  */
-class NRPGRPCCommunicationController
-        : public EngineGrpcServer
+class NRPGazeboCommunicationController
+        : public EngineProtoWrapper
 {
     public:
 
-        ~NRPGRPCCommunicationController() override;
+        using mutex_t = std::timed_mutex;
+        using lock_t  = std::unique_lock<NRPGazeboCommunicationController::mutex_t>;
 
-        /*! \brief Delete for singleton */
-        NRPGRPCCommunicationController(const NRPGRPCCommunicationController &other) = delete;
-
-        /*! \brief Delete for singleton */
-        NRPGRPCCommunicationController &operator=(const NRPGRPCCommunicationController &other) = delete;
-
-        /*! \brief Delete for singleton */
-        NRPGRPCCommunicationController(NRPGRPCCommunicationController &&other) = delete;
-
-        /*! \brief Delete for singleton */
-        NRPGRPCCommunicationController &&operator=(NRPGRPCCommunicationController &&other) = delete;
+        NRPGazeboCommunicationController(const std::string &engineName,
+                                                            const std::string &protobufPluginsPath,
+                                                            const nlohmann::json &protobufPlugins);
 
         /*!
-         * \brief Get singleton instance
-         * \return Gets instance of NRPGRPCCommunicationController
+         * \brief Registers a datapack controller locking the datapack mutex
+         *
+         * \param[in] datapackName       Name of the datapack to be registered
+         * \param[in] datapackController Pointer to the datapack controller object that's supposed to be
+         *                             registered in the engine
          */
-        static NRPGRPCCommunicationController& getInstance();
-
-        /*!
-         * \brief Reset server with the given server URL
-         * \param serverURL URL used by server
-         * \param engineName Name of this engine
-         * \return Returns reference to server instance
-         */
-        static NRPGRPCCommunicationController& resetInstance(const std::string &serverURL, const std::string &engineName,
-                                                         const std::string &protobufPluginsPath,
-                                                         const nlohmann::json &protobufPlugins);
-
+        void registerDataPackWithLock(const std::string & datapackName, ProtoDataPackController *interface)
+        {
+            lock_t lock(this->_datapackLock);
+            this->registerDataPack(datapackName, interface);
+        }
 
         /*!
          * \brief Register a step controller
@@ -108,15 +98,22 @@ class NRPGRPCCommunicationController
         static std::string createDataPackName(const std::string &modelName, const std::string &objectName)
         {   return modelName + "::" + objectName;  }
 
-    private:
+        SimulationTime runLoopStep(SimulationTime timeStep) override;
+
+        void initialize(const nlohmann::json &data) override;
+
+        void reset() override;
+
+        void shutdown() override;
+
+        bool initRunFlag() const override { throw NRPException::logCreate("initRunFlag is not implemented in NRPGazeboCommunicationController"); }
+
+        bool shutdownFlag() const override { throw NRPException::logCreate("shutdownFlag is not implemented in NRPGazeboCommunicationController"); }
+
+private:
 
         /*!
-         * \brief Singleton instance of this class
-         */
-        static std::unique_ptr<NRPGRPCCommunicationController> _instance;
-
-        /*!
-         * \brief Controlls gazebo stepping
+         * \brief Controls gazebo stepping
          */
         GazeboStepController *_stepController = nullptr;
 
@@ -134,29 +131,69 @@ class NRPGRPCCommunicationController
          */
         std::vector< gazebo::ModelPlugin* >  _modelPlugins;
 
-        virtual SimulationTime runLoopStep(SimulationTime timeStep) override;
+        mutex_t _datapackLock;
+};
 
-        virtual void initialize(const nlohmann::json &data, lock_t &datapackLock) override;
+/*!
+ * \brief Singleton class which stores a pointer to the NRPGazeboCommunicationController being used to manage the simulation
+ *
+ * so other gazebo plugins can invoke it to register datapacks
+ */
+class CommControllerSingleton
+{
+public:
 
-        virtual void reset() override;
+    /*! \brief Delete for singleton */
+    CommControllerSingleton(const CommControllerSingleton &other) = delete;
 
-        virtual void shutdown(const nlohmann::json &data) override;
+    /*! \brief Delete for singleton */
+    CommControllerSingleton &operator=(const CommControllerSingleton &other) = delete;
 
-        /*!
-         * \brief Make private for singleton
-         */
-        NRPGRPCCommunicationController() = delete;
+    /*! \brief Delete for singleton */
+    CommControllerSingleton(CommControllerSingleton &&other) = delete;
 
-        /*!
-         * \brief Constructor. Private for singleton
-         * \param serverURL URL used by server
-         * \param engineName Name of this engine
-         * \param registrationURL URL used to register this engine server's URL
-         * \return Returns reference to server instance
-         */
-        NRPGRPCCommunicationController(const std::string &serverURL, const std::string &engineName,
-                                   const std::string &protobufPluginsPath,
-                                   const nlohmann::json &protobufPlugins);
+    /*! \brief Delete for singleton */
+    CommControllerSingleton &&operator=(CommControllerSingleton &&other) = delete;
+
+    /*!
+     * \brief Get singleton instance
+     * \return Gets instance of CommControllerSingleton
+     */
+    static CommControllerSingleton& getInstance();
+
+    /*!
+     * \brief Reset
+     */
+    static CommControllerSingleton& resetInstance(NRPGazeboCommunicationController* engineController);
+
+
+    NRPGazeboCommunicationController& engineCommController()
+    {
+        return *_controller;
+    }
+
+
+private:
+
+    /*!
+     * \brief Singleton instance of this class
+     */
+    static std::unique_ptr<CommControllerSingleton> _instance;
+
+    /*!
+     * \brief Pointer to the NRPGazeboCommunicationController
+     */
+    NRPGazeboCommunicationController* _controller;
+
+    /*!
+     * \brief Make private for singleton
+     */
+    CommControllerSingleton() = delete;
+
+    /*!
+     * \brief Constructor. Private for singleton
+     */
+    CommControllerSingleton(NRPGazeboCommunicationController* engineController);
 };
 
 #endif

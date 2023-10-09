@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,11 +46,9 @@ namespace bpy = boost::python;
 TEST(ComputationalGraphPythonNodes, ROS_NODES) {
     // Start roscore in a child process
     // TODO: find a better way to test these nodes without actually running roscore
+    pid_t ppid_before_fork = getpid();
     const auto pid = fork();
-    if(pid == 0) {
-        execlp("roscore", "roscore", (char*) NULL);
-    }
-    else {
+    if(pid) {
         // Setup required elements
         namespace bpy = boost::python;
         ros::init(std::map<std::string, std::string>(), "nrp_core");
@@ -65,6 +63,7 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         bpy::object test_module(bpy::import("test_ros_nodes"));
         bpy::dict test_module_dict(test_module.attr("__dict__"));
 
+        ComputationalGraphManager::getInstance().graphLoadComplete();
         ComputationalGraphManager::getInstance().configure();
 
         // check results
@@ -125,6 +124,14 @@ TEST(ComputationalGraphPythonNodes, ROS_NODES) {
         ASSERT_EQ(output_p2->getComputePeriod(), 2);
         ASSERT_EQ(output_p2->publishFromCache(), false);
     }
+    else {
+        int r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (r == -1) { perror(0); exit(1); }
+        if (getppid() != ppid_before_fork)
+            exit(1);
+        execlp("roscore", "roscore", (char*) NULL);
+    }
+
 
     // ROS decorator with an incorrect msg type
     ASSERT_THROW(bpy::import("test_ros_wrong_type"), boost::python::error_already_set);

@@ -84,7 +84,7 @@ target_link_libraries(${LIBRARY_NAME}
     ${PROTOBUF_LIBRARIES}
     ${GRPC_LIBRARIES}
     NRPJSONEngineProtocol::NRPJSONEngineProtocol
-    ${NRP_ELE_LIB_TARGET}
+    ${NRP_EVENT_LOOP_TARGET}
     ${NRP_ROS_PROXY_TARGET}
     ${NRP_MQTT_PROXY_TARGET}
     ${catkin_LIBRARIES}
@@ -245,12 +245,6 @@ if(TARGET ${PYTHON_MODULE_NAME})
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
         DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 endif()
-
-# Install python module with the NRP client
-install(FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/client.py"
-        "${CMAKE_CURRENT_SOURCE_DIR}/nrp_simulation/python/nrp_server_launchers.py"
-    DESTINATION "${PYTHON_INSTALL_DIR_REL}/${NRP_PYTHON_MODULE_NAME}")
 
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})

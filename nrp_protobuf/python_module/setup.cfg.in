@@ -1,0 +1,18 @@
+[metadata]
+name = @PYTHON_MODULE_NAME@
+version = @NRP_VERSION@
+author = NRP Team
+author_email = vorobev@im.tum.de
+description = Python module for protobuf python definitions for the NRP-Core
+classifiers =
+    Programming Language :: Python :: 3
+
+[options]
+python_requires = >=3.8
+install_requires =
+    psutil
+    grpcio-tools >= 1.49.1
+
+[options.package_data]
+@PYTHON_MODULE_NAME@ = data/*.so
+

@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 
 from time import time
 from nrp_core.engines.python_grpc import GrpcEngineScript
-from nrp_core.data.nrp_protobuf import dump_pb2
+from nrp_protobuf import dump_pb2
 
 class Script(GrpcEngineScript):
 

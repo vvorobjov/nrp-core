@@ -2,19 +2,20 @@
 
 The EDLUT Engine brings the possibility to connect the EDLUT simulator to NRP-core.
 
-The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and it accepts a single Datapack type which is described below: \ref edlut_engine_datapacks "EdlutDataSpikesDatapack".
-In the same way, this type of engine returns EdlutDataSpikesDatapack as well.
+The engine implementation is based on the \ref engine_grpc "Protobuf over gRPC communication protocol" and it accepts two distinct Datapack types which are described \ref edlut_engine_datapacks "below": EdlutDataSpikesDatapack and EdlutDataCurrentsDatapack.
 
-Actually, there is a single datapack id, "spikes_datapack", which can be used to exchange data with an EDLUT engine.
-It is of type EdlutDataSpikesDatapack and is always registered in the Engine and users can use it to either inject spikes into the simulated Neural Network or read spikes from it.
+By default there are two datapacks registered for data exchange with an EDLUT engine: "spikes_datapack" and "currents_datapack".
+"spikes_datapack" is of type EdlutDataSpikesDatapack and allows users to both inject spikes into the simulated Neural Network and read spikes from it. 
+"currents_datapack" is of type EdlutDataCurrentsDatapack and can only be used for injecting currents into the simulated Neural Network.
+When "currents_datapack" is requested from the Engine, an empty datapack is returned.
 
-When used to read spikes, i.e. as input argument of a TF, the datapack contains all spike events which happened in the EDLUT simulation in the last timestep.
-The attribute "spikes_time" of the datapack stores an array of spike times and the attribute "neuron_indexes" an array with the indexes of each of the neurons which produced the spike.
-Also the current simulation time of the Engine is stored in the attribute "time".
+When using the "spikes_datapack" to read spikes, which is done by using it as an input argument of a TF, the datapack contains all spike events that occurred in the EDLUT simulation during the last timestep. The "spikes_time" attribute of the datapack stores an array of spike times, while the "neuron_indexes" attribute contains an array with the indexes of the neurons that produced the spikes.
 
-When "spikes_datapack" is used to inject spikes into the simulated neural network, i.e. when it is returned from a TF, "spikes_time" and "neuron_indexes" must be used to specify exactly which neurons should spike and when the spike event should happen.
-It is important to notice that "spikes_time" must be expressed in the global simulation timeframe, not relative to the current simulation time.
-Therefore the current simulation time and the length of the Engine timestep must be used and taken into account to compute the values of the "spikes_time" array in order to achieve the intended behavior.
+On the other hand, when the "spikes_datapack" is used to inject spikes into the simulated neural network, typically when it is returned from a TF, the "spikes_time" and "neuron_indexes" attributes must be used to precisely specify which neurons should spike and when the spike events should occur. It is important to note that the "spikes_time" values must be expressed in the global simulation timeframe, rather than being relative to the current simulation time. To achieve the desired behavior, the current simulation time and the length of the Engine timestep must be considered and taken into account when computing the values of the "spikes_time" array.
+
+Similarly, the "currents_datapack" can be used to inject currents into the simulated neural network. 
+In this case, there are also "spikes_time" and "neuron_indexes" attributes in the datapack, which still indicate which neurons should spike and when the event should occur. 
+However, there is an additional attribute,"current_values", which specifies the amplitude of the spike, behaving the latter as a current.
 
 \section edlut_engine_datapacks EDLUT Datapacks
 
@@ -22,16 +23,23 @@ This gRPC implementation uses \ref datapacks_protobuf. Below is shown the protob
 
 \include edlut_msgs.proto
 
-The EdlutDataSpikesDatapack consists of the following attributes:
 <table>
 <caption id="physics_link_attributes_table">EdlutDataSpikesDatapack Attributes</caption>
 <tr><th>Attribute        <th>Description                              <th>Python Type                   <th>C type
-<tr><td>time             <td>Simulation Time                          <td>float                         <td>float
 <tr><td>spikes_time      <td>Spikes Firing Time                       <td>numpy.array(numpy.float32)    <td>std::array<float>
 <tr><td>neuron_indexes   <td>Neuron Indexes Firing                    <td>numpy.array(numpy.uint32)     <td>std::array<uint32>
 </table>
 
-Each of this attributes can be accessed under their respective names from the *data* attribute of EdlutDataSpikesDatapack type.
+<table>
+<caption id="physics_link_attributes_table">EdlutDataCurrentsDatapack Attributes</caption>
+<tr><th>Attribute        <th>Description                              <th>Python Type                   <th>C type
+<tr><td>time             <td>Simulation Time                          <td>float                         <td>float
+<tr><td>spikes_time      <td>Spikes Firing Time                       <td>numpy.array(numpy.float32)    <td>std::array<float>
+<tr><td>neuron_indexes   <td>Neuron Indexes Firing                    <td>numpy.array(numpy.uint32)     <td>std::array<uint32>
+<tr><td>current_values   <td>Current Values                           <td>numpy.array(numpy.float32)    <td>std::array<float>
+</table>
+
+Each of these attributes can be accessed under their respective names from the *data* attribute of both Edlut Datapack types.
 
 \section engine_edlut_config_section Engine Configuration Parameters
 
@@ -68,6 +76,7 @@ To use this engine in an experiment, set `EngineType` to <b>"edlut_grpc_engine"<
 <tr><td>WeightsFile<td>Path to the storage of file containing initial weights of neurons<td>string<td><td>X<td>
 <tr><td>NumThreads<td>Number of threads used for parallel computing<td>integer<td>1<td><td>
 <tr><td>SensorialDelay<td>Sensorial delay needed by EDLUT to compensate delays in communication and compute future spikes<td>float<td>0.00<td><td>
+<tr><td>SaveWeightsPeriod<td>Period of time to save synaptic weights in a file<td>float<td>0.00<td><td>
 </table>
 
 \section engine_edlut_schema Schema

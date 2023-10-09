@@ -1,8 +1,13 @@
 @PACKAGE_INIT@
 
-find_package(NRPGeneralLibrary REQUIRED)
+option(ENABLE_MQTT "Enable MQTT support" @ENABLE_MQTT@)
+if(ENABLE_MQTT)
+    find_package(NRPMQTTProxy REQUIRED)
+else()
+    find_package(NRPGeneralLibrary REQUIRED)
+endif()
 
-set(NRP_ELE_LIB_TARGET @NRP_ELE_LIB_TARGET@)
+set(NRP_EVENT_LOOP_TARGET @NRP_EVENT_LOOP_TARGET@)
 
 include(${CMAKE_CURRENT_LIST_DIR}/@LIB_EXPORT_NAME@.cmake)
 

@@ -36,16 +36,16 @@ function(GENERATE_PROTO_PYTHON PROTO_FILE_PATH PROTO_PYTHON_FILE_VAR)
     get_filename_component(hw_proto_name "${hw_proto_path}" NAME_WE)
 
     # Generated sources
-    set(proto_python "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}/${hw_proto_name}_pb2.py")
+    set(proto_python "${NRP_PROTO_PYTHON_CMAKE_DATA_DIR}/${hw_proto_name}_pb2.py")
 
     # Generate
     add_custom_command(
             OUTPUT "${proto_python}"
-            COMMAND "mkdir" ARGS -p "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            COMMAND "mkdir" ARGS -p "${NRP_PROTO_PYTHON_CMAKE_DATA_DIR}"
             COMMAND python3
             ARGS -m grpc_tools.protoc
             --proto_path ${hw_proto_dir}
-            --python_out "${CMAKE_CURRENT_BINARY_DIR}/include/${HEADER_DIRECTORY}"
+            --python_out "${NRP_PROTO_PYTHON_CMAKE_DATA_DIR}"
             "${hw_proto_path}"
             DEPENDS "${hw_proto_path}")
 
@@ -233,12 +233,12 @@ foreach(PROTO_FILE ${ENGINE_PROTO_FILES})
     install(TARGETS ${PROTO_OPS_LIB_NAME}
             DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-    # Python module
+    # Python module .so files
     install(TARGETS ${PROTO_PYTHON_MODULE_NAME}
             DESTINATION ${NRP_PROTO_PYTHON_INSTALL_DIR})
 
     # Python proto file
-    install(FILES ${PROTO_PYTHON_FILE}
-            DESTINATION "${NRP_PROTO_PYTHON_INSTALL_DIR}")
+    message("Adding ${PROTO_PYTHON_FILE} file to NRP_PROTO_PYTHON_FILES_TARGETS")
+    list(APPEND NRP_PROTO_PYTHON_FILES_TARGETS ${PROTO_PYTHON_FILE})
 
 endforeach()

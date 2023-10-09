@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -237,6 +237,7 @@ TEST(ComputationalGraph, COMPUTATIONAL_GRAPH_MANAGER)
     auto i_p = n11_p->getOrRegisterInput<TestMsg>("input");
 
     cgm.registerEdge(o_p, i_p);
+    cgm.graphLoadComplete();
     cgm.configure();
     cgm.compute();
 

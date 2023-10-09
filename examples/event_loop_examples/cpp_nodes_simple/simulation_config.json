@@ -1,0 +1,7 @@
+{
+	"SimulationName": "husky_braitenberg_cg",
+	"SimulationDescription": "Simple experiment showcasing the joint use of Python and precompiled C++ Functional Nodes. A Python global variable is read, modified and set in the CG execution",
+	"ComputationalGraph": ["fn.py"],
+	"SimulationLoop": "EventLoop",
+	"EventLoop": {"Timeout": 1, "Timestep": 0.1}
+}

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@
 
 #include "nrp_general_library/utils/nrp_logger.h"
 #include "mqtt/async_client.h"
+
+#define MQTT_BASE "nrp_simulation"
 
 // TODO: QOS and non-clean session are hardcoded, they could be parameters
 const int  QOS = 1;
@@ -70,6 +72,11 @@ public:
     virtual void publish(const std::string& address, const std::string& msg, bool retained=false);
 
     /*!
+     * \brief Publishes 'msg' directly to subscriber callbacks, without going through the MQTT broker. Only for testing.
+     */
+    void publishDirect(const std::string& address, const std::string& msg);
+
+    /*!
      * \brief Disconnects client from MQTT Broker
      */
     virtual void disconnect();
@@ -99,7 +106,7 @@ private:
     /*!
      * \brief Subscriptions
      */
-    std::map<std::string, const std::function<void (const std::string&)>&> _subscribers;
+    std::map<std::string, std::function<void (const std::string&)>> _subscribers;
 
     /*!
      * \brief Object containing callbacks to process events in the mqtt client

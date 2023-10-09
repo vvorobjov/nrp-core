@@ -5,7 +5,8 @@
 	"EngineConfigs": [
 		{
 			"EngineType": "${engine_name_lowercase}_grpc_engine",
-			"EngineName": "${engine_name_lowercase}_engine"
+			"EngineName": "${engine_name_lowercase}_engine",
+			"ProtobufPackages": ["EngineTest"]
 		}
 	],
 	"DataPackProcessingFunctions": [

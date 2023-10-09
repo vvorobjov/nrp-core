@@ -25,7 +25,13 @@
           "SensorialDelay": {
             "type": "number",
             "default": 0.00,
-            "description": "Sensorial delay used to compute future spikes"}
+            "description": "Sensorial delay used to compute future spikes"
+          },
+          "SaveWeightsPeriod": {
+            "type": "number",
+            "default" : 0.00,
+            "description": "Period of time to save synaptic weights in a file"
+          }
         },
         "required": ["NetworkFile", "WeightsFile"]
       }

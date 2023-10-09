@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@
 
 #ifdef MQTT_ON
 #include "nrp_mqtt_proxy/nrp_mqtt_client.h"
+
+using MQTTTopicsUpdateCallbackType = std::function<void(const std::string&, const std::string&)>;
 #endif
 
 /*!
@@ -70,7 +72,8 @@ class StreamDataPackController
                                  const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::string &baseDir,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                 const std::string &mqttBaseTopic);
+                                 const std::string &mqttBaseTopic,
+                                 MQTTTopicsUpdateCallbackType topicsUpdateCallback);
 
         /*!
          * \brief StreamDataPackController constructor for streaming to network
@@ -84,7 +87,8 @@ class StreamDataPackController
                                  const std::string &engineName,
                                  const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                  const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                 const std::string &mqttBaseTopic);
+                                 const std::string &mqttBaseTopic,
+                                 MQTTTopicsUpdateCallbackType topicsUpdateCallback);
 #endif
 
         /*!
@@ -192,19 +196,19 @@ class StreamDataPackController
 
 #ifdef MQTT_ON
         /*!
-         * \brief mpqtt topic for publishing message contents
+         * \brief mqtt topic for publishing message contents
          */
         std::string _mqttDataTopic;
 
         /*!
-         * \brief mpqtt topic for publishing message type
-         */
-        std::string _mqttTypeTopic;
-
-        /*!
-         * \brief mpqtt topics name base
+         * \brief mqtt topics name base
          */
         std::string _mqttBase;
+
+        /*!
+         * \brief mqtt topics update callback
+         */
+        MQTTTopicsUpdateCallbackType _topicsUpdateCallback;
 
         std::shared_ptr< NRPMQTTClient > _mqttClient;
 #endif

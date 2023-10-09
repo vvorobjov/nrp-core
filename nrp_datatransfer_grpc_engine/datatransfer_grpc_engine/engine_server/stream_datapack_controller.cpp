@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,16 +58,16 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
                                                     const std::string &engineName,
                                                     const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                                    const std::string &mqttBaseTopic)
+                                                    const std::string &mqttBaseTopic,
+                                                    MQTTTopicsUpdateCallbackType topicsUpdateCallback)
     : StreamDataPackController(datapackName, engineName, protoOps)
 {
     _netDump = true;
     _mqttClient = mqttClient;
+    _topicsUpdateCallback = topicsUpdateCallback;
     this->_mqttBase = std::string(mqttBaseTopic);
     _mqttDataTopic = std::string(this->_mqttBase + "/data/" + datapackName);
-    _mqttTypeTopic = std::string(this->_mqttBase + "/data/" + datapackName + "/type");
-    // announce topic
-    _mqttClient->publish(this->_mqttBase + "/data", _mqttDataTopic, true);
+    _topicsUpdateCallback(_mqttDataTopic, "");
 }
 
 StreamDataPackController::StreamDataPackController( const std::string &datapackName,
@@ -75,8 +75,9 @@ StreamDataPackController::StreamDataPackController( const std::string &datapackN
                                                     const std::vector<std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>>& protoOps,
                                                     const std::string &baseDir,
                                                     const std::shared_ptr<NRPMQTTClient> &mqttClient,
-                                                    const std::string &mqttBaseTopic)
-    : StreamDataPackController(datapackName, engineName, protoOps, mqttClient, mqttBaseTopic)
+                                                    const std::string &mqttBaseTopic,
+                                                    MQTTTopicsUpdateCallbackType topicsUpdateCallback)
+    : StreamDataPackController(datapackName, engineName, protoOps, mqttClient, mqttBaseTopic, topicsUpdateCallback)
 {
     _fileDump = true;
     _baseDir = baseDir;
@@ -118,26 +119,17 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
     if (!this->_initialized) {
         msg = data.GetTypeName();
 
-#ifdef MQTT_ON
-        // Stream msg type
-        if (_netDump){
-            _mqttClient->publish(_mqttTypeTopic, msg, true);
-        }
-#endif
-
         // Check EngineGrpc.DataPackMessage case. Only relevant for file dump
         if(msg == "EngineGrpc.DataPackMessage") {
             this->_isDataPackMessage = true;
             auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
             bool isFound = false;
             for(auto& mod : _protoOps) {
-                try {
-                    const auto& d = mod->getDataFromDataPackMessage(dataPack);
+                const auto& d = mod->unpackProtoAny(dataPack.data());
+                if(d) {
                     msg = d->GetTypeName();
                     isFound = true;
-                }
-                catch (NRPException &) {
-                    // this just means that the module couldn't process the request, try with the next one
+                    break;
                 }
             }
 
@@ -148,6 +140,13 @@ void StreamDataPackController::handleDataPackData(const google::protobuf::Messag
                                               "' in engine '" +
                                               dataPack.datapackid().enginename() + "'");
         }
+
+#ifdef MQTT_ON
+        // Stream msg type
+        if (_netDump){
+            this->_topicsUpdateCallback(this->_mqttDataTopic, msg);
+        }
+#endif
 
         // Check message type case. Only relevant for file dump
         if (_fileDump){
@@ -193,13 +192,11 @@ void StreamDataPackController::streamToFile(const google::protobuf::Message &dat
         auto dataPack = dynamic_cast<const EngineGrpc::DataPackMessage &>(data);
         bool isFound = false;
         for(auto& mod : _protoOps) {
-            try {
-                const auto& d = mod->getDataFromDataPackMessage(dataPack);
+            const auto& d = mod->unpackProtoAny(dataPack.data());
+            if(d) {
                 data_str = (this->*fmtCallback)(*d);
                 isFound = true;
-            }
-            catch (NRPException &) {
-                // this just means that the module couldn't process the request, try with the next one
+                break;
             }
         }
 
@@ -223,7 +220,7 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
     if(!this->_initialized)
         m_data << "sim_time" << ",";
     else
-        m_data << fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime) << ",";
+        m_data << fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime) << ",";
 
     auto n = data.GetDescriptor()->field_count();
     for(int i = 0; i < n; ++i)
@@ -237,7 +234,7 @@ std::string StreamDataPackController::fmtMessage(const google::protobuf::Message
 
 std::string StreamDataPackController::fmtString(const google::protobuf::Message &data){
     const auto& dump = dynamic_cast<const Dump::String &>(data);
-    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime)) +
             + "," + dump.string_stream();
 }
 
@@ -263,7 +260,7 @@ std::string StreamDataPackController::fmtFloat(const google::protobuf::Message &
         }
     }
 
-    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferGrpcServer::_simulationTime)) +
+    return  std::to_string(fromSimulationTime<float, std::ratio<1>>(DataTransferEngine::_simulationTime)) +
             + "," + msg;
 }
 

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ void EventLoopSimManager::initializeCB()
         // Validate configuration
         auto ELoopConf = this->_simConfig->contains("EventLoop") ?
                 (*(this->_simConfig))["EventLoop"].get<nlohmann::json>() : nlohmann::json::object();
-        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#EventLoop");
+        json_utils::validateJson(ELoopConf, "json://nrp-core/event_loop.json#/event_loop");
 
         // Configure Event Loop
         auto eTstep = ELoopConf.at("Timestep").get<float>();

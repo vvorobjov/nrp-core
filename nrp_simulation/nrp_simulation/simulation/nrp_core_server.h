@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ private:
      * \return            Status of the request. In case of failure, it will contain grpc::StatusCode::CANCELLED
      *                    and the error message returned by the consumer.
      */
-    grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::Response * returnMessage);
+    grpc::Status requestHelper(std::unique_lock<std::mutex> & lock, RequestType requestType, NrpCore::SimStateMessage * returnMessage);
 
     /*!
      * \brief Populates the RunLoopResponse with trajectory data from the Status Function
@@ -134,21 +134,21 @@ private:
      * These lists will be assembled back into a single trajectory by the client, based on the
      * message indices assigned to each of the observations.
      *
-     * \param returnMessage Message that should be populated with the trajectory data
+     * \param trajectory Message that should be populated with the trajectory data
      */
-    void prepareTrajectory(NrpCore::RunLoopResponse * returnMessage);
+    void prepareTrajectory(NrpCore::Trajectory * trajectory);
 
     /*!
      * \brief Set content in rpc return message from SimulationManager RequestResult
      */
     void setReturnMessageContent(const SimulationManager::RequestResult& res, NrpCore::SimStateMessage * returnMessage);
 
-    std::vector<std::shared_ptr<const DataPackInterface>> extractExternalDataPacks(const NrpCore::RunLoopMessage * message);
+    std::vector<std::shared_ptr<const DataPackInterface>> extractExternalDataPacks(const NrpCore::DataPacks & message);
 
     /*!
      * \brief Callback for the initialization request coming from the client
      */
-    grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
+    grpc::Status initialize(grpc::ServerContext * , const NrpCore::EmptyMessage * message, NrpCore::InitializeResponse * returnMessage) override;
 
     /*!
      * \brief Callback for the run loop request coming from the client
@@ -168,7 +168,7 @@ private:
     /*!
      * \brief Callback for the reset request coming from the client
      */
-    grpc::Status reset(grpc::ServerContext * , const NrpCore::EmptyMessage * , NrpCore::Response * returnMessage) override;
+    grpc::Status reset(grpc::ServerContext * , const NrpCore::ResetMessage * message, NrpCore::ResetResponse * returnMessage) override;
 
     /*!
      * \brief Callback for the shutdown request coming from the client

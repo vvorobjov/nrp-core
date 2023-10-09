@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ void gazebo::NRPWorldPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementP
 
     NRPLogger::info("NRPWorldPlugin: Registering world controller with communicator...");
     try {
-        NRPGRPCCommunicationController::getInstance().registerStepController(this);
+        CommControllerSingleton::getInstance().engineCommController().registerStepController(this);
     }
     catch(NRPException&) {
-        throw NRPException::logCreate("Failed to register world controller. Ensure that this NRP gRPC world plugin is "
+        throw NRPException::logCreate("Failed to register world controller. Ensure that this NRP world plugin is "
                                       "used in conjunction with a gazebo_grpc Engine in an NRP Core experiment.");
     }
 }

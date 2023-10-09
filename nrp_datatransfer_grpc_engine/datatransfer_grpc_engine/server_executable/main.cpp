@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 // Agreement No. 945539 (Human Brain Project SGA3).
 //
 
+#include "nrp_grpc_engine_protocol/engine_server/engine_grpc_server.h"
 #include "datatransfer_grpc_engine/engine_server/datatransfer_grpc_server.h"
 #include "nrp_grpc_engine_protocol/engine_server/engine_grpc_opts_parser.h"
 
@@ -37,7 +38,7 @@ int main(int argc, char * argv[])
     const auto protobufPluginsDump = options[EngineGRPCConfigConst::ProtobufPluginsArg.data()].as<std::string>();
     const auto protobufPlugins = nlohmann::json::parse(protobufPluginsDump);
 
-    auto server = DataTransferGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins);
+    auto server = EngineGrpcServer(serverAddress, new DataTransferEngine(engineName, protobufPluginsPath, protobufPlugins));
 
     // Start the server
 

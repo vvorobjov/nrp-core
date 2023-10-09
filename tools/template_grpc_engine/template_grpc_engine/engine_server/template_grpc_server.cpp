@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,17 +23,16 @@
 #include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_server.h"
 #include "${engine_name_lowercase}_grpc_engine/engine_server/${engine_name_lowercase}_grpc_datapack_controller.h"
 
-${engine_name}GrpcServer::${engine_name}GrpcServer(const std::string &serverAddress,
-                                     const std::string &engineName,
+${engine_name}Engine::${engine_name}Engine(const std::string &engineName,
                                                    const std::string &protobufPluginsPath,
                                                    const nlohmann::json &protobufPlugins)
-    : EngineGrpcServer(serverAddress, engineName, protobufPluginsPath, protobufPlugins),
+    : EngineProtoWrapper(engineName, protobufPluginsPath, protobufPlugins),
     _engineName(engineName)
 {
 
 }
 
-SimulationTime ${engine_name}GrpcServer::runLoopStep(SimulationTime timeStep)
+SimulationTime ${engine_name}Engine::runLoopStep(SimulationTime timeStep)
 {
     static SimulationTime simulationTime = SimulationTime::zero();
 
@@ -44,24 +43,24 @@ SimulationTime ${engine_name}GrpcServer::runLoopStep(SimulationTime timeStep)
     return simulationTime;
 }
 
-void ${engine_name}GrpcServer::initialize(const nlohmann::json &/*data*/, EngineGrpcServer::lock_t & /*datapackLock*/)
+void ${engine_name}Engine::initialize(const nlohmann::json &/*data*/)
 {
     std::cout << "Initializing simulation" << std::endl;
 
     const auto datapackName = "test_datapack";
 
-    this->registerDataPackNoLock(datapackName, new ${engine_name}GrpcDataPackController(datapackName, this->_engineName));
+    this->registerDataPack(datapackName, new ${engine_name}GrpcDataPackController(datapackName, this->_engineName));
 
     this->_initRunFlag = true;
 }
 
-void ${engine_name}GrpcServer::shutdown(const nlohmann::json &/*data*/)
+void ${engine_name}Engine::shutdown()
 {
     std::cout << "Shutting down simulation" << std::endl;
     this->_shutdownFlag = true;
 }
 
-void ${engine_name}GrpcServer::reset()
+void ${engine_name}Engine::reset()
 {
     std::cout << "Resetting simulation" << std::endl;
 }

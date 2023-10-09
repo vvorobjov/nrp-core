@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ from types import ModuleType
 import os
 import sys
 
-import engine_grpc_pb2 as python_grpc_engine_pb2
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
 from nrp_core.engines.python_grpc import GrpcEngineScript
 
 script = None
@@ -45,6 +45,13 @@ def _flush_std():
     """Flush stdout and stderr, when they are redirected externally they need to be flushed manually"""
     sys.stdout.flush()
     sys.stderr.flush()
+
+
+def get_engine_name() -> str:
+    """Returns Engine name"""
+    global script
+
+    return script._getEngineName()
 
 
 def initialize(request_json: dict) -> dict:
@@ -86,25 +93,43 @@ def run_loop(time_step: int) -> int:
     return script._time_ns
 
 
-def set_datapack(request_grpc: python_grpc_engine_pb2.SetDataPacksRequest) \
+def set_datapacks(request_grpc: python_grpc_engine_pb2.SetDataPacksRequest) \
     -> python_grpc_engine_pb2.SetDataPacksReply:
     """Sets given data on requested datapacks stored in the Script object"""
+    if hasattr(request_grpc, "dataPacks"):
+        for datapack in request_grpc.dataPacks:
+            set_datapack(datapack)
+
+
+def set_datapack(datapack: python_grpc_engine_pb2.DataPackMessage) -> None:
+    """Set datapack in the Script object"""
+    global script
+    script._handleDataPackMsg(datapack)
+
+
+def get_registered_datapack_names() -> list:
+    """Returns the list of registered datapack names"""
     global script
 
-    for datapack in request_grpc.dataPacks:
-        script._handleDataPackMsg(datapack)
+    return script._getRegisteredDataPackNames()
 
 
-def get_datapack(request_grpc: python_grpc_engine_pb2.GetDataPacksRequest)  \
+def get_datapacks(request_grpc: python_grpc_engine_pb2.GetDataPacksRequest)  \
     -> python_grpc_engine_pb2.GetDataPacksReply:
     """Returns requested datapacks stored in the Script object"""
-    global script
-
     return_data = python_grpc_engine_pb2.GetDataPacksReply()
-    for datapack_id in request_grpc.datapackIds:
-        return_data.dataPacks.append(script._getDataPackMsg(datapack_id))
+
+    if hasattr(request_grpc, "datapackIds"):
+        for datapack_id in request_grpc.datapackIds:
+            return_data.dataPacks.append(get_datapack(datapack_id))
 
     return return_data
+
+
+def get_datapack(datapack_id: python_grpc_engine_pb2.DataPackIdentifier) -> python_grpc_engine_pb2.DataPackMessage:
+    """Returns requested datapack stored in the Script object"""
+    global script
+    return script._getDataPackMsg(datapack_id)
 
 
 def reset(request_json: dict) -> dict:

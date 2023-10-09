@@ -38,6 +38,32 @@ target_link_libraries(${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
 )
 
+########################################
+## Gazebo Async Communication Plugin
+if(ENABLE_MQTT)
+    add_library(NRPGazeboAsyncPlugin SHARED "nrp_communication_controller/nrp_async_plugin.cpp")
+    add_library("NRPGazeboGrpcPlugins::NRPGazeboAsyncPlugin" ALIAS NRPGazeboAsyncPlugin)
+    target_compile_options(NRPGazeboAsyncPlugin PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
+
+    target_include_directories(NRPGazeboAsyncPlugin
+            PUBLIC
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+            $<BUILD_INTERFACE:${GAZEBO_INCLUDE_DIRS}>
+
+            PRIVATE
+            )
+
+    target_link_libraries(NRPGazeboAsyncPlugin
+            PUBLIC
+            ${NRP_GAZEBO_LIB_TARGETS}
+
+            PRIVATE
+            ${NRP_GEN_LIB_TARGET}
+            ${NRP_ELE_TARGET}
+            ${GAZEBO_LIBRARIES}
+            )
+endif()
 
 ########################################
 ## Gazebo World Plugin
@@ -60,7 +86,6 @@ target_link_libraries(NRPGazeboGrpcWorldPlugin
 
     PRIVATE
         ${NRP_GEN_LIB_TARGET}
-        ${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
 )
 
@@ -84,7 +109,6 @@ target_link_libraries(NRPGazeboGrpcJointControllerPlugin
 
     PRIVATE
         ${NRP_GEN_LIB_TARGET}
-        ${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
 )
 
@@ -110,7 +134,6 @@ target_link_libraries(NRPGazeboGrpcLinkControllerPlugin
 
     PRIVATE
         ${NRP_GEN_LIB_TARGET}
-        ${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
 )
 
@@ -135,7 +158,6 @@ target_link_libraries(NRPGazeboGrpcModelControllerPlugin
 
         PRIVATE
         ${NRP_GEN_LIB_TARGET}
-        ${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
         )
 
@@ -162,7 +184,6 @@ target_link_libraries(NRPGazeboGrpcCameraControllerPlugin
 
     PRIVATE
         ${NRP_GEN_LIB_TARGET}
-        ${NRP_GAZEBO_COMMUNICATION_PLUGIN}
         ${GAZEBO_LIBRARIES}
         CameraPlugin
 )
@@ -178,6 +199,10 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" "")
 set(PLUGIN_TARGETS ${NRP_GAZEBO_COMMUNICATION_PLUGIN} NRPGazeboGrpcWorldPlugin
     NRPGazeboGrpcJointControllerPlugin NRPGazeboGrpcLinkControllerPlugin NRPGazeboGrpcModelControllerPlugin
     NRPGazeboGrpcCameraControllerPlugin)
+
+if(ENABLE_MQTT)
+    list(APPEND PLUGIN_TARGETS NRPGazeboAsyncPlugin)
+endif()
 
 set_target_properties(${PLUGIN_TARGETS}
     PROPERTIES PREFIX "")

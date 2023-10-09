@@ -4,7 +4,13 @@ This engine allows to use out of the box the <a href="https://pypi.org/project/n
 
 From a user point of view, this engine is very similar to \ref nest_json. At initialization time, it loads a NEST simulation model described in a python script. At run time, it takes care of advancing the simulation when requested and of handling datapack data transfer.
 
-The main difference is that in this case datapacks can't be registered from within the aforementioned Python script, as it is done in the case of NestJsonEngine. Instead, users rely on the mechanism provided by nest-server to access population status. A dictionary with name <b>populations</b> can be defined in the python script. Afterwards the keys of this dictionary can be accessed as JsonDataPacks in TransceiverFunctions. The limitations on the objects that can be used as values in this dictionary will be those imposed by nest-server.
+The main difference is that in this case datapacks can't be registered from within the aforementioned Python script, as it is done in the case of NestJsonEngine. Instead, users rely on the mechanism provided by nest-server to access populations and connections status.
+
+In order to access, from TransceiverFunctions, NEST populations defined in the brain python script, they have to be mapped to a datapack name in a dictionary referred to as <b>populations</b>.
+Afterwards the status of those population will be available as JsonDataPacks; they are updated with the results of calling the NEST <i>GetStatus</i> function.
+The limitations on the objects that can be used as values in this dictionary will be those imposed by nest-server.
+Similarly, a dictionary named <b>connections</b> mapping datapack names to "source" and "target" population names (contained in <b>populations</b>) can be defined too.
+Such datapacks will be updated using the NEST <i>GetConnections</i> function.
 
 \section nest_server_datapacks DataPacks
 

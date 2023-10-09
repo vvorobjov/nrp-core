@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 #include "nrp_event_loop/nodes/engine/input_node.h"
 #include "nrp_event_loop/nodes/engine/output_node.h"
+#include "nrp_event_loop/nodes/time/input_time.h"
 
 #include "nrp_simulation/datapack_handle/datapack_handle.h"
 
@@ -61,6 +62,13 @@ struct ComputationalGraphHandle : public DataPackProcessor {
      */
     std::map<std::string, OutputEngineNode*> _outputs;
 
+    /*! \brief Pointer to the clock_node of the graph */
+    InputClockNode* _clock = nullptr;
+
+    /*! \brief Pointer to the iteration_node of the graph */
+    InputIterationNode* _iteration = nullptr;
+
+
     void init(const jsonSharedPtr &simConfig, const engine_interfaces_t &engines) override
     {
         // Load Computation Graph
@@ -89,6 +97,9 @@ struct ComputationalGraphHandle : public DataPackProcessor {
                 _outputs[engine->engineName()] = o_node;
             }
         }
+
+        // Find Clock and Iteration nodes
+        std::tie(_clock, _iteration) = findTimeNodes();
     }
 
     void updateDataPacksFromEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) override
@@ -124,6 +135,12 @@ struct ComputationalGraphHandle : public DataPackProcessor {
             for(auto &engine : engines)
                 if(_outputs.count(engine->engineName()))
                     _outputs[engine->engineName()]->setDoCompute(true);
+
+            if(_clock)
+                _clock->updateClock(this->_simulationTime);
+
+            if(_iteration)
+                _iteration->updateIteration(this->_simulationIteration);
 
             ComputationalGraphManager::getInstance().compute();
         }

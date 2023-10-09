@@ -16,3 +16,6 @@ class Script(EngineScript):
 
     def shutdown(self):
         print("Engine 2 is shutting down")
+
+    def reset(self):
+        self._setDataPack(self.datapack_out_name, { "time" : self._time_ns, "timestep": 0 })

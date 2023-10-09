@@ -59,6 +59,9 @@ RUN apt-get update && apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencie
 
 USER ${NRP_USER}
 ENV USER ${NRP_USER}
+ENV NRP_USER ${NRP_USER}
+ENV NRP_USER ${NRP_USER}
+ENV NRP_UID ${UID}
 WORKDIR ${HOME}
 
 # EOF

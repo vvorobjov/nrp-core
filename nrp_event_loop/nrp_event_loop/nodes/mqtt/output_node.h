@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 #include <functional>
 #include "nlohmann/json.hpp"
 #include <google/protobuf/message.h>
+#include "nrp_protobuf/engine_grpc.pb.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
 
 #include "nrp_event_loop/computational_graph/output_node.h"
 #include "nrp_event_loop/python/output_edge.h"
@@ -59,25 +61,7 @@ protected:
     void sendSingleMsg(const std::string& /*id*/, const MSG_TYPE* data) override
     {
         // TODO: check that 'id' is equal to the topic address this node publishes to?
-
-        NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
-        if(mqttProxy) {
-            if constexpr (std::is_same_v<MSG_TYPE, std::string>)
-                mqttProxy->publish(_address, *data);
-            else if constexpr (std::is_same_v<MSG_TYPE, nlohmann::json>)
-                mqttProxy->publish(_address, data->dump());
-            else if constexpr (std::is_base_of_v<google::protobuf::Message, MSG_TYPE>) {
-                if(data->SerializeToString(&_msg))
-                    mqttProxy->publish(_address, _msg);
-                else
-                    NRPLogger::warn("From OutputMQTTNode \""+ this->id() +"\". Failed to serialize protobuf message");
-            }
-            else
-                throw NRPException::logCreate("OutputMQTTNode \""+ this->id() +"\" was instantiated with a non supported type");
-        }
-        else
-            NRPLogger::warn("From OutputMQTTNode \"" + this->id() +
-                            "\". NRPCoreSim is not connected to MQTT and this node can't publish. Check your experiment configuration");
+        publishMqttMsg<MSG_TYPE>(data);
     }
     
     void sendBatchMsg(const std::string& /*id*/, const std::vector<const MSG_TYPE*>& /*data*/) override
@@ -85,7 +69,37 @@ protected:
         throw NRPException::logCreate("BATCH update policy is not supported by OutputMQTTNode");
     }
 
+    template<class PUB_TYPE>
+    void publishMqttMsg(const PUB_TYPE* data)
+    {
+        NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
+        if(mqttProxy) {
+            if constexpr (std::is_same_v<PUB_TYPE, std::string>)
+                mqttProxy->publish(_address, *data);
+            else if constexpr (std::is_same_v<PUB_TYPE, nlohmann::json>)
+                mqttProxy->publish(_address, data->dump());
+            else if constexpr (std::is_base_of_v<google::protobuf::Message, PUB_TYPE>) {
+                if(data->SerializeToString(&_msg))
+                    mqttProxy->publish(_address, _msg);
+                else
+                    NRPLogger::warn("From OutputMQTTNode \""+ this->id() +"\". Failed to serialize protobuf message");
+            }
+            else {
+                // This is required to avoid an irrelevant unused-but-set-parameter compilation error
+                dummyCall(data);
+                throw NRPException::logCreate(
+                        "OutputMQTTNode \"" + this->id() + "\" was instantiated with a non supported type");
+            }
+        }
+        else
+            NRPLogger::warn("From OutputMQTTNode \"" + this->id() +
+                            "\". NRPCoreSim is not connected to MQTT and this node can't publish. Check your experiment configuration");
+    }
+
 private:
+
+    void dummyCall(const MSG_TYPE* /*data*/)
+    { }
 
     /*! \brief address of the MQTT topic this node connects to */
     std::string _address;
@@ -93,6 +107,7 @@ private:
     std::string _msg;
 
 };
+
 
 template<class MSG_TYPE>
 class OutputMQTTEdge : public SimpleOutputEdge<MSG_TYPE, OutputMQTTNode<MSG_TYPE>> {
@@ -113,6 +128,71 @@ protected:
     { return new OutputMQTTNode<MSG_TYPE>(this->_id, _address, this->_publishFromCache, this->_computePeriod); }
 
     std::string _address;
+};
+
+//// DPOutputMQTTNode
+template <class MSG_TYPE>
+class DPOutputMQTTNode : public OutputMQTTNode<DataPack<MSG_TYPE>*> {
+
+public:
+
+    using DataPackPtr = DataPack<MSG_TYPE>*;
+
+    DPOutputMQTTNode(const std::string &id, const std::string &address,
+                     bool publishFromCache = false,
+                     unsigned int computePeriod = 1) :
+            OutputMQTTNode<DataPack<MSG_TYPE>*>(id, address, publishFromCache, computePeriod)
+    { }
+
+protected:
+
+    void sendSingleMsg(const std::string& /*id*/, const DataPackPtr* data) override
+    {
+        if(!data || (*data)->isEmpty()) {
+            NRPLogger::warn("From OutputMQTTNode \""+ this->id() +"\". Received null or empty datapack.");
+            return;
+        }
+        
+        if constexpr (std::is_base_of_v<google::protobuf::Message, MSG_TYPE>) {
+            EngineGrpc::DataPackMessage protoDataPack;
+            protoDataPack.mutable_datapackid()->set_datapackname((*data)->name());
+            protoDataPack.mutable_datapackid()->set_datapacktype((*data)->type());
+            protoDataPack.mutable_datapackid()->set_enginename((*data)->engineName());
+            protoDataPack.mutable_data()->PackFrom((*data)->getData());
+
+            this->template publishMqttMsg<EngineGrpc::DataPackMessage>(&protoDataPack);
+        }
+        else if constexpr (std::is_same_v<MSG_TYPE, nlohmann::json>) {
+            nlohmann::json jsonDataPack;
+            jsonDataPack["name"] = (*data)->name();
+            jsonDataPack["engine_name"] = (*data)->engineName();
+            jsonDataPack["type"] = (*data)->type();
+            jsonDataPack["data"] = (*data)->getData();
+
+            this->template publishMqttMsg<nlohmann::json>(&jsonDataPack);
+        }
+        else
+            throw NRPException::logCreate(
+                    "DPOutputMQTTNode \"" + this->id() + "\" was instantiated with a non supported datapack type");
+    }
+};
+
+template<class MSG_TYPE>
+class DPOutputMQTTEdge : public OutputMQTTEdge<DataPack<MSG_TYPE>*> {
+
+public:
+
+    DPOutputMQTTEdge(const std::string &keyword, const std::string &address,
+                   bool publishFromCache = false,
+                   unsigned int computePeriod = 1) :
+            OutputMQTTEdge<DataPack<MSG_TYPE>*>(keyword, address, publishFromCache, computePeriod)
+    {}
+
+protected:
+
+    OutputMQTTNode<DataPack<MSG_TYPE>*>* makeNewNode() override
+    { return new DPOutputMQTTNode<MSG_TYPE>(this->_id, this->_address, this->_publishFromCache, this->_computePeriod); }
+
 };
 
 

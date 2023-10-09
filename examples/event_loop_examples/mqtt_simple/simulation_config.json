@@ -5,5 +5,6 @@
   "DataPackProcessor": "cg",
   "SimulationLoop": "EventLoop",
   "ComputationalGraph": ["cg_mqtt.py"],
-  "MQTTNode": {}
+  "MQTTNode": {},
+  "EventLoop": { "Timestep": 0.1, "Timeout": 1}
 }

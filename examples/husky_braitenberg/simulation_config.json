@@ -6,6 +6,7 @@
 		{
 			"EngineType": "gazebo_grpc",
 			"EngineName": "gazebo",
+			"ServerAddress": "localhost:9019",
 			"GazeboWorldFile": "husky_world.sdf",
 			"GazeboSDFModels": [
 				{

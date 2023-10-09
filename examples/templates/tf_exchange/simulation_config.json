@@ -1,5 +1,5 @@
 {
-    "SimulationName": "tf_exchange v4",
+    "SimulationName": "tf_exchange Python",
     "SimulationDescription": "Launch two python engines. Engine1 will offer the current time as a datapack. tf_1 will request said datapack and send it to Engine2. Engine2 will receive the time and display it",
     "SimulationTimeout": 1,
     "EngineConfigs": [
@@ -18,6 +18,7 @@
             "EngineName": "datatransfer_engine",
             "MQTTBroker": "localhost:1883",
             "simulationID": "0",
+            "MQTTPrefix": "localhost",
             "dumps": []
         }
     ],
@@ -26,6 +27,5 @@
             "Name": "tf_1",
             "FileName": "tf_1.py"
         }
-    ],
-    "cloneDate": "2023-01-23T18:52:14"
+    ]
 }

@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ cxxopts::Options SimulationParams::createStartParamParser()
     opts.add_options()
             (SimulationParams::ParamHelpLong.data(), SimulationParams::ParamHelpDesc.data(),
              cxxopts::value<SimulationParams::ParamHelpT>()->default_value("0"))
+            (SimulationParams::ParamLogConfig.data(), SimulationParams::ParamLogConfigDesc.data(),
+             cxxopts::value<SimulationParams::ParamLogConfigT>()->default_value("0"))
             (SimulationParams::ParamSimCfgFileLong.data(), SimulationParams::ParamSimCfgFileDesc.data(),
              cxxopts::value<SimulationParams::ParamSimCfgFileT>())
             (SimulationParams::ParamPluginsLong.data(), SimulationParams::ParamPluginsDesc.data(),
@@ -172,17 +174,36 @@ void SimulationParams::setCLISimParams(const std::string &fullKey, const std::st
     // Get the head key Name (before the first delimiter)
     std::string key = fullKey.substr(0, fullKey.find(delimiter));
 
+    // If the head key coincides with initial key Name (there is no nested keys)
+    bool newValue = false;
+
     // The element for override
     nlohmann::json *element;
 
     // Treat differently JSON lists and dictionaries
     if (simulationConfig.is_array()){
-        int idx = std::stoi(key);
+        int idx = 0;
+        try
+        {
+            idx = std::stoi(key);
+        }
+        // catch non-numeric key and try to parse it
+        catch (const std::invalid_argument &e)
+        {
+            std::string searchKey = key.substr(0, key.find(":"));
+            std::string searchValue = key.substr(key.find(":") + 1);
+            NRPLogger::debug("Trying to find the element with the pair \"{}\":\"{}\"", searchKey, searchValue);
+            for (idx = 0; (size_t)idx < simulationConfig.size(); idx++) {
+                if (simulationConfig.at(idx).contains(searchKey) && simulationConfig.at(idx)[searchKey] == searchValue) {
+                    break;
+                }
+            }
+        }
         if ((size_t)idx < simulationConfig.size()){
             element = &simulationConfig.at(idx);
         }
         else {
-            throw std::out_of_range("The list element ID to override is greater than the list size");
+            throw std::out_of_range("The list ID to override is not found in the array");
         }
     }
     else if (simulationConfig.contains(key))
@@ -191,20 +212,31 @@ void SimulationParams::setCLISimParams(const std::string &fullKey, const std::st
     }
     else
     {
-        throw std::invalid_argument("The override parameter " + key + " is absent in the simulation config");
+        // Key doesn't exist, so add it.
+        newValue = true;
     }
     
     // If the head key coincides with initial key Name (there is no nested keys)
+    // Note! That the string value should be enclosed in escaped double quotes
     if (fullKey.compare(key) == 0)
     {
-        NRPLogger::info("Overriding config parameter \"{}\" with value \"{}\"", key, value);
-        if (!element->is_string())
-            *element = nlohmann::json::parse(value);
+        if (newValue) {
+            NRPLogger::info("Adding config parameter \"{}\" with value {}", key, value);
+            simulationConfig += nlohmann::json::object_t::value_type(key, nlohmann::json::parse(value));
+        }
         else
-            *element = value;
+        {
+            NRPLogger::info("Overriding config parameter \"{}\" with value {}", key, value);
+            *element = nlohmann::json::parse(value);
+        }
     }
     else
     {
+        if (newValue) {
+            NRPLogger::info("Adding object \"{}\"", key);
+            simulationConfig += nlohmann::json::object_t::value_type(key, nlohmann::json::object({}));
+            element = &simulationConfig.at(key);
+        }
         // Get the nested keys (after the first delimiter)
         std::string nestedKey = fullKey.substr(fullKey.find(delimiter) + delimiter.length());
         NRPLogger::debug("Overriding config parameter \"{}\" with nested key \"{}\"", key, nestedKey);

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,30 @@ public:
      * \param engines Engines that are been synchronize in the current loop
      */
     virtual void sendDataPacksToEngines(const std::vector<EngineClientInterfaceSharedPtr> &engines) = 0;
+
+    /*!
+     * \brief Performs post-engine-initialization DataPack operations
+     *
+     * \param engines Vector of engines for which the post-init step should be performed
+     */
+    virtual void postEngineInit(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/)
+    {}
+
+    /*!
+     * \brief Performs pre-engine-reset DataPack operations
+     *
+     * \param engines Vector of engines for which the pre-init step should be performed
+     */
+    virtual void preEngineReset(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/)
+    {}
+
+    /*!
+     * \brief Performs post-engine-reset DataPack operations
+     *
+     * \param engines Vector of engines for which the post-reset step should be performed
+     */
+    virtual void postEngineReset(const std::vector<EngineClientInterfaceSharedPtr> &/*engines*/)
+    {}
 
     /*!
      * \brief Execute sequentially the update, compute and send operations

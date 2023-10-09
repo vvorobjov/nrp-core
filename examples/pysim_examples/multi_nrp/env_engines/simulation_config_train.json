@@ -1,0 +1,62 @@
+{
+	"SimulationName": "test_openai_nest",
+	"SimulationDescription": "Launch a py_sim engine to run openAI simulation and a nest engine to control the simulation",
+	"SimulationTimeout": 20,
+	"EngineConfigs": 
+	[
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "ppo_model",
+			"PythonFileName": "ppo_model.py",
+			"EngineTimestep": 0.01,
+			"EngineNumber": 2,
+			"StepNumber": 1000,
+			"WorldFileName":"CartPole-v1",
+			"ProtobufPackages": ["Dump", "NrpGenericProto"]
+		},
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "sim_engine_0",
+			"EngineID": 0,
+			"PythonFileName": "engine_sim.py",
+			"WorldFileName":"CartPole-v1",
+			"EngineExtraConfigs": {
+				"framework":"stable_baselines3", "env_number": 1},
+			"Simulator":"OpenAI",
+			"Visualizer":false,
+			"ProtobufPackages": ["Dump", "NrpGenericProto"]
+		},
+		{
+			"EngineType": "python_grpc",
+			"EngineName": "sim_engine_1",
+			"EngineID": 1,
+			"PythonFileName": "engine_sim.py",
+			"WorldFileName":"CartPole-v1",
+			"EngineExtraConfigs": {
+				"framework":"stable_baselines3", "env_number": 1},
+			"Simulator":"OpenAI",
+			"Visualizer":false,
+			"ProtobufPackages": ["Dump", "NrpGenericProto"]
+		}
+	],
+	"DataPackProcessingFunctions":
+	[
+		{
+			"Name": "for_model",
+			"FileName": "for_model.py"
+		},
+		{
+			"Name": "get_action_0",
+			"FileName": "get_action_0.py"
+		},
+		{
+			"Name": "get_action_1",
+			"FileName": "get_action_1.py"
+		}
+	],
+	"StatusFunction":
+	{
+		"Name": "status_function",
+		"FileName": "status_function.py"
+	}
+}

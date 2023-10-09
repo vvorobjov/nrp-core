@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 import typing
 
 from google.protobuf.message import Message
-from engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
+from nrp_protobuf.engine_grpc_pb2 import DataPackMessage, DataPackIdentifier
 
 
 class GrpcEngineScript:
@@ -32,6 +32,10 @@ class GrpcEngineScript:
         self._config = None
 
         self._datapacks_msgs: typing.Dict[str, Message] = {}
+
+    def _getEngineName(self) -> str:
+        """Returns Engine name"""
+        return self._name
 
     def _advanceTime(self, timestep_ns: int) -> None:
         """Advances the simulation time by given timestep"""
@@ -60,6 +64,12 @@ class GrpcEngineScript:
                                 f" 'protobuf_type' argument must be a Python Protobuf Message type")
         
         self._datapacks_msgs[datapack_name] = protobuf_type()
+
+    def _getRegisteredDataPackNames(self) -> list:
+        """
+        Returns the list of registered datapack names
+        """
+        return list(self._datapacks_msgs.keys())
 
     def _getDataPack(self, datapack_name: str):
         """

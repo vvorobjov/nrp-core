@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -213,22 +213,22 @@ class TestServer(unittest.TestCase):
         server_callbacks.initialize(self.init_json)
 
         # Test get_datapack with empty request
-        self.assertEqual(server_callbacks.get_datapack({}), {})
+        self.assertEqual(server_callbacks.get_datapacks({}), {})
 
         # Test set_datapack with empty request
-        server_callbacks.set_datapack({})
+        server_callbacks.set_datapacks({})
 
         # If the data was never set, get_datapack() should return None accompanied by some metadata
-        datapacks = server_callbacks.get_datapack(self.get_datapack_json)
+        datapacks = server_callbacks.get_datapacks(self.get_datapack_json)
         self.assertEqual(datapacks["test_datapack"]["engine_name"], self.engine_name)
         self.assertEqual(datapacks["test_datapack"]["type"], JsonDataPack.getType())
         self.assertEqual(datapacks["test_datapack"]["data"], None)
 
         # Set the data
-        server_callbacks.set_datapack(self.set_datapack_json)
+        server_callbacks.set_datapacks(self.set_datapack_json)
 
         # Retrieve the data. It should match the data that was set.
-        datapacks = server_callbacks.get_datapack(self.get_datapack_json)
+        datapacks = server_callbacks.get_datapacks(self.get_datapack_json)
 
         self.assertEqual(datapacks["test_datapack"], self.set_datapack_json["test_datapack"])
 
@@ -241,7 +241,7 @@ class TestServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to set data on an unregistered DataPack .*"):
-            server_callbacks.set_datapack(self.set_datapack_json)
+            server_callbacks.set_datapacks(self.set_datapack_json)
 
 
     def test_set_datapack_malformed(self):
@@ -256,7 +256,7 @@ class TestServer(unittest.TestCase):
                                          "data": {"test_int": 1}}
 
         with self.assertRaisesRegex(Exception, "Malformed DataPack. .*"):
-            server_callbacks.set_datapack(request_json)
+            server_callbacks.set_datapacks(request_json)
 
 
     def test_get_datapack_unregistered(self):
@@ -267,7 +267,7 @@ class TestServer(unittest.TestCase):
         """
         server_callbacks.initialize(self.init_json_srr_raise)
         with self.assertRaisesRegex(Exception, "Attempting to get data from an unregistered DataPack .*"):
-            server_callbacks.get_datapack(self.get_datapack_json)
+            server_callbacks.get_datapacks(self.get_datapack_json)
 
 
     def test_get_datapack_incorrect_engine_name(self):
@@ -282,7 +282,7 @@ class TestServer(unittest.TestCase):
                                          "type": JsonDataPack.getType()}
 
         with self.assertRaisesRegex(Exception, "Requesting DataPack .* from incorrect engine .*"):
-            server_callbacks.get_datapack(request_json)
+            server_callbacks.get_datapacks(request_json)
 
 
 if __name__ == '__main__':

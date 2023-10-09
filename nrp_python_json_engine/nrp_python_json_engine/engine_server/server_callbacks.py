@@ -1,6 +1,6 @@
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +46,13 @@ def _flush_std():
     sys.stderr.flush()
 
 
+def get_engine_name() -> str:
+    """Returns Engine name"""
+    global script
+
+    return script._getEngineName()
+
+
 def initialize(request_json: dict) -> dict:
     """Imports module containing the Script class, instantiates it, and runs its initialize() method"""
     global script
@@ -85,33 +92,43 @@ def run_loop(request_json: dict) -> dict:
     return {"time": script._time_ns}
 
 
-def set_datapack(request_json: dict) -> None:
+def set_datapacks(request_json: dict) -> None:
     """Sets given data on requested datapacks stored in the Script object"""
-    global script
-    expected_keys = set(("data", "engine_name", "type"))
-
     if not request_json:
         return
 
     for datapack_name in request_json:
-        datapack = request_json[datapack_name]
-
-        # Check if any of the expected keys are not in the datapack
-
-        if not expected_keys.issubset(datapack.keys()):
-            raise Exception(f"Malformed DataPack. Expected keys: {str(expected_keys)}"
-                            f"; actual keys: {str(datapack.keys())}")
-
-        # Check if DataPack type is correct and save the data
-
-        if datapack["type"] == JsonDataPack.getType():
-            script._setDataPack(datapack_name, datapack["data"])
-        else:
-            raise Exception(f"Unable to set datapacks of type '{datapack['type']}'"
-                            f" (DataPack named '{datapack['name']}'")
+        set_datapack(datapack_name, request_json[datapack_name])
 
 
-def get_datapack(request_json: dict) -> dict:
+def set_datapack(datapack_name: str, datapack: dict) -> None:
+    """Sets given data on requested datapack stored in the Script object"""
+    global script
+    expected_keys = set(("data", "engine_name", "type"))
+
+    # Check if any of the expected keys are not in the datapack
+
+    if not expected_keys.issubset(datapack.keys()):
+        raise Exception(f"Malformed DataPack. Expected keys: {str(expected_keys)}"
+                        f"; actual keys: {str(datapack.keys())}")
+
+    # Check if DataPack type is correct and save the data
+
+    if datapack["type"] == JsonDataPack.getType():
+        script._setDataPack(datapack_name, datapack["data"])
+    else:
+        raise Exception(f"Unable to set datapacks of type '{datapack['type']}'"
+                        f" (DataPack named '{datapack['name']}'")
+
+
+def get_registered_datapack_names() -> list:
+    """Returns the list of registered datapack names"""
+    global script
+
+    return script._getRegisteredDataPackNames()
+
+
+def get_datapacks(request_json: dict) -> dict:
     """Returns requested datapacks stored in the Script object"""
     global script
 
@@ -124,21 +141,23 @@ def get_datapack(request_json: dict) -> dict:
         engine_name = request_json[datapack_name]["engine_name"]
 
         # Check if engine name in the request matches the actual name
-        if engine_name != script._name:
+        if engine_name != script._getEngineName():
             raise Exception(f"Requesting DataPack '{datapack_name}'"
                             f" from incorrect engine (engine name in the request '{engine_name}'"
-                            f", engine that received the request '{script._name}'")
+                            f", engine that received the request '{script._getEngineName()}'")
 
-        # TODO: "type" in the request is currently empty, so we can't validate it...
-
-        data = script._getDataPack(datapack_name)
-
-        return_data[datapack_name] = {}
-        return_data[datapack_name]["engine_name"] = engine_name
-        return_data[datapack_name]["type"] = JsonDataPack.getType()
-        return_data[datapack_name]["data"] = data
+        return_data[datapack_name] = get_datapack(datapack_name)
 
     return return_data
+
+
+def get_datapack(datapack_name: str) -> dict:
+    """Returns requested datapack stored in the Script object"""
+    global script
+    datapack = {"engine_name": script._getEngineName(),
+                "type": JsonDataPack.getType(),
+                "data": script._getDataPack(datapack_name)}
+    return datapack
 
 
 def reset(request_json: dict) -> dict:

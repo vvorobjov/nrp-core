@@ -22,6 +22,7 @@ namespace bpy = boost::python;
 class MqttEdgeFactory {
 
 public:
+    
     /*!
      * \brief Constructor
      */
@@ -39,8 +40,17 @@ public:
         _publishFromCache(publishFromCache),
         _computePeriod(computePeriod)
     {
-        _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
         _moduleName = boost::python::extract<std::string>(msgType.attr("__module__"))();
+        boost::python::tuple bases(msgType.attr("__bases__"));
+        for (long i = 0; i < boost::python::len(bases); i++)
+            _isDatapack = boost::python::extract<std::string>(bases[i].attr("__name__"))() == "DataPackInterface" || _isDatapack;
+
+        if(_isDatapack) {
+            auto obj = msgType("dpname", "enginename");
+            _className = boost::python::extract<std::string>(obj.attr("data").attr("__class__").attr("__name__"))();
+        }
+        else
+            _className = boost::python::extract<std::string>(msgType.attr("__name__"))();
     }
 
     /*!
@@ -49,8 +59,14 @@ public:
     template<class MSG_TYPE>
     boost::python::object pySetupInput(const boost::python::object& obj)
     {
-        auto mqttEdge = InputMQTTEdge<MSG_TYPE>(_keyword, _address, _msgPublishPolicy, _msgCachePolicy);
-        return mqttEdge.pySetup(obj);
+        if(_isDatapack) {
+            auto mqttEdge = DPInputMQTTEdge<MSG_TYPE>(_keyword, _address, _msgPublishPolicy, _msgCachePolicy);
+            return mqttEdge.pySetup(obj);
+        }
+        else {
+            auto mqttEdge = InputMQTTEdge<MSG_TYPE>(_keyword, _address, _msgPublishPolicy, _msgCachePolicy);
+            return mqttEdge.pySetup(obj);
+        }
     }
 
     /*!
@@ -59,8 +75,14 @@ public:
     template<class MSG_TYPE>
     boost::python::object pySetupOutput(const boost::python::object& obj)
     {
-        auto mqttEdge = OutputMQTTEdge<MSG_TYPE>(_keyword, _address, _publishFromCache, _computePeriod);
-        return mqttEdge.pySetup(obj);
+        if(_isDatapack) {
+            auto mqttEdge = DPOutputMQTTEdge < MSG_TYPE>(_keyword, _address, _publishFromCache, _computePeriod);
+            return mqttEdge.pySetup(obj);
+        }
+        else {
+            auto mqttEdge = OutputMQTTEdge<MSG_TYPE>(_keyword, _address, _publishFromCache, _computePeriod);
+            return mqttEdge.pySetup(obj);
+        }
     }
 
     /*!
@@ -110,6 +132,7 @@ private:
     std::string _address;
     std::string _className;
     std::string _moduleName;
+    bool _isDatapack = false;
     InputNodePolicies::MsgPublishPolicy _msgPublishPolicy;
     InputNodePolicies::MsgCachePolicy _msgCachePolicy;
     bool _isInput;

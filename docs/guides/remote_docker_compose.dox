@@ -74,7 +74,7 @@ sudo apt install nfs-kernel-server
 sudo exportfs -a
 sudo systemctl restart nfs-kernel-server #restarting the NFS kernel
 
-# If you have a firewall enabled, you’ll also need to open up firewall access using the sudo ufw allow command.
+# If you have a firewall enabled, youï¿½ll also need to open up firewall access using the sudo ufw allow command.
 
 # Installing NFS Client Packages : Run these commands on the worker nodes
 
@@ -113,7 +113,7 @@ Let's say your master-script is as follow:
 
 \code{.py}
 import time
-from nrp_core.client import NrpCore
+from nrp_client import NrpCore
 
 nrp_1 = "10.1.1.184:50050"
 nrp_2 = "10.1.1.79:50050"

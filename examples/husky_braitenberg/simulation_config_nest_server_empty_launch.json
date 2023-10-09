@@ -23,7 +23,7 @@
 			"NestInitFileName": "braitenberg_nest_server.py",
 			"EngineEnvParams": ["PYNEST_QUIET=1"],
 			"NestServerHost": "localhost",
-			"NestServerPort": 9010,
+			"NestServerPort": 53467,
 			"EngineLaunchCommand": {
 				"LaunchType": "EmptyLaunchCommand"
 			}

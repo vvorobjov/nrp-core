@@ -16,4 +16,6 @@ def robot_control(target):
         target_ret.data.linearVelocity.append(1.84)
         return [target_ret]
     else:
-        return []
+        # TODO: temporary fix until https://hbpneurorobotics.atlassian.net/browse/NRRPLT-8925 is fixed
+        # return []
+        return [target]

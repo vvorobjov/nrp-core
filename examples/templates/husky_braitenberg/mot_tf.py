@@ -14,12 +14,12 @@ def robot_control(actors):
     right_voltage = actors.data[1]['V_m']
 
     forward_vel = 20.0 * min(left_voltage, right_voltage)
-    rot_vel = 70.0 * (right_voltage - left_voltage)
+    rot_vel = 100.0 * (right_voltage - left_voltage)
 
-    back_left_j.data.velocity = (forward_vel - rot_vel) * 10
-    back_right_j.data.velocity = (forward_vel + rot_vel) * 10
-    front_left_j.data.velocity = (forward_vel - rot_vel) * 10
-    front_right_j.data.velocity = (forward_vel + rot_vel) * 10
+    back_left_j.data.velocity = (forward_vel - rot_vel * 0.275) * 7
+    back_right_j.data.velocity = (forward_vel + rot_vel * 0.275) * 7
+    front_left_j.data.velocity = (forward_vel - rot_vel * 0.275) * 7
+    front_right_j.data.velocity = (forward_vel + rot_vel * 0.275) * 7
 
     # print("------------------")
     # print(f"Left voltage:  {left_voltage}")

@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,5 +31,7 @@
 #define TEST_GAZEBO_WORLD_FILE "@GAZEBO_WORLD_FILE@"
 
 #define TEST_NEST_SIM_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/nest_simple.py"
+
+#define TEST_TIME_NODES_FILE "@CMAKE_CURRENT_SOURCE_DIR@/tests/test_files/test_time_nodes.py"
 
 #endif // TEST_ENV_CMAKE_H

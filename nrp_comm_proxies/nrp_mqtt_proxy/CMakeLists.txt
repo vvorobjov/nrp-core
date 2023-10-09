@@ -182,15 +182,6 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
         PATTERN "*.hpp"
 )
 
-# Install python module
-#if(TARGET ${PYTHON_MODULE_NAME})
-#   install(TARGETS ${PYTHON_MODULE_NAME}
-#       DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
-#
-#   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/src/__init__.py"
-#       DESTINATION "${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}")
-#endif()
-
 # Install executable files
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}

@@ -1,0 +1,8 @@
+{
+	"Timestep": 0.01,
+	"Timeout": 10,
+	"EngineConfig": {
+		"EngineName": "client",
+		"PythonFileName": "client.py"
+	}
+}

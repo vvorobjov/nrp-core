@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 #include <functional>
 #include "nlohmann/json.hpp"
 #include <google/protobuf/message.h>
+#include "nrp_protobuf/engine_grpc.pb.h"
+#include "nrp_general_library/datapack_interface/datapack.h"
 
 #include "nrp_event_loop/computational_graph/input_node.h"
 #include "nrp_event_loop/python/input_edge.h"
@@ -56,37 +58,13 @@ protected:
 
     void configure() override
     {
-        // Set msg conversion function
-        if constexpr (std::is_same_v<MSG_TYPE, std::string>)
-            _msgFromString = [] (const std::string& s) { return s; };
-        else if constexpr (std::is_same_v<MSG_TYPE, nlohmann::json>)
-            _msgFromString = [] (const std::string& s) {
-                try {
-                    return nlohmann::json::parse(s);
-                }
-                catch(const std::exception &e) {
-                    std::stringstream error_msg;
-                    error_msg << "Error in InputMQTTNode while converting incoming msg into json format: " << e.what();
-                    throw NRPException::logCreate(error_msg.str());
-                }
-            };
-        else if constexpr (std::is_base_of_v<google::protobuf::Message, MSG_TYPE>)
-            _msgFromString = [] (const std::string& s) {
-                MSG_TYPE m;
-                if(m.ParseFromString(s))
-                    return m;
-                else
-                    throw NRPException::logCreate("Error in InputMQTTNode while converting incoming msg into protobuf format");
-            };
-        else
-            throw NRPException::logCreate("InputMQTTNode \""+ this->id() +"\" was instantiated with a non supported type");
+        setMsgFromString();
 
         // Subscribes to mqtt topic
         NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());
         if(mqttProxy) {
             using std::placeholders::_1;
-            _callback = std::bind(&InputMQTTNode::topic_callback, this, _1);
-            mqttProxy->subscribe(_address, _callback);
+            mqttProxy->subscribe(_address, std::bind(&InputMQTTNode::topic_callback, this, _1));
         }
         else
             NRPLogger::warn("From InputMQTTNode \"" + this->id() +
@@ -134,6 +112,42 @@ protected:
         return false;
     }
 
+protected:
+
+    /*!
+     * \brief set the msg conversion function depending on template argument MSG_TYPE
+     */
+    virtual void setMsgFromString()
+    {
+        // Set msg conversion function
+        if constexpr (std::is_same_v<MSG_TYPE, std::string>)
+            _msgFromString = [] (const std::string& s) { return s; };
+        else if constexpr (std::is_same_v<MSG_TYPE, nlohmann::json>)
+            _msgFromString = [] (const std::string& s) {
+                try {
+                    return nlohmann::json::parse(s);
+                }
+                catch(const std::exception &e) {
+                    std::stringstream error_msg;
+                    error_msg << "Error in InputMQTTNode while converting incoming msg into json format: " << e.what();
+                    throw NRPException::logCreate(error_msg.str());
+                }
+            };
+        else if constexpr (std::is_base_of_v<google::protobuf::Message, MSG_TYPE>)
+            _msgFromString = [] (const std::string& s) {
+                MSG_TYPE m;
+                if(m.ParseFromString(s))
+                    return m;
+                else
+                    throw NRPException::logCreate("Error in InputMQTTNode while converting incoming msg into protobuf format");
+            };
+        else
+            throw NRPException::logCreate("InputMQTTNode \""+ this->id() +"\" was instantiated with a non supported type");
+    }
+
+    /*! \brief converts msgs in string format to MSG_TYPE */
+    std::function<MSG_TYPE (const std::string&)> _msgFromString;
+
 private:
 
     /*! \brief mutex used in msg access operations */
@@ -144,10 +158,6 @@ private:
     std::vector<MSG_TYPE> _msgStore;
     /*! \brief address of the MQTT topic this node connects to */
     std::string _address;
-    /*! \brief callback for new msgs */
-    std::function<void (const std::string&)> _callback;
-    /*! \brief converts msgs in string format to MSG_TYPE */
-    std::function<MSG_TYPE (const std::string&)> _msgFromString;
 };
 
 
@@ -171,5 +181,82 @@ protected:
     std::string _address;
 };
 
+//// DPInputMQTTNode
+template <class MSG_TYPE>
+class DPInputMQTTNode : public InputMQTTNode<DataPack<MSG_TYPE>> {
+public:
+    /*!
+     * \brief Constructor
+     */
+    DPInputMQTTNode(const std::string &id, const std::string &address) :
+            InputMQTTNode<DataPack<MSG_TYPE>>(id, address)
+    { }
+
+protected:
+
+    void setMsgFromString() override
+    {
+        if constexpr (std::is_base_of_v<google::protobuf::Message, MSG_TYPE>) {
+            this->_msgFromString = [](const std::string &s) {
+                EngineGrpc::DataPackMessage m;
+                if (!m.ParseFromString(s))
+                    throw NRPException::logCreate(
+                            "Error in DPInputMQTTNode while converting incoming msg into EngineGrpc::DataPackMessage protobuf message");
+                else if (!m.has_data())
+                    throw NRPException::logCreate("Error in DPInputMQTTNode. Received empty DataPack");
+                else if (!m.has_datapackid())
+                    throw NRPException::logCreate("Error in DPInputMQTTNode. Received DataPack without id");
+                else if (!m.data().Is<MSG_TYPE>())
+                    throw NRPException::logCreate(
+                            "Error in DPInputMQTTNode while converting incoming msg into DataPack. Wrong msg type");
+
+                MSG_TYPE *data = new MSG_TYPE();
+                m.data().UnpackTo(data);
+                return DataPack<MSG_TYPE>(m.datapackid().datapackname(), m.datapackid().enginename(), data);
+            };
+        }
+        else if constexpr (std::is_same_v<MSG_TYPE, nlohmann::json>)
+            this->_msgFromString = [] (const std::string& s) {
+                try {
+                    auto datapack =  nlohmann::json::parse(s);
+                    if(!datapack.contains("name") || !datapack.contains("engine_name"))
+                        throw NRPException::logCreate("malformed json datapack received: \"" + s +
+                        "\". It must contain keys name and engine_name");
+                    else if(!datapack.contains("data"))
+                        throw NRPException::logCreate("empty datapack received. This is not allowed");
+                    else
+                        return DataPack<nlohmann::json>(
+                                datapack["name"].get<std::string>(),
+                                datapack["engine_name"].get<std::string>(),
+                                new nlohmann::json(std::move(datapack["data"])));
+                }
+                catch(const std::exception &e) {
+                    std::stringstream error_msg;
+                    error_msg << "Error in InputMQTTNode while converting incoming msg into json datapack format: " << e.what();
+                    throw NRPException::logCreate(error_msg.str());
+                }
+            };
+    }
+
+};
+
+
+template<class MSG_TYPE>
+class DPInputMQTTEdge : public InputMQTTEdge<DataPack<MSG_TYPE>> {
+
+public:
+
+    DPInputMQTTEdge(const std::string& keyword, const std::string& address,
+                    InputNodePolicies::MsgPublishPolicy msgPublishPolicy,
+                    InputNodePolicies::MsgCachePolicy msgCachePolicy) :
+            InputMQTTEdge<DataPack<MSG_TYPE>>(keyword, address, msgPublishPolicy, msgCachePolicy)
+    {}
+
+protected:
+
+    InputMQTTNode<DataPack<MSG_TYPE>>* makeNewNode() override
+    { return new DPInputMQTTNode<MSG_TYPE>(this->_id, this->_address); }
+
+};
 
 #endif //INPUT_MQTT_NODE_H

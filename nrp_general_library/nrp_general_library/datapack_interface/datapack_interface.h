@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,12 @@ struct DataPackIdentifier
 
     DataPackIdentifier() = default;
 
+    DataPackIdentifier (const DataPackIdentifier&) = default;
+    DataPackIdentifier& operator= (const DataPackIdentifier&) = default;
+
+    DataPackIdentifier(DataPackIdentifier&& obj) = default;
+    DataPackIdentifier& operator = (DataPackIdentifier&&) = default;
+
     DataPackIdentifier(const std::string &_name, const std::string &_engineName, const std::string &_type);
 
     DataPackIdentifier(std::string &&_name, std::string &&_engineName, std::string &&_type)
@@ -85,6 +91,12 @@ class DataPackInterface
 {
     public:
         DataPackInterface() = default;
+
+        DataPackInterface (const DataPackInterface&) = default;
+        DataPackInterface& operator= (const DataPackInterface&) = default;
+
+        DataPackInterface(DataPackInterface&& obj) = default;
+        DataPackInterface& operator = (DataPackInterface&&) = default;
 
         template<class DEV_ID_T>
         DataPackInterface(DEV_ID_T &&id)

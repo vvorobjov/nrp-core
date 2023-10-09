@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,9 @@
 #include <chrono>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <string>
+#include <utility>
+#include <sstream>
 
 /*!
  * \brief Anonymous namespace containing helper functions
@@ -128,10 +131,46 @@ namespace
      */
     void extractPopulations(const std::string & data, NestEngineServerNRPClient::population_mapping_t * populations)
     {
-        auto respJson = nlohmann::json::parse(data);
-        for (nlohmann::json::iterator it = respJson["data"]["populations"].begin(); it != respJson["data"]["populations"].end(); ++it)
+        const auto & respJson = nlohmann::json::parse(data);
+        for (const auto & pop_item: respJson.at("data").at("populations").items())
         {
-            populations->insert({it.key(), it.value().dump()});
+            NRP_LOGGER_TRACE("{}: \"{}\" population found. {} ", __FUNCTION__, pop_item.key(), pop_item.value().dump());
+            populations->insert({pop_item.key(), pop_item.value().dump()});
+        }
+    }
+
+
+    /*!
+     * \brief Extracts connections from NEST server response to brain file execution
+     *
+     * The NEST server is supposed to return a dictionary names 'connections'.
+     * The dictionary should contain a mapping of connection (datapack) names to "source" and "target" population names
+     * The datapack will be updated by calling GetConnection(source, target).
+     *
+     * This is a helper function of initialize().
+     *
+     * \param[in]  data        Body part of the response from NEST server
+     * \param[out] getConnectionsPopulationToArgs Connection names to arguments mapping that will be filled by the function
+     */
+    void extractConnections(const std::string & data, NestEngineServerNRPClient::get_connection_population_mapping_t * getConnectionsPopulationToArgs)
+    {
+        const auto & respJson = nlohmann::json::parse(data);
+
+        if(!respJson.at("data").contains("connections")) {
+            NRPLogger::debug("NestEngineServerNRPClient::initialize(...) No connections variable found in brain script");
+            return;
+        }
+
+        // connections variable has been specified in brain script
+        for (const auto & conn_item: respJson["data"]["connections"].items())
+        {
+            const auto & connection_name = conn_item.key();
+            const auto & connection_args = conn_item.value();
+
+            // pop item is "connection_name": {"source": "pop_name", "target": "other_pop_name"}
+            getConnectionsPopulationToArgs->insert({connection_name,
+                                                    std::make_pair(connection_args.at("source"),
+                                                                   connection_args.at("target"))});
         }
     }
 
@@ -160,23 +199,53 @@ namespace
      * \brief Sends SetStatus request to NEST server
      *
      * \param serverAddress Address of the NEST server
-     * \param data Arguments for SetStatus
+     * \param argsStr Comma-separated arguments list to SetStatus as string (e.g. "arg1, arg2")
+     * \param kwargsStr Comma-separated keyword arguments to SetStatus as string (e.g. (" "key1": value1, "key2": value2 "))
+
      */
-    void nestSetStatus(const std::string & serverAddress, const std::string & data)
+    void nestSetStatus(const std::string & serverAddress, const std::string & argsStr, const std::string & kwargsStr)
     {
-        nestGenericCall(serverAddress + "/api/SetStatus", "application/json", data);
+        // equivalent to a NESTClient call client.SetStatus(arg1, arg2, key1=value1, key2=value2})
+        std::stringstream data;
+        data << "{" << R"("args": )" << "[" << argsStr << "], " << kwargsStr << "}";
+
+        nestGenericCall(serverAddress + "/api/SetStatus","application/json", data.str());
     }
 
     /*!
      * \brief Sends GetStatus request to NEST server
      *
      * \param serverAddress Address of the NEST server
-     * \param data Arguments to GetStatus
+     * \param argsStr Comma-separated arguments list to GetStatus as string (e.g. "arg1, arg2"))
      * \return Response from GetStatus as string
      */
-    std::string nestGetStatus(const std::string & serverAddress, const std::string & data)
+    std::string nestGetStatus(const std::string & serverAddress, const std::string & argsStr)
     {
-        return nestGenericCall(serverAddress + "/api/GetStatus", "application/json", data);
+        //TODO kwargs support so to select keys to get.
+        // Datapacks can't pass that info to engine clients yet.
+        // equivalent to a NESTClient call client.GetStatus(arg1, arg2, ..)
+        std::stringstream data;
+        data << "{" << R"("args": )" << "[" << argsStr << "]" << "}";
+
+        return nestGenericCall(serverAddress + "/api/GetStatus", "application/json", data.str());
+    }
+
+    /*!
+     * \brief Sends GetConnections request to NEST server
+     *
+     * \param serverAddress Address of the NEST server
+     * \param source_ids_str The IDs of the pre-synaptic population as a JSON list
+     * \param target_ids_str The IDs of the post-synaptic population as a JSON list
+     * \return Response from GetConnections as string
+     */
+    std::string nestGetConnections(const std::string & serverAddress, const std::string & source_ids_str, const std::string & target_ids_str)
+    {
+        //TODO kwargs support so to select keys to get.
+        // Datapacks can't pass that info to engine clients yet.
+        // equivalent to a NESTClient call client.GetConnections(source=source_ids_str, target=target_ids_str})
+        std::stringstream data;
+        data << "{ " << R"("source": )" << source_ids_str << ", " << R"("target": )" << target_ids_str << " }";
+        return nestGenericCall(serverAddress + "/api/GetConnections", "application/json", data.str());
     }
 
     /*!
@@ -273,7 +342,7 @@ void NestEngineServerNRPClient::initialize()
         std::string response;
         try
         {
-            response = nestExec(this->serverAddress(), nlohmann::json({{"source", initCode}, {"return", {"populations"}}}).dump());
+            response = nestExec(this->serverAddress(), nlohmann::json({{"source", initCode}, {"return", {"populations", "connections"}}}).dump());
         }
         catch(NRPException &e)
         {
@@ -291,6 +360,18 @@ void NestEngineServerNRPClient::initialize()
         // Extract all populations from the response and cache them in the populations map
 
         extractPopulations(response, &this->_populations);
+
+        // Extract all connections from the response and cache them in the connections map
+        try
+        {
+            extractConnections(response, &this->_getConnectionsPopulationToArgs);
+        }
+        catch(std::exception &e)
+        {
+            throw NRPException::logCreate(e, "Failed to extract \"connections\" from nest server response."
+                                             "The format of the \"connections\" dictionary should be"
+                                             "{\"connection_name\": {\"source\": \"a_pop_name\", \"target\": \"another_pop_name\"}}.");
+        }
 
         // Exit the loop
 
@@ -355,16 +436,13 @@ const std::string & NestEngineServerNRPClient::getDataPackIdList(const std::stri
 {
     NRP_LOGGER_TRACE("{} called", __FUNCTION__);
 
-    // Check if the datapack is in the populations map
-
-    if(this->_populations.count(datapackName) == 0)
-    {
+    // Get list of datapack IDs mapped to this datapack name
+    try {
+        return this->_populations.at(datapackName);
+    }
+    catch (const std::out_of_range&) {
         throw NRPException::logCreate("DataPack \"" + datapackName + "\" not in populations map");
     }
-
-    // Get list of datapack IDs mapped to this datapack name
-
-    return this->_populations.at(datapackName);
 }
 
 datapacks_vector_t NestEngineServerNRPClient::getDataPacksFromEngine(const datapack_identifiers_set_t &datapackIdentifiers)
@@ -382,12 +460,24 @@ datapacks_vector_t NestEngineServerNRPClient::getDataPacksFromEngine(const datap
 
             // Request status of the IDs from the list
 
-            try
-            {
-                response = nestGetStatus(this->serverAddress(), "{\"nodes\":" + getDataPackIdList(datapackName) + "}");
+            try {
+                if (this->_populations.count(datapackName) > 0) {
+                    // it's a population use GetStatus
+                    response = nestGetStatus(this->serverAddress(), getDataPackIdList(datapackName));
+
+                } else if (this->_getConnectionsPopulationToArgs.count(datapackName) > 0) {
+                        // it's a connection use GetConnection
+                        // fetch the parameters, i.e. "source" and "target" population IDs
+                        auto getConnectionArgs = this->_getConnectionsPopulationToArgs.at(datapackName);
+
+                        response = nestGetConnections(this->serverAddress(),
+                                                      getDataPackIdList(getConnectionArgs.first),
+                                                      getDataPackIdList(getConnectionArgs.second));
+                } else {
+                    throw NRPException::logCreate("Datapack \"" + datapackName + "\" is not defined in brain script.");
+                }
             }
-            catch(std::exception& e)
-            {
+            catch(std::exception& e) {
                 throw NRPException::logCreate(e, "Failed to get NEST status for datapack \"" + datapackName + "\"");
             }
 
@@ -413,12 +503,12 @@ void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_set_t &dat
 
             const auto datapackName = datapack->name();
 
-            std::string setStatusStr = "{\"nodes\":" + getDataPackIdList(datapackName) + ","
-                                       "\"params\":" + ((JsonDataPack const *)datapack.get())->getData().dump() + "}";
+            const std::string kwargsStr = "\"params\": " + ((JsonDataPack const *)datapack.get())->getData().dump();
 
             try
             {
-                nestSetStatus(this->serverAddress(), setStatusStr);
+                // SetStatus(args, kwargs)
+                nestSetStatus(this->serverAddress(), getDataPackIdList(datapackName), kwargsStr);
             }
             catch(std::exception& e)
             {

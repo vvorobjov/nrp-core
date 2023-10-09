@@ -1,4 +1,4 @@
-set(NRP_VERSION 1.3.1)
+set(NRP_VERSION 1.4.1)
 
 cmake_minimum_required(VERSION 3.16)
 project("NRP Core" VERSION ${NRP_VERSION})
@@ -26,7 +26,7 @@ cmake_dependent_option(BUILD_NEST_ENGINE_SERVER "Build the server part of the ne
 option(ENABLE_GAZEBO "Enable Gazebo support" ON)
 cmake_dependent_option(BUILD_GAZEBO_ENGINE_SERVER "Build the server part of the Gazebo engines" ON "ENABLE_GAZEBO" OFF)
 
-option(ENABLE_EDLUT "Enable EDLUT support" OFF)
+option(ENABLE_EDLUT "Enable EDLUT support" ON)
 option(EDLUT_WITH_CUDA "Enable EDLUT with cuda support" OFF)
 cmake_dependent_option(BUILD_EDLUT_ENGINE_SERVER "Build the server part of the EDLUT engine" ON "ENABLE_EDLUT" OFF)
 
@@ -191,7 +191,7 @@ endif()
 
 # Spinnaker
 if(ENABLE_SPINNAKER)
-    message(STATUS "Building Spinnaker support")
+    message(STATUS "Building with Spinnaker support")
     add_definitions(-DSPINNAKER_ON)
 else()
     message(STATUS "Spinnaker support will not be built")
@@ -263,6 +263,10 @@ add_subdirectory(nrp_datatransfer_grpc_engine)
 ##########################################
 ## NRP Simulation
 add_subdirectory(nrp_simulation)
+
+##########################################
+## NRP clients
+add_subdirectory(nrp_clients/python)
 
 ##########################################
 ## cppcheck
@@ -431,6 +435,7 @@ doxygen_add_docs(nrp_doxygen
         "docs/event_loop/python_graph.dox"
         "docs/event_loop/computational_graph_integration.dox"
         "docs/event_loop/fn_cpp_nodes.dox"
+        "docs/event_loop/async_experiments.dox"
 
         COMMENT "Generating documentation")
 

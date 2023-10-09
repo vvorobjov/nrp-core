@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,11 @@ struct SimulationParams
     static constexpr std::string_view ParamLogDirLong = "logdir";
     static constexpr std::string_view ParamLogDirDesc = "Directory for the file logs";
     using ParamLogDirT = std::string;
+
+    static constexpr std::string_view ParamLogConfig = "l";
+    static constexpr std::string_view ParamLogConfigLong = "l,logconfig";
+    static constexpr std::string_view ParamLogConfigDesc = "Print the simulation config in use to DEBUG log";
+    using ParamLogConfigT = bool;
 
     static constexpr std::string_view ParamMode = "m";
     static constexpr std::string_view ParamModeLong = "m,mode";

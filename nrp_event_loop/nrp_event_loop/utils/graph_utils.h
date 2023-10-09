@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@
 
 #include "nrp_event_loop/computational_graph/computational_graph_manager.h"
 
+#include "nrp_event_loop/nodes/time/input_time.h"
+
 inline void createPythonGraphFromConfig(const nlohmann::json &config, const ComputationalGraph::ExecMode& execMode,
                                         const boost::python::dict &globalDict)
 {
@@ -51,29 +53,31 @@ inline void createPythonGraphFromConfig(const nlohmann::json &config, const Comp
             throw NRPException::logCreate("Loading of computation graph file \"" + fileName + "\" failed: the file doesn't exist.");
     }
 
+    gm.graphLoadComplete();
+
     gm.configure();
 }
 
-/*!
- * \brief Parses a computational node address returning the node id and the port (if any) contained in the address
- *
- * \param address string containing a computational graph connection address with the format /node_id/port_id
- * \param hasPort if the address contains a port id or just a node id
- * \return a pair with the node and port ids parsed from 'address'
- */
-inline std::pair<std::string, std::string> parseCGAddress(const std::string& address, bool hasPort = true)
+inline std::pair<InputClockNode*, InputIterationNode*> findTimeNodes()
 {
-    if(address.at(0) != '/')
-        throw NRPException::logCreate("Error while parsing address \""+ address +"\". Computational Graph addresses must start with '/'");
+    ComputationalGraphManager& gm = ComputationalGraphManager::getInstance();
+    InputClockNode* _clock = nullptr;
+    InputIterationNode* _iteration = nullptr;
 
-    auto n = address.find('/',1);
-    if(n == std::string::npos && hasPort)
-        throw NRPException::logCreate("Error while parsing address \""+ address +"\". Expected format is '/node_id/port_id'");
+    // Find Clock and Iteration nodes
+    if(gm.getNode("clock_node")) {
+        _clock = dynamic_cast<InputClockNode *>(gm.getNode("clock_node"));
+        if (!_clock)
+            throw NRPException::logCreate(
+                    "Exception in the ComputationalGraph: found Node with id 'clock_node', which is reserved for the input Clock node");
+    }
+    if(gm.getNode("iteration_node")) {
+        _iteration = dynamic_cast<InputIterationNode*>(gm.getNode("iteration_node"));
+        if(!_iteration)
+            throw NRPException::logCreate("Exception in the ComputationalGraph: found Node with id 'iteration_node', which is reserved for the input Iteration node");
+    }
 
-    auto node = hasPort ? address.substr(1, n-1) : address.substr(1);
-    auto port = hasPort ? address.substr(n+1, address.size()) : node;
-
-    return std::make_pair(node, port);
+    return std::make_pair(_clock, _iteration);
 }
 
 #endif //GRAPH_UTILS_H

@@ -5,7 +5,8 @@ set(NAMESPACE_NAME "${PROJECT_NAME}")
 
 set(LIBRARY_NAME "${PROJECT_NAME}")
 set(PYTHON_MODULE_NAME "edlut_grpc")
-set(EXECUTABLE_NAME "NRPEdlutGrpcServerExecutable")
+set(EXECUTABLE_NAME "NRPEdlutEngineExecutable")
+set(EXECUTABLE_ASYNC_NAME "EdlutEngineAsync")
 set(TEST_NAME "${PROJECT_NAME}Tests")
 
 set(LIB_EXPORT_NAME "${LIBRARY_NAME}Targets")
@@ -26,7 +27,8 @@ set(LIB_SRC_FILES
 if(BUILD_EDLUT_ENGINE_SERVER)
     list(APPEND LIB_SRC_FILES
         edlut_grpc_engine/engine_server/edlut_grpc_server.cpp
-        edlut_grpc_engine/engine_server/edlut_grpc_datapack_controller.cpp)
+        edlut_grpc_engine/engine_server/edlut_spikes_datapack_controller.cpp
+        edlut_grpc_engine/engine_server/edlut_currents_datapack_controller.cpp)
 endif()
 
 # List of Python module build files
@@ -38,6 +40,10 @@ if(BUILD_EDLUT_ENGINE_SERVER)
     set(EXEC_SRC_FILES
     edlut_grpc_engine/server_executable/main.cpp
     )
+
+    set(EXEC_ASYNC_SRC_FILES
+            edlut_grpc_engine/server_executable/main_async.cpp
+            )
 endif()
 
 # List testing build files
@@ -57,6 +63,8 @@ if(BUILD_EDLUT_ENGINE_SERVER)
     FetchContent_GetProperties(edlut_sim)
     if(NOT edlut_sim_POPULATED)
         FetchContent_Populate(edlut_sim)
+        set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build EDLUT library shared")
+        set(with-python "3" CACHE STRING "Enable Python binding. Optional: set Python version (2 or 3). [default=ON]")
         if(EDLUT_WITH_CUDA)
             set(with-cuda ON CACHE INTERNAL "Build EDLUT with cuda")
         endif()
@@ -137,6 +145,14 @@ if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
     target_link_libraries(${EXECUTABLE_NAME} ${LIBRARY_NAME})
 endif()
 
+if(NOT "${EXEC_ASYNC_SRC_FILES}" STREQUAL "" AND ENABLE_MQTT)
+    add_executable(${EXECUTABLE_ASYNC_NAME} ${EXEC_ASYNC_SRC_FILES})
+    target_link_libraries(${EXECUTABLE_ASYNC_NAME}
+            ${LIBRARY_NAME}
+            ${NRP_ELE_TARGET}
+            )
+endif()
+
 ##########################################
 ## Tests
 if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
@@ -208,6 +224,11 @@ endif()
 if(TARGET ${EXECUTABLE_NAME})
     install(TARGETS ${EXECUTABLE_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+if(TARGET ${EXECUTABLE_ASYNC_NAME})
+    install(TARGETS ${EXECUTABLE_ASYNC_NAME}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 # create cmake version and config files

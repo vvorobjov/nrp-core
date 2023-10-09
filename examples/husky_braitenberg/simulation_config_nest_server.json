@@ -21,7 +21,10 @@
 			"EngineType": "nest_server",
 			"EngineName": "nest",
 			"NestInitFileName": "braitenberg_nest_server.py",
-			"EngineEnvParams": ["PYNEST_QUIET=1"]
+			"EngineEnvParams": [
+				"PYNEST_QUIET=1",
+				"NEST_SERVER_MODULES=nest,nrp_core,nrp_core.engines.nest_server.brain_devices"
+			]
 		}
 	],
 	"DataPackProcessingFunctions": [

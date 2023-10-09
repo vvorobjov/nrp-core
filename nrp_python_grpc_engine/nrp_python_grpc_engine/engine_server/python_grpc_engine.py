@@ -2,7 +2,7 @@
 
 # NRP Core - Backend infrastructure to synchronize simulations
 #
-# Copyright 2020-2021 NRP Team
+# Copyright 2020-2023 NRP Team
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import urllib.parse
 import json
 import grpc
 from concurrent import futures
-import engine_grpc_pb2 as python_grpc_engine_pb2
-import engine_grpc_pb2_grpc as python_grpc_engine_pb2_grpc
+import nrp_protobuf.engine_grpc_pb2 as python_grpc_engine_pb2
+import nrp_protobuf.engine_grpc_pb2_grpc as python_grpc_engine_pb2_grpc
 
 import time
 
@@ -50,12 +50,13 @@ class StandaloneApplication(python_grpc_engine_pb2_grpc.EngineGrpcServiceService
         return python_grpc_engine_pb2.RunLoopStepReply(engineTime=res)
 
     def setDataPacks(self, request, context):
-        server_callbacks.set_datapack(request)
+        server_callbacks.set_datapacks(request)
         return python_grpc_engine_pb2.SetDataPacksReply()
 
     def getDataPacks(self, request, context):
-        res = server_callbacks.get_datapack(request)
+        res = server_callbacks.get_datapacks(request)
         return res
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -65,9 +66,10 @@ if __name__ == '__main__':
     
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
     python_grpc_engine_pb2_grpc.add_EngineGrpcServiceServicer_to_server(
-        StandaloneApplication(),server)
+        StandaloneApplication(), server)
     server.add_insecure_port(args.serverurl)
     server.start()
     print("grpc server start...")
     server.wait_for_termination()
+
 # EOF

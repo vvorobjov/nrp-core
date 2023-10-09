@@ -1,7 +1,7 @@
 """Python Engine 1. Will get current engine time and make it accessible as a datapack"""
 
 from nrp_core.engines.python_grpc import GrpcEngineScript
-from nrp_core.data.nrp_protobuf import dump_pb2
+from nrp_protobuf import dump_pb2
 
 class Script(GrpcEngineScript):
     def initialize(self):

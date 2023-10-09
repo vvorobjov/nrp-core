@@ -1,7 +1,7 @@
 //
 // NRP Core - Backend infrastructure to synchronize simulations
 //
-// Copyright 2020-2021 NRP Team
+// Copyright 2020-2023 NRP Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -225,6 +225,12 @@ int main(int argc, char *argv[])
     // Validate the resulting config
     SimulationManager::validateConfig(simConfig);
 
+    // Log config
+    if (startParams[SimulationParams::ParamLogConfig.data()].as<SimulationParams::ParamLogConfigT>())
+    {
+        NRPLogger::debug("Working with the config:\n {}", simConfig->dump(2));
+    }
+
     // List of plugin to load
     auto pluginsList = startParams[SimulationParams::ParamPlugins.data()].as<SimulationParams::ParamPluginsT>();
 
@@ -318,7 +324,7 @@ int main(int argc, char *argv[])
 
         NrpCoreServer server(serverAddress, std::move(manager));
 
-        // In server mode ignore SIGINT, otherwise shut the server down nicely
+        // In server mode ignore SIGINT if slave, otherwise shut the server down nicely
         if(isSlave)
             signal(SIGINT, SIG_IGN);
         else {
@@ -326,6 +332,7 @@ int main(int argc, char *argv[])
                 server.stopServerLoop();
             };
             signal(SIGINT, signal_handler);
+            signal(SIGTERM, signal_handler);
         }
 
         server.runServerLoop();
@@ -343,6 +350,7 @@ int main(int argc, char *argv[])
                 NRPLogger::warn("Interruption Signal received. But the simulation is not running, signal will be ignored");
         };
         signal(SIGINT, signal_handler);
+        signal(SIGTERM, signal_handler);
 
         if(res.currentState != SimulationManager::SimState::Failed)
             manager->runSimulationUntilDoneOrTimeout();
@@ -359,6 +367,10 @@ int main(int argc, char *argv[])
     // Force flush stdout and stderr in Python, when output is redirected Python might fail to do it automatically
     if(enginesFD >= 0)
         boost::python::exec("import sys; sys.stdout.flush(); sys.stderr.flush()");
+
+    // Stop external processes
+    for(auto &proc : extProcs)
+        proc->stopProcess(60);
 
 #ifdef MQTT_ON
     NRPMQTTProxy* mqttProxy = &(NRPMQTTProxy::getInstance());

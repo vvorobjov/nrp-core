@@ -1,6 +1,6 @@
 /* * NRP Core - Backend infrastructure to synchronize simulations
  *
- * Copyright 2020-2021 NRP Team
+ * Copyright 2020-2023 NRP Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,28 @@ public:
     virtual bool doCompute() const
     { return _doCompute; }
 
+    /*!
+     * \brief Parses a computational node address returning the node id and the port (if any) contained in the address
+     *
+     * \param address string containing a computational graph connection address with the format /node_id/port_id
+     * \param hasPort if the address contains a port id or just a node id
+     * \return a pair with the node and port ids parsed from 'address'
+     */
+    static std::pair<std::string, std::string> parseNodeAddress(const std::string& address, bool hasPort = true)
+    {
+        if(address.at(0) != '/')
+            throw std::invalid_argument("Error while parsing node address \""+ address +"\". Computational Graph addresses must start with '/'");
+
+        auto n = address.find('/',1);
+        if(n == std::string::npos && hasPort)
+            throw std::invalid_argument("Error while parsing node address \""+ address +"\". Expected format is '/node_id/port_id'");
+
+        auto node = hasPort ? address.substr(1, n-1) : address.substr(1);
+        auto port = hasPort ? address.substr(n+1, address.size()) : node;
+
+        return std::make_pair(node, port);
+    }
+
 protected:
 
     /*!
@@ -114,7 +136,14 @@ protected:
     virtual void graphCycleStartCB()
     { }
 
+    /*!
+     * \brief Function called by the Computational Graph to nodes that the graph has been completely loaded
+     */
+    virtual void graphLoadedCB()
+    { }
+
     friend class ComputationalGraph;
+    friend class ComputationalGraphManager;
     friend class ComputationalGraphPythonNodes_PYTHON_DECORATORS_BASIC_Test;
 
 private:
