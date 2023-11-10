@@ -47,8 +47,8 @@ class Script(PySimEngineScript):
             # All Joints and Muscles can be found in the "*.osim"
             # Obtain the joint data from model "arm_26"
             # In arm_26, the joint set is [offset, r_shoulder, r_elbow]
-            s_val = self.sim_manager.get_model_property("r_shoulder", datapack_type="Joint")
-            e_val = self.sim_manager.get_model_property("r_elbow", datapack_type="Joint")
+            s_val = self.sim_manager.get_model_property("r_shoulder_elev", datapack_type="Joint")
+            e_val = self.sim_manager.get_model_property("r_elbow_flex", datapack_type="Joint")
             # Send data to TF
             self._setDataPack("joints", {"shoulder": s_val, "elbow": e_val})
             self._setDataPack("infos", {"time": self.sim_manager.get_sim_time()})
