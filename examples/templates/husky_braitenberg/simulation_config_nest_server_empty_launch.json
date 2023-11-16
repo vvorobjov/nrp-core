@@ -7,7 +7,7 @@
             "EngineType": "gazebo_grpc",
             "EngineName": "gazebo",
             "ServerAddress": "localhost:9017",
-            "EngineProcCmd": "xvfb-run-nrp /usr/bin/gzserver",
+            "EngineProcCmd": "/usr/xpra-entrypoint.sh /usr/bin/gazebo",
             "GazeboWorldFile": "husky_world.sdf",
             "GazeboSDFModels": [
                 {
@@ -25,7 +25,7 @@
             "NestInitFileName": "braitenberg_nest_server.py",
             "EngineEnvParams": ["PYNEST_QUIET=1"],
             "NestServerHost": "nest-simulator",
-            "NestServerPort": 9000,
+            "NestServerPort": 52425,
             "EngineLaunchCommand": {
                 "LaunchType": "EmptyLaunchCommand"
             }
