@@ -1,5 +1,6 @@
 build
 .vscode
+.devcontainer
 .pytest_cache
 generatedJUnitFiles
 .git
