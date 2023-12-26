@@ -1,0 +1,14 @@
+{
+    "image": "hbpneurorobotics/nrp-gazebo-nest-ubuntu20-env:latest",
+    // "image": "hbpneurorobotics/nrp-ubuntu20-env:latest",
+  
+    "customizations": {
+      "vscode": {
+        "extensions": ["mhutchie.git-graph"]
+      }
+    },
+    "containerEnv": {
+        "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo.cmake"
+    }
+    // "forwardPorts": [3000]
+  }
