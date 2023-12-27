@@ -23,3 +23,6 @@ reports
 .nrp_compile_protobuf
 .build_fn_factory_module
 libFNFactoryModule.so
+
+.env
+examples/opensim_tvb/outputs/

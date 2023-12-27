@@ -136,6 +136,18 @@ services:
         - tvb-env
 
 
+    xpra-opensim-tvb-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - opensim-tvb-env
+
+
     base-nvidia-cuda-env:
         build:
             context: .
