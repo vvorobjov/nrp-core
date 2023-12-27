@@ -1,5 +1,5 @@
 {
-    "image": "hbpneurorobotics/nrp-gazebo-nest-ubuntu20-env:latest",
+    "image": "nexus.neurorobotics.ebrains.eu/nrp-core/nrp-xpra-opensim-tvb-ubuntu20:4.1.1",
     // "image": "hbpneurorobotics/nrp-ubuntu20-env:latest",
   
     "customizations": {
@@ -8,7 +8,8 @@
       }
     },
     "containerEnv": {
-        "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo.cmake"
-    }
-    // "forwardPorts": [3000]
+        "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo.cmake",
+        "NRP_XPRA_PORT": "9876"
+    },
+    "forwardPorts": [9876]
   }

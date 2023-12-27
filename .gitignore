@@ -26,3 +26,4 @@ libFNFactoryModule.so
 
 .env
 examples/opensim_tvb/outputs/
+examples/templates/opensim_tvb/outputs/
