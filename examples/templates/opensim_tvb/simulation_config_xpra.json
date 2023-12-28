@@ -1,6 +1,6 @@
 {
-    "SimulationName": "tvb_opensim",
-    "SimulationDescription": "Example of a simple interaction between OpenSim and TVB. TVB brain model controls movements of an arm, modelled in OpenSim, in a close-loop manner",
+    "SimulationName": "tvb_opensim with xpra",
+    "SimulationDescription": "Example of a simple interaction between OpenSim and TVB, using visualization through xpra. TVB brain model controls movements of an arm, modelled in OpenSim, in a close-loop manner",
     "SimulationTimeout": 50,
     "EngineConfigs": 
     [
@@ -19,6 +19,14 @@
             "EngineTimestep": 0.01,
             "EngineName": "tvb",
             "PythonFileName": "tvb_engine.py"
+        },
+        {
+            "EngineType": "datatransfer_grpc_engine",
+            "EngineName": "datatransfer_engine",
+            "MQTTBroker": "localhost:1883",
+            "simulationID": "0",
+            "MQTTPrefix": "localhost",
+            "dumps": []
         }
     ],
     "DataPackProcessingFunctions":

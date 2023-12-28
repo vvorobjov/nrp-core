@@ -101,6 +101,18 @@ services:
 
 
 
+    nrp-xpra-opensim-tvb:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
+        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-opensim-tvb-ubuntu20${NRP_CORE_TAG}
+        command: bash
+
+
+
     nrp-nvidia-cuda:
         build:
             context: .
