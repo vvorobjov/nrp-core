@@ -9,6 +9,7 @@
     },
     "containerEnv": {
         "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo.cmake",
+        // "CMAKE_CACHE_FILE": ".ci/cmake_cache/opensim.cmake",
         "NRP_XPRA_PORT": "9876"
     },
     "forwardPorts": [9876]
