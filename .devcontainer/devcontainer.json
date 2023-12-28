@@ -1,6 +1,6 @@
 {
-    "image": "nexus.neurorobotics.ebrains.eu/nrp-core/nrp-xpra-opensim-tvb-ubuntu20:4.1.1",
-    // "image": "hbpneurorobotics/nrp-ubuntu20-env:latest",
+    "image": "hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest",
+    // "image": "hbpneurorobotics/nrp-xpra-opensim-tvb-ubuntu20-env:latest",
   
     "customizations": {
       "vscode": {
