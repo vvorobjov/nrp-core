@@ -9,12 +9,12 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 
 # numba (dependency of tvb) requires numpy < 1.22
 
-RUN pip install numpy==1.21
+RUN pip install numpy==1.21 scipy numba==0.55
 
 # Install TVB data
 
 WORKDIR ${HOME}
-RUN git clone https://github.com/the-virtual-brain/tvb-data.git
+RUN git clone https://github.com/the-virtual-brain/tvb-data.git && cd tvb-data && git checkout 354684981b9b3db16e0a28cedb825c2595cae295
 WORKDIR ${HOME}/tvb-data
 RUN sudo python3 setup.py develop
 

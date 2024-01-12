@@ -6,6 +6,7 @@ nlohmann-json3-dev
 libzip-dev
 cython3
 python3-numpy
+python3-matplotlib
 libgrpc++-dev
 protobuf-compiler-grpc
 libprotobuf-dev

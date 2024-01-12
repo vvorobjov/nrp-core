@@ -12,5 +12,6 @@ inetutils-tools
 inetutils-traceroute
 inetutils-ping
 python3-urllib3
+python3-openssl
 nano
 libclang-dev
