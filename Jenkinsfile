@@ -117,7 +117,7 @@ pipeline {
                                 stopProcessingIfError: true
                                 )]
                             )
-                        recordIssues tool: cppCheck(pattern:'build/cppcheck/cppcheck_results.xml'), ignoreQualityGate: true, ignoreFailedBuilds: true
+                        recordIssues tool: cppCheck(pattern:'build/cppcheck/cppcheck_results.xml'), ignoreQualityGate: true
                     }
                 }
 
