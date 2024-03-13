@@ -13,4 +13,5 @@ protobuf-compiler-grpc
 libprotobuf-dev
 python3-pip
 ros-noetic-ros-base
+libopenmpi-dev
 libbrotli-dev
