@@ -6,7 +6,12 @@ generatedJUnitFiles
 .git
 
 Jenkinsfile
-docker-compose.yaml
+docker-compose-env.yaml
+docker-compose-nrp.yaml
 .ci/Jenkinsfile
+build_nrp_core_image.sh
 
 dockerfiles
+
+.env
+.env.template

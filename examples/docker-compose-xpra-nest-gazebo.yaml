@@ -17,7 +17,7 @@ services:
         #     driver: none
 
     xpra-gazebo-service:
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-gazebo-ubuntu20${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         environment:
@@ -38,7 +38,7 @@ services:
         #     driver: none
 
     nrp-core-service:
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-vanilla-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json --floglevel trace -o SimulationTimeout=100

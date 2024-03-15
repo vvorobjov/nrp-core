@@ -9,8 +9,8 @@ services:
             context: .
             dockerfile: dockerfiles/base.Dockerfile
             args:
-                BASE_IMAGE: ubuntu:20.04
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ubuntu:focal
+        image: ${NRP_DOCKER_REGISTRY}/base-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
 
 
@@ -20,21 +20,9 @@ services:
             dockerfile: dockerfiles/nrp-core.Dockerfile
             target: nrp-core-env
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/vanilla.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-vanilla-ubuntu20-env${NRP_CORE_TAG}
-        command: bash
-        depends_on:
-        - base-env
-
-
-    nest-env:
-        build:
-            context: .
-            dockerfile: dockerfiles/nest.Dockerfile
-            args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nest-ubuntu20-env${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
         - base-env
@@ -45,8 +33,8 @@ services:
             context: .
             dockerfile: dockerfiles/gazebo.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
         - base-env
@@ -56,73 +44,62 @@ services:
             context: .
             dockerfile: dockerfiles/xpra.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
         - gazebo-env
 
 
-    gazebo-nest-env:
+    nest-gazebo-env:
         build:
             context: .
-            dockerfile: dockerfiles/gazebo.Dockerfile
+            dockerfile: dockerfiles/nest.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/nest-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - nest-env
+        - gazebo-env
 
 
-    xpra-gazebo-nest-env:
+    xpra-nest-gazebo-env:
         build:
             context: .
             dockerfile: dockerfiles/xpra.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - gazebo-nest-env
+        - nest-gazebo-env
 
 
-    nrp-gazebo-nest-env:
+    nrp-nest-gazebo-env:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             target: nrp-core-env
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - gazebo-nest-env
+        - nest-gazebo-env
 
 
-    nrp-xpra-gazebo-nest-env:
+    nrp-xpra-nest-gazebo-env:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             target: nrp-core-env
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - xpra-gazebo-nest-env
+        - xpra-nest-gazebo-env
 
-
-    tvb-env:
-        build:
-            context: .
-            dockerfile: dockerfiles/tvb.Dockerfile
-            args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/tvb-ubuntu20-env${NRP_CORE_TAG}
-        command: bash
-        depends_on:
-        - base-env
 
 
     opensim-env:
@@ -130,48 +107,48 @@ services:
             context: .
             dockerfile: dockerfiles/opensim.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
         - base-env
 
 
-    opensim-tvb-env:
+    tvb-opensim-env:
         build:
             context: .
-            dockerfile: dockerfiles/opensim.Dockerfile
+            dockerfile: dockerfiles/tvb.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/tvb-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - tvb-env
+        - opensim-env
 
 
-    xpra-opensim-tvb-env:
+    xpra-tvb-opensim-env:
         build:
             context: .
             dockerfile: dockerfiles/xpra.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - opensim-tvb-env
+        - tvb-opensim-env
 
 
-    nrp-xpra-opensim-tvb-env:
+    nrp-xpra-tvb-opensim-env:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             target: nrp-core-env
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
-        - xpra-opensim-tvb-env
+        - xpra-tvb-opensim-env
 
 
     base-nvidia-cuda-env:
@@ -180,7 +157,7 @@ services:
             dockerfile: dockerfiles/base.Dockerfile
             args:
                 BASE_IMAGE: nvidia/cudagl:11.4.2-base-ubuntu20.04
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/base-nvidia-cuda-ubuntu20-env${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/base-nvidia-cuda-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
 
 
@@ -189,8 +166,8 @@ services:
             context: .
             dockerfile: dockerfiles/nvidia_cuda.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-nvidia-cuda-ubuntu20-env${NRP_CORE_TAG}
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nvidia-cuda-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-nvidia-cuda-ubuntu20-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nvidia-cuda-ubuntu20-env:${NRP_CORE_TAG}
         command: bash
         depends_on:
         - base-nvidia-cuda-env

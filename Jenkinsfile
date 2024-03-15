@@ -8,8 +8,10 @@
 pipeline {
     environment {
         TOPIC_BRANCH = selectTopicBranch(env.BRANCH_NAME, env.CHANGE_BRANCH)
-        IMAGE_TAG = TOPIC_BRANCH.replace("/", "-");
+        NRP_CORE_TAG = TOPIC_BRANCH.replace("/", "-");
         BITBUCKET_DOC_REPO = "${env.BRANCH_NAME == "master" ? "hbpneurorobotics" : "nrp-core-dev-docs"}"
+        DockerRegistryUrl = "https://${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}"
+        NRP_DOCKER_REGISTRY = "${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}/nrp-core"
     }
     agent {
         label 'ci_label'
@@ -23,15 +25,26 @@ pipeline {
 
         stage('Build image') {
             steps {
-                bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Image build nrp-core')
-                sh 'export NRP_CORE_TAG=:${IMAGE_TAG}; docker-compose -f docker-compose-env.yaml up --build nrp-gazebo-nest-env'
+                script {
+                    docker.withRegistry("${DockerRegistryUrl}", 'nexusadmin') {
+                        try {
+                            sh 'docker compose -f docker-compose-env.yaml pull nrp-nest-gazebo-env'
+                        }
+                        catch(all) {
+                            sh 'export NRP_CORE_TAG=development; docker compose -f docker-compose-env.yaml pull nrp-nest-gazebo-env'
+                        }
+                        sh './build_nrp_core_image.sh nrp-nest-gazebo-env && docker compose -f docker-compose-env.yaml push nrp-nest-gazebo-env'
+                    }
+                }
             }
         }
 
         stage('Build and test') {
             agent {
                 docker {
-                    image "nrp-core/nrp-gazebo-nest-ubuntu20-env:${IMAGE_TAG}"
+                    registryUrl "${DockerRegistryUrl}"
+                    registryCredentialsId 'nexusadmin'
+                    image "${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}"
                     args '-u nrpuser:nrpgroup --privileged --net=host'
                     reuseNode true
                 }
@@ -40,7 +53,7 @@ pipeline {
 
                 stage('Prepare Build') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'CMake nrp-core')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'CMake nrp-core')
 
                         // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                         sh 'bash .ci/10-prepare-build.sh'
@@ -49,7 +62,7 @@ pipeline {
 
                 stage('Build') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building nrp-core')
 
                         // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                         sh 'bash .ci/20-build.sh'
@@ -58,7 +71,7 @@ pipeline {
 
                 stage('Build Docs') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building documentation')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Building documentation')
 
                         // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                         sh 'bash .ci/25-build_docs.sh'
@@ -73,7 +86,7 @@ pipeline {
 
                 stage('Unit tests') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
 
                         // run simultaneously just one set of tests
                         lock("${NODE_NAME}-nrp-core-unit-tests") {
@@ -86,7 +99,7 @@ pipeline {
 
                 stage('Static tests') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Testing nrp-core')
 
                         // Determine explicitly the shell as bash (needed for proper user-scripts operation)
                         sh 'bash .ci/40-run-cppcheck.sh'
@@ -95,7 +108,7 @@ pipeline {
 
                 stage('Publishing results') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Publishing results for nrp-core')
 
                             xunit (
                             thresholds: [
@@ -126,7 +139,7 @@ pipeline {
                         expression { (env.TOPIC_BRANCH == "development") || (env.TOPIC_BRANCH == "master") }
                     }
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
 
                         sshagent(['vorobev_key']) {
                             sh("""
@@ -156,7 +169,7 @@ pipeline {
 
                 stage('Publishing Sphinx docs') {
                     steps {
-                        bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
+                        // bitbucketStatusNotify(buildState: 'INPROGRESS', buildName: 'Updating documentation')
 
                         // This step requires nexusArtifactUploader plugin
                         // The artifact will be uploaded to
@@ -198,7 +211,7 @@ pipeline {
                 if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
                     slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "warning", message: "NRP-core build of ${env.BRANCH_NAME} branch aborted! (${BUILD_URL})\n\n${commitMessage}")
             }
-            bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build aborted!')
+            // bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build aborted!')
         }
         failure {
             script{
@@ -206,7 +219,7 @@ pipeline {
                 if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
                     slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "danger", message: "NRP-core build of ${env.BRANCH_NAME} branch failed! (${BUILD_URL})\n\n${commitMessage}")
             }
-            bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build failed, see console output!')
+            // bitbucketStatusNotify(buildState: 'FAILED', buildDescription: 'Build failed, see console output!')
         }
         success{
             script{
@@ -214,7 +227,7 @@ pipeline {
                 if (env.BRANCH_NAME == 'development' || env.BRANCH_NAME == 'master')
                     slackSend(channel: "${env.NRP_CORE_SLACK_CHANNEL}", color: "good", message: "NRP-core build of ${env.BRANCH_NAME} branch succeeded! (${BUILD_URL})\n\n${commitMessage}")
             }
-            bitbucketStatusNotify(buildState: 'SUCCESSFUL', buildDescription: 'branch ' + env.BRANCH_NAME)
+            // bitbucketStatusNotify(buildState: 'SUCCESSFUL', buildDescription: 'branch ' + env.BRANCH_NAME)
         }
     }
 }

@@ -8,8 +8,14 @@ if [[ $# -ne 1 ]] ; then
     exit 1
 fi
 
-export NRP_DOCKER_REGISTRY="${NRP_DOCKER_REGISTRY:-}"
-export NRP_CORE_TAG="${NRP_CORE_TAG:-}"
+if [ -f ".env" ]; then
+    source .env
+else
+    echo ".env file not found. Skipping..."
+fi
+
+export NRP_DOCKER_REGISTRY="${NRP_DOCKER_REGISTRY:-nrp-local}"
+export NRP_CORE_TAG="${NRP_CORE_TAG:-latest}"
 
 target_service_name=$1
 
@@ -35,9 +41,10 @@ function build_service {
     local base_image=$(echo "$build_info" | grep BASE_IMAGE | awk -F 'BASE_IMAGE:' '{print $2}' | xargs)
     local image_name=$(echo "$build_info" | grep image | awk -F 'image:' '{print $2}' | xargs)
 
-    if [[ $base_image == ${NRP_DOCKER_REGISTRY}nrp-core* ]]; then
+    if [[ $base_image == ${NRP_DOCKER_REGISTRY}/* ]]; then
         echo "Trying to build the base image $base_image"
-        base_image_service_name=$(awk -v RS= -v FS="\n" -v image_name="${base_image}" '$0 ~ image_name {print $1}' "${service_env_file}" | awk -F':' '{print $1}')
+        base_image_service_name=$(envsubst < "${service_env_file}" | awk -v RS= -v FS="\n" -v image_name="image: ${base_image}" '$0 ~ image_name {print $1}' | awk -F':' '{print $1}')
+        echo "Looking for the service $base_image_service_name"
         build_service $service_env_file $base_image_service_name
     else
         echo "The base image $base_image needs no building"

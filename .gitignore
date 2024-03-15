@@ -24,6 +24,6 @@ reports
 .build_fn_factory_module
 libFNFactoryModule.so
 
-.env
 examples/opensim_tvb/outputs/
 examples/templates/opensim_tvb/outputs/
+.env

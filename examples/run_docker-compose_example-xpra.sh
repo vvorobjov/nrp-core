@@ -9,7 +9,7 @@ if [[ -z "$EXAMPLES_PATH" ]] ; then
 fi
 
 export NRPCORE_EXPERIMENT_DIR="$EXAMPLES_PATH/husky_braitenberg/"
-export NRP_DOCKER_REGISTRY=nexus.neurorobotics.ebrains.eu/
-export NRP_CORE_TAG=":xpra"
+export NRP_DOCKER_REGISTRY=nexus.neurorobotics.ebrains.eu/nrp-core
+export NRP_CORE_TAG=":latest"
 
 docker-compose -f "$EXAMPLES_PATH/docker-compose-xpra-nest-gazebo.yaml" up --abort-on-container-exit --remove-orphans

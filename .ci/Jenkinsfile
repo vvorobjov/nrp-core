@@ -3,14 +3,14 @@
 def jobs = [
     [
         name: "Nest+Gazebo Examples",
-        image: "nrp-gazebo-nest-ubuntu20",
+        image: "nrp-nest-gazebo-ubuntu20",
         cmakeconf: ".ci/cmake_cache/nest-gazebo.cmake",
         build: false,
         cmakeProj: "./examples/"
     ],
     [
         name: "Nest+Gazebo -ROS-MQTT Build+Examples",
-        image: "nrp-gazebo-nest-ubuntu20-env",
+        image: "nrp-nest-gazebo-ubuntu20-env",
         cmakeconf: ".ci/cmake_cache/nest-gazebo-nomqtt-noros.cmake",
         build: true,
         cmakeProj: ""
@@ -45,7 +45,7 @@ def jobs = [
     ],
     [
         name: "Opensim+TVB Examples",
-        image: "nrp-opensim-tvb-ubuntu20",
+        image: "nrp-tvb-opensim-ubuntu20",
         cmakeconf: ".ci/cmake_cache/opensim-tvb-tests.cmake",
         build: false,
         cmakeProj: "./examples/"
@@ -61,9 +61,9 @@ def generateStage(job) {
         stage("${job.name}")
         {
             node('ci_label') {
-                docker.withRegistry("https://${DockerRegistryUrl}", 'nexusadmin') {
-                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").pull()
-                    docker.image("${DockerRegistryUrl}/nrp-core/${job.image}:${params.IMAGE_TAG}").inside {
+                docker.withRegistry("${DockerRegistryUrl}", 'nexusadmin') {
+                    docker.image("${NRP_DOCKER_REGISTRY}/${job.image}:${params.IMAGE_TAG}").pull()
+                    docker.image("${NRP_DOCKER_REGISTRY}/${job.image}:${params.IMAGE_TAG}").inside {
                         checkout scm
                         sh 'git submodule update --init'
                         echo "This is ${job.name}."
@@ -109,7 +109,8 @@ def generateStage(job) {
 // Pipeline for the nrp-core images build
 pipeline {
     environment {
-        DockerRegistryUrl = "${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}"
+        DockerRegistryUrl = "https://${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}"
+        NRP_DOCKER_REGISTRY = "${env.NEXUS_REGISTRY_IP}:${env.NEXUS_REGISTRY_PORT}/nrp-core"
     }
     agent none
     options {
@@ -127,14 +128,13 @@ pipeline {
                 label 'cd_label'
             }
             steps {
-                sh 'git submodule update --init'
-                sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml build; docker-compose -f docker-compose-nrp.yaml build --parallel"
-                withCredentials([usernamePassword(credentialsId: 'nexusadmin', usernameVariable: 'USER', passwordVariable: 'PASSWORD')])
-                {
-                    sh 'docker login -u $USER -p $PASSWORD ${DockerRegistryUrl}'
-                    sh "export NRP_CORE_TAG=:${params.IMAGE_TAG}; export NRP_DOCKER_REGISTRY=${DockerRegistryUrl}/; docker-compose -f docker-compose-env.yaml push; docker-compose -f docker-compose-nrp.yaml push"
+                script {
+                    docker.withRegistry("${DockerRegistryUrl}", 'nexusadmin') {
+                        sh 'git submodule update --init'
+                        sh "export NRP_CORE_TAG=${params.IMAGE_TAG}; docker compose -f docker-compose-env.yaml build; docker compose -f docker-compose-nrp.yaml build --parallel"
+                        sh "export NRP_CORE_TAG=${params.IMAGE_TAG}; docker compose -f docker-compose-env.yaml push; docker compose -f docker-compose-nrp.yaml push"
+                    }
                 }
-                sh "docker logout ${DockerRegistryUrl}"
             }
             post {
                 aborted {

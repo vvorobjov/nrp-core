@@ -10,9 +10,9 @@ services:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/base-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/vanilla.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-vanilla-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
@@ -22,9 +22,9 @@ services:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/gazebo.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
@@ -34,33 +34,33 @@ services:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-gazebo-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/gazebo.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-gazebo-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
 
-    nrp-xpra-gazebo-nest:
+    nrp-xpra-nest-gazebo:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-nest-gazebo-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
 
-    nrp-gazebo-nest:
+    nrp-nest-gazebo:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/gazebo-nest-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
@@ -70,45 +70,45 @@ services:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-opensim-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-opensim-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
 
-    nrp-tvb:
+    # nrp-tvb:
+    #     build:
+    #         context: .
+    #         dockerfile: dockerfiles/nrp-core.Dockerfile
+    #         args:
+    #             BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/tvb-ubuntu20-env:${NRP_CORE_TAG}
+    #             CMAKE_CACHE_FILE: .ci/cmake_cache/tvb.cmake
+    #     image: ${NRP_DOCKER_REGISTRY}/nrp-tvb-ubuntu20:${NRP_CORE_TAG}
+    #     command: bash
+
+
+
+    nrp-tvb-opensim:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/tvb-ubuntu20-env${NRP_CORE_TAG}
-                CMAKE_CACHE_FILE: .ci/cmake_cache/tvb.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-tvb-ubuntu20${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
+        image: ${NRP_DOCKER_REGISTRY}/nrp-tvb-opensim-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
 
-    nrp-opensim-tvb:
+    nrp-xpra-tvb-opensim:
         build:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-opensim-tvb-ubuntu20${NRP_CORE_TAG}
-        command: bash
-
-
-
-    nrp-xpra-opensim-tvb:
-        build:
-            context: .
-            dockerfile: dockerfiles/nrp-core.Dockerfile
-            args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/xpra-opensim-tvb-ubuntu20-env${NRP_CORE_TAG}
-                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-xpra-opensim-tvb-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-tvb-opensim-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
 
@@ -118,8 +118,8 @@ services:
             context: .
             dockerfile: dockerfiles/nrp-core.Dockerfile
             args:
-                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}nrp-core/nvidia-cuda-ubuntu20-env${NRP_CORE_TAG}
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nvidia-cuda-ubuntu20-env:${NRP_CORE_TAG}
                 CMAKE_CACHE_FILE: .ci/cmake_cache/nrp-nvidia-cuda.cmake
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-nvidia-cuda-ubuntu20${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nvidia-cuda-ubuntu20:${NRP_CORE_TAG}
         command: bash
 
