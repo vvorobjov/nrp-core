@@ -31,7 +31,7 @@ pipeline {
                             sh 'docker compose -f docker-compose-env.yaml pull nrp-nest-gazebo-env'
                         }
                         catch(all) {
-                            sh 'export NRP_CORE_TAG=development; docker compose -f docker-compose-env.yaml pull nrp-nest-gazebo-env'
+                            sh 'echo "The CI image with the branch tag does not exist"'
                         }
                         sh './build_nrp_core_image.sh nrp-nest-gazebo-env && docker compose -f docker-compose-env.yaml push nrp-nest-gazebo-env'
                     }
