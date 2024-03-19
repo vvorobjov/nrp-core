@@ -11,8 +11,7 @@
             "EngineTimestep": 0.01,
             "PythonFileName": "opensim_engine.py",
             "WorldFileName":"arm26/arm26_ground_offset.osim",
-            "Visualizer": true,
-            "EngineProcCmd": "/usr/xpra-entrypoint.sh python_json_engine.py"
+            "Visualizer": false
         },
         {
             "EngineType": "python_json",
