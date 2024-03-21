@@ -1,0 +1,17 @@
+{
+	"SimulationName": "build_experiment",
+	"SimulationDescription": "This experiment launches the build JSON engine and passes some data from the engine to the transceiver function",
+	"SimulationTimeout": 1,
+	"EngineConfigs": [
+		{
+			"EngineType": "build_json_engine",
+			"EngineName": "build_engine"
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}

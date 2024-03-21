@@ -15,7 +15,7 @@ else
 fi
 
 export NRP_DOCKER_REGISTRY="${NRP_DOCKER_REGISTRY:-nrp-local}"
-export NRP_CORE_TAG="${NRP_CORE_TAG:-latest}"
+export NRP_CORE_TAG="${NRP_CORE_TAG:-local}"
 
 target_service_name=$1
 

@@ -143,7 +143,7 @@ make nrp_doxygen
 
 ## Basic Information
 
- - The project is divided into multiple libraries, separated by folders:
+ - The project is divided into multiple libraries, separated by folders, that are stored in `src` firectory:
      - nrp_general_library: Main Library. Contains classes and methods to interface with Python, Engines, and Transceiver-Functions
      - nrp_engine_protocols: Engine interfaces implementing server/client communication for different communication protocols
      - nrp_nest_engines: Nest Engine

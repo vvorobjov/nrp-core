@@ -1,0 +1,6 @@
+{
+	"EngineConfig": {
+			"EngineName": "build_engine",
+			"ProtobufPackages": ["EngineTest"]
+		}
+}

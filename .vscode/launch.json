@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch NRP-Core with the config",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:NRP_INSTALL_DIR}/bin/NRPCoreSim",
+            "args": ["-c", "${file}"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "${env:NRP_INSTALL_DIR}/lib:${env:NRP_DEPS_INSTALL_DIR}/lib:${env:NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:${env:LD_LIBRARY_PATH}"
+                },
+                {
+                    "name": "PYTHONPATH",
+                    "value": "${env:NRP_INSTALL_DIR}/lib/python3.8/site-packages:${env:NRP_DEPS_INSTALL_DIR}/lib/python3.8/site-packages:${env:PYTHONPATH}"
+                },
+                {
+                    "name": "PATH",
+                    "value": "${env:NRP_INSTALL_DIR}/bin:${env:NRP_DEPS_INSTALL_DIR}/bin:${env:PATH}"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+
+    ]
+}

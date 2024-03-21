@@ -80,7 +80,7 @@ Below are listed the parameters required to configure DockerLauncher:
 
 The complete schema is listed below:
 
-\include config_schemas/launch_commands/docker_launcher_cmd.json
+\include src/config_schemas/launch_commands/docker_launcher_cmd.json
 
 \subsection docker_launcher_engines Usage
 

@@ -1,0 +1,25 @@
+{
+    "cmake.configureOnOpen": false,
+    "cmake.options.statusBarVisibility": "compact",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureEnvironment": {
+        "LD_LIBRARY_PATH": "${env:NRP_INSTALL_DIR}/lib:${env:NRP_DEPS_INSTALL_DIR}/lib:${env:NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:${env:LD_LIBRARY_PATH}"
+    },
+    "cmake.configureSettings":{
+        "CMAKE_INSTALL_PREFIX": "${env:NRP_INSTALL_DIR}",
+        "NRP_DEP_CMAKE_INSTALL_PREFIX": "${env:NRP_DEPS_INSTALL_DIR}",
+        "NEST_INSTALL_DIR": "${env:NRP_DEPS_INSTALL_DIR}",
+        "COVERAGE": true,
+        "BUILD_RST": false,
+        "ENABLE_GAZEBO": false,
+        "BUILD_GAZEBO_ENGINE_SERVER": false,
+        "ENABLE_NEST": false,
+        "BUILD_NEST_ENGINE_SERVER": false,
+        "ENABLE_EDLUT": false,
+        "ENABLE_SPINNAKER": false,
+        "ENABLE_ROS": true,
+        "ENABLE_MQTT": true,
+        "ENABLE_TESTING": true,
+        "ENABLE_EXAMPLES_TESTING": false
+    }
+}

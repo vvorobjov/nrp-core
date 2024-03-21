@@ -29,9 +29,9 @@ WORKDIR ${HOME}
 RUN echo '. /usr/share/gazebo-11/setup.sh' >> ${HOME}/.bashrc
 
 # Define entrypoint
-COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/xvfb-run-gazebo-runcmd.bash /usr/xvfb-run-gazebo-runcmd.bash
+COPY --chown=${NRP_USER}:${NRP_GROUP} src/nrp_scripts/xvfb-run-gazebo-runcmd.bash /usr/xvfb-run-gazebo-runcmd.bash
 RUN chmod +x /usr/xvfb-run-gazebo-runcmd.bash
-COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/run-gazebo-runcmd.bash /usr/run-gazebo-runcmd.bash
+COPY --chown=${NRP_USER}:${NRP_GROUP} src/nrp_scripts/run-gazebo-runcmd.bash /usr/run-gazebo-runcmd.bash
 RUN chmod +x /usr/run-gazebo-runcmd.bash
 
 # EOF

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package Dump;
+
+/*
+ * Data going to Data Stream Engine as string
+ */
+
+message String
+{
+    string string_stream  = 5;
+}
+
+message ArrayFloat
+{
+    repeated float float_stream = 5;
+    repeated uint32 dims = 6;
+}
+
+
+// EOF

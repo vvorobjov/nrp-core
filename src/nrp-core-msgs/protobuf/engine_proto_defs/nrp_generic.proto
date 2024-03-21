@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package NrpGenericProto;
+
+message ArrayString
+{
+    repeated string array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayBytes
+{
+    repeated bytes array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayFloat
+{
+    repeated float array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayDouble
+{
+    repeated double array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayInt32
+{
+    repeated int32 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayInt64
+{
+    repeated int64 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArraySInt32
+{
+    repeated sint32 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArraySInt64
+{
+    repeated sint64 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayUInt32
+{
+    repeated uint32 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayUInt64
+{
+    repeated uint64 array = 1;
+    repeated uint32 shape = 2;
+}
+
+message ArrayBool
+{
+    repeated bool array = 1;
+    repeated uint32 shape = 2;
+}
+
+enum IMAGE_TYPE
+{
+    OTHER  = 0;
+
+    RGB8   = 1;
+    RGBA8  = 2;
+    RGB16  = 3;
+    RGBA16 = 4;
+    BGR16  = 5;
+    BGRA16 = 6;
+    MONO8  = 7;
+    MONO16 = 8;
+
+    BAYER_RGGB8  = 9;
+    BAYER_BGGR8  = 10;
+    BAYER_GBRG8  = 11;
+    BAYER_GRBG8  = 12;
+    BAYER_RGGB16 = 13;
+    BAYER_BGGR16 = 14;
+    BAYER_GBRG16 = 15;
+    BAYER_GRBG16 = 16;
+}
+
+message Image
+{
+    uint32     height      = 1;
+    uint32     width       = 2;
+    uint32     step        = 3;  // Full row length in bytes
+    IMAGE_TYPE type        = 4;
+    bool       isBigEndian = 5;
+    bytes      data        = 6;
+}
+
+// EOF

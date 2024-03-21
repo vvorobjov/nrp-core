@@ -384,7 +384,7 @@ install(DIRECTORY "${HEADER_DIRECTORY}" "${CMAKE_CURRENT_BINARY_DIR}/include/${H
 )
 
 # Install configuration schemas
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/${NRP_CONFIG_DIR}"
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/${NRP_CONFIG_DIR}"
         DESTINATION
         ${CMAKE_INSTALL_LIBDIR}
         FILES_MATCHING

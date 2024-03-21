@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package NrpCore;
+
+import "google/protobuf/any.proto";
+import "engine_grpc.proto";
+
+service NrpCore
+{
+    rpc initialize     (EmptyMessage)   returns (InitializeResponse) {}
+    rpc runLoop        (RunLoopMessage) returns (RunLoopResponse)    {}
+    rpc runUntilTimeout(EmptyMessage)   returns (RunLoopResponse)    {}
+    rpc stopLoop       (EmptyMessage)   returns (Response)           {}
+    rpc reset          (ResetMessage)   returns (ResetResponse)      {}
+    rpc shutdown       (EmptyMessage)   returns (Response)           {}
+}
+
+message EmptyMessage
+{
+
+}
+
+message JsonMessage
+{
+    string data = 1;
+}
+
+message SimStateMessage
+{
+    string currentState = 1;
+    string errorMsg = 2;
+}
+
+message Response
+{
+    SimStateMessage simState = 1;
+}
+
+message TrajectoryMessage
+{
+    int32               dataIndex = 1;
+    google.protobuf.Any data      = 2;
+}
+
+message Trajectory
+{
+    repeated TrajectoryMessage jsonTrajectoryMessages  = 1;
+    repeated TrajectoryMessage protoTrajectoryMessages = 2;
+}
+
+message InitializeResponse
+{
+    SimStateMessage simState   = 1;
+    Trajectory      trajectory = 2;
+}
+
+message DataPacks
+{
+    repeated EngineGrpc.DataPackMessage jsonDataPacks = 2;
+    repeated EngineGrpc.DataPackMessage protoDataPacks = 3;
+}
+
+message RunLoopResponse
+{
+    SimStateMessage simState    = 1;
+    bool            doneFlag    = 2;
+    bool            timeoutFlag = 3;
+    Trajectory      trajectory  = 4;
+}
+
+message RunLoopMessage
+{
+    int32     numIterations = 1;
+    DataPacks dataPacks     = 2;
+}
+
+message ResetMessage
+{
+    DataPacks dataPacks = 1;
+}
+
+message ResetResponse
+{
+    SimStateMessage simState   = 1;
+    Trajectory      trajectory = 2;
+}
+
+// EOF

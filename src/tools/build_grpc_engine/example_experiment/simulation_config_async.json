@@ -1,0 +1,11 @@
+{
+  "SimulationLoop": "EventLoop",
+  "ComputationalGraph": ["fn_mqtt.py"],
+  "MQTTNode": {},
+  "ExternalProcesses" : [
+    {
+      "ProcCmd": "BuildAsync",
+      "ProcStartParams": ["-c", "engine_async_conf.json", "--loglevel=info"]
+    }
+  ]
+}

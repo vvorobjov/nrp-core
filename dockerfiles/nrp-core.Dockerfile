@@ -73,7 +73,15 @@ ENV CMAKE_CACHE_FILE ${CMAKE_CACHE_FILE}
 RUN mkdir -p ${HOME}/nrp-core-src
 # TODO: copy source files more elegant, but without breaking the cache
 # Copying the root (.) immediatly breaks the cache
-COPY --chown=${NRP_USER}:${NRP_GROUP} . ${HOME}/nrp-core-src/
+COPY --chown=${NRP_USER}:${NRP_GROUP} src ${HOME}/nrp-core-src/src
+COPY --chown=${NRP_USER}:${NRP_GROUP} docs ${HOME}/nrp-core-src/docs
+COPY --chown=${NRP_USER}:${NRP_GROUP} examples ${HOME}/nrp-core-src/examples
+COPY --chown=${NRP_USER}:${NRP_GROUP} cmake ${HOME}/nrp-core-src/cmake
+COPY --chown=${NRP_USER}:${NRP_GROUP} CMakeLists.txt ${HOME}/nrp-core-src/CMakeLists.txt
+COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/cmake_cache ${HOME}/nrp-core-src/.ci/cmake_cache
+COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/11-prepare-build.sh ${HOME}/nrp-core-src/.ci/11-prepare-build.sh
+COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/20-build.sh ${HOME}/nrp-core-src/.ci/20-build.sh
+
 RUN cd ${HOME}/nrp-core-src && ls -al && bash .ci/11-prepare-build.sh && bash .ci/20-build.sh
 
 
@@ -90,12 +98,12 @@ ENV PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
 
 COPY --from=nrp-core-builder ${NRP_INSTALL_DIR} ${NRP_INSTALL_DIR}
 COPY --from=nrp-core-builder ${NRP_DEPS_INSTALL_DIR} ${NRP_DEPS_INSTALL_DIR}
-COPY --from=nrp-core-builder ${HOME}/nrp-core-src/examples/templates ${NRP_TEMPLATES_DIR}
+COPY --chown=${NRP_USER}:${NRP_GROUP} templates ${NRP_TEMPLATES_DIR}
 
 # Define entrypoint
 WORKDIR ${HOME}
 
-COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/nrp-core-entrypoint.bash /usr/nrp-core-entrypoint.bash
+COPY --chown=${NRP_USER}:${NRP_GROUP} src/nrp_scripts/nrp-core-entrypoint.bash /usr/nrp-core-entrypoint.bash
 RUN chmod +x /usr/nrp-core-entrypoint.bash
 ENTRYPOINT ["/usr/nrp-core-entrypoint.bash"]
 CMD ["/bin/bash"]

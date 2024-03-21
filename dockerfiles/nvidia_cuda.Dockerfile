@@ -11,7 +11,7 @@ RUN wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-
 RUN sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list http://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
 RUN sudo apt update && sudo apt install -y vulkan-sdk
 
-COPY nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
+COPY src/nvidia_icd.json /etc/vulkan/icd.d/nvidia_icd.json
 
 WORKDIR ${HOME}
 

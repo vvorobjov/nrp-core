@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+/*
+ * This file provides a set of wrappers for generic protobuf types.
+ * It is a subset of the "well-known types":
+ * https://protobuf.dev/reference/protobuf/google.protobuf/
+ * The re-definitions provided here are necessary to create python bindings
+ * for the DataPacks used by the Transceiver Functions.
+ */
+
+package Wrappers;
+
+message BoolValue
+{
+    bool value = 1;
+}
+
+message BytesValue
+{
+    bytes value = 1;
+}
+
+message FloatValue
+{
+    float value = 1;
+}
+
+message DoubleValue
+{
+    double value = 1;
+}
+
+message Int32Value
+{
+    int32 value = 1;
+}
+
+message Int64Value
+{
+    int64 value = 1;
+}
+
+message StringValue
+{
+    string value = 1;
+}
+
+// EOF

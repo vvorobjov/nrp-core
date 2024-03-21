@@ -17,8 +17,8 @@ RUN sudo mkdir -p /run/user/1000/xpra && sudo chown ${NRP_USER} /run/user/1000/x
     sudo mkdir -p /run/xpra && sudo chown ${NRP_USER} /run/xpra
 RUN sudo bash -c 'echo "LANG=en_US.UTF-8" >> /etc/locale.conf'
 
-COPY --chown=${NRP_USER}:${NRP_GROUP} xpraconf/xpra.conf ${HOME}/xpra/xpra.conf
-COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/xpra-entrypoint.sh /usr/xpra-entrypoint.sh
+COPY --chown=${NRP_USER}:${NRP_GROUP} src/xpraconf/xpra.conf ${HOME}/xpra/xpra.conf
+COPY --chown=${NRP_USER}:${NRP_GROUP} src/nrp_scripts/xpra-entrypoint.sh /usr/xpra-entrypoint.sh
 RUN chmod +x /usr/xpra-entrypoint.sh
 
 ENV NRP_XPRA_PORT 9876

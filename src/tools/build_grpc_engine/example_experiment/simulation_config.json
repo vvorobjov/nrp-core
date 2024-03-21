@@ -1,0 +1,18 @@
+{
+	"SimulationName": "example_experiment",
+	"SimulationDescription": "This experiment launches the build gRPC engine and passes some data from the engine to the transceiver function",
+	"SimulationTimeout": 1,
+	"EngineConfigs": [
+		{
+			"EngineType": "build_grpc_engine",
+			"EngineName": "build_engine",
+			"ProtobufPackages": ["EngineTest"]
+		}
+	],
+	"DataPackProcessingFunctions": [
+		{
+			"Name": "tf_1",
+			"FileName": "tf_1.py"
+		}
+	]
+}
