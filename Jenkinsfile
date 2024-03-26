@@ -28,12 +28,12 @@ pipeline {
                 script {
                     docker.withRegistry("${DockerRegistryUrl}", 'nexusadmin') {
                         try {
-                            sh 'docker compose -f docker-compose-env.yaml pull nrp-nest-gazebo-env'
+                            sh 'docker compose pull nrp-nest-gazebo-env'
                         }
                         catch(all) {
                             sh 'echo "The CI image with the branch tag does not exist"'
                         }
-                        sh './build_nrp_core_image.sh nrp-nest-gazebo-env && docker compose -f docker-compose-env.yaml push nrp-nest-gazebo-env'
+                        sh './build_nrp_core_image.sh nrp-nest-gazebo-env && docker compose push nrp-nest-gazebo-env'
                     }
                 }
             }

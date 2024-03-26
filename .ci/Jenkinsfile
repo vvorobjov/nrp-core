@@ -119,6 +119,7 @@ pipeline {
     }
     parameters {
         string(defaultValue: 'latest', name: 'IMAGE_TAG', description: 'The tag name for the built images', trim: true)
+        string(defaultValue: 'all', name: 'BUILD_TARGET', description: 'The service name to build', trim: true)
     }
 
     stages {
@@ -130,9 +131,15 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("${DockerRegistryUrl}", 'nexusadmin') {
-                        sh 'git submodule update --init'
-                        sh "export NRP_CORE_TAG=${params.IMAGE_TAG}; docker compose -f docker-compose-env.yaml build; docker compose -f docker-compose-nrp.yaml build --parallel"
-                        sh "export NRP_CORE_TAG=${params.IMAGE_TAG}; docker compose -f docker-compose-env.yaml push; docker compose -f docker-compose-nrp.yaml push"
+                        // Using set -e to stop pipeline execution on error
+                        sh """
+                            set -e
+                            git submodule update --init
+                            export NRP_CORE_TAG=${params.IMAGE_TAG}
+                            export COMPOSE_PARALLEL_LIMIT=2
+                            ./build_nrp_core_image.sh ${params.BUILD_TARGET}
+                            docker compose push ${params.BUILD_TARGET == "all" ? "" : params.BUILD_TARGET}
+                        """
                     }
                 }
             }
@@ -168,6 +175,10 @@ pipeline {
         }
 
         stage('Build and Test'){
+            when
+            {
+                expression { params.BUILD_TARGET == 'all' }
+            }
             steps
             {
                 script{

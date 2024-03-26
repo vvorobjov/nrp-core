@@ -1,7 +1,7 @@
 /*! \page docker_compose Building NRPCore Docker images
 
 This page describes how to use the provided dockerfiles to build docker images containing nrp-core and necessary dependencies to run Engines or whole NRPCore experiments in them.
-For this purpose, the file `docker-compose-env.yaml` and `docker-compose-nrp.yaml` in the root folder can be used to build images from docker-compose. The first file `docker-compose-env.yaml` describes the rules for the building of the NRP-Core environment images (without NRP-Core installed inside). The second one `docker-compose-nrp.yaml` describes the rules for the building of the NRP-Core images.
+For this purpose, the file `docker-compose.yaml` in the root folder can be used to build images by Docker Compose. The file `docker-compose.yaml` describes the rules for the building of the NRP-Core environment images (without NRP-Core installed inside) as well as the rules for the building of the NRP-Core images.
 The Docker registry and image tags are defined with the means of the environment variables. For convenience, one can use `.env` file in the root directory. In order to create one, copy the template and redefine the environment variables if needed.
 
 \code

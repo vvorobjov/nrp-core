@@ -4,7 +4,7 @@ set -e
 
 if [[ $# -ne 1 ]] ; then
     echo 'This script requires a Docker service name as an argument.'
-    echo 'Pick a service name from docker-compose-nrp.yaml to build and provide it as an argument.'
+    echo 'Pick a service name from docker-compose.yaml to build and provide it as an argument.'
     exit 1
 fi
 
@@ -19,8 +19,7 @@ export NRP_CORE_TAG="${NRP_CORE_TAG:-local}"
 
 target_service_name=$1
 
-service_env_file="docker-compose-env.yaml"
-service_nrp_file="docker-compose-nrp.yaml"
+docker_compose_file="docker-compose.yaml"
 
 function build_service {
     local service_file=$1
@@ -43,9 +42,9 @@ function build_service {
 
     if [[ $base_image == ${NRP_DOCKER_REGISTRY}/* ]]; then
         echo "Trying to build the base image $base_image"
-        base_image_service_name=$(envsubst < "${service_env_file}" | awk -v RS= -v FS="\n" -v image_name="image: ${base_image}" '$0 ~ image_name {print $1}' | awk -F':' '{print $1}')
+        base_image_service_name=$(envsubst < "${docker_compose_file}" | awk -v RS= -v FS="\n" -v image_name="image: ${base_image}" '$0 ~ image_name {print $1}' | awk -F':' '{print $1}')
         echo "Looking for the service $base_image_service_name"
-        build_service $service_env_file $base_image_service_name
+        build_service $docker_compose_file $base_image_service_name
     else
         echo "The base image $base_image needs no building"
     fi
@@ -58,10 +57,8 @@ function build_service {
     fi
 }
 
-# Define Docker Compose files
-compose_files=("docker-compose-nrp.yaml" "docker-compose-env.yaml")
-
-# Build service
-for compose_file in "${compose_files[@]}"; do
-    build_service $compose_file $target_service_name
-done
+if [ "$target_service_name" = "all" ]; then
+    docker compose -f "${docker_compose_file}" build
+else
+    build_service $docker_compose_file $target_service_name
+fi

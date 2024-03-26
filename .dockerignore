@@ -8,6 +8,7 @@ generatedJUnitFiles
 Jenkinsfile
 docker-compose-env.yaml
 docker-compose-nrp.yaml
+docker-compose.yaml
 .ci/Jenkinsfile
 build_nrp_core_image.sh
 
