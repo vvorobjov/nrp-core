@@ -84,7 +84,12 @@ class EngineGrpcClient
                 this->_rpcTimeout = SimulationTime::zero();
             }
 
-            this->validateServerAddress();
+            std::string launchType = this->engineConfig().at("EngineLaunchCommand").at("LaunchType");
+
+            if (launchType != "EmptyLaunchCommand")
+            {
+                this->validateServerAddress();
+            }
 
             this->_serverAddress = this->engineConfig().at("ServerAddress");
             _channel = grpc::CreateChannel(_serverAddress, grpc::InsecureChannelCredentials());

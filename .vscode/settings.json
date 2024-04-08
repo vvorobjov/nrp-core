@@ -7,6 +7,7 @@
     },
     "cmake.configureSettings":{
         "CMAKE_INSTALL_PREFIX": "${env:NRP_INSTALL_DIR}",
+        "CMAKE_BUILD_TYPE": "Debug",
         "NRP_DEP_CMAKE_INSTALL_PREFIX": "${env:NRP_DEPS_INSTALL_DIR}",
         "NEST_INSTALL_DIR": "${env:NRP_DEPS_INSTALL_DIR}",
         "COVERAGE": true,
