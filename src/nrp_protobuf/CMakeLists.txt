@@ -61,11 +61,9 @@ find_package(
 
 # Protobuf: google's Protocol Buffers library
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
-message(STATUS "Using protobuf ${PROTOBUF_VERSION}")
 
 # gRPC: google's Remote Procedure Calls library
-pkg_check_modules(GRPC REQUIRED grpc++)
-message(STATUS "Using gRPC ${GRPC_VERSION}")
+pkg_check_modules(GRPC REQUIRED grpc++=1.16.1)
 
 # Protobuf compiler
 find_program(PROTOC protoc)
