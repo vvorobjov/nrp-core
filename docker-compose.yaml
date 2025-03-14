@@ -188,6 +188,18 @@ services:
         - nrp-vanilla-env
 
 
+    nrp-pybullet:
+        build:
+            context: .
+            dockerfile: dockerfiles/pybullet.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-pybullet-ubuntu20:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nrp-vanilla
+
+
 
     nrp-gazebo:
         build:
