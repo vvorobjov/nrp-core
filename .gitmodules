@@ -2,3 +2,7 @@
 	path = src/nrp-core-msgs
 	url = https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git
 	branch = development
+[submodule "polimi_controller_v1"]
+	path = examples/polimi_controller_v1
+	url = https://bitbucket.org/hbpneurorobotics/polimi_controller_v1.git
+	branch = 1j_no_cereb_updated
