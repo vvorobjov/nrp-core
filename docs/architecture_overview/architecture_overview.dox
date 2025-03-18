@@ -1,22 +1,28 @@
 /*! \page architecture_overview Architecture Overview
 
-The NRP Core framework (NRP-core) allows NRP users to design and execute modular simulations where multiple modules run concurrently, e.g., in separate processes, in separate containers, on separate machines, or any combination thereof. These modules synchronize with each other at different frequencies to create a single, coherent simulation. The architecture components that run these "simulations modules" will hereafter be referred to as Engines.
+The NRP Core framework (NRP-core) enables users to design and execute modular simulations, where multiple modules run concurrently—whether in separate processes, containers, machines, or any combination thereof. These modules, referred to as Engines, synchronize at user-defined frequencies to produce a coherent simulation.
 
-A typical experiment in NRP-core, therefore, consists of multiple engine processes that synchronize with a central Simulation Loop process at predetermined frequencies defined by the user. These frequencies (expressed in simulation time) determine the engine time step, which defines the duration (also in simulation time) for which that engine carries out a simulation independently (i.e. without communication to the central process). Note that: 1) the engine time step can be different for each engine and is set in the experiment configuration; 2) that the internal time step of the simulator at the heart of a given engine is independent of the engine time step (the latter should nevertheless be a multiple of this internal time step).
+A typical NRP-core experiment consists of multiple engine processes synchronizing with a central Simulation Loop process. Synchronization frequencies, defined by the user in simulation time, set the duration of each engine's independent simulation step (engine time step). Note the following:
 
-For more explanations, this \subpage sync_model_details "page" contains a more detailed description of the <b>synchronization model</b>.
+- Each engine may have a unique engine time step, defined explicitly within the experiment configuration.
+- The internal simulator timestep of an Engine may differ from the engine time step but should be a divisor of the engine time step to maintain consistency.
 
-Additionally, NRP-core offers an asynchronous mode which allows to interact with external simulation modules or other processes asynchronously.
-This asynchronous mode is particularly useful for soft real-time applications. It is implemented by the component referred to as EventLoop, which is described in details in this \subpage event_loop "page".
+Detailed information about the synchronization approach can be found in the dedicated \subpage sync_model_details "Synchronization Model".
 
-The inclusion of additional Engines into NRP-core experiments is managed by a system of \subpage plugin_system "Engine plugins", which allows for easy extensions of the set of available simulators. 
-Users also can choose to run Engines either in separate processes, containers or machines. 
-The spawning of Engines is controlled by \subpage process_launcher "Process Launchers" and the actual spawning behavior (eg.in separate processes, containers or machines) is implemented by \subpage launch_command "Launch Commands".
+NRP-core also supports an asynchronous mode, enabling interaction with external simulation modules or processes without strict synchronization. This asynchronous approach is particularly suitable for soft real-time applications and is managed by the EventLoop component, described in-depth on the \subpage event_loop "EventLoop Page".
 
-Please also note that, while NRP-core is - quite literally - the beating heart of the NRP, the so-called NRPCoreSim is the standalone application based on NRP-core. This standalone application can execute experiments through the same \subpage experiment_lifecycle "lifecycle process", but without the additional functionalities of the NRP (e.g. front end, etc.). This \subpage nrp_simulation "page" contains more information about NRPCoreSim.
+The NRP-core framework allows easy integration of additional Engines via the \subpage plugin_system "Engine Plugins System". This plugin-based architecture enables users to extend and customize simulation capabilities seamlessly.
 
-The main elements and components participating in the NRP-core architecture are described \subpage main_elements "here".
+Engines within NRP-core experiments can run in separate processes, containers, or distributed across different machines. Engine spawning and execution are controlled by:
 
-For information about the different workflows that are supported by NRP-core, please consult the following \subpage supported_workflows "page".
+- Process Launchers: Managed by the \subpage process_launcher "Process Launchers".
+- Launch Commands: Define actual spawning behavior (e.g., separate processes, containers, or machines), described further on the \subpage launch_command "Launch Commands Page".
+
+The core functionality of the NRP is encapsulated within NRPCoreSim, a standalone application built upon NRP-core. NRPCoreSim executes simulations following the same \subpage experiment_lifecycle "Experiment Lifecycle", though without additional features of the complete NRP environment, such as front-end interfaces. Further details about NRPCoreSim can be explored on the \subpage nrp_simulation "NRPCoreSim Page".
+
+Comprehensive details on the main components participating in the NRP-core architecture are outlined \subpage main_elements "here".
+
+To learn more about the workflows supported by NRP-core, refer to the \subpage supported_workflows "Supported Workflows Page".
 
 */
+
