@@ -185,12 +185,15 @@ namespace
      */
     std::string nestGenericCall(const std::string & url, const std::string & ctype, const std::string & data)
     {
+        NRPLogger::debug("nestGenericCall: {}, content: {}, data: {}", url, ctype, data);
         auto resp = RestClient::post(url, ctype, data);
 
         if(resp.code != 200)
         {
             throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code));
         }
+
+        NRPLogger::debug("nestGenericCall reply: {}", resp.body);
 
         return resp.body;
     }
