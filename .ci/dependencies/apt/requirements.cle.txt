@@ -1,10 +1,13 @@
 cython3
+doxygen
 libboost-filesystem-dev
 libboost-numpy-dev
 libboost-python-dev
 libbrotli-dev
 libcurl4-openssl-dev
+libclang-dev
 libgrpc++-dev
+llvm-dev
 libopenmpi-dev
 libpistache-dev
 libprotobuf-dev
@@ -14,4 +17,3 @@ protobuf-compiler-grpc
 python3-matplotlib
 python3-numpy
 python3-pip
-ros-noetic-ros-base

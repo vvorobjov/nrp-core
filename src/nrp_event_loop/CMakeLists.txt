@@ -342,9 +342,22 @@ endif()
 
 ##########################################
 ## generateFNFactoryModule
+
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVM_INCLUDE_DIR: ${LLVM_INCLUDE_DIR}")
+message(STATUS "Using LLVM_LIBRARY_DIR: ${LLVM_LIBRARY_DIR}")
+# List all variables containing "LLVM" and print their values
+get_cmake_property(_variableNames VARIABLES)
+foreach (_variableName ${_variableNames})
+    if (_variableName MATCHES "LLVM")
+        message(DEBUG "${_variableName}=${${_variableName}}")
+    endif()
+endforeach()
+
 add_custom_command(
         OUTPUT generateFNFactoryModule
-        COMMAND g++ -I/usr/lib/llvm-10/include/ -L/usr/lib/llvm-10/lib ${CMAKE_CURRENT_SOURCE_DIR}/fn_factory_module/generate_fn_factory_module.cpp -x c++ -std=c++17 -lclang -o generateFNFactoryModule)
+        COMMAND g++ -I${LLVM_INCLUDE_DIR} -L${LLVM_LIBRARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/fn_factory_module/generate_fn_factory_module.cpp -x c++ -std=c++17 -lclang -o generateFNFactoryModule)
 
 # Forces the generation of generateFNFactoryModule
 add_custom_target(

@@ -6,6 +6,8 @@ set(ENABLE_GAZEBO ON CACHE BOOL "Enable gazebo support")
 set(BUILD_GAZEBO_ENGINE_SERVER OFF CACHE BOOL "Disable nest-simulator engines server side")
 set(ENABLE_NEST ON CACHE BOOL "Enable nest support")
 set(BUILD_NEST_ENGINE_SERVER OFF CACHE BOOL  "Disable nest-simulator engines server side")
+set(ENABLE_EDLUT OFF CACHE BOOL "Enable EDLUT support")
+set(ENABLE_SPINNAKER OFF CACHE BOOL "Enable Spinnaker support")
 
 
 set(ENABLE_ROS ON CACHE BOOL "Enable ROS support")

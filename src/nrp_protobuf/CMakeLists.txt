@@ -23,6 +23,7 @@ set(LIB_SRC_FILES
     nrp_protobuf/proto_python_bindings/repeated_field_proxy.cpp
     nrp_protobuf/proto_python_bindings/proto_python_bindings.cpp
 )
+add_compile_options(-Wno-redundant-move)
 
 # List of python module build files
 set(PYTHON_MODULE_SRC_FILES
@@ -63,7 +64,7 @@ find_package(
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
 
 # gRPC: google's Remote Procedure Calls library
-pkg_check_modules(GRPC REQUIRED grpc++=1.16.1)
+pkg_check_modules(GRPC REQUIRED grpc++)
 
 # Protobuf compiler
 find_program(PROTOC protoc)

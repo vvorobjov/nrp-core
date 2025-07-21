@@ -23,9 +23,10 @@
 #define PYTHON_INTERPRETER_STATE_H
 
 #include "nrp_general_library/utils/wchar_t_converter.h"
+#include "nrp_general_library/utils/nrp_logger.h"
 
 #include <boost/python.hpp>
-#include <stack>
+#include <vector>
 
 /*!
  * \brief Initializes the python interpreter as well as python threading
@@ -49,9 +50,8 @@ class PythonInterpreterState
 
 
         /*!
-         * \brief Constructor. Initializes Python with the no start parameters, enables threading, and releases GIL
-         * \param argc main()'s argc
-         * \param argv main()'s argv
+         * \brief Constructor. Initializes Python with no start parameters, enables threading, and releases GIL
+         * \param allowThreads Should threads be allowed
          */
         explicit PythonInterpreterState(bool allowThreads = false);
 
@@ -67,7 +67,7 @@ class PythonInterpreterState
         bool threadsAllowed() const;
 
         /*!
-         * \brief Halt other threads from executin. This is required if python code should be executed in the main thread
+         * \brief Halt other threads from executing. This is required if python code should be executed in the main thread
          */
         void endAllowThreads();
 
@@ -77,10 +77,11 @@ class PythonInterpreterState
         ~PythonInterpreterState();
 
     private:
+        void initialize(bool allowThreads);
         /*!
          * \brief Converts argv to wchar_t. Used by Python
          */
-        WCharTConverter _wcharArgs;
+        std::unique_ptr<WCharTConverter> _wcharArgs;
 
         /*!
          * \brief Initial PyThread state
@@ -89,7 +90,7 @@ class PythonInterpreterState
 };
 
 /*!
- * \brief Manages the Pyton GIL. Useful for threads
+ * \brief Manages the Python GIL. Useful for threads
  */
 class PythonGILLock
 {
@@ -127,7 +128,7 @@ class PythonGILLock
 
     private:
         /*!
-         * \brief Is GIL state acuired?
+         * \brief Is GIL state acquired?
          */
         PyGILState_STATE *_state;
 };

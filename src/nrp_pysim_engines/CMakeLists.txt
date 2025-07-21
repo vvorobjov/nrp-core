@@ -44,7 +44,7 @@ set(TEST_SRC_FILES
 
 ## Python
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-find_package(PythonLibs 3 REQUIRED)
+# find_package(PythonLibs 3 REQUIRED)
 
 ## Boost Python
 find_package(Boost REQUIRED)

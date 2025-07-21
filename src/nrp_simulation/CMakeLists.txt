@@ -54,9 +54,9 @@ find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 pkg_check_modules(PROTOBUF REQUIRED protobuf)
-pkg_check_modules(GRPC REQUIRED grpc++=1.16.1)
+pkg_check_modules(GRPC REQUIRED grpc++)
 
-if(NOT ENABLE_ROS STREQUAL OFF)
+if(ENABLE_ROS)
     find_package(catkin REQUIRED COMPONENTS roscpp)
 endif()
 

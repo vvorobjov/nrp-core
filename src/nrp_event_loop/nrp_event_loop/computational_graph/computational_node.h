@@ -23,6 +23,7 @@
 #define COMPUTATIONAL_NODE_H
 
 #include <string>
+#include <stdexcept>
 #include <map>
 
 /*!

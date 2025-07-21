@@ -27,59 +27,73 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-void setup_venv() {
+void setup_venv(PyConfig* config) {
     std::vector<std::string> paths;
     std::string pathEnv = getenv("PATH");
     boost::split(paths, pathEnv, boost::is_any_of(";:"));
-    for (std::string path : paths)
-    {
-      boost::filesystem::path pythonPath = boost::filesystem::path(path) / "python";
-      if (boost::filesystem::exists(pythonPath))
-      {
-        std::string pythonProgramName = pythonPath.string();
-        std::wstring widestring = std::wstring(pythonProgramName.begin(), pythonProgramName.end());
-        Py_SetProgramName(widestring.c_str());
-        break;
-      }
+    for (const std::string& path : paths) {
+        boost::filesystem::path pythonPath = boost::filesystem::path(path) / "python";
+        if (boost::filesystem::exists(pythonPath)) {
+            std::string pythonProgramName = pythonPath.string();
+            std::wstring widestring = std::wstring(pythonProgramName.begin(), pythonProgramName.end());
+            PyConfig_SetString(config, &config->program_name, widestring.c_str());
+            break;
+        }
     }
 }
 
-
-PythonInterpreterState::PythonInterpreterState(int argc, const char *const *argv, bool allowThreads)
-    : _wcharArgs(argc, argv)
+PythonInterpreterState::PythonInterpreterState(int argc, const char* const* argv, bool allowThreads)
+    : _wcharArgs(std::make_unique<WCharTConverter>(argc, argv))
 {
-    assert(argc >= 1);
-
-    Py_SetProgramName(this->_wcharArgs.getWCharTPointers()[0]);
-    setup_venv();
-    Py_Initialize();
-    json_converter::initNumpy();
-    boost::python::numpy::initialize();
-
-    PySys_SetArgv(this->_wcharArgs.getWCharSize(), this->_wcharArgs.getWCharTPointers());
-
-    if(allowThreads)
-        this->_state = PyEval_SaveThread();
-    else
-        this->_state = nullptr;
+    initialize(allowThreads);
 }
 
-PythonInterpreterState::PythonInterpreterState(int argc, const std::vector<const char*> &argv, bool allowThreads)
-    : PythonInterpreterState(argc, argv.data(), allowThreads)
-{}
+PythonInterpreterState::PythonInterpreterState(int argc, const std::vector<const char*>& argv, bool allowThreads)
+    : _wcharArgs(std::make_unique<WCharTConverter>(argc, argv.data()))
+{
+    initialize(allowThreads);
+}
 
 PythonInterpreterState::PythonInterpreterState(bool allowThreads)
-    : _wcharArgs(0, nullptr)
+    : _wcharArgs(std::make_unique<WCharTConverter>(0, nullptr))
 {
-    setup_venv();
-    Py_Initialize();
+    initialize(allowThreads);
+}
+
+void PythonInterpreterState::initialize(bool allowThreads) {
+    PyStatus status;
+    PyConfig config;
+    NRPLogger::debug("PythonInterpreterState::initialize(bool allowThreads={})", allowThreads);
+    PyConfig_InitPythonConfig(&config);
+
+    setup_venv(&config);
+    status = PyConfig_SetArgv(&config, _wcharArgs->getWCharSize(), _wcharArgs->getWCharTPointers());
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        throw std::runtime_error("Failed to set Python config arguments");
+    }
+
+    if (allowThreads) {
+        config.install_signal_handlers = 0;
+        config.use_environment = 1;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        throw std::runtime_error("Failed to initialize Python interpreter");
+    }
+
+    PyConfig_Clear(&config);
+
     json_converter::initNumpy();
     boost::python::numpy::initialize();
 
-    if(allowThreads)
-        this->_state = PyEval_SaveThread();
-    else
-        this->_state = nullptr;
+    if (allowThreads) {
+        _state = PyEval_SaveThread();
+    } else {
+        _state = nullptr;
+    }
 }
 
 void PythonInterpreterState::allowThreads()

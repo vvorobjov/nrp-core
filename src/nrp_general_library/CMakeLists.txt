@@ -84,14 +84,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
 
 # Python 3 libraries
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
+message(DEBUG 'Python3_NumPy_INCLUDE_DIRS: ${Python3_NumPy_INCLUDE_DIRS}')
+include_directories(${Python3_NumPy_INCLUDE_DIRS})
 
 set(PYTHON_INSTALL_DIR_REL "${CMAKE_INSTALL_LIBDIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" CACHE INTERNAL "Relative install location for python libraries")
 
 # Boost Python libraries
 # find_package(Boost) changes behavior after Boost version 1.67, so adapt component names accordingly
-add_compile_definitions(BOOST_ASIO_DISABLE_CONCEPTS)
+set(NRP_COMMON_COMPILATION_FLAGS ${NRP_COMMON_COMPILATION_FLAGS} -DBOOST_ASIO_DISABLE_CONCEPTS)
 find_package(Boost REQUIRED)
+message(STATUS 'Boost_VERSION: ${Boost_VERSION}')
 if(Boost_VERSION VERSION_GREATER_EQUAL 1.67)
     set(BOOST_PYTHON_COMPONENT "python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}" "numpy${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
 else()
@@ -135,14 +138,24 @@ pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
 # nlohmann_json: JSON library
 find_package(nlohmann_json REQUIRED)
+message(STATUS "nlohmann_json version found: ${nlohmann_json_VERSION}")
+if(${nlohmann_json_VERSION} VERSION_LESS "3.8.0")
+    set(NRP_nlohmann_json_schema_validator_version "2.1.0")
+else()
+    set(NRP_nlohmann_json_schema_validator_version "2.3.0")
+endif()
+message(STATUS "nlohmann_json_schema_validator version to use: ${NRP_nlohmann_json_schema_validator_version}")
 
 # nlohmann_json schema validator
-find_package(nlohmann_json_schema_validator 2.1.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
+find_package(
+    nlohmann_json_schema_validator 
+    ${NRP_nlohmann_json_schema_validator_version}
+    EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 if(NOT ${nlohmann_json_schema_validator_FOUND})
     message("Please wait. Downloading nlohmann_json_schema_validator...")
     ExternalProject_Add(nlohmann_json_schema_validator
             GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
-            GIT_TAG 2.1.0
+            GIT_TAG ${NRP_nlohmann_json_schema_validator_version}
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
             CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DBUILD_SHARED_LIBS=ON)
 
@@ -292,10 +305,11 @@ if(NOT "${EXEC_SRC_FILES}" STREQUAL "")
 endif()
 
 
-##########################################
-## Append Doxygen files
-add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} "${HEADER_DIRECTORY}")
-
+if(BUILD_DOC)
+    ##########################################
+    ## Append Doxygen files
+    add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FILES} ${PYTHON_MODULE_SRC_FILES} "${HEADER_DIRECTORY}")
+endif()
 
 ##########################################
 ## Tests

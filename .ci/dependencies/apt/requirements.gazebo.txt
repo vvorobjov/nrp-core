@@ -1,3 +1,4 @@
 gazebo11
 gazebo11-plugin-base
 libgazebo11-dev
+ros-noetic-ros-base

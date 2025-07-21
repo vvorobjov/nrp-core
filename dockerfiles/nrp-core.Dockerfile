@@ -17,6 +17,7 @@ RUN sudo add-apt-repository ppa:pistache+team/unstable
 
 RUN sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN sudo sh -c 'curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -'
+RUN sudo apt-get update && sudo apt-get install -y ros-noetic-ros-base
 
 # Install CLE dependencies
 
@@ -43,24 +44,18 @@ ENV PATH=$PATH:$NRP_DEPS_INSTALL_DIR/bin:$HOME/.local/bin
 ENV LD_LIBRARY_PATH=$NRP_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 # Install MQTT (to NRP_DEPS_INSTALL_DIR)
-RUN git clone https://github.com/eclipse/paho.mqtt.c.git \
-    && cd paho.mqtt.c \
-    && git checkout v1.3.8 \
-    && cmake -Bbuild -H. -DPAHO_ENABLE_TESTING=OFF -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DPAHO_WITH_SSL=ON -DPAHO_HIGH_PERFORMANCE=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"\
-    && cmake --build build/ --target install \
-    && sudo ldconfig && cd .. && rm -rf paho.mqtt.c
-
 RUN git clone https://github.com/eclipse/paho.mqtt.cpp \
     && cd paho.mqtt.cpp \
-    && git checkout v1.2.0 \
-    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_DEPS_INSTALL_DIR}"\
+    && git checkout v1.4.0 \
+    && git submodule init \
+    && git submodule update \
+    && cmake -Bbuild -H. -DPAHO_BUILD_STATIC=OFF -DPAHO_BUILD_SHARED=ON -DCMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}" -DCMAKE_PREFIX_PATH="${NRP_DEPS_INSTALL_DIR}" -DPAHO_WITH_MQTT_C=ON \
     && cmake --build build/ --target install \
     && sudo ldconfig && cd .. && rm -rf paho.mqtt.cpp
 
 # Add nrp-core env vars to .bashrc
 WORKDIR ${HOME}
 RUN echo 'source $NRP_INSTALL_DIR/bin/.nrp_env' >> ${HOME}/.bashrc
-
 
 ## Build image
 # Configure and install NRP in a intermediate sub-image
