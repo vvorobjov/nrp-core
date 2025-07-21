@@ -2,7 +2,12 @@
     "cmake.configureOnOpen": false,
     "cmake.options.statusBarVisibility": "compact",
     "cmake.buildDirectory": "${workspaceFolder}/build",
-    "cmake.configureEnvironment": {
+    "cmake.environment": {
+        "NRP_INSTALL_DIR": "${env:HOME}/.local/nrp",
+        "NRP_DEPS_INSTALL_DIR": "${env:HOME}/.local/nrp_deps",
+        "LD_LIBRARY_PATH": "${env:NRP_INSTALL_DIR}/lib:${env:NRP_DEPS_INSTALL_DIR}/lib:${env:NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:${env:LD_LIBRARY_PATH}"
+    },
+    "cmake.buildEnvironment": {
         "NRP_INSTALL_DIR": "${env:HOME}/.local/nrp",
         "NRP_DEPS_INSTALL_DIR": "${env:HOME}/.local/nrp_deps",
         "LD_LIBRARY_PATH": "${env:NRP_INSTALL_DIR}/lib:${env:NRP_DEPS_INSTALL_DIR}/lib:${env:NRP_INSTALL_DIR}/lib/nrp_gazebo_plugins:${env:LD_LIBRARY_PATH}"
