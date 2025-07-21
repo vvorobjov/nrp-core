@@ -44,7 +44,7 @@ SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     
     // This must be set after config validation,
     // so that the default value of SimulationTimeout can be set in case it's not set in the config file
-    _simTimeout = toSimulationTime<unsigned, std::ratio<1>>(int(this->_simConfig->at("SimulationTimeout")));
+    _simTimeout = toSimulationTime<double, std::ratio<1>>(this->_simConfig->at("SimulationTimeout"));
 }
 
 SimulationManager::RequestResult SimulationManager::initializeSimulation()

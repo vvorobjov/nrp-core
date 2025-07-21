@@ -93,7 +93,7 @@ bool FTILoopSimManager::runUntilDoneOrTimeoutCB()
     std::function condition = [&] () {
         return this->_simulationDataManager.getDoneFlag() ||
                hasSimTimedOut(this->_loop->getSimTime(),
-                              toSimulationTime<unsigned, std::ratio<1>>(int(this->_simConfig->at("SimulationTimeout"))));
+                              toSimulationTime<double, std::ratio<1>>(this->_simConfig->at("SimulationTimeout")));
     };
 
     return runSimulationUntilCondition(condition);
