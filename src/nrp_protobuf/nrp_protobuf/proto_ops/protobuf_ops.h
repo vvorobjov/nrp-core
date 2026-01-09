@@ -196,12 +196,13 @@ namespace protobuf_ops {
             // Do not process the exception.
             // Bad casts aren't 'bad' in this case, they simply mean that
             // we haven't found the right message type yet.
+            NRPLogger::debug("DataPack '{}' is not supported by engine '{}'", from.name(), from.engineName());
         }
 
         if constexpr (sizeof...(REMAINING_MSG_TYPES) > 0)
             return setTrajectoryMessageFromInterfaceSubset<REMAINING_MSG_TYPES...>(from, to);
         else
-            throw NRPException::logCreate("DataPack \"" + from.name() + "\" is not supported by engine '" + from.engineName() + "'");
+            throw NRPExceptionRecoverable("DataPack \"" + from.name() + "\" is not supported by engine '" + from.engineName() + "'");
     }
 
 

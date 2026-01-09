@@ -115,6 +115,9 @@ pid_t BasicFork::launchProcess(const nlohmann::json &/*launcherConfig*/, const s
         // Replace the child's stdout and stderr handles with the log file handle
         if(logFD >= 0)
         {
+            std::cout.flush();
+            std::cerr.flush();
+            NRPLogger::info("Redirecting the console output to file: {}",  startParamStr.c_str());
             if (dup2(logFD, STDOUT_FILENO) < 0) {
                 std::perror("dup2 (stdout)");
                 std::exit(1);
@@ -128,8 +131,9 @@ pid_t BasicFork::launchProcess(const nlohmann::json &/*launcherConfig*/, const s
         NRPLogger::debug("Launching process with cmd: {}",  startParamStr.c_str());
         auto res = execvp(BasicFork::EnvCfgCmd.data(), const_cast<char *const *>(startParamPtrs.data()));
 
-        if(logFD >= 0)
-            close(logFD);
+        // This will close the file descriptor used by parent process
+        // if(logFD >= 0)
+        //     close(logFD);
 
         // Don't use the logger here, as this is a separate process
         std::cerr << "Couldn't start Process with cmd \"" << procCmd.data() << "\"\n Error code: " << res << std::endl;

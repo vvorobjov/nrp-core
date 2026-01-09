@@ -4,7 +4,7 @@
     "description": "Base Json Engine configuration schema",
     "$id": "#EngineExample",
     "allOf": [
-      { "$ref": "json://nrp-core/engines/engine_base.json#EngineBase" },
+      { "$ref": "engines/engine_base.json#EngineBase" },
       {
         "properties" : {
           "ServerAddress": {

@@ -30,7 +30,7 @@ using namespace testing;
 struct TestEngineConfigConst
 {
     static constexpr char EngineType[] = "test_engine";
-    static constexpr char EngineSchema[] = "json://nrp-core/engines/engine_base.json#EngineBase";
+    static constexpr char EngineSchema[] = "engines/engine_base.json#EngineBase";
 };
 
 class TestEngine

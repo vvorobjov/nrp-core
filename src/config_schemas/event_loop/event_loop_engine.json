@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventLoopEngine",
+  "description": "Event Loop Engine configuration parameters",
+  "$id": "#EventLoopEngine",
+  "allOf": [
+    {
+      "$ref": "event_loop_base.json#EventLoopBase"
+    },
+    {
+      "properties": {
+        "EngineConfig": {
+          "$ref": "../engines/engine_base.json#EngineBase",
+          "description": "Configuration of the Engine run by the Event Loop"
+        },
+        "MQTTConfig": {
+          "$ref": "../nrp_connectors.json#/MQTTClient",
+          "default": {},
+          "description": "configuration of the MQTT client"
+        },
+        "ProcessLastMsg": {
+          "type": "boolean",
+          "default": true,
+          "description": "if true, only the last message received through a topic during the last step is processed"
+        },
+        "HeartbeatAddress": {
+          "type": "string",
+          "description": "sets the address for the obtaining of the monitoring information from the engine"
+        },
+        "DataQueueSize": {
+          "type": "integer",
+          "default": 1,
+          "description": "Maximum number of messages received through a topic which are stored each step"
+        }
+      },
+      "required": [
+        "EngineConfig"
+      ]
+    }
+  ]
+}

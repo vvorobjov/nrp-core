@@ -140,7 +140,7 @@ TEST(SimulationParametersTest, AddsParametersToConfig)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
     ASSERT_EQ(simConfig->at("SomeNewParameter").get<std::string>(), "SomeNewValue");
     ASSERT_EQ(simConfig->at("SomeParameter").at("NestedParameter").get<std::string>(), "SomeValue");
@@ -159,7 +159,7 @@ TEST(SimulationParametersTest, ModifiesParametersInConfig)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
     ASSERT_EQ(simConfig->at("SimulationName").get<std::string>(), "NewName");
 }
@@ -180,7 +180,7 @@ TEST(SimulationParametersTest, CLIModifiesNestetParsInConfig)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
     ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineName").get<std::string>(), "NewName");
     ASSERT_EQ(simConfig->at("EngineConfigs").at(0).at("EngineType").get<std::string>(), "NewType");
@@ -202,7 +202,7 @@ TEST(SimulationParametersTest, ChangeArrayToElementThrows)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::logic_error);
 }
 
@@ -219,7 +219,7 @@ TEST(SimulationParametersTest, AddsEmptyObjectToConfig)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_NO_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig));
     ASSERT_TRUE(simConfig->at("EngineConfigs").at(0).empty());
 }
@@ -237,7 +237,7 @@ TEST(SimulationParametersTest, EditingNonexistingArrayElementThrows)
     auto startParamVals(parseStartParams(optParser, startParamDat));
     jsonSharedPtr simConfig = SimulationParams::setWorkingDirectoryAndGetConfigFile(startParamVals);
 
-    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "json://nrp-core/simulation.json#Simulation"));
+    EXPECT_NO_THROW(json_utils::validateJson(*simConfig, "simulation.json#Simulation"));
     ASSERT_THROW(SimulationParams::parseAndSetCLISimParams(startParamVals[SimulationParams::ParamSimParam.data()].as<SimulationParams::ParamSimParamT>(), *simConfig), std::out_of_range);
 }
 

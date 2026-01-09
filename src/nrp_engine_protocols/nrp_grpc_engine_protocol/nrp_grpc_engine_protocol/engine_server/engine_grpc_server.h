@@ -94,6 +94,13 @@ class EngineGrpcServer : public EngineGrpcService::Service
             if(!this->_isServerRunning)
             {
                 grpc::ServerBuilder builder;
+                // Allow clients to ping even when there are no active RPCs
+                builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+                // Let clients ping as frequently as you need (e.g., 10s)
+                builder.AddChannelArgument(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 10000);
+                // Don’t close the connection for “too many” pings without data
+                // (0 means unlimited in gRPC core)
+                builder.AddChannelArgument(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
                 builder.AddListeningPort(_serverAddress, grpc::InsecureServerCredentials());
                 builder.RegisterService(this);
                 NRPLogger::debug("Using server address: "+ this->_serverAddress);

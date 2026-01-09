@@ -29,7 +29,7 @@
 struct PythonGrpcConfigConst
 {
     static constexpr char EngineType[] = "python_grpc";
-    static constexpr char EngineSchema[] = "https://neurorobotics.net/engines/engine_python.json#/python_grpc";
+    static constexpr char EngineSchema[] = "engines/engine_python.json#/python_grpc";
 
     /*!
      * \brief Ratio used by SimulationTime

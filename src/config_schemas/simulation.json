@@ -28,22 +28,22 @@
     },
     "EngineConfigs" : {
       "type" : "array",
-      "items": {"$ref": "json://nrp-core/engines/engine_base.json#EngineBase"},
+      "items": {"$ref": "engines/engine_base.json#EngineBase"},
       "description": "Engines that will be started in the experiment"
     },
     "ExternalProcesses" : {
       "type" : "array",
-      "items": {"$ref": "json://nrp-core/process_launcher.json#ProcessLauncher"},
+      "items": {"$ref": "process_launcher.json#ProcessLauncher"},
       "description": "Additional processes that will be started in the experiment"
     },
     "DataPackProcessingFunctions" : {
       "type" : "array",
-      "items": {"$ref": "json://nrp-core/transceiver_function.json#TransceiverFunction"},
+      "items": {"$ref": "transceiver_function.json#TransceiverFunction"},
       "description": "Transceiver and Preprocessing functions that will be used in the experiment"
     },
     "StatusFunction" : {
       "type" : "object",
-      "items": {"$ref": "json://nrp-core/transceiver_function.json#TransceiverFunction"},
+      "items": {"$ref": "transceiver_function.json#TransceiverFunction"},
       "description": "Status Function that will be used in the experiment"
     },
     "ComputationalGraph" : {
@@ -52,15 +52,15 @@
       "description": "List of filenames defining the CG nodes and connections"
     },
     "EventLoop" : {
-      "$ref": "json://nrp-core/event_loop.json#/event_loop",
+      "$ref": "event_loop/event_loop.json",
       "description": "Event Loop configuration parameters. Only used if \"SimulationLoop\" parameter is set to \"EventLoop\""
     },
     "ROSNode" : {
-      "$ref": "json://nrp-core/nrp_connectors.json#/ROSNode",
+      "$ref": "nrp_connectors.json#/ROSNode",
       "description": "If this parameter is present a ROS node is started by NRPCoreSim"
     },
     "MQTTNode" : {
-      "$ref": "json://nrp-core/nrp_connectors.json#/MQTTClient",
+      "$ref": "nrp_connectors.json#/MQTTClient",
       "description": "If this parameter is present an MQTT client is instantiated and connected"
     },
     "FunctionArgumentsPassingMethod" : {

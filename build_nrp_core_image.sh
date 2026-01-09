@@ -50,7 +50,7 @@ function build_service {
     fi
 
     echo "Building the service $service_name from $service_file"
-    docker compose -f $service_file build $service_name
+    docker compose -f $service_file build $service_name --progress=plain
 
     if [[ $target_service_name == $service_name ]]; then
         exit

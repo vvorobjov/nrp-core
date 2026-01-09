@@ -92,7 +92,13 @@ class EngineGrpcClient
             }
 
             this->_serverAddress = this->engineConfig().at("ServerAddress");
-            _channel = grpc::CreateChannel(_serverAddress, grpc::InsecureChannelCredentials());
+            // Create a ChannelArguments object
+            grpc::ChannelArguments args;
+            // Set keep-alive settings
+            args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 90000); // 60 seconds
+            args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 30000); // 10 seconds
+            args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1); // Allow pings without active calls
+            _channel = grpc::CreateCustomChannel(_serverAddress, grpc::InsecureChannelCredentials(), args);
             _stub    = EngineGrpc::EngineGrpcService::NewStub(_channel);
 
             ProtoOpsManager::getInstance().addPluginPath(this->engineConfig().at("ProtobufPluginsPath"));

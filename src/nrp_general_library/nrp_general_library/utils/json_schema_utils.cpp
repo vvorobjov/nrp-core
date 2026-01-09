@@ -50,7 +50,7 @@ namespace json_utils {
         std::string schema_path = NRP_CONFIG_INSTALL_DIR;
         schema_path += uri.path();
 
-        std::fstream s(schema_path.c_str());
+        std::fstream s(schema_path.c_str(), std::ios::in);
         if (!s.good())
             throw std::invalid_argument("\"" + uri.url() + "\" schema could not be found. It was looked in file \"" +
             schema_path + "\". Please check that the file exists.");

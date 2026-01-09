@@ -115,6 +115,7 @@ void NrpCoreServer::runServerLoop()
         catch(std::exception &e)
         {
             result.errorMessage = e.what();
+            NRPLogger::error("Exception caught while processing request: {}", e.what());
         }
 
         this->markRequestAsProcessed(result);
@@ -241,8 +242,9 @@ void NrpCoreServer::prepareTrajectory(NrpCore::Trajectory * trajectory)
                     mod->setTrajectoryMessageFromInterface(*((*trajectoryElement).get()), &trajectoryMessage);
                     isSet = true;
                 }
-                catch (NRPException &) {
+                catch (NRPExceptionRecoverable &) {
                     // this just means that the module couldn't process the request, try with the next one
+                    NRPLogger::debug("Protobuf ops module could not process datapack '{}', trying the next one", (*trajectoryElement)->name());
                 }
             }
 

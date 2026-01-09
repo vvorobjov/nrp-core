@@ -10,7 +10,7 @@ set(ENABLE_EDLUT OFF CACHE BOOL "Enable EDLUT support")
 set(ENABLE_SPINNAKER OFF CACHE BOOL "Enable Spinnaker support")
 
 
-set(ENABLE_ROS ON CACHE BOOL "Enable ROS support")
+set(ENABLE_ROS OFF CACHE BOOL "Enable ROS support")
 set(ENABLE_MQTT ON CACHE BOOL "Enable MQTT support")
 
 set(ENABLE_EXAMPLES_TESTING ON CACHE STRING "Enable running of examples in tests")

@@ -45,7 +45,7 @@ TEST(FTILoopTest, Constructor)
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));
 
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
-    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+    json_utils::validateJson(*config, "simulation.json#Simulation");
     SimulationDataManager simulationDataManager;
 
     EngineClientInterfaceSharedPtr brain(NestEngineJSONLauncher().launchEngine(config->at("EngineConfigs").at(1), ProcessLauncherInterface::unique_ptr(new ProcessLauncherBasic())));
@@ -60,7 +60,7 @@ TEST(FTILoopTest, RunLoop)
 
     auto simConfigFile = std::fstream(TEST_SIM_CONFIG_FILE, std::ios::in);
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
-    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+    json_utils::validateJson(*config, "simulation.json#Simulation");
 
     const char *procName = "test";
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));
@@ -107,7 +107,7 @@ TEST(FTILoopTest, TimeNodes)
     jsonSharedPtr config(new nlohmann::json(nlohmann::json::parse(simConfigFile)));
     (*config)["DataPackProcessor"] = "cg";
     (*config)["ComputationalGraph"] = std::vector<std::string>({TEST_TIME_NODES_FILE});
-    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+    json_utils::validateJson(*config, "simulation.json#Simulation");
 
     const char *procName = "test";
     PythonInterpreterState pyState(1, const_cast<char**>(&procName));

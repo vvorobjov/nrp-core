@@ -27,7 +27,7 @@
 
 void SimulationManager::validateConfig(jsonSharedPtr &config)
 {
-    json_utils::validateJson(*config, "json://nrp-core/simulation.json#Simulation");
+    json_utils::validateJson(*config, "simulation.json#Simulation");
 
     // Set default values
     json_utils::setDefault<std::vector<nlohmann::json>>(*config, "EngineConfigs", std::vector<nlohmann::json>());
@@ -41,10 +41,14 @@ SimulationManager::SimulationManager(const jsonSharedPtr &simulationConfig)
     _simState(SimState::Created)
 {
     validateConfig(_simConfig);
+
+    auto simulationTimeout = this->_simConfig->at("SimulationTimeout");
     
+    NRPLogger::debug("SimulationTimeout from the configuration file: {}", simulationTimeout.dump());
     // This must be set after config validation,
     // so that the default value of SimulationTimeout can be set in case it's not set in the config file
-    _simTimeout = toSimulationTime<double, std::ratio<1>>(this->_simConfig->at("SimulationTimeout"));
+    _simTimeout = toSimulationTime<double, std::ratio<1>>(simulationTimeout);
+    NRPLogger::debug("Converted SimulationTimeout in clock counts: {0:d}", _simTimeout.count());
 }
 
 SimulationManager::RequestResult SimulationManager::initializeSimulation()

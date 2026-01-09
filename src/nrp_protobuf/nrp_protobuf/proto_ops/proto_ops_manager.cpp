@@ -32,25 +32,63 @@ using protobuf_ops_fcn_t = protobuf_ops::NRPProtobufOpsIface*();
 
 std::unique_ptr<ProtoOpsManager> ProtoOpsManager::_instance = nullptr;
 
-std::unique_ptr<protobuf_ops::NRPProtobufOpsIface> ProtoOpsManager::loadProtobufPlugin(const std::string &pluginLibFile)
+std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>
+ProtoOpsManager::loadProtobufPlugin(const std::string &pluginLibFile)
 {
+    NRPLogger::debug("ProtoOpsManager: requesting protobuf plugin \"{}\"", pluginLibFile);
+
     // Load plugin, only if not loaded already
-    if(!this->_loadedLibs.count(pluginLibFile) && !this->loadPlugin(pluginLibFile))
-        return nullptr;
+    if(!this->_loadedLibs.count(pluginLibFile))
+    {
+        NRPLogger::debug("ProtoOpsManager: plugin \"{}\" not loaded yet, calling loadPlugin()", pluginLibFile);
+
+        if(!this->loadPlugin(pluginLibFile))
+        {
+            NRPLogger::error("ProtoOpsManager: loadPlugin(\"{}\") failed", pluginLibFile);
+            return nullptr;
+        }
+    }
+    else
+    {
+        NRPLogger::debug("ProtoOpsManager: plugin \"{}\" already loaded, reusing handle", pluginLibFile);
+    }
 
     auto pLibHandle = this->_loadedLibs.at(pluginLibFile);
-
-    // Find protobuf_ops::NRPProtobufOpsIface function in library
-    protobuf_ops_fcn_t *pLaunchFcn = reinterpret_cast<protobuf_ops_fcn_t*>(dlsym(pLibHandle, CREATE_PROTOBUF_OPS_FCN_STR));
-    if(pLaunchFcn == nullptr)
+    if(pLibHandle == nullptr)
     {
-        NRPLogger::error("Plugin Library \"" + pluginLibFile + "\" does not contain an protobuf operations creation function");
-
+        NRPLogger::error("ProtoOpsManager: plugin \"{}\" has null library handle after load", pluginLibFile);
         return nullptr;
     }
 
-    return std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>((*pLaunchFcn)());
+    NRPLogger::debug("ProtoOpsManager: resolving symbol \"{}\" in plugin \"{}\"",
+                    CREATE_PROTOBUF_OPS_FCN_STR, pluginLibFile);
+
+    // Find protobuf_ops::NRPProtobufOpsIface factory function in library
+    auto *pLaunchFcn =
+        reinterpret_cast<protobuf_ops_fcn_t*>(dlsym(pLibHandle, CREATE_PROTOBUF_OPS_FCN_STR));
+
+    if(pLaunchFcn == nullptr)
+    {
+        NRPLogger::error(
+            "Plugin Library \"{}\" does not contain protobuf ops creation function \"{}\"",
+            pluginLibFile, CREATE_PROTOBUF_OPS_FCN_STR);
+        return nullptr;
+    }
+
+    auto opsPtr = std::unique_ptr<protobuf_ops::NRPProtobufOpsIface>((*pLaunchFcn)());
+    if(!opsPtr)
+    {
+        NRPLogger::error(
+            "ProtoOpsManager: creation function in plugin \"{}\" returned nullptr", pluginLibFile);
+        return nullptr;
+    }
+
+    NRPLogger::debug("ProtoOpsManager: successfully created protobuf ops from plugin \"{}\"",
+                    pluginLibFile);
+
+    return opsPtr;
 }
+
 
 ProtoOpsManager &ProtoOpsManager::getInstance()
 {

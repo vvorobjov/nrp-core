@@ -29,6 +29,6 @@ Below is a list of all the parameters needed to configure the EventLoop.
 
 \section event_loop_schema_schema Schema
 
-\include event_loop.json
+\include event_loop/event_loop.json
 
 */

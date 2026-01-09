@@ -26,11 +26,15 @@ ENV NRP_GROUP ${NRP_GROUP}
 
 # Disable Prompt During Packages Installation
 
-ENV DEBIAN_FRONTEND "noninteractive"
+ENV DEBIAN_FRONTEND="noninteractive"
 
 # INSTALL sudo
 
 RUN apt-get update -y && apt-get install -y sudo
+RUN apt-get update && \
+    apt-get install -y tzdata
+ENV TZ=Europe/Berlin
+RUN sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Set NRP_USER user
 

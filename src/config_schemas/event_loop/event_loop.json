@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventLoop",
+  "description": "Event Loop configuration parameters",
+  "$id": "#EventLoop",
+  "allOf": [
+    {
+      "$ref": "event_loop_base.json#EventLoopBase"
+    },
+    {
+      "properties": {
+        "ExecutionMode": {
+          "type": "string",
+          "enum": [
+            "AllNodes",
+            "OutputDriven"
+          ],
+          "default": "AllNodes",
+          "description": "Execution Mode that will be used when running the Event Loop"
+        }
+      }
+    }
+  ]
+}

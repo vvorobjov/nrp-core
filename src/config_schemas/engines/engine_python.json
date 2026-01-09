@@ -4,7 +4,7 @@
     "description": "Python Engine Base Configuration",
     "$id": "#PythonEngineBase",
     "allOf": [
-      { "$ref": "json://nrp-core/engines/engine_comm_protocols.json#/engine_json" },
+      { "$ref": "engine_comm_protocols.json#/engine_json" },
       {
         "properties": {
           "PythonFileName" : {

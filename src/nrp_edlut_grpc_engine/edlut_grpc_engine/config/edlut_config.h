@@ -4,7 +4,7 @@
 struct EdlutGrpcConfigConst
 {
     static constexpr char EngineType[] = "edlut_grpc_engine";
-    static constexpr char EngineSchema[] = "json://nrp-core/engines/engines_edlut.json#";
+    static constexpr char EngineSchema[] = "engines/engines_edlut.json#";
 };
 
 #endif // EDLUT_CONFIG_H

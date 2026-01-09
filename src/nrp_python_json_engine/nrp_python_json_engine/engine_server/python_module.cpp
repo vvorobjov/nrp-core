@@ -16,7 +16,7 @@ std::string parseAndValidateEngineConfig(const std::string& configFile)
 {
     nlohmann::json config(json_utils::parseJSONFile(configFile));
     json_utils::setDefault<std::string>(config.at("EngineConfig"), "EngineType", PythonConfigConst::EngineType);
-    json_utils::validateJson(config, "json://nrp-core/event_loop.json#/event_loop_engine");
+    json_utils::validateJson(config, "event_loop/event_loop.json#/event_loop_engine");
 
     PythonEngineJSONNRPClient client(config.at("EngineConfig"), ProcessLauncherInterface::unique_ptr{});
     config.at("EngineConfig") = client.engineConfig();

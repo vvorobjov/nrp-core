@@ -109,6 +109,7 @@ static void loadEngines(EnginePluginManager & pluginManager,
 static int processLogOutputOption(const std::string& logOutput, std::string logFilename, std::string logDir)
 {
     int enginesFD = -1;
+    NRPLogger::debug("logoutput option: {}, {}, {}", logOutput, logFilename, logDir);
     if (logOutput == "silent")
         enginesFD = open("/dev/null", O_WRONLY);
     else if (logOutput == "engines" || logOutput == "all") {
