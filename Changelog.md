@@ -269,3 +269,62 @@
     * [Pull request #207](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/207)
     * [Pull request #210](https://bitbucket.org/hbpneurorobotics/nrp-core/pull-requests/210)
 
+
+## NRPCore 1.5.0 (2025-01-09)
+
+1. Docker, DevContainer, and Developer Experience:
+    * Added VS Code devcontainer support.
+    * Fixed missing system dependencies in Docker images (e.g. `libbrotli-dev`, matplotlib, OpenSSL, scipy, numba).
+    * Added Xpra support for OpenSim simulations, including new Docker images and examples.
+    * Returned to a single Docker Compose file:
+        * Pull request #220
+    * Fixed and improved docker-compose examples.
+    * Added PyBullet Docker support:
+        * Pull request #222
+
+2. Ubuntu 22 / 24 and platform compatibility:
+    * Made NRPCore installable on Ubuntu 22.
+    * Extensive Ubuntu 22 and Ubuntu 24 compatibility updates.
+    * Updated dependencies and compilation flags to reduce warnings.
+    * Pinned gRPC++ version in CMake to avoid incompatibilities.
+    * Large cumulative merge for EBRAINS2 / t3.4 preparation:
+        * Pull requests #223, #224, #225
+
+3. Simulation engine and runtime improvements:
+    * Allowed `SimulationTimeout` to be specified as a floating-point value:
+        * Pull request #224
+    * Added logging for SimulationTimeout calculation.
+    * Increased gRPC timeouts and improved channel setup.
+    * Fixed protobuf API inconsistencies.
+    * Prevented gRPC server port redefinition when `EmptyLauncher` is used:
+        * Pull request #221
+
+4. NEST server and logging enhancements:
+    * Extended logging in the NEST server engine.
+    * General logging improvements across engines.
+
+5. Examples and simulation configuration fixes:
+    * Fixed OpenSim example joint naming issues.
+    * Fixed `simulation_config.json` for `Examples.OpensimTVB`:
+        * Pull request #219
+    * Added POLIMI controller to examples.
+    * Added and updated experiment submodules and links.
+
+6. CI and build system improvements:
+    * Fixed Jenkinsfile to avoid CI downloads during tests:
+        * Pull request #217
+    * Removed `ignoreFailedBuilds` parameters from CI:
+        * Pull request #211
+    * Introduced `.env` file for environment variable configuration:
+        * Pull request #216
+    * Added minimal CMake configuration.
+
+7. Documentation:
+    * Complete rewrite of the documentation.
+    * Updated demo and controller links.
+
+8. Cleanup and restructuring:
+    * Docker image renaming.
+    * Directory and experiment structure reorganization.
+    * JSON schema naming updates.
+    * Removal of deprecated controllers.
