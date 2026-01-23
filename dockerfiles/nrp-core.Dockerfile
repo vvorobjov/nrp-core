@@ -22,11 +22,12 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 RUN pip install "grpcio-tools>=1.62.2" pytest psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt==1.6.1"
 
 # Experiments
-RUN pip install opencv-python
+# RUN pip install opencv-python
 
 # Install python_on_whales for the example of invoking nrp-core remotely with compose (See guides/remote_docker_compose.dox)
 # Needed for tests
 RUN pip install python-on-whales pyyaml
+RUN pip install -U setuptools pip
 
 # Install Documentation dependencies
 

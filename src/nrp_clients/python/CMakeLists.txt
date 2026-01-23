@@ -39,7 +39,7 @@ file(COPY ${PROJECT_ROOT_FILES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${PYTHO
 # nrp-py-client-dev-nodeps is run with make
 add_custom_target(nrp-py-client-dev-nodeps ALL
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PYTHON_MODULE_NAME}
-    COMMAND pip install . -U -t "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/" --no-deps
+    COMMAND ${Python3_EXECUTABLE} -m pip install . -U -t "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/" --no-deps
     COMMENT "Installing NRP-Core Python client into NRP-Core installation folder"
     DEPENDS ${PROTO_PYTHON_FILES}
     VERBATIM

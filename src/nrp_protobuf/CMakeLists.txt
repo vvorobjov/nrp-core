@@ -456,7 +456,7 @@ endforeach()
 # nrp-py-protobuf-dev-nodeps is run with make
 add_custom_target(nrp-py-protobuf-dev-nodeps ALL
     WORKING_DIRECTORY ${PYTHON_MODULE_CMAKE_ROOT_DIR}
-    COMMAND pip install . -U -t "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/" --no-deps
+    COMMAND ${Python3_EXECUTABLE} -m pip install . -U -t "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/" --no-deps
     COMMENT "Installing NRP-Core Python protobuf into NRP-Core installation folder"
     DEPENDS ${PROTO_PYTHON_FILES_SRC} ${NRP_PROTO_PYTHON_FILES_TARGETS}
     VERBATIM
