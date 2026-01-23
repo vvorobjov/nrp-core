@@ -1,5 +1,5 @@
 {
-    "image": "nexus.neurorobotics.ebrains.eu/nrp-core/nrp-nest-gazebo-ubuntu20-env:development",
+    "image": "nrp-local/nrp-nest-gazebo-ubuntu20:local",
     // "image": "hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest",
     // "image": "hbpneurorobotics/nrp-xpra-opensim-tvb-ubuntu20-env:latest",
   
