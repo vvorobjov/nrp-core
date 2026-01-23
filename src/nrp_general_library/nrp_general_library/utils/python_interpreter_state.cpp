@@ -73,6 +73,8 @@ void PythonInterpreterState::initialize(bool allowThreads) {
         throw std::runtime_error("Failed to set Python config arguments");
     }
 
+    config.parse_argv = 0;
+
     if (allowThreads) {
         config.install_signal_handlers = 0;
         config.use_environment = 1;
