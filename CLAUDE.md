@@ -33,7 +33,8 @@ is loaded into every conversation.
   Jira access from your Claude Code session, ask the user to create it via
   claude.ai (the repo's `docs/jira_prompt.md` has the ready-made prompt).
 - **Branch name:** `EBR2-<num>-<short-slug>`, lower-kebab-case slug, ≤ 60
-  chars total. Examples: `EBR2-234-fix-entrypoint-newline`,
+  chars total, branch from development always.
+  Examples: `EBR2-234-fix-entrypoint-newline`,
   `EBR2-238-bump-paho-mqtt-1-4-1`.
 - **Commit subject:** `[EBR2-<num>] <imperative summary>`. The `<num>` is the
   same as the branch's. Multiple commits on one branch are fine — all share
