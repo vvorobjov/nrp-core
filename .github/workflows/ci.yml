@@ -14,9 +14,10 @@ jobs:
     permissions:
       contents: read
     container:
-      image: hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest
+      image: ${{ vars.NRP_CI_CONTAINER_IMAGE || 'hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest' }}
 
     env:
+      BUILD_DIR: build
       CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
       NRP_INSTALL_DIR: ${{ github.workspace }}/.nrp-install
       NRP_DEPS_INSTALL_DIR: ${{ github.workspace }}/.nrp-deps-install
@@ -44,10 +45,12 @@ jobs:
         run: |
           python3 - <<'PY'
           import glob
+          import os
           import sys
           import xml.etree.ElementTree as ET
 
-          test_files = sorted(glob.glob('build/Testing/*/Test.xml'))
+          build_dir = os.environ['BUILD_DIR']
+          test_files = sorted(glob.glob(f'{build_dir}/Testing/*/Test.xml'))
           if not test_files:
               print('No CTest XML reports found')
               sys.exit(1)
@@ -67,7 +70,7 @@ jobs:
         with:
           name: test-results
           path: |
-            build/Testing/**/*.xml
-            build/xml/**/*.xml
-            build/gcovr.xml
+            ${{ env.BUILD_DIR }}/Testing/**/*.xml
+            ${{ env.BUILD_DIR }}/xml/**/*.xml
+            ${{ env.BUILD_DIR }}/gcovr.xml
           if-no-files-found: ignore
