@@ -193,4 +193,27 @@ TEST(ComputationalGraphPorts, OUTPUT_PORT_PUBLISH_WITH_ZERO_SUBSCRIBERS_IS_A_NO_
     ASSERT_NO_THROW(o_p.publish(nullptr));
 }
 
+TEST(ComputationalGraphPorts, PORT_ID_ACCESSOR_IS_CONST_CALLABLE)
+{
+    // Regression test for EBR2-23 (former PB-4). Port::id() used to be a
+    // non-const member, so callers holding a `const Port&` could not read
+    // the id. Binding to const Port& here and then calling id() compiles
+    // only once the method carries the `const` qualifier. Port::parent()
+    // was already const; we pin its const-callable property alongside for
+    // symmetry.
+    TestNode n("owner", ComputationalNode::Input);
+    std::function<void(const int*)> cb = [](const int*){};
+
+    OutputPort<int> o_p("out", &n);
+    InputPort<int, int> i_p("in", &n, cb);
+
+    const Port &const_out = o_p;
+    const Port &const_in  = i_p;
+
+    EXPECT_EQ(const_out.id(), "out");
+    EXPECT_EQ(const_in.id(),  "in");
+    EXPECT_EQ(const_out.parent(), &n);
+    EXPECT_EQ(const_in.parent(),  &n);
+}
+
 // EOF

@@ -44,7 +44,7 @@ public:
     /*!
      * \brief Returns the port 'id'
      */
-    const std::string& id()
+    const std::string& id() const
     { return _id; }
 
     /*!
