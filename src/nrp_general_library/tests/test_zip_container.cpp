@@ -30,14 +30,7 @@
 #include <vector>
 
 using nrp_test::TempDir;
-
-// Happy-path coverage (compressPath + getCompressedData + extractZipFiles)
-// is deliberately NOT added here: writing those tests during EBR2-19
-// surfaced a double-free in ZipSourceWrapper's destructor (see
-// docs/probable_bugs.md PB-6). Per the "cover, don't fix" rule of this
-// branch, we leave the crashing path untested until that bug has its own
-// ticket. The two error-path tests below exercise the constructors that
-// do NOT rely on the affected code path.
+using nrp_test::writeTextFile;
 
 TEST(ZipContainerTest, OpenMissingArchivePathThrows)
 {
@@ -57,18 +50,9 @@ TEST(ZipContainerTest, ConstructFromGarbageBytesThrows)
 
 TEST(ZipContainerTest, StringConstructorReadsOnlySizeBytesNotCapacity)
 {
-    // Regression test for EBR2-21 (former PB-2): the old ctor used
-    // data.capacity() as the read length, so a string with reserved-but-
-    // unused capacity past size() caused libzip to consume uninitialised
-    // bytes and fail with a junk error. After the fix only the first
-    // size() bytes are read.
-    //
-    // To observe the behavioural flip we construct a string containing
-    // just a minimal valid ZIP archive (a 22-byte End-Of-Central-Directory
-    // record with zero entries) in a buffer whose capacity is much
-    // larger. Before the fix libzip would be told to parse ~4096 bytes,
-    // would hit uninitialised data past byte 22, and throw.
-    // After the fix it sees exactly the 22 EOCD bytes and opens cleanly.
+    // Minimal valid ZIP: a 22-byte End-Of-Central-Directory record with
+    // zero entries. Held in a string with capacity > size so the test
+    // distinguishes size-bytes-read from capacity-bytes-read.
     const char minimalZipEocd[] = {
         'P', 'K', 0x05, 0x06,                    // EOCD signature
         0, 0,                                    // disk number
@@ -84,9 +68,38 @@ TEST(ZipContainerTest, StringConstructorReadsOnlySizeBytesNotCapacity)
     std::string s;
     s.reserve(4096);
     s.assign(minimalZipEocd, sizeof(minimalZipEocd));
-    ASSERT_EQ(s.size(), 22u);
-    ASSERT_GT(s.capacity(), s.size())
-        << "test precondition: capacity must exceed size to distinguish the fix";
+    ASSERT_GT(s.capacity(), s.size());
 
     EXPECT_NO_THROW(ZipContainer(std::move(s)));
+}
+
+// Round-trip via getCompressedData / saveToDestination is intentionally
+// NOT exercised below: both route through ZipContainer::addZipToZip,
+// which creates libzip sources via zip_source_zip but never hands them
+// to zip_file_add, so zip_close fails with "Entry has been changed".
+// Until that separate bug is fixed the tests below can only confirm
+// that compressPath itself completes without crashing.
+
+TEST(ZipContainerTest, CompressPathWithFilesAndSubdirsDoesNotCrash)
+{
+    TempDir src;
+    writeTextFile(src / "a.txt", "alpha");
+    writeTextFile(src / "sub/b.txt", "beta");
+
+    EXPECT_NO_THROW({
+        ZipContainer archive = ZipContainer::compressPath(src.path(), /*keepRelDirStruct=*/false);
+        (void)archive;
+    });
+}
+
+TEST(ZipContainerTest, CompressPathWithKeepRelDirStructDoesNotCrash)
+{
+    TempDir src;
+    writeTextFile(src / "top.txt", "T");
+    writeTextFile(src / "a/b/deep.txt", "D");
+
+    EXPECT_NO_THROW({
+        ZipContainer archive = ZipContainer::compressPath(src.path(), /*keepRelDirStruct=*/true);
+        (void)archive;
+    });
 }
