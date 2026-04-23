@@ -388,7 +388,7 @@ class EngineGrpcClient
                 const uint16_t newPort = getFreePort(addressParse.host());
 
                 // Returns the address using the new port and the previous host
-                return addressParse.host() + ":" + std::to_string(newPort);
+                return formatHostPort(addressParse.host(), newPort);
             }
 
             return address;
