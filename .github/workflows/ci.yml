@@ -36,6 +36,10 @@ jobs:
         shell: bash
         run: bash .ci/20-build.sh
 
+      - name: Run full test script
+        shell: bash
+        run: bash .ci/30-run-tests.sh
+
       - name: Run smoke test subset
         shell: bash
         run: |
