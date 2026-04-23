@@ -10,14 +10,16 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 120
+    permissions:
+      contents: read
     container:
       image: hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest
 
     env:
       CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
       NRP_INSTALL_DIR: ${{ github.workspace }}/.nrp-install
-      NRP_DEPS_INSTALL_DIR: ${{ github.workspace }}/.nrp-install
+      NRP_DEPS_INSTALL_DIR: ${{ github.workspace }}/.nrp-deps-install
 
     steps:
       - name: Checkout repository
