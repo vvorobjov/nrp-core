@@ -33,6 +33,7 @@
 #include "nrp_general_library/utils/json_schema_utils.h"
 
 #include "tests/test_env_cmake.h"
+#include "tests/test_helpers.h"
 
 #define MQTT_WELCOME "nrp_simulation/0/welcome"
 #define MQTT_DATA "nrp_simulation/0/data"
@@ -40,8 +41,7 @@
 TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 {
     // Engine config
-    auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
-    nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
+    nlohmann::json engine_config = nrp_test::loadJsonFile(TEST_ENGINE_SIMPLE_CONFIG_FILE);
     json_utils::validateJson(engine_config, "engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // Launch DataTransferEngine
@@ -110,8 +110,7 @@ TEST(TestDatatransferGrpcEngine, ServerConnectedMock)
 TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
 {
     // Engine config
-    auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
-    nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
+    nlohmann::json engine_config = nrp_test::loadJsonFile(TEST_ENGINE_SIMPLE_CONFIG_FILE);
     json_utils::validateJson(engine_config, "engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // Launch DataTransferEngine
@@ -140,8 +139,7 @@ TEST(TestDatatransferGrpcEngine, ServerDisconnectedMock)
 TEST(TestDatatransferGrpcEngine, ServerBroker)
 {
     // Engine config
-    auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
-    nlohmann::json engine_config(nlohmann::json::parse(simConfigFile));
+    nlohmann::json engine_config = nrp_test::loadJsonFile(TEST_ENGINE_SIMPLE_CONFIG_FILE);
     json_utils::validateJson(engine_config, "engines/engine_datatransfer.json#/engine_datatransfer_base");
 
     // MQTT client config

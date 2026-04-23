@@ -75,6 +75,10 @@ set(TEST_SRC_FILES
     tests/test_engine_client.cpp
     tests/test_process_launcher_basic.cpp
     tests/test_function_manager.cpp
+    tests/test_helpers_smoke.cpp
+    tests/test_file_finder.cpp
+    tests/test_zip_container.cpp
+    tests/test_json_schema_utils.cpp
 )
 
 ##########################################
