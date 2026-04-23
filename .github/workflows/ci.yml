@@ -1,21 +1,31 @@
 name: CI
 
 # The container image used below is built and pushed by the
-# 'build-ci-image.yml' workflow.  Run that workflow first if the image does
-# not yet exist in the hbpneurorobotics Docker Hub organisation.
+# 'build-ci-image.yml' workflow.  On pushes to master/development that touch
+# the Dockerfiles, the image is rebuilt first and this workflow is triggered
+# automatically via workflow_run once the build completes.  For all other
+# pushes and pull requests the image is pulled directly from Docker Hub.
 #
 # Image name: hbpneurorobotics/nrp-nest-gazebo-ubuntu20-env:latest
 # (corresponds to the 'nrp-nest-gazebo-env' service in docker-compose.yaml)
 
 on:
-  push:
+  # Run directly for pull requests (image already exists on Docker Hub).
+  pull_request:
+  # Run after the image-build workflow completes on master/development pushes,
+  # so the fresh image is always available before we try to pull it.
+  workflow_run:
+    workflows: ["Build and Push CI Container Image"]
+    types:
+      - completed
     branches:
       - master
       - development
-  pull_request:
 
 jobs:
   build-and-test:
+    # When triggered by workflow_run, only proceed if the upstream build succeeded.
+    if: ${{ github.event_name == 'pull_request' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
