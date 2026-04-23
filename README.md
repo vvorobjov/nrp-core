@@ -2,6 +2,36 @@ This README file contains information on how to get nrp-core installed in your s
 
 **WARNING:** nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in the instructions below. Installation in other environments might be possible but has not been tested yet.
 
+## Quick start for contributors (devcontainer loop)
+
+If you have Docker installed and just want to rebuild + run the full test
+suite the way reviewers will, use the one-shot helper:
+
+```bash
+# From the repo root. Builds the nrp-local/nrp-nest-gazebo-ubuntu20:local
+# image if missing, then compiles + installs nrp-core and runs ctest inside
+# the canonical devcontainer.
+bash .ci/00-dev-rebuild-and-test.sh
+```
+
+Useful flags:
+
+- `--rebuild-image` — force rebuild of the devcontainer image even if it
+  already exists locally.
+- `--no-image` — skip the image check entirely (assume it already exists).
+- `--test-filter REGEX` — pass `-R REGEX` to ctest.
+- `--keep-build` — reuse the existing `build/` directory instead of wiping it.
+
+The script is the recommended local loop. The numbered stages under
+`.ci/` (`11-prepare-build.sh`, `20-build.sh`, `30-run-tests.sh`) remain
+callable individually for CI. Exit status is the real ctest status — the
+`0x8` mask in `.ci/30-run-tests.sh` is a Jenkins-only xunit workaround and
+is NOT applied when running through `00-dev-rebuild-and-test.sh`.
+
+The sections below document the manual install path, which is retained for
+users who want to run nrp-core directly on an Ubuntu 20.04 host without
+Docker.
+
  * Before starting the installation, define, please, the nrp-core installation directory:
  
  ```
