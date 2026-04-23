@@ -1,5 +1,12 @@
 name: CI
 
+# The container image used below is built and pushed by the
+# 'build-ci-image.yml' workflow.  Run that workflow first if the image does
+# not yet exist in the hbpneurorobotics Docker Hub organisation.
+#
+# Image name: hbpneurorobotics/nrp-nest-gazebo-ubuntu20-env:latest
+# (corresponds to the 'nrp-nest-gazebo-env' service in docker-compose.yaml)
+
 on:
   push:
     branches:
@@ -14,7 +21,8 @@ jobs:
     permissions:
       contents: read
     container:
-      image: ${{ vars.NRP_CI_CONTAINER_IMAGE || 'hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest' }}
+      # Override by setting the NRP_CI_CONTAINER_IMAGE repository variable.
+      image: ${{ vars.NRP_CI_CONTAINER_IMAGE || 'hbpneurorobotics/nrp-nest-gazebo-ubuntu20-env:latest' }}
 
     env:
       BUILD_DIR: build

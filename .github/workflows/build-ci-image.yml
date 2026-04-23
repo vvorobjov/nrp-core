@@ -1,0 +1,73 @@
+name: Build and Push CI Container Image
+
+# Builds the 'nrp-nest-gazebo-ubuntu20-env' image that the CI test job runs
+# inside, and pushes it to the hbpneurorobotics Docker Hub organisation.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   DOCKERHUB_USERNAME  – Docker Hub username with push rights to hbpneurorobotics
+#   DOCKER_HUB_TOKEN    – Docker Hub access token for that account
+#
+# This workflow must complete successfully at least once before the CI test
+# job ('ci.yml') can pull the image and run.  After the initial push, re-run
+# this workflow whenever 'dockerfiles/' or '.ci/dependencies/' change.
+
+on:
+  push:
+    branches:
+      - master
+      - development
+    paths:
+      - dockerfiles/**
+      - .ci/dependencies/**
+      - .ci/bashrc
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+
+    env:
+      # These variables control which registry and tag the build script uses.
+      # The docker-compose.yaml services produce images named:
+      #   ${NRP_DOCKER_REGISTRY}/<service-image>:${NRP_CORE_TAG}
+      NRP_DOCKER_REGISTRY: hbpneurorobotics
+      NRP_CORE_TAG: latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      # Pull every intermediate image that will be used as a layer-cache source.
+      # Failures are silenced (|| true) so the first-ever build still succeeds.
+      - name: Pull existing images for layer cache
+        run: |
+          docker pull hbpneurorobotics/base-ubuntu20-env:latest || true
+          docker pull hbpneurorobotics/gazebo-ubuntu20-env:latest || true
+          docker pull hbpneurorobotics/nest-gazebo-ubuntu20-env:latest || true
+          docker pull hbpneurorobotics/nrp-nest-gazebo-ubuntu20-env:latest || true
+
+      # build_nrp_core_image.sh recursively builds all dependent services:
+      #   base-env → gazebo-env → nest-gazebo-env → nrp-nest-gazebo-env
+      # Each step tags the image as hbpneurorobotics/<name>:latest.
+      - name: Build nrp-nest-gazebo-env image chain
+        run: bash build_nrp_core_image.sh nrp-nest-gazebo-env
+
+      # Push every image produced by the build chain so they are available
+      # as cache sources on the next run and as the CI test container.
+      - name: Push images to Docker Hub
+        run: |
+          docker push hbpneurorobotics/base-ubuntu20-env:latest
+          docker push hbpneurorobotics/gazebo-ubuntu20-env:latest
+          docker push hbpneurorobotics/nest-gazebo-ubuntu20-env:latest
+          docker push hbpneurorobotics/nrp-nest-gazebo-ubuntu20-env:latest
