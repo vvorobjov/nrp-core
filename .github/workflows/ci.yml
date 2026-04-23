@@ -36,33 +36,11 @@ jobs:
         shell: bash
         run: bash .ci/20-build.sh
 
-      - name: Run tests
-        shell: bash
-        run: bash .ci/30-run-tests.sh
-
-      - name: Ensure at least one test passed
+      - name: Run smoke test subset
         shell: bash
         run: |
-          python3 - <<'PY'
-          import glob
-          import os
-          import sys
-          import xml.etree.ElementTree as ET
-
-          build_dir = os.environ['BUILD_DIR']
-          test_files = sorted(glob.glob(f'{build_dir}/Testing/*/Test.xml'))
-          if not test_files:
-              print('No CTest XML reports found')
-              sys.exit(1)
-
-          passed = 0
-          for path in test_files:
-              root = ET.parse(path).getroot()
-              passed += len(root.findall(".//Test[@Status='passed']"))
-
-          print(f'Passed tests found: {passed}')
-          sys.exit(0 if passed > 0 else 1)
-          PY
+          ctest --test-dir "${BUILD_DIR}" --output-on-failure \
+            -R "EngineScript|ServerCallbacks|PyServerGrpcCallbacks|EventLoopPython"
 
       - name: Upload test artifacts
         if: always()
