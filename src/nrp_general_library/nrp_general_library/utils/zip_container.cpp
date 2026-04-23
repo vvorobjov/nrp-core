@@ -113,7 +113,7 @@ ZipContainer::ZipFileWrapper::operator zip_file_t *()
 
 
 ZipContainer::ZipContainer(std::string &&data)
-    : _data(ZipContainer::createZip(data.data(), data.capacity()))
+    : _data(ZipContainer::createZip(data.data(), data.size()))
 {}
 
 ZipContainer::ZipContainer(std::vector<uint8_t> &&data)

@@ -77,7 +77,9 @@ class ZipContainer
     public:
         /*!
          * \brief Constructor. Takes a string argument. This is mainly used for Pistache data receiving
-         * \param data Zip File Data. Note: Will use entire data.capacity() as ZIP file array, not just data.size()
+         * \param data Zip File Data. Only the first data.size() bytes are
+         *             used; any reserved-but-unused capacity past size() is
+         *             NOT read. See EBR2-21 for history.
          * \exception Throws std::logic_error on failure
          */
         ZipContainer(std::string &&data);
