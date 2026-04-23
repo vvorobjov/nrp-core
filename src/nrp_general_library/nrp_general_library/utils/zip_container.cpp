@@ -298,15 +298,17 @@ zip_t *ZipContainer::createZip(const void *data, zip_uint64_t length)
     if(pZipSource == nullptr)
         throw NRPException::logCreate(std::string("Failed to create Zip buffer from data: ") + zip_error_strerror(&zErr));
 
-    // Copy data to buffer managed by ZipContainer
-    if(int cErr = zip_source_begin_write(pZipSource) < 0 ||
+    // Copy data to buffer managed by ZipContainer. libzip signals failure
+    // on each of these calls by returning a negative value and stashing the
+    // detailed error on the source; we read that back via zip_source_error
+    // rather than trying to decode the return value ourselves.
+    if(zip_source_begin_write(pZipSource) < 0 ||
             zip_source_write(pZipSource, data, length) < 0 ||
             zip_source_commit_write(pZipSource) < 0)
     {
-        zErr = ZipErrorT(cErr);
-        const std::string zErrMsg = cErr == 0 ? zip_error_strerror(zip_source_error(pZipSource)) : zip_error_strerror(&zErr);
-
-        throw NRPException::logCreate("Failed to copy Zip data to buffer: " + zErrMsg);
+        zip_error_t *const srcErr = zip_source_error(pZipSource);
+        const char *const zErrMsg = srcErr ? zip_error_strerror(srcErr) : "unknown libzip error";
+        throw NRPException::logCreate(std::string("Failed to copy Zip data to buffer: ") + zErrMsg);
     }
 
     // Create zip struct. Will take ownership of pZipSource and delete on close
