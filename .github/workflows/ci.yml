@@ -18,6 +18,7 @@ jobs:
 
     env:
       BUILD_DIR: build
+      SMOKE_TEST_PATTERN: EngineScript|ServerCallbacks|PyServerGrpcCallbacks|EventLoopPython
       CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
       NRP_INSTALL_DIR: ${{ github.workspace }}/.nrp-install
       NRP_DEPS_INSTALL_DIR: ${{ github.workspace }}/.nrp-deps-install
@@ -37,7 +38,6 @@ jobs:
         run: bash .ci/20-build.sh
 
       - name: Run full test script
-        continue-on-error: true
         shell: bash
         run: bash .ci/30-run-tests.sh
 
@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           ctest --test-dir "${BUILD_DIR}" --output-on-failure \
-            -R "EngineScript|ServerCallbacks|PyServerGrpcCallbacks|EventLoopPython"
+            -R "${SMOKE_TEST_PATTERN}"
 
       - name: Upload test artifacts
         if: always()
