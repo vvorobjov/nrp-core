@@ -24,7 +24,12 @@ from argparse import ArgumentParser
 from abc import ABC, abstractmethod
 import logging
 import json
-import paho.mqtt.client as mqtt
+try:
+    import paho.mqtt.client as mqtt
+    _MQTT_IMPORT_ERROR = None
+except ImportError as e:
+    mqtt = None
+    _MQTT_IMPORT_ERROR = e
 from nrp_core.event_loop import EventLoopInterface
 
 
@@ -67,6 +72,13 @@ class EventLoopEngine(EventLoopInterface):
                  mqtt_config: dict,
                  engine_wrapper: EngineWrapper):
         super().__init__(timestep, timestep_thres)
+
+        if mqtt is None:
+            raise RuntimeError(
+                "EventLoopEngine requires the paho-mqtt Python package, which could "
+                "not be imported ({}). This typically means nrp-core was built with "
+                "ENABLE_MQTT=OFF or paho-mqtt is not installed in the active "
+                "environment.".format(_MQTT_IMPORT_ERROR))
 
         self._store_capacity = store_capacity
         self._do_process_last = do_process_last
