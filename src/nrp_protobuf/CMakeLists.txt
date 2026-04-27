@@ -46,6 +46,7 @@ set(EXEC_SRC_FILES
 
 # List testing build files
 set(TEST_SRC_FILES
+    tests/test_proto_ops_manager.cpp
 )
 
 

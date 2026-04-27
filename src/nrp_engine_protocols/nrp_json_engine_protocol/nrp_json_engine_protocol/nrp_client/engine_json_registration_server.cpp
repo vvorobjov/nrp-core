@@ -112,7 +112,7 @@ std::string EngineJSONRegistrationServer::tryInstantiate(const std::string & ini
 
             // Recreate the address using the new port and the previous host
 
-            address = host + ":" + std::to_string(newPort);
+            address = formatHostPort(host, newPort);
 
             // Mark the attempt to start the server as failed. We should try again with the new port
 

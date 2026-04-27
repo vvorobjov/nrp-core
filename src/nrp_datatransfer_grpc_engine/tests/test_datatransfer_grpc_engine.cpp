@@ -30,13 +30,13 @@
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
 
 #include "tests/test_env_cmake.h"
+#include "tests/test_helpers.h"
 
 
 TEST(TestDatatransferGrpcEngine, Launcher)
 {
     // Engine config
-    auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
-    nlohmann::json config(nlohmann::json::parse(simConfigFile));
+    nlohmann::json config = nrp_test::loadJsonFile(TEST_ENGINE_SIMPLE_CONFIG_FILE);
 
     // Launch DataStream server
     DataTransferEngineGrpcLauncher launcher;
@@ -54,8 +54,7 @@ TEST(TestDatatransferGrpcEngine, Launcher)
 TEST(TestDatatransferGrpcEngine, LauncherLog)
 {
     // Engine config
-    auto simConfigFile = std::fstream(TEST_ENGINE_SIMPLE_CONFIG_FILE, std::ios::in);
-    nlohmann::json config(nlohmann::json::parse(simConfigFile));
+    nlohmann::json config = nrp_test::loadJsonFile(TEST_ENGINE_SIMPLE_CONFIG_FILE);
 
     // capture console logs
     testing::internal::CaptureStdout();

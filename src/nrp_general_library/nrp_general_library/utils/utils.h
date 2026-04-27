@@ -39,31 +39,33 @@
 
 /*!
  * \brief Attempts to bind to a given address
- * \param hostIpv4 IP4 address of the host
+ * \param host IPv4 or IPv6 address of the host (or "localhost")
  * \param port Port to connect to, if 0 a free port is searched and used
  * \return Port used in the connection, same as "port" argument or found free port
  *
  * When "port" is 0, the function asks the OS to look for a free port number. Throws an exception
- * if the connection is not successful
+ * if the connection is not successful. The socket family is chosen to match the resolved address
+ * so that callers receiving an IPv6 address from a name resolver (e.g. Pistache::Address for
+ * "localhost" on hosts where getaddrinfo returns ::1 first) bind successfully.
  */
-inline int bindOrFindFreePort(std::string hostIpv4, int port = 0)
+inline int bindOrFindFreePort(std::string host, int port = 0)
 {
     using namespace boost::asio;
 
     ip::address addressStruct;
 
-    if(hostIpv4 == "localhost")
+    if(host == "localhost")
     {
         addressStruct = ip::address_v4::loopback();
     }
     else
     {
-        addressStruct = ip::address::from_string(hostIpv4);
+        addressStruct = ip::address::from_string(host);
     }
 
     io_service service;
     ip::tcp::socket socket(service);
-    socket.open(ip::tcp::v4());
+    socket.open(addressStruct.is_v6() ? ip::tcp::v6() : ip::tcp::v4());
     socket.bind(ip::tcp::endpoint(addressStruct, port));
 
     int newPort = socket.local_endpoint().port();
@@ -76,23 +78,38 @@ inline int bindOrFindFreePort(std::string hostIpv4, int port = 0)
 
 /*!
  * \brief Attempts to bind to a given address
- * \param hostIpv4 IP4 address of the host
+ * \param host IPv4 or IPv6 address of the host (or "localhost")
  * \param port Port to connect to
  *
  * Throws an exception if the connection is not successful
  */
-inline void bindToAddress(std::string hostIpv4, int port)
-{ bindOrFindFreePort(hostIpv4, port); }
+inline void bindToAddress(std::string host, int port)
+{ bindOrFindFreePort(host, port); }
 
 /*!
  * \brief Returns a free port number
- * \param hostIpv4 IP4 address of the host
+ * \param host IPv4 or IPv6 address of the host (or "localhost")
  * \return Free port number
  *
  * Asks the OS to look for a free port number
  */
-inline int getFreePort(std::string hostIpv4)
-{ return bindOrFindFreePort(hostIpv4); }
+inline int getFreePort(std::string host)
+{ return bindOrFindFreePort(host); }
+
+/*!
+ * \brief Formats a host:port endpoint, bracketing the host if it is an IPv6 literal.
+ *
+ * IPv6 numeric addresses contain colons and must be wrapped in square brackets
+ * so that the final colon can be interpreted as the port separator (RFC 3986 §3.2.2,
+ * and required by gRPC / cURL / most URI parsers). IPv4 literals and DNS names
+ * ("127.0.0.1", "localhost") are returned unchanged.
+ */
+inline std::string formatHostPort(const std::string & host, int port)
+{
+    const bool isIpv6Literal = host.find(':') != std::string::npos
+                               && host.front() != '['; // already bracketed
+    return (isIpv6Literal ? "[" + host + "]" : host) + ":" + std::to_string(port);
+}
 
 /*!
  * \brief Appends 'path' to PYTHON_PATH env variable

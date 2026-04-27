@@ -57,8 +57,13 @@ namespace json_utils {
 
         try {
             s >> schema;
-        } catch (std::exception &e) {
-            throw e;
+        } catch (std::exception &) {
+            // Rethrow by reference (bare `throw;`) so the dynamic type --
+            // typically nlohmann::json::parse_error -- reaches the caller
+            // intact. A prior implementation used `throw e;` which sliced
+            // to std::exception and defeated caller-side type-specific
+            // catch blocks. See EBR2-22.
+            throw;
         }
     }
 

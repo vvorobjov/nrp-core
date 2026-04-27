@@ -80,6 +80,24 @@ class EventLoopEngineTest(EventLoopEngine):
 
 class TestEventLoopEngine(unittest.TestCase):
 
+    def test_event_loop_engine_raises_clear_error_without_mqtt(self):
+        # Simulate an nrp-core build where paho-mqtt is unavailable (e.g. ENABLE_MQTT=OFF).
+        # The module-level try/except already ran successfully at import time, so we patch
+        # the module's mqtt attribute directly and verify EventLoopEngine's __init__ refuses
+        # to construct and raises a RuntimeError naming the build flag.
+        from nrp_core.event_loop import event_loop_engine as ele_mod
+        saved_mqtt = ele_mod.mqtt
+        saved_err = ele_mod._MQTT_IMPORT_ERROR
+        ele_mod.mqtt = None
+        ele_mod._MQTT_IMPORT_ERROR = ImportError("No module named 'paho'")
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                EventLoopEngineTest(0.01, 0.001, 2, True, {"test": True}, {}, EngineWrapperTest())
+            self.assertIn("ENABLE_MQTT", str(ctx.exception))
+        finally:
+            ele_mod.mqtt = saved_mqtt
+            ele_mod._MQTT_IMPORT_ERROR = saved_err
+
     def test_event_loop_engine(self):
         engine_config = {"test": True}
         engine = EngineWrapperTest()
