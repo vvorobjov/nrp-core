@@ -328,3 +328,30 @@
     * Directory and experiment structure reorganization.
     * JSON schema naming updates.
     * Removal of deprecated controllers.
+
+## NRPCore 1.5.1 (2026-04-27)
+
+1. Stability and bug fixes:
+    * Fixed gRPC engine bind failure on IPv6-enabled hosts; the socket family now follows the resolved address and IPv6 literals are bracketed for `AddListeningPort`:
+        * Pull request #227
+    * Fixed `ZipContainer::createZip` capturing a boolean instead of the libzip error code, which masked the real failure cause behind a "No error" message:
+        * Pull request #230
+    * Fixed `ZipContainer(std::string&&)` reading `capacity()` bytes instead of `size()`, which could over-read uninitialised tail bytes:
+        * Pull request #231
+    * Fixed `jsonSchemaLoader` rethrow path so derived exception types are no longer sliced when propagated to callers:
+        * Pull request #232
+    * Made `Port::id()` const-callable so it can be invoked on `const Port&` references:
+        * Pull request #233
+    * Fixed a crash in `ZipSourceWrapper` and tightened the surrounding tests:
+        * Pull request #234
+    * Guarded the paho-mqtt import in `nrp_core.event_loop` so the module loads cleanly when MQTT is disabled at build time:
+        * Pull request #236
+
+2. Documentation:
+    * Documented the `ProtoOpsManager` singleton lifetime contract:
+        * Pull request #235
+
+3. Developer experience and tests:
+    * Added `.ci/00-dev-rebuild-and-test.sh`, a one-shot host-side helper that ensures the canonical image, runs configure + build + install + ctest inside the container, and bypasses the Jenkins-only `0x8` exit mask so failing tests fail the script.
+    * Expanded the unit-test suite (zip container, JSON schema utils, file finder, ports, ProtoOpsManager, datatransfer engines) and introduced `CLAUDE.md`, `docs/jira_prompt.md`, `.github/copilot-instructions.md`, and `docs/probable_bugs.md` to capture the local development contract:
+        * Pull request #229
