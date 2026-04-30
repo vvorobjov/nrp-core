@@ -32,24 +32,49 @@ import code_generation as cg
 import optparse
 
 
+def _get_package_path(pkg, explicit_path):
+    """Resolve where the .msg files for `pkg` live.
+
+    - If ``--package_path`` was passed, use it verbatim (preferred, used
+      by cmake for the in-tree nrp_ros_msgs).
+    - Otherwise fall back to ament_index_python's share-directory
+      lookup, which works for any installed ROS 2 package.
+    """
+    if explicit_path:
+        return explicit_path
+    try:
+        from ament_index_python.packages import get_package_share_directory
+    except ImportError as exc:
+        raise RuntimeError(
+            "--package_path not provided and ament_index_python is not "
+            "available. Install ROS 2 (ros-<distro>-ros-base) or pass "
+            "--package_path explicitly.") from exc
+    return get_package_share_directory(pkg)
+
+
 if __name__ == "__main__":
-    parser = optparse.OptionParser(epilog='Generates boost python bindings for ROS msgs from a particular ROS package.')
+    parser = optparse.OptionParser(epilog='Generates boost python bindings for ROS 2 msgs from a particular ROS package.')
     parser.add_option('--package', metavar='ROS_PACKAGE',  dest='package', type='string',
                        help='The ROS package to generate bindings for.')
+    parser.add_option('--package_path', metavar='ROS_PACKAGE_SRC', dest='package_path', type='string',
+                       default='',
+                       help='Filesystem path to the source tree of ROS_PACKAGE (containing msg/*.msg). '
+                            'If omitted, ament_index_python is used to locate an installed package.')
     parser.add_option('--cpp_target_dir', metavar='CPP_TARGET_DIR', dest='cpp_target_dir', type='string',
                         default= os.getcwd(), help='Where to place the generated cpp files.')
     parser.add_option('--py_target_dir',metavar='PY_TARGET_DIR', dest='py_target_dir', type='string',
                         default= os.getcwd(), help='Where to place the ROS_PACKAGE python converter files.')
     parser.add_option('--current_package', metavar='CURRENT_ROS_PACKAGE', dest='current_package', type='string')
     (options, a) = parser.parse_args()
-   
+
     pkg = options.package
+    pkg_path = _get_package_path(pkg, options.package_path)
     cpp_target_dir = options.cpp_target_dir
-    py_target_dir = options.py_target_dir #os.path.join(args.py_target_dir, pkg)
+    py_target_dir = options.py_target_dir
     if not os.path.exists(py_target_dir):
         os.makedirs(py_target_dir)
     if not os.path.exists(cpp_target_dir):
         os.makedirs(cpp_target_dir)
-    cg.write_bindings(pkg, cpp_target_dir)
-    cg.write_rospy_conversions(pkg, py_target_dir, options.current_package)
-    
+    cg.write_bindings(pkg_path, pkg, cpp_target_dir)
+    cg.write_rospy_conversions(pkg_path, pkg, py_target_dir, options.current_package)
+

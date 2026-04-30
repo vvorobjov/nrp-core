@@ -21,7 +21,7 @@
 //
 
 #ifdef ROS_ON
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 #include "nrp_ros_proxy/nrp_ros_proxy.h"
 #endif
 
@@ -285,11 +285,14 @@ int main(int argc, char *argv[])
         extProcs.push_back(std::move(procLaunch));
     }
 
-    // Connect to ROS
+    // Connect to ROS 2
 #ifdef ROS_ON
     if(simConfig->contains("ROSNode")) {
-        nlohmann::json nodeProperties = simConfig->at("ROSNode");
-        ros::init(std::map<std::string, std::string>(), nodeProperties.at("NodeName"));
+        // ROS 2 node name is fixed in NRPROSProxy ("nrp_core"); the JSON
+        // "NodeName" field is still accepted for config-file compatibility
+        // but is no longer used to name the rclcpp node.
+        if(!rclcpp::ok())
+            rclcpp::init(0, nullptr);
         NRPROSProxy::resetInstance();
     }
 #else
@@ -383,6 +386,12 @@ int main(int argc, char *argv[])
 
     if(enginesFD >= 0)
         close(enginesFD);
+
+#ifdef ROS_ON
+    // ROS 2 requires an explicit shutdown paired with rclcpp::init.
+    if(rclcpp::ok())
+        rclcpp::shutdown();
+#endif
 
     NRPLogger::info("Exiting Simulation Manager");
     return 0;

@@ -65,12 +65,12 @@ def test_input(input_rosmsg):
 
     duration = rbt.Duration()
     #duration.sec = 1
-    tc.assertEqual      (input_rosmsg.duration_msg.secs, duration.secs)
-    tc.assertEqual      (input_rosmsg.duration_msg.nsecs, duration.nsecs)
+    tc.assertEqual      (input_rosmsg.duration_msg.sec, duration.sec)
+    tc.assertEqual      (input_rosmsg.duration_msg.nanosec, duration.nanosec)
 
     time = rbt.Time()
-    tc.assertEqual      (input_rosmsg.time_msg.secs, time.secs)
-    tc.assertEqual      (input_rosmsg.time_msg.nsecs, time.nsecs)
+    tc.assertEqual      (input_rosmsg.time_msg.sec, time.sec)
+    tc.assertEqual      (input_rosmsg.time_msg.nanosec, time.nanosec)
 
     tc.assertEqual      (input_rosmsg.std_string_msg.data, "TestString")
 
@@ -120,12 +120,12 @@ def test_output():
     test_datapack.float_array_msg.append(6)
 
     #duration = rbt.Duration()
-    test_datapack.duration_msg.secs = 60
-    test_datapack.duration_msg.nsecs = 0
+    test_datapack.duration_msg.sec = 60
+    test_datapack.duration_msg.nanosec = 0
 
     #time = rbt.Time()
-    test_datapack.time_msg.secs = 0
-    test_datapack.time_msg.nsecs = 1000000
+    test_datapack.time_msg.sec = 0
+    test_datapack.time_msg.nanosec = 1000000
 
     pose = gmb.Pose()
     pose.position.x = 1

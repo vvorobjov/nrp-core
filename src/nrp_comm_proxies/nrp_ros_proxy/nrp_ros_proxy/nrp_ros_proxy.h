@@ -22,10 +22,27 @@
 #ifndef ROS_PROXY_H
 #define ROS_PROXY_H
 
-#include "ros/ros.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+// ─────────────────────────────────────────────────────────────────────
+// NRP ROS 2 proxy (rclcpp)
+//
+// Singleton wrapping a rclcpp::Node with ROS 2 publishers and
+// subscriptions used by the NRPCore event-loop ROS nodes. Replaces
+// the previous ROS 1 roscpp implementation (ros::NodeHandle +
+// ros::Publisher / ros::Subscriber).
+//
+// ROS 2 publishers are typed (rclcpp::Publisher<MsgT>), unlike the
+// untyped ros::Publisher. We erase the type by storing a
+// PublisherBase::SharedPtr plus a std::function closure that knows
+// how to publish the concrete message type.
+// ─────────────────────────────────────────────────────────────────────
+
 #include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "rclcpp/rclcpp.hpp"
 
 class NRPROSProxy {
 
@@ -49,35 +66,76 @@ public:
     static NRPROSProxy &resetInstance();
 
     /*!
-     * \brief Subscribe to ROS topic 'address' with callback function 'callback'
+     * \brief Subscribe to ROS 2 topic 'address' with callback 'callback'.
+     *
+     * The callback signature matches rclcpp: it receives a
+     * std::shared_ptr<const MSG_TYPE>.
      */
     template<class MSG_TYPE>
-    void subscribe(const std::string& address, const boost::function<void (const boost::shared_ptr<MSG_TYPE const>&)>& callback, size_t queueSize = 10)
-    { _subscribers.push_back(_node->subscribe<MSG_TYPE>(address, queueSize, callback)); }
+    void subscribe(const std::string& address,
+                   const std::function<void(std::shared_ptr<const MSG_TYPE>)>& callback,
+                   size_t queueSize = 10)
+    {
+        auto sub = _node->create_subscription<MSG_TYPE>(address, queueSize, callback);
+        _subscribers.push_back(sub);
+    }
 
     /*!
-     * \brief Publishes 'msg' to ROS topic 'address'
+     * \brief Publishes 'msg' to ROS 2 topic 'address'.
+     *
+     * The first call for a given address creates a typed
+     * rclcpp::Publisher<MSG_TYPE> and stores both its
+     * PublisherBase::SharedPtr and a std::function closure that
+     * captures the typed pointer. Subsequent calls reuse the closure.
      */
     template<class MSG_TYPE>
     void publish(const std::string& address, const MSG_TYPE& msg, size_t queueSize = 10)
     {
-        if(!_publishers.count(address))
-            _publishers.emplace(address, _node->advertise<MSG_TYPE>(address, queueSize));
-
-        _publishers[address].publish(msg);
+        if(!_publishers.count(address)) {
+            auto pub = _node->create_publisher<MSG_TYPE>(address, queueSize);
+            _publishers.emplace(address, PublisherEntry{
+                pub,
+                [pub](const void* m) { pub->publish(*static_cast<const MSG_TYPE*>(m)); }
+            });
+        }
+        _publishers[address].publish_fn(&msg);
     }
+
+    /*!
+     * \brief Process pending subscription callbacks (ROS 2 equivalent
+     * of the ROS 1 ros::spinOnce). Drains any messages that arrived
+     * since the last call and invokes their callbacks once.
+     */
+    void spinSome()
+    { rclcpp::spin_some(_node); }
+
+    /*!
+     * \brief Access the underlying rclcpp::Node (for tests / advanced users).
+     */
+    rclcpp::Node::SharedPtr node() const { return _node; }
 
 private:
 
-    std::shared_ptr<ros::NodeHandle> _node;
-    std::map<std::string, ros::Publisher> _publishers;
-    std::vector<ros::Subscriber> _subscribers;
+    /*!
+     * Type-erased publisher entry. We keep the PublisherBase to own
+     * the publisher, and a std::function closure that captures the
+     * typed publisher and publishes the correct MSG_TYPE.
+     */
+    struct PublisherEntry {
+        rclcpp::PublisherBase::SharedPtr pub;
+        std::function<void(const void*)> publish_fn;
+    };
+
+    rclcpp::Node::SharedPtr _node;
+    std::map<std::string, PublisherEntry> _publishers;
+    std::vector<rclcpp::SubscriptionBase::SharedPtr> _subscribers;
 
     /*!
-     * Constructor
+     * Constructor. Requires rclcpp::init() to have been called by
+     * the executable before the singleton is instantiated.
      */
     NRPROSProxy()
-    { _node.reset(new ros::NodeHandle()); }
+    { _node = rclcpp::Node::make_shared("nrp_core"); }
 
     static std::unique_ptr<NRPROSProxy> _instance;
 

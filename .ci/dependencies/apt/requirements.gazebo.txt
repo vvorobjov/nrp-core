@@ -1,4 +1,16 @@
 gazebo11
 gazebo11-plugin-base
 libgazebo11-dev
-ros-noetic-ros-base
+# ROS 2 Foxy packages used by NRPCore for ament_cmake / rclcpp /
+# message generation. python3-ament-package is NOT a valid apt
+# package on focal — ament_package is shipped by ros-foxy-ament-package.
+ros-foxy-ros-base
+ros-foxy-rclcpp
+ros-foxy-std-msgs
+ros-foxy-geometry-msgs
+ros-foxy-builtin-interfaces
+ros-foxy-ament-cmake
+ros-foxy-ament-package
+ros-foxy-rosidl-default-generators
+ros-foxy-rosidl-default-runtime
+python3-colcon-common-extensions

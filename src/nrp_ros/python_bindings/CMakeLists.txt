@@ -25,8 +25,18 @@ set(TEST_SRC_FILES
         tests/rosmsg_converter.cpp
         )
 ##########################################
-## Dependencies
-find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
+## Dependencies (ROS 2)
+
+message(STATUS "[nrp_ros_python_bindings] Configuring ROS 2 Boost.Python bindings (ament_cmake + rclcpp + rosidl packages)")
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(nrp_ros_msgs REQUIRED)
+foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
+    message(STATUS "[nrp_ros_python_bindings] Locating extra ROS 2 msg package: ${PACK}")
+    find_package(${PACK} REQUIRED)
+endforeach()
 
 find_package(Threads REQUIRED)
 find_package(Boost COMPONENTS
@@ -44,7 +54,6 @@ find_package(PythonLibs REQUIRED)
 # This macro adds boost python bindings target
 macro(add_python_target ROS_PACKAGE)
     include_directories(
-            ${catkin_INCLUDE_DIRS}
             ${PYTHON_INCLUDE_PATH}
             ${Boost_INCLUDE_DIRS}
     )
@@ -62,22 +71,34 @@ macro(add_python_target ROS_PACKAGE)
             ${NRP_GEN_LIB_TARGET}
             ${Boost_LIBRARIES}
             ${PYTHON_LIBRARIES}
-            ${catkin_LIBRARIES}
             rostime_boost_python
             )
+
+    # Pull ROS 2 include dirs and link libs from ament
+    ament_target_dependencies(${ROS_PACKAGE} rclcpp builtin_interfaces nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 endmacro()
 
-# Top level macro generates boost python bindings as well as python conversion wrapper 
-# for all messages in a given ros package `ROS_PACKAGE`
-macro(gen_ros_package_python ROS_PACKAGE)
+# Top level macro generates boost python bindings as well as python conversion wrapper
+# for all messages in a given ROS 2 package `ROS_PACKAGE`
+#
+# PACKAGE_SRC_PATH is the filesystem path to the package's source tree
+# (containing msg/*.msg). If empty, the generator script falls back to
+# ament_index_python.packages.get_package_share_directory(ROS_PACKAGE).
+macro(gen_ros_package_python ROS_PACKAGE PACKAGE_SRC_PATH)
     set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/${ROS_PACKAGE}) #this is for generated cpp files.
+
+    message(STATUS "[nrp_ros_python_bindings] Generating ROS 2 bindings for ${ROS_PACKAGE} (src=${PACKAGE_SRC_PATH})")
 
     execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_pkg_bindings.py
             --package=${ROS_PACKAGE}
+            --package_path=${PACKAGE_SRC_PATH}
             --cpp_target_dir=${GEN_DIR}
             --py_target_dir=${GEN_PYTHON_ROOT}
             --current_package=${PROJECT_NAME}
-            )
+            RESULT_VARIABLE _gen_result)
+    if(NOT _gen_result EQUAL 0)
+        message(FATAL_ERROR "generate_pkg_bindings.py failed for ${ROS_PACKAGE} (exit=${_gen_result})")
+    endif()
 
     file(GLOB ${ROS_PACKAGE}_srcs  ${GEN_DIR}/*.cpp)
 
@@ -92,8 +113,14 @@ macro(gen_ros_package_python ROS_PACKAGE)
         math(EXPR msg_pos "${pos}+1")
         math(EXPR msg_end "${end}-${msg_pos}")
         string(SUBSTRING "${ROS_MSG}" "${msg_pos}" "${msg_end}" msg_name)
-        file(APPEND "${CMAKE_BINARY_DIR}/nrp_ros_msg_types.txt" "${ROS_PACKAGE}::${msg_name};")
-        file(APPEND "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" "${ROS_PACKAGE}/${msg_name}.h;")
+        # ROS 2 headers use snake_case: "MyMsg" -> "my_msg.hpp".
+        # Apply the two standard camel-to-snake regexes, then lowercase.
+        string(REGEX REPLACE "(.)([A-Z][a-z]+)" "\\1_\\2" msg_name_sc "${msg_name}")
+        string(REGEX REPLACE "([a-z0-9])([A-Z])" "\\1_\\2" msg_name_sc "${msg_name_sc}")
+        string(TOLOWER "${msg_name_sc}" msg_name_sc)
+        # ROS 2 type keys: "<pkg>::msg::<Msg>"; headers "<pkg>/msg/<snake>.hpp"
+        file(APPEND "${CMAKE_BINARY_DIR}/nrp_ros_msg_types.txt" "${ROS_PACKAGE}::msg::${msg_name};")
+        file(APPEND "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" "${ROS_PACKAGE}/msg/${msg_name_sc}.hpp;")
     endforeach()
 endmacro()
 
@@ -102,7 +129,8 @@ endmacro()
 file(WRITE ${GEN_PYTHON_ROOT}/__init__.py "\n")
 
 ##########################################
-## We need a special library for the ros time types since these are ROS builtins that don't have .msg files
+## Python bindings for the ROS 2 builtin_interfaces/Time and /Duration
+## (these have no .msg file in-tree; they ship with rclcpp).
 add_definitions("-Wl,--no-undefined ")
 add_library(rostime_boost_python src/rostime_exports.cpp)
 set_target_properties(rostime_boost_python
@@ -114,18 +142,18 @@ target_link_libraries(rostime_boost_python
         ${NRP_GEN_LIB_TARGET}
         ${Boost_LIBRARIES}
         ${PYTHON_LIBRARIES}
-        ${catkin_LIBRARIES}
         )
+ament_target_dependencies(rostime_boost_python rclcpp builtin_interfaces)
 
 ##########################################
 file(WRITE "${CMAKE_BINARY_DIR}/nrp_ros_msg_types.txt" "")
 file(WRITE "${CMAKE_BINARY_DIR}/nrp_ros_msg_headers.txt" "")
 
-## Generate python bindings for nrp-core msg definitions
-gen_ros_package_python(nrp_ros_msgs)
-## Generate python bindings for additional external ros packages
+## Generate python bindings for nrp-core msg definitions (in-tree submodule)
+gen_ros_package_python(nrp_ros_msgs "${NRP_CORE_MSGS_PATH}/nrp_ros_msgs")
+## Generate python bindings for additional external ros packages (installed via ROS 2 apt)
 foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
-    gen_ros_package_python(${PACK})
+    gen_ros_package_python(${PACK} "")
 endforeach()
 
 #########################################
@@ -151,14 +179,13 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     add_executable(${TEST_NAME} ${TEST_SRC_FILES})
     target_compile_options(${TEST_NAME} PUBLIC $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${NRP_COMMON_COMPILATION_FLAGS}>)
     target_link_options(${TEST_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
+    # ament_target_dependencies uses the plain signature of
+    # target_link_libraries; must match here (no PUBLIC/PRIVATE keyword).
     target_link_libraries(${TEST_NAME}
-            PUBLIC
-            #${PYTHON_MODULE_NAME}
-            #${NAMESPACE_NAME}::${LIBRARY_NAME}
             ${NRP_GEN_LIB_TARGET}
-            ${catkin_LIBRARIES}
             GTest::GTest
             GTest::Main)
+    ament_target_dependencies(${TEST_NAME} rclcpp builtin_interfaces nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 
     gtest_discover_tests(${TEST_NAME}
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"

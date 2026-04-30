@@ -24,28 +24,31 @@
  */
 
 #include <boost/python.hpp>
-#include <ros/time.h>
-#include <ros/duration.h>
+#include "builtin_interfaces/msg/time.hpp"
+#include "builtin_interfaces/msg/duration.hpp"
 #include "nrp_general_library/datapack_interface/datapack.h"
 
 
 BOOST_PYTHON_MODULE(rostime_boost_python)
 {
+  // ROS 2: ros::Time / ros::Duration are replaced by
+  // builtin_interfaces::msg::Time / builtin_interfaces::msg::Duration.
+  // Field names also changed: sec/nsec -> sec/nanosec. The Python
+  // attribute names follow the ROS 2 IDL convention.
   using namespace boost::python;
-  using boost::shared_ptr;
-  using ros::Time;
-  using ros::Duration;
+  using builtin_interfaces::msg::Time;
+  using builtin_interfaces::msg::Duration;
 
-  class_<Time, shared_ptr<Time> > ("Time", "Ros time builtin")
-    .def_readwrite("secs", &Time::sec)
-    .def_readwrite("nsecs", &Time::nsec)
+  class_<Time, std::shared_ptr<Time> > ("Time", "ROS 2 builtin_interfaces/Time")
+    .def_readwrite("sec", &Time::sec)
+    .def_readwrite("nanosec", &Time::nanosec)
     ;
 
   DataPack<Time>::create_python("TimeDataPack");
 
-  class_<Duration, shared_ptr<Duration> > ("Duration", "Ros duration builtin")
-    .def_readwrite("secs", &Duration::sec)
-    .def_readwrite("nsecs", &Duration::nsec)
+  class_<Duration, std::shared_ptr<Duration> > ("Duration", "ROS 2 builtin_interfaces/Duration")
+    .def_readwrite("sec", &Duration::sec)
+    .def_readwrite("nanosec", &Duration::nanosec)
     ;
 
   DataPack<Duration>::create_python("DurationDataPack");

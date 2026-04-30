@@ -101,7 +101,16 @@ set(MQTT_TEST_SRC_FILES
 ## Dependencies
 
 if(ENABLE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roscpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
+    # ROS 2: use ament_cmake instead of catkin. Each ROS 2 message
+    # package is its own cmake package, found individually.
+    message(STATUS "[nrp_event_loop] ROS 2 enabled; locating ament packages (rclcpp, nrp_ros_msgs, extras)")
+    find_package(ament_cmake REQUIRED)
+    find_package(rclcpp REQUIRED)
+    find_package(nrp_ros_msgs REQUIRED)
+    foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
+        message(STATUS "[nrp_event_loop] Locating extra ROS 2 msg package: ${PACK}")
+        find_package(${PACK} REQUIRED)
+    endforeach()
 endif()
 
 ##########################################
@@ -158,8 +167,9 @@ target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${NRP_GEN_LIB_TARGET}
         ${Boost_LIBRARIES}
-        ${catkin_LIBRARIES}
-
+        # event_loop.cpp's ROS-guarded block now talks to NRPROSProxy
+        # (ROS 2); pull its include dirs via the target link.
+        $<$<BOOL:${ENABLE_ROS}>:${NRP_ROS_PROXY_TARGET}>
 
     PRIVATE
 )
@@ -171,7 +181,6 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
         ${Boost_INCLUDE_DIRS}
-        ${catkin_INCLUDE_DIRS}
 
     PRIVATE
 )
@@ -189,7 +198,6 @@ if(ENABLE_ROS)
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-            ${catkin_INCLUDE_DIRS}
             ${Boost_INCLUDE_DIRS}
             )
 
@@ -198,9 +206,11 @@ if(ENABLE_ROS)
             ${NRP_EVENT_LOOP_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${NRP_ROS_PROXY_TARGET}
-            ${catkin_LIBRARIES}
             ${Boost_LIBRARIES}
             )
+
+    # ROS 2 dependencies (rclcpp + message packages) propagated via ament
+    ament_target_dependencies(${ROS_LIBRARY_NAME} PUBLIC rclcpp nrp_ros_msgs ${NRP_ROS_MSGS_PACKAGES})
 endif()
 
 if(ENABLE_MQTT)
@@ -425,7 +435,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
     set_tests_properties(ComputationalNodes.FN_FACTORY_MANAGER PROPERTIES DEPENDS TEST_FN_FACTORY_MODULE)
 
     # Add python Event Loop test
-    add_test(NAME EventLoopPython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopPython.xml" test_event_loop.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME EventLoopPython COMMAND python3 -m pytest --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopPython.xml" test_event_loop.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
     if(ENABLE_ROS AND NOT "${ROS_TEST_SRC_FILES}" STREQUAL "")
         enable_testing()
@@ -459,7 +469,7 @@ if(${ENABLE_TESTING} AND NOT "${TEST_SRC_FILES}" STREQUAL "")
                 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
                 EXTRA_ARGS -VV)
 
-        add_test(NAME EventLoopEnginePython COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopEnginePython.xml" test_event_loop_engine.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+        add_test(NAME EventLoopEnginePython COMMAND python3 -m pytest --junitxml "${CMAKE_BINARY_DIR}/xml/EventLoopEnginePython.xml" test_event_loop_engine.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     endif()
 
 endif()

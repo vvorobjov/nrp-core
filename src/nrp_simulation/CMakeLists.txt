@@ -57,7 +57,10 @@ pkg_check_modules(PROTOBUF REQUIRED protobuf)
 pkg_check_modules(GRPC REQUIRED grpc++)
 
 if(ENABLE_ROS)
-    find_package(catkin REQUIRED COMPONENTS roscpp)
+    # ROS 2: use ament_cmake + rclcpp (replaces ROS 1 catkin/roscpp).
+    message(STATUS "[nrp_simulation] ROS 2 enabled; locating rclcpp for NRPCoreSim")
+    find_package(ament_cmake REQUIRED)
+    find_package(rclcpp REQUIRED)
 endif()
 
 
@@ -87,19 +90,21 @@ target_link_libraries(${LIBRARY_NAME}
     ${NRP_EVENT_LOOP_TARGET}
     ${NRP_ROS_PROXY_TARGET}
     ${NRP_MQTT_PROXY_TARGET}
-    ${catkin_LIBRARIES}
 )
 
 target_include_directories(${LIBRARY_NAME} BEFORE
-    PUBLIC 
+    PUBLIC
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-        ${catkin_INCLUDE_DIRS}
-
     PRIVATE
 )
+
+# ROS 2 dependencies (rclcpp) via ament — needed by main.cpp's rclcpp::init/shutdown
+if(ENABLE_ROS)
+    ament_target_dependencies(${LIBRARY_NAME} PUBLIC rclcpp)
+endif()
 
 
 ##########################################
@@ -196,7 +201,7 @@ endif()
 # Add python tests for NRP Server
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)
-    add_test(NAME NrpServer COMMAND py.test server.py "${CMAKE_SOURCE_DIR}/examples/status_function_test" --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME NrpServer COMMAND python3 -m pytest server.py "${CMAKE_SOURCE_DIR}/examples/status_function_test" --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     set_property(TEST NrpServer PROPERTY ENVIRONMENT
         "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
 endif()

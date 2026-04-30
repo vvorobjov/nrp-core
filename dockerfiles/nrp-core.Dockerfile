@@ -19,7 +19,17 @@ COPY --chown=${NRP_USER}:${NRP_GROUP} .ci/dependencies/apt/requirements.cle.txt 
 RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.dependencies/apt/requirements.cle.txt  | tr "\n" " ")
 
 # If this image will be used for TVB integration, then flask==1.1.4 is needed and after markupsafe (included in flask) has to be downgraded to 2.0.1
-RUN pip install "grpcio-tools>=1.62.2" pytest psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt==1.6.1"
+# Pin pytest to the 7.x series:
+#   - pytest < 7: rejected by setuptools' bundled typeguard pytest
+#     plugin ("AssertionError" on type="string" addini).
+#   - pytest >= 8: ROS 2 Foxy's launch_testing pytest hooks call
+#     import_path(path, root=None) which became illegal in pytest 8.1
+#     ("import_path() missing 1 required keyword-only argument:
+#     'consider_namespace_packages'").
+# pytest 7.x satisfies both. /home/nrpuser/.local/lib/python3.8/site-
+# packages is already ahead of /usr/lib/python3/dist-packages on
+# sys.path, so the pip-user pytest wins over the apt-provided 4.6.9.
+RUN pip install "grpcio-tools>=1.62.2" "pytest>=7,<8" psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt==1.6.1"
 
 # Experiments
 # RUN pip install opencv-python

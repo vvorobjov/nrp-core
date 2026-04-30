@@ -33,17 +33,33 @@ endif()
 # Find dependencies
 find_package(NRPEventLoop REQUIRED)
 
-if(NOT ${NRP_ROS_MSGS_PACKAGES} STREQUAL "")
-    find_package(catkin REQUIRED COMPONENTS roscpp ${NRP_ROS_MSGS_PACKAGES})
+# ROS 2: locate rclcpp (plus any user-configured message packages) via
+# ament. We extract the include dirs from the imported rclcpp::rclcpp
+# target's INTERFACE_INCLUDE_DIRECTORIES, since catkin_INCLUDE_DIRS no
+# longer exists.
+if(NOT "${NRP_ROS_MSGS_PACKAGES}" STREQUAL "")
+    message(STATUS "[CreateFNModule] ROS 2 packages requested: ${NRP_ROS_MSGS_PACKAGES}")
+    find_package(ament_cmake REQUIRED)
+    find_package(rclcpp REQUIRED)
+    foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
+        find_package(${PACK} REQUIRED)
+    endforeach()
 endif()
 
 # clang include statement
 set(GENERATE_FN_TOOL "generateFNFactoryModule")
 set(FN_GEN_CMND ${GENERATE_FN_TOOL} ${HEADER_FILE_PATH} ${FN_FACTORY_MODULE_INSTALL_DIR} -x c++ -std=c++17 -I ${NRP_INSTALL_DIR}/include -I ${NRP_DEPS_INSTALL_DIR}/include)
 
-foreach(DIR ${catkin_INCLUDE_DIRS})
-    list(APPEND FN_GEN_CMND -I ${DIR})
-endforeach() 
+# Pull ROS 2 include dirs from the rclcpp imported target (replacing
+# the old foreach over ${catkin_INCLUDE_DIRS}).
+if(TARGET rclcpp::rclcpp)
+    get_target_property(_rclcpp_includes rclcpp::rclcpp INTERFACE_INCLUDE_DIRECTORIES)
+    if(_rclcpp_includes)
+        foreach(DIR ${_rclcpp_includes})
+            list(APPEND FN_GEN_CMND -I ${DIR})
+        endforeach()
+    endif()
+endif()
 
 foreach(DIR ${Boost_INCLUDE_DIRS})
     list(APPEND FN_GEN_CMND -I ${DIR})

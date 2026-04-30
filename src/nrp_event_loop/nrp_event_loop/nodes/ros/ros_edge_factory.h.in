@@ -74,7 +74,11 @@ public:
             throw NRPException::logCreate("Error occurred while processing "+ dec_type + _address +"\". ROS message type must be an \"nrp_core.data.nrp_ros\" class.");
         }
 
-        std::string rosType = _moduleName.substr(_moduleName.rfind('.')+1) + "::" + _className;
+        // ROS 2 type names are fully qualified as "<pkg>::msg::<Class>"
+        // (ROS 1 used just "<pkg>::<Class>"). The entries generated in
+        // nrp_ros_msg_types.txt follow the ROS 2 convention, so we must
+        // build the key with the "::msg::" infix to match them.
+        std::string rosType = _moduleName.substr(_moduleName.rfind('.')+1) + "::msg::" + _className;
 
         // 'if' statements selecting the right ROS msg type. Configured from cmake.
         @ROS_MSG_TYPES_CHECK@

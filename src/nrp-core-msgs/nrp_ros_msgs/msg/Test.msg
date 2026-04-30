@@ -12,8 +12,8 @@ uint64 uint64_msg
 float32 float32_msg
 float64 float64_msg
 string string_msg
-time time_msg
-duration duration_msg
+builtin_interfaces/Time time_msg
+builtin_interfaces/Duration duration_msg
 # array
 uint8[] byte_array_msg
 float32[] float_array_msg

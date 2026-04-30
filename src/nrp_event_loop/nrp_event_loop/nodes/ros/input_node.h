@@ -23,8 +23,8 @@
 #define INPUT_ROS_NODE_H
 
 #include <boost/python.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
+#include <functional>
+#include <memory>
 #include <mutex>
 
 #include "nrp_event_loop/computational_graph/input_node.h"
@@ -33,9 +33,11 @@
 #include "nrp_ros_proxy/nrp_ros_proxy.h"
 
 /*!
- * \brief Input node used to connect a ROS subscriber to the computational graph
- * 
- * The template parameter MSG_TYPE is the ROS msg type this node subscribes to
+ * \brief Input node used to connect a ROS 2 subscriber to the computational graph
+ *
+ * The template parameter MSG_TYPE is the ROS 2 msg type this node subscribes
+ * to (e.g. nrp_ros_msgs::msg::Test). Callbacks receive a
+ * std::shared_ptr<const MSG_TYPE> as per rclcpp conventions.
  */
 template<class MSG_TYPE>
 class InputROSNode : public InputNode<MSG_TYPE> {
@@ -55,12 +57,12 @@ protected:
 
     void configure() override
     {
-        // creates ROS subscriber
-        using boost::placeholders::_1;
-        boost::function<void (const boost::shared_ptr<MSG_TYPE const>&)> callback = boost::bind(&InputROSNode::topic_callback, this, _1);
+        // creates ROS 2 subscriber via NRPROSProxy
+        std::function<void(std::shared_ptr<const MSG_TYPE>)> callback =
+            [this](std::shared_ptr<const MSG_TYPE> msg) { this->topic_callback(msg); };
         NRPROSProxy* rosProxy = &(NRPROSProxy::getInstance());
         if(rosProxy)
-            rosProxy->subscribe(this->id(), callback);
+            rosProxy->subscribe<MSG_TYPE>(this->id(), callback);
         else
             NRPLogger::warn("From InputROSNode \"" + this->id() +
                             "\". NRPCoreSim is not connected to ROS and this node can't subscribe to topics. Add \"ROSNode\" parameter to your experiment configuration");
@@ -71,9 +73,9 @@ protected:
     }
 
     /*!
-     * \brief callback function used in the ROS subscriber
+     * \brief callback function used in the ROS 2 subscription
      */
-    void topic_callback(const boost::shared_ptr<MSG_TYPE const>& msg)
+    void topic_callback(std::shared_ptr<const MSG_TYPE> msg)
     {
         std::lock_guard<std::mutex> lock(_msgMutex);
 
@@ -111,10 +113,10 @@ private:
 
     /*! \brief mutex used in ROS msgs access operations */
     std::mutex _msgMutex;
-    /*! \brief vector storing incoming ROS msgs temporarily  */
-    std::vector<boost::shared_ptr<MSG_TYPE const>> _msgTemp;
-    /*! \brief vector storing incoming ROS msgs which pointers are connected to this node ports  */
-    std::vector<boost::shared_ptr<MSG_TYPE const>> _msgStore;
+    /*! \brief vector storing incoming ROS 2 msgs temporarily  */
+    std::vector<std::shared_ptr<const MSG_TYPE>> _msgTemp;
+    /*! \brief vector storing incoming ROS 2 msgs which pointers are connected to this node ports  */
+    std::vector<std::shared_ptr<const MSG_TYPE>> _msgStore;
 
 
 };

@@ -40,11 +40,11 @@ set(TEST_SRC_FILES
 
 
 ##########################################
-## Dependencies
+## Dependencies (ROS 2)
 
-find_package(catkin REQUIRED COMPONENTS
-        roscpp
-        )
+message(STATUS "[NRPRosProxy] Configuring for ROS 2 (rclcpp). No catkin/roscpp.")
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 
 find_package(Boost COMPONENTS
         system
@@ -70,7 +70,6 @@ target_include_directories(${LIBRARY_NAME} BEFORE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>"
 
-        ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
 
         PRIVATE
@@ -79,11 +78,13 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 target_link_libraries(${LIBRARY_NAME}
         PUBLIC
         ${NRP_GEN_LIB_TARGET}
-        ${catkin_LIBRARIES}
         ${Boost_LIBRARIES}
 
         PRIVATE
         )
+
+# ROS 2 dependencies via ament (replaces ${catkin_LIBRARIES})
+ament_target_dependencies(${LIBRARY_NAME} PUBLIC rclcpp)
 
 
 ##########################################

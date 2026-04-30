@@ -127,7 +127,7 @@ add_doxygen_source("${CMAKE_CURRENT_SOURCE_DIR}" ${EXEC_SRC_FILES} ${LIB_SRC_FIL
 ##########################################
 ## Tests
 # Add python tests
-add_test(NAME PyServerGrpcCallbacks COMMAND py.test --junitxml "${CMAKE_BINARY_DIR}/xml/PyServerGrpcCallbacks.xml" test_grpc_server_callbacks.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME PyServerGrpcCallbacks COMMAND python3 -m pytest --junitxml "${CMAKE_BINARY_DIR}/xml/PyServerGrpcCallbacks.xml" test_grpc_server_callbacks.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 ##########################################
 ## Installation

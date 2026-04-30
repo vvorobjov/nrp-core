@@ -1,30 +1,63 @@
 cmake_minimum_required(VERSION 3.16)
 project(NRPROS VERSION ${NRP_VERSION})
 
-##########################################
-## Copy the nrp message definitions to a catkin workspace which path is specified by var CATKIN_WS
-## and build that workspace
-set(CATKIN_WS $ENV{CATKIN_WS})
-if ("${CATKIN_WS}" STREQUAL "")
-    message(STATUS "Setting catkin_ws path to: $ENV{HOME}/catkin_ws")
-    set(CATKIN_WS $ENV{HOME}/catkin_ws)
+# ─────────────────────────────────────────────────────────────────────
+# ROS 2 integration for nrp-core
+#
+# Build steps executed at cmake-configure time:
+#   1. Resolve a colcon workspace path (ROS2_WS, defaults to ~/ros2_ws)
+#      and create its src/ directory if needed.
+#   2. Copy the in-tree nrp_ros_msgs package into that workspace.
+#   3. Build it with `colcon build --packages-select nrp_ros_msgs`.
+#   4. Expose the resulting install prefix via CMAKE_PREFIX_PATH so
+#      downstream find_package(nrp_ros_msgs) succeeds.
+#   5. Recurse into python_bindings/ to generate the Boost.Python
+#      wrappers.
+#
+# This replaces the ROS 1 path, which copied the same package into a
+# CATKIN_WS and ran `catkin_make` on it.
+# ─────────────────────────────────────────────────────────────────────
+
+message(STATUS "[NRPROS] ROS 2 integration: preparing colcon workspace for nrp_ros_msgs")
+
+set(ROS2_WS $ENV{ROS2_WS})
+if ("${ROS2_WS}" STREQUAL "")
+    set(ROS2_WS "$ENV{HOME}/ros2_ws")
+    message(STATUS "[NRPROS] ROS2_WS not set; defaulting to ${ROS2_WS}")
+else()
+    message(STATUS "[NRPROS] Using ROS2_WS=${ROS2_WS}")
 endif()
 
-if (NOT EXISTS ${CATKIN_WS})
-    message(STATUS "Creating catkin_ws folder: ${CATKIN_WS}")
-    file(MAKE_DIRECTORY ${CATKIN_WS})
-    file(MAKE_DIRECTORY ${CATKIN_WS}/src)
-endif()
+file(MAKE_DIRECTORY "${ROS2_WS}/src")
 
+# Copy nrp_ros_msgs into the colcon workspace src/ tree. We use
+# execute_process rather than file(COPY) so the source tree is always
+# overwritten, mirroring the ROS 1 behaviour.
 execute_process(
-        WORKING_DIRECTORY ${CATKIN_WS}
-        COMMAND cp -rf ${NRP_CORE_MSGS_PATH}/nrp_ros_msgs src
-        COMMAND bash -c "cd ${CATKIN_WS} && catkin_make && source devel/setup.bash && rospack profile"
+    COMMAND cp -rf "${NRP_CORE_MSGS_PATH}/nrp_ros_msgs" "${ROS2_WS}/src/"
+    RESULT_VARIABLE _cp_result
 )
+if(NOT _cp_result EQUAL 0)
+    message(FATAL_ERROR "[NRPROS] Failed to copy nrp_ros_msgs into ${ROS2_WS}/src (cp exit=${_cp_result})")
+endif()
 
-set(ENV{ROS_PACKAGE_PATH} "${CATKIN_WS}/src:$ENV{ROS_PACKAGE_PATH}")
-set(ENV{CMAKE_PREFIX_PATH} "${CATKIN_WS}/devel:$ENV{CMAKE_PREFIX_PATH}")
+# colcon requires /opt/ros/<distro>/setup.bash in the shell env, so we
+# go through bash -lc; the ROS 2 distro is discovered from ROS_DISTRO /
+# an /opt/ros/*/setup.bash, whichever is available.
+message(STATUS "[NRPROS] Running colcon build for nrp_ros_msgs in ${ROS2_WS}")
+execute_process(
+    WORKING_DIRECTORY ${ROS2_WS}
+    COMMAND bash -c "source /opt/ros/\${ROS_DISTRO:-foxy}/setup.bash && colcon build --packages-select nrp_ros_msgs"
+    RESULT_VARIABLE _colcon_result
+)
+if(NOT _colcon_result EQUAL 0)
+    message(FATAL_ERROR "[NRPROS] colcon build of nrp_ros_msgs failed (exit=${_colcon_result})")
+endif()
+
+# Expose the install space for downstream find_package(nrp_ros_msgs).
+set(ENV{CMAKE_PREFIX_PATH} "${ROS2_WS}/install/nrp_ros_msgs:$ENV{CMAKE_PREFIX_PATH}")
+message(STATUS "[NRPROS] CMAKE_PREFIX_PATH now includes ${ROS2_WS}/install/nrp_ros_msgs")
 
 ##########################################
-## Build nrp ros python bindings
+## Build nrp ros python bindings (Boost.Python)
 add_subdirectory(python_bindings)

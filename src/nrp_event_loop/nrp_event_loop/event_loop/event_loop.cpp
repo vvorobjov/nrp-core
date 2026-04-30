@@ -21,7 +21,7 @@
 //
 
 #ifdef ROS_ON
-#include "ros/ros.h"
+#include "nrp_ros_proxy/nrp_ros_proxy.h"
 #endif
 
 #include "nrp_event_loop/event_loop/event_loop.h"
@@ -72,7 +72,7 @@ void EventLoop::runLoopCB()
 
 #ifdef ROS_ON
     if(_spinROS)
-        ros::spinOnce();
+        NRPROSProxy::getInstance().spinSome();
 #endif
 
     if(_clock)
