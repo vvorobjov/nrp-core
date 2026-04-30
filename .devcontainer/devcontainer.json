@@ -1,8 +1,12 @@
 {
+    // Ubuntu 20.04 canonical image (default)
     "image": "nrp-local/nrp-nest-gazebo-ubuntu20:local",
+    // Ubuntu 22.04 alternative — build with:
+    //   ./build_nrp_core_image.sh nrp-nest-gazebo-ubuntu22
+    // "image": "nrp-local/nrp-nest-gazebo-ubuntu22:local",
     // "image": "hbpneurorobotics/nrp-xpra-gazebo-nest-ubuntu20-env:latest",
     // "image": "hbpneurorobotics/nrp-xpra-opensim-tvb-ubuntu20-env:latest",
-  
+
     "customizations": {
       "vscode": {
         "extensions": [
@@ -15,6 +19,8 @@
     "onCreateCommand": ".devcontainer/devcontainer-setup.bash",
     "containerEnv": {
         "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo.cmake",
+        // Ubuntu 22.04 preset:
+        // "CMAKE_CACHE_FILE": ".ci/cmake_cache/nest-gazebo-ubuntu22.cmake",
         // "CMAKE_CACHE_FILE": ".ci/cmake_cache/opensim.cmake",
         "NRP_XPRA_PORT": "9876"
     },

@@ -2,6 +2,9 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
+# Python version must match the base image's system python (3.8 on
+# focal, 3.10 on jammy). Passed through from docker-compose.yaml.
+ARG PYTHON_VERSION=3.8
 
 # Install nest dependencies
 
@@ -20,7 +23,7 @@ RUN git clone https://github.com/nest/nest-simulator.git \
     && make -j4 && make install \
     && cd .. && rm -rf nest-simulator
 ENV NEST_INSTALL_DIR ${NRP_DEPS_INSTALL_DIR}
-ENV PYTHONPATH=$NRP_DEPS_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
+ENV PYTHONPATH=$NRP_DEPS_INSTALL_DIR/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 
 WORKDIR ${HOME}
 

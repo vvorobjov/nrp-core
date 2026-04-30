@@ -1,3 +1,7 @@
+# Ubuntu 22.04 (jammy) + xpra variant of docker-compose-xpra-nest-gazebo.yaml.
+# Same experiment topology with xpra remote display, but on the
+# Humble / python3.10 / jammy image set.
+
 version: '3.2'
 
 services:
@@ -16,8 +20,8 @@ services:
         # logging:
         #     driver: none
 
-    gazebo-service:
-        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo-ubuntu20:${NRP_CORE_TAG}
+    xpra-gazebo-service:
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-gazebo-ubuntu22:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         environment:
@@ -26,22 +30,25 @@ services:
             GAZEBO_PORT: 9000
             GAZEBO_ADDITIONAL_PARAMETERS: "--verbose"
             GAZEBO_RNG_SEED: 0
-        command: /usr/xvfb-run-gazebo-runcmd.bash
+            NRP_XPRA_PORT: ${NRP_XPRA_PORT:-9876}
+            NRP_DISPLAY: ${NRP_DISPLAY:-100}
+        entrypoint: /usr/xpra-entrypoint.sh
+        command: /usr/run-gazebo-runcmd.bash
         # # expose 11345 port for gzclient
-        # ports:
-        #     - "11345:11345"
+        ports:
+             - "${NRP_XPRA_HOST_PORT:-9876}:${NRP_XPRA_PORT:-9876}"
         container_name: nrp-gazebo
         # logging:
         #     driver: none
 
     nrp-core-service:
-        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu22:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
-        command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json --floglevel trace -o SimulationTimeout=10
+        command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json --floglevel trace -o SimulationTimeout=100
         depends_on:
             - nest-service
-            - gazebo-service
+            - xpra-gazebo-service
             - mqtt-broker-service
         container_name: nrp-core
 
@@ -59,4 +66,3 @@ services:
         command: sub -h mqtt-broker -t "#" -v
         depends_on:
             - mqtt-broker-service
-

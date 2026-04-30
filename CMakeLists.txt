@@ -45,6 +45,23 @@ endif()
 set(NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror -Wno-maybe-uninitialized ${GCOV_CXX_FLAGS})
 set(NRP_COMMON_LD_FLAGS ${GCOV_LD_FLAGS})
 
+# ROS 2 Humble's rclcpp cmake export lists `fastcdr` as a bare target
+# in its INTERFACE_LINK_LIBRARIES. Subdirectories linking NRPEventLoop
+# (which transitively depends on rclcpp) need the `fastcdr` target to
+# exist in their cmake scope. Import it once at the top, then promote
+# to IMPORTED_GLOBAL so it's visible everywhere downstream. The
+# fastcdr-config.cmake in /opt/ros/humble declares the target without
+# GLOBAL so directory scoping would otherwise limit it to this file.
+# No-op on Foxy (find returns QUIET-empty; the TARGET check skips).
+if(ENABLE_ROS)
+    message(STATUS "[nrp-core] ROS 2 enabled; pre-importing fastcdr for Humble compatibility")
+    find_package(fastcdr QUIET)
+    if(TARGET fastcdr)
+        set_target_properties(fastcdr PROPERTIES IMPORTED_GLOBAL TRUE)
+        message(STATUS "[nrp-core] fastcdr target promoted to IMPORTED_GLOBAL")
+    endif()
+endif()
+
 # Uncomment to compile a production version of code (without trace calls)
 # add_definitions(-DPRODUCTION_RELEASE)
 

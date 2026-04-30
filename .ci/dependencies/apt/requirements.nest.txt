@@ -1,4 +1,4 @@
-cython
+cython3
 libgsl-dev
 libltdl-dev
 libncurses-dev

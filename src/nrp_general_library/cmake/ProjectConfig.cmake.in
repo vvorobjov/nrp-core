@@ -35,7 +35,7 @@ set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
 
 add_library(lib_spdlog STATIC IMPORTED )
 set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libspdlog.so")
+        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libspdlog.a")
 
 include(${CMAKE_CURRENT_LIST_DIR}/@LIB_EXPORT_NAME@.cmake)
 

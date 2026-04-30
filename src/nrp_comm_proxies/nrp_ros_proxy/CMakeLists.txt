@@ -45,6 +45,11 @@ set(TEST_SRC_FILES
 message(STATUS "[NRPRosProxy] Configuring for ROS 2 (rclcpp). No catkin/roscpp.")
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+# Humble's rclcpp cmake export references the bare target name
+# "fastcdr" in its transitive INTERFACE_LINK_LIBRARIES. Importing it
+# explicitly here lets downstream target_link_libraries resolve. On
+# Foxy this find_package is a no-op.
+find_package(fastcdr QUIET)
 
 find_package(Boost COMPONENTS
         system

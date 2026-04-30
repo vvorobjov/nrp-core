@@ -6,15 +6,37 @@ is loaded into every conversation.
 
 ## The two rules that always win
 
-1. **No change lands unless the full unit-test suite passes inside the
-   canonical container** (`nrp-local/nrp-nest-gazebo-ubuntu20:local`). This is
-   the acceptance gate for every commit, merge, and review. If you cannot run
-   the tests, say so explicitly — do not claim the task is done.
-   The canonical *local* verification command is
-   [`bash .ci/00-dev-rebuild-and-test.sh`](.ci/00-dev-rebuild-and-test.sh) — it
-   runs from the host, ensures the devcontainer image, and executes configure
-   + build + install + ctest inside it with no Jenkins-specific exit-bit
-   masking. Prefer it over invoking the 11/20/30 scripts by hand.
+1. **No change lands unless the full unit-test suite AND the
+   docker-compose example pass on BOTH supported Ubuntu targets**.
+   The acceptance gate has two parts. First, two ctest runs:
+
+   ```bash
+   bash .ci/00-dev-rebuild-and-test.sh              # ubuntu20 (canonical)
+   bash .ci/00-dev-rebuild-and-test.sh --ubuntu22   # ubuntu22 (jammy)
+   ```
+
+   Second, the husky_braitenberg docker-compose example must run end-
+   to-end without errors in all four supported configurations:
+
+   ```bash
+   bash examples/run_docker-compose_example.sh                       # ubuntu20 + xvfb
+   bash examples/run_docker-compose_example.sh --ubuntu22            # ubuntu22 + xvfb
+   bash examples/run_docker-compose_example.sh --xpra                # ubuntu20 + xpra
+   bash examples/run_docker-compose_example.sh --ubuntu22 --xpra     # ubuntu22 + xpra
+   ```
+
+   All six commands must exit 0 before a commit, merge, or review can
+   be claimed done. The ctest runs cover unit-test correctness; the
+   compose runs catch integration regressions (entrypoint scripts,
+   PYTHONPATH, gazebo plugins, nrp-core ↔ nest-server wire
+   compatibility, MQTT proxy) that single-process unit tests miss.
+   The compose example exits cleanly when SimulationTimeout is reached
+   (success); container errors or non-zero exits are real failures.
+
+   If you cannot run any of the six checks (e.g. missing image build
+   artifact, no Docker access), say so explicitly — do not claim the
+   task is done.
+
    See [Running the tests](#running-the-tests) and
    [If tests fail](#if-tests-fail).
 
@@ -111,18 +133,27 @@ Top-level layout:
 
 ## The canonical build+test environment
 
-The project has only ever been validated on **Ubuntu 20.04** with a very
-specific set of pinned dependencies (Gazebo 11, NEST 3.1, gRPC from the focal
-PPA, ROS Noetic, Python 3.8, Boost.Python 1.71). Ubuntu 22.04 is known to build
-(commit `4f047ecc` on `development`) but is not the primary target — do not
-rely on it.
+The project supports **two Ubuntu target versions**:
+
+| Version | ROS 2 | Python | Status |
+|---|---|---|---|
+| Ubuntu 20.04 (focal) | Foxy | 3.8 | **Primary / canonical** |
+| Ubuntu 22.04 (jammy) | Humble | 3.10 | Supported (EBR2-27) |
+
+Core deps are pinned identically on both (Gazebo 11, NEST 3.1, Boost.Python
+matching the distro, gRPC from apt). The EBR2-26 work replaced ROS 1 Noetic
+with ROS 2 (rclcpp / ament_cmake / colcon) for both targets.
 
 **Canonical image:** `nrp-local/nrp-nest-gazebo-ubuntu20:local`, declared in
 [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) and built by
 the `nrp-nest-gazebo` service in [docker-compose.yaml](docker-compose.yaml).
+For Ubuntu 22.04 use `nrp-local/nrp-nest-gazebo-ubuntu22:local` (service
+`nrp-nest-gazebo-ubuntu22`).
 
 The corresponding cmake preset is
-[.ci/cmake_cache/nest-gazebo.cmake](.ci/cmake_cache/nest-gazebo.cmake):
+[.ci/cmake_cache/nest-gazebo.cmake](.ci/cmake_cache/nest-gazebo.cmake) (ubuntu20)
+or [.ci/cmake_cache/nest-gazebo-ubuntu22.cmake](.ci/cmake_cache/nest-gazebo-ubuntu22.cmake)
+(ubuntu22):
 
 ```
 ENABLE_GAZEBO=ON  BUILD_GAZEBO_ENGINE_SERVER=ON
@@ -180,16 +211,19 @@ bash .ci/20-build.sh              # make + make install, -j auto-sized
 
 ### The one-command local path (preferred)
 
-From the **host**, at the repo root:
+From the **host**, at the repo root, run the dev-helper **twice** —
+once per supported Ubuntu target. Both must exit 0:
 
 ```bash
-bash .ci/00-dev-rebuild-and-test.sh
+bash .ci/00-dev-rebuild-and-test.sh              # ubuntu20 / foxy / py3.8
+bash .ci/00-dev-rebuild-and-test.sh --ubuntu22   # ubuntu22 / humble / py3.10
 ```
 
-This is the script to run before claiming a change is done. It:
+The script:
 
-1. Ensures the canonical image `nrp-local/nrp-nest-gazebo-ubuntu20:local`
-   exists (builds it if missing; `--rebuild-image` to force).
+1. Ensures the target image (`nrp-local/nrp-nest-gazebo-ubuntu20:local`
+   or `nrp-local/nrp-nest-gazebo-ubuntu22:local`) exists — builds it if
+   missing; `--rebuild-image` to force.
 2. Runs `.ci/11-prepare-build.sh` + `.ci/20-build.sh` inside the container
    against the mounted source tree.
 3. Runs `ctest` directly (bypassing `.ci/30-run-tests.sh`'s Jenkins `0x8`
@@ -197,14 +231,14 @@ This is the script to run before claiming a change is done. It:
 
 Useful flags:
 
+- `--ubuntu22` — target the Ubuntu 22.04 image instead of the default 20.04.
 - `--keep-build` — reuse the existing `build/` directory (fast iteration).
 - `--test-filter REGEX` — forward `-R REGEX` to ctest for a subset.
 - `--no-image` — skip the docker-image existence check.
 - `--rebuild-image` — force-rebuild the image first.
 
-Copilot / Claude note: this is the command to cite in PR descriptions and
-the command to run after every commit on a branch. Do *not* claim a change
-passes if this script did not exit 0.
+Copilot / Claude note: cite **both** ubuntu20 and ubuntu22 runs in PR
+descriptions. Do *not* claim a change passes if either run did not exit 0.
 
 ### Inside-container primitives
 
@@ -280,8 +314,14 @@ that's a flake signal — note it and dig.
   `option(...)` / `cmake_dependent_option(...)`. Any new simulator integration
   must be behind such a flag so the vanilla build stays small.
 - Proto files go in the `src/nrp-core-msgs` submodule, not the main tree.
-- Python modules are installed to `${NRP_INSTALL_DIR}/lib/python3.8/site-packages`
-  — hardcoding `python3.8` is intentional (Ubuntu 20.04 system Python).
+- Python modules install to `${NRP_INSTALL_DIR}/lib/python<X.Y>/site-packages`
+  where X.Y is detected by cmake's `find_package(Python3)` (3.8 on focal, 3.10
+  on jammy). Never hardcode `python3.8`; use
+  `${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}` in cmake and
+  `python3 -c "import sys; ..."` in shell scripts.
+- Don't hardcode the ROS 2 distribution either — the image-building ARG is
+  `ROS_DISTRO` (foxy on focal, humble on jammy). In shell scripts, prefer a
+  loop that sources whichever `/opt/ros/<distro>/setup.bash` is present.
 - Submodules must be initialized before cmake:
   `git submodule update --init --recursive`. The cmake configure will fail fast
   with a clear message if `src/nrp-core-msgs/protobuf` is missing.
@@ -303,8 +343,10 @@ The `onCreateCommand` just installs `gdb`.
   updating `.devcontainer/devcontainer.json`, `docker-compose.yaml`, and
   `.ci/cmake_cache/nest-gazebo.cmake` in the same commit — reviewers rely on
   all three lining up.
-- Don't introduce Ubuntu-22-only syntax (python 3.10+, glibc-2.35-only APIs)
-  unless you've also built it on 20.04.
+- Both Ubuntu 20.04 and Ubuntu 22.04 are now active targets. Don't introduce
+  Ubuntu-22-only syntax (python 3.10+, glibc-2.35-only APIs) without
+  verifying it also builds on 20.04. The `.ci/00-dev-rebuild-and-test.sh
+  --ubuntu22` flag builds and tests the jammy variant.
 - Don't bump `NEST`, `Gazebo`, or `grpc++` versions casually — the CMake files
   pin them deliberately (`v3.1`, `gazebo11`, `libgrpc++-dev` from focal). These
   are coupled to the Dockerfiles and to the NEST Python bindings path.
@@ -324,11 +366,12 @@ The `onCreateCommand` just installs `gdb`.
 - **Gazebo unit tests hang in a fresh container** → `DISPLAY` not set; run
   under `xvfb-run-nrp` or source the provided `.ci/30-run-tests.sh` wrapper.
 - **NEST-Python tests can't import `nest`** → `PYTHONPATH` missing
-  `$NRP_DEPS_INSTALL_DIR/lib/python3.8/site-packages`; re-source
-  `$NRP_INSTALL_DIR/bin/.nrp_env`.
-- **ROS tests fail immediately** → `/opt/ros/noetic/setup.bash` not sourced.
-  The canonical image's `~/.bashrc` handles this; if you shelled in with
-  `docker exec --no-tty`, re-source it.
+  `$NRP_DEPS_INSTALL_DIR/lib/python<X.Y>/site-packages` (3.8 on focal,
+  3.10 on jammy); re-source `$NRP_INSTALL_DIR/bin/.nrp_env`.
+- **ROS tests fail immediately** → `/opt/ros/foxy/setup.bash` (focal) or
+  `/opt/ros/humble/setup.bash` (jammy) not sourced. The canonical image's
+  `~/.bashrc` loops over both and sources whichever is present; if you shelled
+  in with `docker exec --no-tty`, re-source it.
 - **MQTT link errors on rebuild** → Paho C/C++ libs were built into
   `$NRP_DEPS_INSTALL_DIR`; make sure `LD_LIBRARY_PATH` includes it.
 

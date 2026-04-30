@@ -1,3 +1,7 @@
+# Ubuntu 22.04 (jammy) variant of docker-compose-nest-gazebo.yaml.
+# Same experiment topology (NEST + Gazebo + nrp-core + MQTT) but built
+# on the Humble / python3.10 / jammy image set added by EBR2-27.
+
 version: '3.2'
 
 services:
@@ -17,7 +21,7 @@ services:
         #     driver: none
 
     gazebo-service:
-        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo-ubuntu20:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo-ubuntu22:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         environment:
@@ -35,7 +39,7 @@ services:
         #     driver: none
 
     nrp-core-service:
-        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu20:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu22:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json --floglevel trace -o SimulationTimeout=10
@@ -59,4 +63,3 @@ services:
         command: sub -h mqtt-broker -t "#" -v
         depends_on:
             - mqtt-broker-service
-

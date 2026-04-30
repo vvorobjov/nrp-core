@@ -30,6 +30,7 @@ REBUILD_IMAGE=0
 NO_IMAGE=0
 TEST_FILTER=""
 KEEP_BUILD=0
+UBUNTU_VERSION="20"
 
 usage() {
     cat <<EOF
@@ -40,11 +41,13 @@ Options:
   --no-image            Skip the image existence check entirely (assume it exists).
   --test-filter REGEX   Pass -R REGEX to ctest (run only matching tests).
   --keep-build          Do not wipe build/ before configuring.
+  --ubuntu22            Target the Ubuntu 22.04 image (nrp-nest-gazebo-ubuntu22)
+                        instead of the default Ubuntu 20.04 one.
   -h, --help            Show this message and exit.
 
-Expected image: nrp-local/nrp-nest-gazebo-ubuntu20:local
-This is the image referenced by .devcontainer/devcontainer.json and is
-built by docker-compose service "nrp-nest-gazebo".
+Default image: nrp-local/nrp-nest-gazebo-ubuntu20:local (canonical).
+Ubuntu 22 image: nrp-local/nrp-nest-gazebo-ubuntu22:local.
+Both come from docker-compose.yaml.
 EOF
 }
 
@@ -58,6 +61,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --keep-build)    KEEP_BUILD=1 ;;
+        --ubuntu22)      UBUNTU_VERSION="22" ;;
         -h|--help)       usage; exit 0 ;;
         *)
             echo "[$0] unknown argument: $1" >&2
@@ -76,8 +80,16 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." &>/dev/null && pwd)"
 cd "$REPO_ROOT"
 
-IMAGE="nrp-local/nrp-nest-gazebo-ubuntu20:local"
-BUILD_SERVICE="nrp-nest-gazebo"
+# Ubuntu 20 and Ubuntu 22 images and their docker-compose service
+# names don't line up (ubuntu20 keeps the original, unqualified
+# "nrp-nest-gazebo" for historical reasons).
+if [[ "$UBUNTU_VERSION" == "22" ]]; then
+    IMAGE="nrp-local/nrp-nest-gazebo-ubuntu22:local"
+    BUILD_SERVICE="nrp-nest-gazebo-ubuntu22"
+else
+    IMAGE="nrp-local/nrp-nest-gazebo-ubuntu20:local"
+    BUILD_SERVICE="nrp-nest-gazebo"
+fi
 
 # Pretty logger
 log() { printf '\n[%s] %s\n' "$(basename "$0")" "$*"; }

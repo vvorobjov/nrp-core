@@ -89,7 +89,11 @@ COPY --from=opensim-build ${NRP_OPENSIM_INSTALL_DIR} ${NRP_OPENSIM_INSTALL_DIR}
 
 # Export opensim python wrappers and packages
 
-RUN echo 'export PYTHONPATH=${NRP_OPENSIM_INSTALL_DIR}/lib/python3.8/site-packages/:"${PYTHONPATH}"' >> .bashrc
+# Opensim's wrapper install path follows the interpreter's version;
+# detect it at image-build time rather than hardcoding python3.8 so
+# the same Dockerfile works for focal (3.8) and jammy (3.10).
+RUN PYVER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
+    echo "export PYTHONPATH=\${NRP_OPENSIM_INSTALL_DIR}/lib/python${PYVER}/site-packages/:\"\${PYTHONPATH}\"" >> .bashrc
 
 # Export opensim libraries
 # Some of the dependecies (ipopt, adolc) arent installed with 'make install', we have to export them too

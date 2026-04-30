@@ -61,6 +61,8 @@ if(ENABLE_ROS)
     message(STATUS "[nrp_simulation] ROS 2 enabled; locating rclcpp for NRPCoreSim")
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
+    # Humble's rclcpp references fastcdr as a bare target; import it here.
+    find_package(fastcdr QUIET)
 endif()
 
 

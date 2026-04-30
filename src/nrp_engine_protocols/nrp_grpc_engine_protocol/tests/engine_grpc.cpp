@@ -363,6 +363,13 @@ TEST(EngineGrpc, RunLoopStepCommand)
     ASSERT_THROW(client.runLoopStepCallback(timeStep), std::runtime_error);
 
     server.startServer();
+    // ResetCommand has the same pattern — gRPC needs a brief moment
+    // after startServer() before the listener accepts connections,
+    // especially on jammy where DNS resolution of "localhost" can race
+    // with the bind. Without this sleep we get sporadic
+    // "failed to connect to all addresses" errors on the first
+    // post-start call.
+    testSleep(1500);
 
     // Engine time should never be smaller than 0
 

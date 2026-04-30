@@ -44,11 +44,23 @@ using namespace boost;
  */
 class FunctionManagerTest : public testing::Test {
     protected:
+        // SetUpTestSuite runs once, before any fixture instance is
+        // constructed for this suite. This matters because the
+        // python::dict member below is built via PyDict_New() during
+        // fixture construction — calling PyDict_New() before
+        // Py_Initialize() is undefined and segfaults on Boost.Python
+        // 1.74 (jammy). On Boost 1.71 (focal) it happened to be
+        // tolerated.
+        static void SetUpTestSuite()
+        {
+            if(!Py_IsInitialized())
+                Py_Initialize();
+        }
+
         void SetUp() override
         {
             try
             {
-                Py_Initialize();
                 json_converter::initNumpy();
                 boost::python::numpy::initialize();
 

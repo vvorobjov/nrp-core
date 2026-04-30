@@ -168,21 +168,38 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
 
 endif()
 
-## Log library
-find_package(spdlog 1.11.0 EXACT QUIET PATHS ${NRP_DEP_CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-if(NOT ${spdlog_FOUND})
+## Log library — keep spdlog 1.11.0 (we use newer-fmt-only formatting
+## of nlohmann::json values that breaks under focal apt's spdlog 1.5
+## bundled fmt 6.x). Build it as a STATIC archive into
+## NRP_DEP_CMAKE_INSTALL_PREFIX and link it into our shared libs with
+## --exclude-libs so its symbols are NOT exported from the resulting
+## libNRP*.so. That way the rclcpp-loaded /lib/.../libspdlog.so.1
+## (1.5 on focal, 1.9 on jammy) and our embedded 1.11.0 don't share
+## a registry, and the husky_braitenberg docker-compose example
+## doesn't crash with a double-free in
+## spdlog::sinks::ansicolor_stdout_sink::~ansicolor_stdout_sink.
+##
+## Test the static archive's presence directly. find_package(spdlog 1.11.0)
+## happily matches a previously-installed shared 1.11.0 (left over from
+## pre-873417a5 builds in the canonical focal image), which would set
+## spdlog_FOUND=TRUE and skip the ExternalProject — but our IMPORTED
+## lib_spdlog target still points at libspdlog.a, breaking the link.
+set(NRP_SPDLOG_STATIC "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.a")
+if(EXISTS "${NRP_SPDLOG_STATIC}")
+    set(spdlog_FOUND TRUE)
+else()
+    set(spdlog_FOUND FALSE)
     message("Please wait. Downloading spdlog...")
     ExternalProject_Add(spdlog
             GIT_REPOSITORY https://github.com/gabime/spdlog.git
             GIT_TAG v1.11.0
             INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
-            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX} -DSPDLOG_BUILD_SHARED=ON)
+            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX}
+                       -DSPDLOG_BUILD_SHARED=OFF
+                       -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
 
-
-
-    set(SPDLOG_BUILD_SHARED ON)
+    set(SPDLOG_BUILD_SHARED OFF)
     set(SPDLOG_INSTALL ON)
-
 endif()
 
 # libzip: ZIP Manipulation
@@ -229,9 +246,11 @@ add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
 set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
         IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
 
-add_library(lib_spdlog STATIC IMPORTED )
+# spdlog is now built as a static archive into NRP_DEP_CMAKE_INSTALL_PREFIX
+# (see find_package + ExternalProject_Add block above).
+add_library(lib_spdlog STATIC IMPORTED)
 set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.so")
+        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.a")
 
 if(NOT ${cxxopts_FOUND})
     add_dependencies(${LIBRARY_NAME} cxxopts)
@@ -250,6 +269,13 @@ if(NOT ${spdlog_FOUND})
 endif()
 
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
+# Hide spdlog symbols inside libNRPGeneralLibrary.so so they don't
+# clash at runtime with the system libspdlog.so.1 that rclcpp loads
+# via librcl_logging_spdlog.so. Without this NRPCoreSim crashes with
+# a double-free in ~ansicolor_stdout_sink at startup. The --exclude-
+# libs flag is GNU ld / lld specific; harmless on toolchains that
+# don't recognise it.
+target_link_options(${LIBRARY_NAME} PRIVATE LINKER:--exclude-libs,libspdlog.a)
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}

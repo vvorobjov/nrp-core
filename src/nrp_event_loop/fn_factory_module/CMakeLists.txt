@@ -41,6 +41,8 @@ if(NOT "${NRP_ROS_MSGS_PACKAGES}" STREQUAL "")
     message(STATUS "[CreateFNModule] ROS 2 packages requested: ${NRP_ROS_MSGS_PACKAGES}")
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
+    # Humble's rclcpp cmake export references fastcdr; import it.
+    find_package(fastcdr QUIET)
     foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
         find_package(${PACK} REQUIRED)
     endforeach()

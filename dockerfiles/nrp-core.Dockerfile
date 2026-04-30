@@ -31,13 +31,26 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 # sys.path, so the pip-user pytest wins over the apt-provided 4.6.9.
 RUN pip install "grpcio-tools>=1.62.2" "pytest>=7,<8" psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt==1.6.1"
 
-# Experiments
-# RUN pip install opencv-python
+# Experiments — opencv-python is needed by examples/husky_braitenberg's
+# cam_pf.py (and any other camera-data transceiver function). Without
+# it the docker-compose example fails at "import cv2" before the
+# simulation even starts. Pin numpy<2 so we don't drag in numpy 2.x
+# (latest opencv-python wheel auto-upgrades to numpy 2.2 which is
+# ABI-incompatible with the apt-installed python3-scipy that EDLUT's
+# swig wrapper imports — "numpy.dtype size changed").
+RUN pip install "numpy<2" opencv-python
 
 # Install python_on_whales for the example of invoking nrp-core remotely with compose (See guides/remote_docker_compose.dox)
 # Needed for tests
 RUN pip install python-on-whales pyyaml
-RUN pip install -U setuptools pip
+# Upgrade packaging alongside setuptools: modern setuptools (>= ~74)
+# calls packaging.canonicalize_version(strip_trailing_zero=...), which
+# was added in packaging 23.0. Jammy's apt-provided python3-packaging
+# is 21.3 and shadows the pip-user one on some code paths, causing
+# ament_cmake_python to fail colcon build with
+#   TypeError: canonicalize_version() got an unexpected keyword
+#   argument 'strip_trailing_zero'
+RUN pip install -U setuptools pip packaging
 
 # Install Documentation dependencies
 
@@ -89,12 +102,17 @@ RUN cd ${HOME}/nrp-core-src && ls -al && bash .ci/11-prepare-build.sh && bash .c
 # Copy the installed nrp to the main image (the intermediate container with code will be unseen for production)
 FROM nrp-core-env
 
+# Python version must match the base image's system python. Defaults
+# to 3.8 (ubuntu20); override to 3.10 in docker-compose.yaml for the
+# ubuntu22 services.
+ARG PYTHON_VERSION=3.8
+
 ARG NRP_TEMPLATES_DIR=/nrp-templates
 ENV NRP_TEMPLATES_DIR ${NRP_TEMPLATES_DIR}
 
 ENV PATH=$PATH:$NRP_INSTALL_DIR/bin:$HOME/.local/bin
 ENV LD_LIBRARY_PATH=$NRP_INSTALL_DIR/lib:$LD_LIBRARY_PATH
-ENV PYTHONPATH=$NRP_INSTALL_DIR/lib/python3.8/site-packages:$PYTHONPATH
+ENV PYTHONPATH=$NRP_INSTALL_DIR/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 
 COPY --from=nrp-core-builder ${NRP_INSTALL_DIR} ${NRP_INSTALL_DIR}
 COPY --from=nrp-core-builder ${NRP_DEPS_INSTALL_DIR} ${NRP_DEPS_INSTALL_DIR}

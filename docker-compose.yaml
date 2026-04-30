@@ -323,3 +323,281 @@ services:
         depends_on:
         - nvidia-cuda-env
 
+
+
+    base-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/base.Dockerfile
+            args:
+                BASE_IMAGE: ubuntu:jammy
+        image: ${NRP_DOCKER_REGISTRY}/base-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+
+
+    nrp-vanilla-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            target: nrp-core-env
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/vanilla.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - base-ubuntu22-env
+
+
+    gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/gazebo.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu22-env:${NRP_CORE_TAG}
+                ROS_DISTRO: humble
+        image: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - base-ubuntu22-env
+
+
+    xpra-gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - gazebo-ubuntu22-env
+
+
+    nest-gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/nest.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - gazebo-ubuntu22-env
+
+
+    xpra-nest-gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nest-gazebo-ubuntu22-env
+
+
+    nrp-xpra-nest-gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            target: nrp-core-env
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - xpra-nest-gazebo-ubuntu22-env
+
+
+    nrp-nest-gazebo-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            target: nrp-core-env
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nest-gazebo-ubuntu22-env
+
+
+    opensim-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/opensim.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu22-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - base-ubuntu22-env
+
+
+    tvb-opensim-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/tvb.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu22-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - opensim-ubuntu22-env
+
+
+    xpra-tvb-opensim-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/xpra.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - tvb-opensim-ubuntu22-env
+
+
+    nrp-xpra-tvb-opensim-ubuntu22-env:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            target: nrp-core-env
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - xpra-tvb-opensim-ubuntu22-env
+
+
+    nrp-vanilla-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/base-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/vanilla.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nrp-vanilla-ubuntu22-env
+
+
+    nrp-pybullet-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/pybullet.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nrp-vanilla-ubuntu22:${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-pybullet-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nrp-vanilla-ubuntu22
+
+
+    nrp-gazebo-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/gazebo.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - gazebo-ubuntu22-env
+
+
+    nrp-xpra-gazebo-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/gazebo.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-gazebo-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - xpra-gazebo-ubuntu22-env
+
+
+    nrp-nest-gazebo-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo-ubuntu22.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - nest-gazebo-ubuntu22-env
+
+
+    nrp-xpra-nest-gazebo-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-nest-gazebo-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo-ubuntu22.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-nest-gazebo-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - xpra-nest-gazebo-ubuntu22-env
+
+
+    nrp-opensim-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/opensim-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-opensim-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - opensim-ubuntu22-env
+
+
+    nrp-tvb-opensim-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-tvb-opensim-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - tvb-opensim-ubuntu22-env
+
+
+    nrp-xpra-tvb-opensim-ubuntu22:
+        build:
+            context: .
+            dockerfile: dockerfiles/nrp-core.Dockerfile
+            args:
+                BASE_IMAGE: ${NRP_DOCKER_REGISTRY}/xpra-tvb-opensim-ubuntu22-env:${NRP_CORE_TAG}
+                CMAKE_CACHE_FILE: .ci/cmake_cache/opensim.cmake
+                PYTHON_VERSION: "3.10"
+        image: ${NRP_DOCKER_REGISTRY}/nrp-xpra-tvb-opensim-ubuntu22:${NRP_CORE_TAG}
+        command: bash
+        depends_on:
+        - xpra-tvb-opensim-ubuntu22-env
+

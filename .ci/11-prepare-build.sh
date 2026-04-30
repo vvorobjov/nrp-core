@@ -20,6 +20,15 @@ fi
 
 source "$HOME"/.bashrc
 
+# ROS 2's setup.bash sets AMENT_PREFIX_PATH (honoured by ament_cmake
+# Find*.cmake modules) but leaves CMAKE_PREFIX_PATH empty. Plain
+# find_package calls (e.g. find_package(fastcdr) as needed by Humble's
+# rclcpp transitive target) don't go through ament_cmake, so they
+# need the ROS install prefix explicitly in CMAKE_PREFIX_PATH.
+if [ -n "${AMENT_PREFIX_PATH:-}" ]; then
+    export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:+$CMAKE_PREFIX_PATH:}${AMENT_PREFIX_PATH}"
+fi
+
 # Check if NEST_INSTALL_DIR is set and the external nest-simulator can be used
 [[ -z "$NEST_INSTALL_DIR" ]] && NEST_INSTALL_OPTION="" || NEST_INSTALL_OPTION="-DNEST_INSTALL_DIR=${NEST_INSTALL_DIR}"
 

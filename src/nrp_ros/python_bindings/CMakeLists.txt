@@ -31,6 +31,8 @@ message(STATUS "[nrp_ros_python_bindings] Configuring ROS 2 Boost.Python binding
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+# Humble's rclcpp cmake export needs fastcdr as a target.
+find_package(fastcdr QUIET)
 find_package(builtin_interfaces REQUIRED)
 find_package(nrp_ros_msgs REQUIRED)
 foreach(PACK ${NRP_ROS_MSGS_PACKAGES})

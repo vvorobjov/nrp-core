@@ -106,6 +106,9 @@ if(ENABLE_ROS)
     message(STATUS "[nrp_event_loop] ROS 2 enabled; locating ament packages (rclcpp, nrp_ros_msgs, extras)")
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
+    # Humble needs fastcdr imported explicitly; see comment in
+    # nrp_ros_proxy/CMakeLists.txt. QUIET because Foxy doesn't need it.
+    find_package(fastcdr QUIET)
     find_package(nrp_ros_msgs REQUIRED)
     foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
         message(STATUS "[nrp_event_loop] Locating extra ROS 2 msg package: ${PACK}")
@@ -316,6 +319,14 @@ if(NOT ${PYTHON_MODULE_SRC_FILES} STREQUAL "")
     add_library(${PYTHON_MODULE_NAME} SHARED ${PYTHON_MODULE_SRC_FILES})
     add_library(${NAMESPACE_NAME}::${PYTHON_MODULE_NAME} ALIAS ${PYTHON_MODULE_NAME})
     target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra>)
+    # python_module.cpp instantiates Boost.Python wrappers for every
+    # ROS 2 message type listed in NRP_ROS_MSGS_PACKAGES (via the
+    # generated ros_edge_factory.h). On jammy + Humble this pushes
+    # cc1plus over 4 GB of RAM even at -O1, OOM-killing the build.
+    # -O0 on this TU drops peak compile memory to ~1.5 GB. This is a
+    # binding wrapper — no perf-sensitive code — so dropping the
+    # optimizer costs nothing at runtime.
+    target_compile_options(${PYTHON_MODULE_NAME} PRIVATE $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:-O0>)
     set_target_properties(${PYTHON_MODULE_NAME} PROPERTIES PREFIX "")
 
     target_include_directories(${PYTHON_MODULE_NAME}
