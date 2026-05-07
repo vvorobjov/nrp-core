@@ -30,6 +30,14 @@ concurrency:
   group: ci-vanilla-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    # Inside the container GH Actions falls back to `sh` (dash) for
+    # multi-line `run:` steps unless we pin bash explicitly. Our
+    # scripts use `set -o pipefail` and process substitution, both
+    # bash-only. Pinning here covers every step in the workflow.
+    shell: bash
+
 jobs:
   test:
     name: ${{ matrix.label }} vanilla
