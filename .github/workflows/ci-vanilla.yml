@@ -1,0 +1,148 @@
+name: CI (vanilla)
+
+# Builds nrp-core with every optional simulator and transport disabled
+# (Gazebo / NEST / EDLUT / ROS / MQTT / Spinnaker all OFF), then runs
+# the unit-test suite that survives that trim and reports gcovr
+# coverage. Runs the same matrix on Ubuntu 20.04 (focal, python 3.8)
+# and Ubuntu 22.04 (jammy, python 3.10).
+
+on:
+  push:
+    branches:
+      - master
+      - development
+      - "ci-**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} vanilla
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            image: ubuntu:20.04
+          - os: ubuntu-22.04
+            image: ubuntu:22.04
+    container:
+      image: ${{ matrix.image }}
+      # Run as root inside the container — we are only setting up a
+      # build environment and there is no shared state to protect.
+      options: --user 0:0
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Etc/UTC
+      NRP_INSTALL_DIR: /opt/nrp
+      NRP_DEPS_INSTALL_DIR: /opt/nrp_deps
+      CMAKE_CACHE_FILE: .ci/cmake_cache/ci-vanilla.cmake
+      # 11-prepare-build.sh sources $HOME/.bashrc which is empty in
+      # the bare ubuntu container; forcing $HOME=/root keeps it from
+      # erroring on a missing file.
+      HOME: /root
+
+    steps:
+      - name: Install apt dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates gnupg2 lsb-release software-properties-common \
+            curl wget git sudo tzdata
+          ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime
+          # libpistache-dev is required unconditionally by
+          # nrp_general_library / nrp_simulation. It ships in jammy's
+          # universe but on focal we need the upstream PPA.
+          if [ "$(. /etc/os-release; echo $VERSION_ID)" = "20.04" ]; then
+            add-apt-repository -y ppa:pistache+team/unstable
+          fi
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            cmake g++ make pkg-config \
+            python3 python3-dev python3-pip python3-numpy \
+            cython3 doxygen \
+            libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libboost-system-dev \
+            libcurl4-openssl-dev libzip-dev nlohmann-json3-dev \
+            libpistache-dev \
+            libgrpc++-dev libprotobuf-dev protobuf-compiler-grpc \
+            libgmock-dev libgtest-dev \
+            libclang-dev llvm-dev \
+            xvfb cppcheck
+
+      - name: Install pip dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --upgrade pip
+          # gcovr 5.0 matches what .ci/30-run-tests.sh expects.
+          # grpcio-tools provides the python proto/grpc generators
+          # invoked by src/nrp_protobuf during cmake configure / build.
+          # pytest is needed by the cmake-registered python tests.
+          python3 -m pip install "gcovr==5.0" "grpcio-tools>=1.30,<2" "pytest>=7,<8"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        shell: bash
+        run: bash .ci/11-prepare-build.sh
+
+      - name: Build & install
+        shell: bash
+        run: bash .ci/20-build.sh
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # ${NRP_INSTALL_DIR}/lib/python<X.Y>/site-packages is where
+          # the nrp_core python bindings get installed; the python
+          # ctest cases (EngineScript / ServerCallbacks /
+          # PyServerGrpcCallbacks / EventLoopPython) import from it.
+          PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          export PYTHONPATH="${NRP_INSTALL_DIR}/lib/python${PYVER}/site-packages:${PYTHONPATH:-}"
+          export LD_LIBRARY_PATH="${NRP_INSTALL_DIR}/lib:${NRP_DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH:-}"
+          cd build
+          ctest --output-on-failure --no-compress-output --test-output-size-failed 300000 -T Test
+
+      - name: Generate coverage report
+        if: always()
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd build
+          # `make gcovr` calls `gcovr -r ../ ... --xml gcovr.xml --html gcovr.html`
+          make gcovr
+          # Print a one-line summary into the job log and the GitHub
+          # Actions step summary.
+          gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" --print-summary \
+            | tee gcovr-summary.txt
+          {
+            echo "## Coverage (${{ matrix.os }})"
+            echo
+            echo '```'
+            cat gcovr-summary.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload coverage and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-vanilla-${{ matrix.os }}
+          path: |
+            build/gcovr.xml
+            build/gcovr.html
+            build/gcovr-summary.txt
+            build/Testing/**/*.xml
+            build/xml/**/*.xml
+          if-no-files-found: ignore
