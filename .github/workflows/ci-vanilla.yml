@@ -119,6 +119,12 @@ jobs:
             echo "build/Makefile missing — coverage step skipped."
             exit 0
           fi
+          # gcovr is intentionally NOT in the env image (it's a dev-
+          # only tool); the canonical .ci/30-run-tests.sh pip-installs
+          # it at coverage time, so do the same here. Pin to 5.0 to
+          # match the version that produces the gcovr.xml schema the
+          # repo is wired against.
+          python3 -m pip install --user "gcovr==5.0"
           cd build
           make gcovr
           gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" --print-summary \
