@@ -46,6 +46,14 @@ jobs:
       # the bare ubuntu container; forcing $HOME=/root keeps it from
       # erroring on a missing file.
       HOME: /root
+      # Test binaries built with `gtest_discover_tests` are run during
+      # the build step (post-link `--gtest_list_tests`), so they need
+      # to find ExternalProject-fetched libs (e.g.
+      # libnlohmann_json_schema_validator.so.1, libspdlog.so.1)
+      # already at compile time, not just at ctest time. The deps
+      # land in NRP_DEPS_INSTALL_DIR/lib and the project's own
+      # libraries land in NRP_INSTALL_DIR/lib.
+      LD_LIBRARY_PATH: /opt/nrp/lib:/opt/nrp_deps/lib
 
     steps:
       - name: Install apt dependencies
