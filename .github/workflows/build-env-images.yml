@@ -32,6 +32,26 @@ on:
       - 'docker-compose.yaml'
       - 'build_nrp_core_image.sh'
       - '.github/workflows/build-env-images.yml'
+  # Also fire on PRs that touch env-affecting paths so feature
+  # branches can rebuild the images before ci-vanilla pulls them.
+  # Required for the first-time bootstrap of this PR (the file
+  # itself is being added here), and going forward whenever someone
+  # changes a Dockerfile or pinned dependency. PR runs push to
+  # `:latest` like the default-branch runs do; that is acceptable
+  # because we only have one active PR touching CI at a time, and
+  # ci-vanilla rejects stale images via the `latest` tag's content
+  # digest anyway. If you ever land overlapping CI-image PRs in
+  # parallel, switch to `:pr-${{ github.event.pull_request.number }}`
+  # tagging here and resolve the tag dynamically in ci-vanilla.
+  pull_request:
+    paths:
+      - 'dockerfiles/**'
+      - '.ci/dependencies/**'
+      - '.ci/bashrc'
+      - '.ci/cmake_cache/**'
+      - 'docker-compose.yaml'
+      - 'build_nrp_core_image.sh'
+      - '.github/workflows/build-env-images.yml'
 
 permissions:
   contents: read
