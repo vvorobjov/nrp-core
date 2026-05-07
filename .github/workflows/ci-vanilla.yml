@@ -98,7 +98,17 @@ jobs:
           # grpcio-tools provides the python proto/grpc generators
           # invoked by src/nrp_protobuf during cmake configure / build.
           # pytest is needed by the cmake-registered python tests.
-          python3 -m pip install "gcovr==5.0" "grpcio-tools>=1.30,<2" "pytest>=7,<8"
+          # psutil / docker / python-on-whales / pyyaml / flask /
+          # gunicorn / flask_cors / docopt / requests are imported
+          # transitively by nrp_core/__init__.py via nrp_client and
+          # the python_json_engine server, so the C++ tests that
+          # embed Python and `import nrp_core` need them present.
+          python3 -m pip install \
+            "gcovr==5.0" \
+            "grpcio-tools>=1.30,<2" \
+            "pytest>=7,<8" \
+            psutil docker python-on-whales pyyaml \
+            flask gunicorn flask_cors docopt requests
 
       - name: Checkout repository
         uses: actions/checkout@v4
