@@ -76,6 +76,14 @@ jobs:
       # this build's own libs in NRP_INSTALL_DIR/lib must already be
       # discoverable at compile time.
       LD_LIBRARY_PATH: /home/nrpuser/.local/nrp/lib:/home/nrpuser/.local/nrp_deps/lib
+      # The env image's Dockerfile only adds NRP_DEPS_INSTALL_DIR/bin
+      # to PATH (NRP_INSTALL_DIR/bin doesn't exist at image build
+      # time). The canonical .ci/bashrc adds NRP_INSTALL_DIR/bin at
+      # shell startup, but our workflow doesn't source it — without
+      # this, ctest's NrpServer / TEST_FN_FACTORY_MODULE / Launcher
+      # cases fail with `FileNotFoundError: NRPCoreSim` /
+      # `build_fn_factory_module.sh` not found.
+      PATH: /home/nrpuser/.local/nrp/bin:/home/nrpuser/.local/nrp_deps/bin:/home/nrpuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     steps:
       - name: Checkout repository
