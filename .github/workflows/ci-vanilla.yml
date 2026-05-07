@@ -99,6 +99,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Mark workspace as a safe git directory
+        shell: bash
+        run: |
+          # The runner mounts the workspace owned by uid 1001 but the
+          # container runs as root, so git refuses to operate on it
+          # ("dubious ownership") — and cmake's configure step runs
+          # `git submodule update --init --recursive` on it. Pre-empt
+          # the failure with a system-wide safe.directory.
+          git config --system --add safe.directory '*'
+
       - name: Configure
         shell: bash
         run: bash .ci/11-prepare-build.sh
@@ -126,6 +136,14 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          # If cmake configure didn't reach Makefile generation (e.g.
+          # apt step or git ownership failure earlier), there is
+          # nothing to summarise; skip rather than masking the real
+          # failure with a "No rule to make target 'gcovr'" error.
+          if [ ! -f build/Makefile ]; then
+            echo "build/Makefile missing — coverage step skipped."
+            exit 0
+          fi
           cd build
           # `make gcovr` calls `gcovr -r ../ ... --xml gcovr.xml --html gcovr.html`
           make gcovr
