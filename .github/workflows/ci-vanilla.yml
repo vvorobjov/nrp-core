@@ -58,18 +58,16 @@ jobs:
             curl wget git sudo tzdata
           ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime
           # The bare ubuntu:* Docker images ship sources.list with
-          # only `main restricted`. Several deps below — libpistache-
-          # dev on jammy, cppcheck, xvfb, libgmock-dev, libgrpc++-dev
-          # on jammy, libboost-numpy-dev — live in `universe`, so
-          # enable it explicitly.
+          # only `main restricted`. Several deps below — cppcheck,
+          # xvfb, libgmock-dev, libgrpc++-dev (jammy), libboost-numpy-
+          # dev — live in `universe`, so enable it explicitly.
           add-apt-repository -y universe
           # libpistache-dev is required unconditionally by
-          # nrp_general_library / nrp_simulation. It ships in jammy's
-          # universe but on focal it is only available from the
-          # upstream PPA.
-          if [ "$(. /etc/os-release; echo $VERSION_ID)" = "20.04" ]; then
-            add-apt-repository -y ppa:pistache+team/unstable
-          fi
+          # nrp_general_library / nrp_simulation. It is not in the
+          # Ubuntu archive on either focal or jammy, so use the
+          # upstream Pistache PPA on both. This matches what
+          # dockerfiles/nrp-core.Dockerfile does.
+          add-apt-repository -y ppa:pistache+team/unstable
           apt-get update
           apt-get install -y --no-install-recommends \
             cmake g++ make pkg-config \
