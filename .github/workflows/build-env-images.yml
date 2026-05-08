@@ -1,0 +1,156 @@
+name: Build & push env images
+
+# Builds the docker-compose `*-env` images that ci-vanilla.yml and any
+# future full-suite workflow consume as their build environment, and
+# pushes them to GHCR. The chain matches docker-compose.yaml exactly:
+#
+#   ubuntu20: base-env -> nrp-vanilla-env
+#             base-env -> gazebo-env -> nest-gazebo-env -> nrp-nest-gazebo-env
+#   ubuntu22: base-ubuntu22-env -> nrp-vanilla-ubuntu22-env
+#             base-ubuntu22-env -> gazebo-ubuntu22-env -> nest-gazebo-ubuntu22-env
+#                                  -> nrp-nest-gazebo-ubuntu22-env
+#
+# The `nrp-core-env` Dockerfile target stops *before* the source tree is
+# compiled, so the resulting images are the build environment, not a
+# release artifact — exactly what ci-vanilla / ci-nest-gazebo need.
+#
+# Bootstrap: dispatch this workflow once from the feature branch via
+# `gh workflow run build-env-images.yml --ref <branch>` to populate
+# ghcr.io/<owner>/*-env:latest before the first ci-vanilla run.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - development
+    paths:
+      - 'dockerfiles/**'
+      - '.ci/dependencies/**'
+      - '.ci/bashrc'
+      - '.ci/cmake_cache/**'
+      - 'docker-compose.yaml'
+      - 'build_nrp_core_image.sh'
+      - '.github/workflows/build-env-images.yml'
+  # Also fire on PRs that touch env-affecting paths so feature
+  # branches can rebuild the images before ci-vanilla pulls them.
+  # Required for the first-time bootstrap of this PR (the file
+  # itself is being added here), and going forward whenever someone
+  # changes a Dockerfile or pinned dependency. PR runs push to
+  # `:latest` like the default-branch runs do; that is acceptable
+  # because we only have one active PR touching CI at a time, and
+  # ci-vanilla rejects stale images via the `latest` tag's content
+  # digest anyway. If you ever land overlapping CI-image PRs in
+  # parallel, switch to `:pr-${{ github.event.pull_request.number }}`
+  # tagging here and resolve the tag dynamically in ci-vanilla.
+  pull_request:
+    paths:
+      - 'dockerfiles/**'
+      - '.ci/dependencies/**'
+      - '.ci/bashrc'
+      - '.ci/cmake_cache/**'
+      - 'docker-compose.yaml'
+      - 'build_nrp_core_image.sh'
+      - '.github/workflows/build-env-images.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-env-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Resolves image names like
+  # `ghcr.io/<owner>/nrp-vanilla-ubuntu20-env:latest` via the
+  # `${NRP_DOCKER_REGISTRY}/<service>:${NRP_CORE_TAG}` template that
+  # docker-compose.yaml uses. github.repository_owner is lowercased
+  # (`${{ github.repository_owner }}` already is on GitHub).
+  NRP_DOCKER_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  NRP_CORE_TAG: latest
+
+jobs:
+  build:
+    name: ${{ matrix.label }} env images
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: ubuntu-20.04
+            vanilla_service: nrp-vanilla-env
+            nest_gazebo_service: nrp-nest-gazebo-env
+            images: |
+              base-ubuntu20-env
+              nrp-vanilla-ubuntu20-env
+              gazebo-ubuntu20-env
+              nest-gazebo-ubuntu20-env
+              nrp-nest-gazebo-ubuntu20-env
+          - label: ubuntu-22.04
+            vanilla_service: nrp-vanilla-ubuntu22-env
+            nest_gazebo_service: nrp-nest-gazebo-ubuntu22-env
+            images: |
+              base-ubuntu22-env
+              nrp-vanilla-ubuntu22-env
+              gazebo-ubuntu22-env
+              nest-gazebo-ubuntu22-env
+              nrp-nest-gazebo-ubuntu22-env
+
+    steps:
+      - name: Reclaim disk space
+        # The nest-gazebo chain is multi-GB (NEST 3.1 from source +
+        # Gazebo 11 + ROS 2). The ~14 GB free on a fresh GitHub-hosted
+        # ubuntu-latest is enough only after we drop the unused
+        # toolchains / android sdk / .NET / haskell that the runner
+        # ships with by default.
+        run: |
+          set -euxo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          docker image prune -af || true
+          df -h /
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Intentionally NOT using docker/setup-buildx-action@v3:
+      # its default `docker-container` driver lives in a separate
+      # buildkitd instance whose image store is not shared with the
+      # host docker daemon. As a result, the second `docker compose
+      # build` step fails to resolve `FROM ghcr.io/<owner>/base-...:
+      # latest` even though the previous step just built it locally
+      # ("load metadata: not found"). Using the default builder (the
+      # docker daemon's built-in BuildKit) means each chain step
+      # finds the previous one's output by image tag.
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build vanilla env chain (base + nrp-vanilla)
+        run: bash build_nrp_core_image.sh ${{ matrix.vanilla_service }}
+
+      - name: Build nest-gazebo env chain (gazebo + nest + nrp-nest-gazebo)
+        run: bash build_nrp_core_image.sh ${{ matrix.nest_gazebo_service }}
+
+      - name: Push images to GHCR
+        run: |
+          set -euxo pipefail
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            ref="${NRP_DOCKER_REGISTRY}/${name}:${NRP_CORE_TAG}"
+            echo "Pushing ${ref}"
+            docker push "${ref}"
+          done <<< '${{ matrix.images }}'
+
+      - name: Show pushed images
+        run: docker images "${NRP_DOCKER_REGISTRY}/*"

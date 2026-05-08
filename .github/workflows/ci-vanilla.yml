@@ -1,0 +1,151 @@
+name: CI (vanilla)
+
+# Runs cmake configure / build / ctest / gcovr against the prebuilt
+# `nrp-vanilla-{ubuntu20,ubuntu22}-env:latest` images that
+# build-env-images.yml pushes to GHCR. The image already has every apt
+# / pip / paho-mqtt dependency from the canonical nrp-core.Dockerfile
+# `nrp-core-env` target — this workflow only contributes the source
+# checkout, the cmake build, the tests, and the coverage report.
+#
+# The matching cmake preset .ci/cmake_cache/ci-vanilla.cmake disables
+# every optional simulator / transport (Gazebo, NEST, EDLUT, ROS,
+# MQTT, Spinnaker) so the build is a small core slice; ENABLE_TESTING
+# and COVERAGE stay on.
+
+on:
+  push:
+    branches:
+      - master
+      - development
+      - "ci-**"
+      - "gh-actions-**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-vanilla-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Inside the container GH Actions falls back to `sh` (dash) for
+    # multi-line `run:` steps unless we pin bash explicitly. Our
+    # scripts use `set -o pipefail` and process substitution, both
+    # bash-only. Pinning here covers every step in the workflow.
+    shell: bash
+
+jobs:
+  test:
+    name: ${{ matrix.label }} vanilla
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: ubuntu-20.04
+            image: nrp-vanilla-ubuntu20-env
+          - label: ubuntu-22.04
+            image: nrp-vanilla-ubuntu22-env
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
+      # Image's default user is `nrpuser` (uid 1000), but the runner
+      # mounts the workspace as uid 1001; running as root sidesteps
+      # the mismatch. We still set safe.directory='*' below for git.
+      options: --user 0:0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      # NRP_INSTALL_DIR / NRP_DEPS_INSTALL_DIR match the paths baked
+      # into the env image's PATH / LD_LIBRARY_PATH / .bashrc, so the
+      # paho-mqtt libs already in NRP_DEPS_INSTALL_DIR/lib stay
+      # findable and our fresh nrp-core install lands where every
+      # canonical helper expects it.
+      NRP_INSTALL_DIR: /home/nrpuser/.local/nrp
+      NRP_DEPS_INSTALL_DIR: /home/nrpuser/.local/nrp_deps
+      CMAKE_CACHE_FILE: .ci/cmake_cache/ci-vanilla.cmake
+      HOME: /home/nrpuser
+      # gtest_discover_tests runs each freshly-linked test binary
+      # during the build step (post-link --gtest_list_tests), so the
+      # ExternalProject-fetched libs in NRP_DEPS_INSTALL_DIR/lib and
+      # this build's own libs in NRP_INSTALL_DIR/lib must already be
+      # discoverable at compile time.
+      LD_LIBRARY_PATH: /home/nrpuser/.local/nrp/lib:/home/nrpuser/.local/nrp_deps/lib
+      # The env image's Dockerfile only adds NRP_DEPS_INSTALL_DIR/bin
+      # to PATH (NRP_INSTALL_DIR/bin doesn't exist at image build
+      # time). The canonical .ci/bashrc adds NRP_INSTALL_DIR/bin at
+      # shell startup, but our workflow doesn't source it — without
+      # this, ctest's NrpServer / TEST_FN_FACTORY_MODULE / Launcher
+      # cases fail with `FileNotFoundError: NRPCoreSim` /
+      # `build_fn_factory_module.sh` not found.
+      PATH: /home/nrpuser/.local/nrp/bin:/home/nrpuser/.local/nrp_deps/bin:/home/nrpuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Mark workspace as a safe git directory
+        # cmake's configure step calls `git submodule update --init
+        # --recursive`, which refuses to operate on a workspace owned
+        # by a different uid than the running shell.
+        run: git config --system --add safe.directory '*'
+
+      - name: Configure
+        run: bash .ci/11-prepare-build.sh
+
+      - name: Build & install
+        run: bash .ci/20-build.sh
+
+      - name: Run unit tests
+        run: |
+          set -euxo pipefail
+          PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          export PYTHONPATH="${NRP_INSTALL_DIR}/lib/python${PYVER}/site-packages:${PYTHONPATH:-}"
+          cd build
+          ctest --output-on-failure --no-compress-output --test-output-size-failed 300000 -T Test
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          set -euxo pipefail
+          if [ ! -f build/Makefile ]; then
+            echo "build/Makefile missing — coverage step skipped."
+            exit 0
+          fi
+          # gcovr is intentionally NOT in the env image (it's a dev-
+          # only tool); the canonical .ci/30-run-tests.sh pip-installs
+          # it at coverage time, so do the same here. Pin to 5.0 to
+          # match the version that produces the gcovr.xml schema the
+          # repo is wired against.
+          python3 -m pip install --user "gcovr==5.0"
+          cd build
+          make gcovr
+          gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" --print-summary \
+            | tee gcovr-summary.txt
+          {
+            echo "## Coverage (${{ matrix.label }})"
+            echo
+            echo '```'
+            cat gcovr-summary.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload coverage and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-vanilla-${{ matrix.label }}
+          path: |
+            build/gcovr.xml
+            build/gcovr.html
+            build/gcovr-summary.txt
+            build/Testing/**/*.xml
+            build/xml/**/*.xml
+          if-no-files-found: ignore
