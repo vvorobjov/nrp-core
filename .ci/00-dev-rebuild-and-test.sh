@@ -31,6 +31,7 @@ NO_IMAGE=0
 TEST_FILTER=""
 KEEP_BUILD=0
 UBUNTU_VERSION="20"
+CMAKE_CACHE_OVERRIDE=""
 
 usage() {
     cat <<EOF
@@ -43,6 +44,12 @@ Options:
   --keep-build          Do not wipe build/ before configuring.
   --ubuntu22            Target the Ubuntu 22.04 image (nrp-nest-gazebo-ubuntu22)
                         instead of the default Ubuntu 20.04 one.
+  --cmake-cache PATH    Override the cmake initial-cache preset. PATH must be
+                        the in-container path (e.g.
+                        /workspace/.ci/cmake_cache/vanilla.cmake). By default
+                        the canonical preset is selected:
+                          ubuntu20 -> /workspace/.ci/cmake_cache/nest-gazebo.cmake
+                          ubuntu22 -> /workspace/.ci/cmake_cache/nest-gazebo-ubuntu22.cmake
   -h, --help            Show this message and exit.
 
 Default image: nrp-local/nrp-nest-gazebo-ubuntu20:local (canonical).
@@ -62,6 +69,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         --keep-build)    KEEP_BUILD=1 ;;
         --ubuntu22)      UBUNTU_VERSION="22" ;;
+        --cmake-cache)
+            [[ $# -ge 2 ]] || { echo "[$0] --cmake-cache requires an argument" >&2; exit 2; }
+            CMAKE_CACHE_OVERRIDE="$2"
+            shift
+            ;;
         -h|--help)       usage; exit 0 ;;
         *)
             echo "[$0] unknown argument: $1" >&2
@@ -86,10 +98,20 @@ cd "$REPO_ROOT"
 if [[ "$UBUNTU_VERSION" == "22" ]]; then
     IMAGE="nrp-local/nrp-nest-gazebo-ubuntu22:local"
     BUILD_SERVICE="nrp-nest-gazebo-ubuntu22"
+    DEFAULT_CMAKE_CACHE="/workspace/.ci/cmake_cache/nest-gazebo-ubuntu22.cmake"
 else
     IMAGE="nrp-local/nrp-nest-gazebo-ubuntu20:local"
     BUILD_SERVICE="nrp-nest-gazebo"
+    DEFAULT_CMAKE_CACHE="/workspace/.ci/cmake_cache/nest-gazebo.cmake"
 fi
+
+# The canonical preset for each Ubuntu target enables MQTT / NEST /
+# Gazebo / ROS — i.e. it's what CLAUDE.md and reviewers expect ctest to
+# exercise. Without this the in-container 11-prepare-build.sh falls
+# back to vanilla.cmake and silently skips ~100 of the 185 tests
+# (every MQTT / Gazebo / NEST / ROS gated test goes uncompiled), which
+# masks real regressions. See EBR2-71.
+CMAKE_CACHE_IN_CONTAINER="${CMAKE_CACHE_OVERRIDE:-$DEFAULT_CMAKE_CACHE}"
 
 # Pretty logger
 log() { printf '\n[%s] %s\n' "$(basename "$0")" "$*"; }
@@ -137,11 +159,13 @@ fi
 # with the Jenkinsfile 'agent' args).
 
 log "running configure + build + install + ctest inside $IMAGE"
+log "cmake initial-cache: $CMAKE_CACHE_IN_CONTAINER"
 
 docker run --rm --net=host --privileged \
     -v "$REPO_ROOT:/workspace" -w /workspace \
     -e "NRP_TEST_FILTER=$TEST_FILTER" \
     -e "NRP_KEEP_BUILD=$KEEP_BUILD" \
+    -e "CMAKE_CACHE_FILE=$CMAKE_CACHE_IN_CONTAINER" \
     "$IMAGE" \
     bash -lc '
         set -euo pipefail
