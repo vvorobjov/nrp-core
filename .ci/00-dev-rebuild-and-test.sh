@@ -162,7 +162,15 @@ docker run --rm --net=host --privileged \
         # Run ctest directly (not via .ci/30-run-tests.sh) so the 0x8
         # Jenkins-xunit mask does not swallow real failures locally.
         cd build
-        declare -a CTEST_ARGS=(--no-compress-output --test-output-size-failed 300000 --output-on-failure)
+        # --timeout 120: cap each test at 2 min. Default ctest timeout
+        # is 1500 s (25 min) — single hung test burns half an hour of
+        # wall-clock for no info. Longest legitimately-passing test in
+        # the canonical preset finishes in ~42 s, so 120 s leaves
+        # ~3× headroom. Individual tests that genuinely need longer
+        # can override in cmake via
+        #   set_tests_properties(<name> PROPERTIES TIMEOUT <seconds>)
+        # See EBR2-78.
+        declare -a CTEST_ARGS=(--no-compress-output --test-output-size-failed 300000 --output-on-failure --timeout 120)
         if [[ -n "${NRP_TEST_FILTER:-}" ]]; then
             CTEST_ARGS+=(-R "$NRP_TEST_FILTER")
         fi
