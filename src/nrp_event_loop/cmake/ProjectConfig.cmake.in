@@ -1,10 +1,27 @@
 @PACKAGE_INIT@
 
 option(ENABLE_MQTT "Enable MQTT support" @ENABLE_MQTT@)
+option(ENABLE_ROS  "Enable ROS support"  @ENABLE_ROS@)
 if(ENABLE_MQTT)
     find_package(NRPMQTTProxy REQUIRED)
 else()
     find_package(NRPGeneralLibrary REQUIRED)
+endif()
+
+# NRPEventLoop's exported target transitively links against
+# NRPRosProxy::NRPRosProxy when built with ENABLE_ROS=ON (see
+# src/nrp_event_loop/CMakeLists.txt line ~175). Downstream consumers
+# (notably the sub-cmake invoked by TEST_FN_FACTORY_MODULE — see
+# src/nrp_event_loop/tests/.build_fn_factory_module/CMakeLists.txt)
+# fail at cmake configure with
+#   Target "FNFactoryModule" links to target "NRPRosProxy::NRPRosProxy"
+#   but the target was not found.
+# unless we resolve NRPRosProxy here. This is also what blocks the
+# jammy-only #97 ComputationalNodes.FN_FACTORY_MANAGER test, which
+# trips on a stale libFNFactoryModule.so from a previous successful
+# build because #76 itself can't regenerate the .so. See EBR2-73.
+if(ENABLE_ROS)
+    find_package(NRPRosProxy REQUIRED)
 endif()
 
 set(NRP_EVENT_LOOP_TARGET @NRP_EVENT_LOOP_TARGET@)
