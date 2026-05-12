@@ -113,6 +113,39 @@ target_include_directories(${LIBRARY_NAME} BEFORE
 )
 
 if(BUILD_EDLUT_ENGINE_SERVER)
+    # NRPEdlutGrpcEngine.so links against libedlut.so, built by the
+    # `edlut` cmake target defined in the FetchContent'd
+    # Kernel/CMakeLists.txt. Originally:
+    #   target_link_libraries(... PUBLIC ${edlut_BINARY_DIR}/libedlut.so)
+    # which passed a raw file path. cmake then did not know libedlut.so
+    # is the OUTPUT of the edlut target, so the generated Makefile
+    # listed the file as a prereq with no rule to build it. Under
+    # parallel `make -j${J_LIM}` from .ci/20-build.sh the build aborted
+    # with
+    #   "No rule to make target '_deps/edlut_sim-build/libedlut.so',
+    #    needed by 'src/nrp_edlut_grpc_engine/NRPEdlutGrpcEngine.so'".
+    # Pre-built canonical images shipped libedlut.so via the install
+    # prefix, masking the bug for iterative in-container rebuilds.
+    #
+    # Declare the build-order dependency on the `edlut` target via
+    # add_dependencies() — that is what cmake-as-buildsystem needs to
+    # schedule edlut's rule before NRPEdlutGrpcEngine's link. Keep the
+    # file-path entry on the link command (so the .so ends up in
+    # NRPEdlutGrpcEngine's DT_NEEDED). Do NOT use
+    # target_link_libraries(... PUBLIC edlut) or PRIVATE edlut — both
+    # cause `install(EXPORT NRPEdlutGrpcEngineTargets ...)` to fail at
+    # cmake generate with
+    #   install(EXPORT "NRPEdlutGrpcEngineTargets" ...) includes target
+    #   "NRPEdlutGrpcEngine" which requires target "edlut" that is not
+    #   in any export set.
+    # PUBLIC propagates `edlut` into INTERFACE_LINK_LIBRARIES; PRIVATE
+    # still propagates it as $<LINK_ONLY:edlut>, which the install-
+    # export check rejects identically. The file-path link side-steps
+    # the export check because cmake doesn't treat a file as an in-tree
+    # target. The runtime dlopen of NRPEdlutGrpcEngine.so resolves
+    # libedlut.so via DT_NEEDED, so downstream consumers don't need a
+    # transitive link.
+    add_dependencies(${LIBRARY_NAME} edlut)
     target_link_libraries(${LIBRARY_NAME} PUBLIC ${edlut_BINARY_DIR}/libedlut.so)
     target_include_directories(${LIBRARY_NAME} BEFORE PUBLIC "$<BUILD_INTERFACE:${edlut_sim_SOURCE_DIR}/Kernel/include>")
 endif()
