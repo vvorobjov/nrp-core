@@ -58,6 +58,25 @@ endif()
 set(ENV{CMAKE_PREFIX_PATH} "${ROS2_WS}/install/nrp_ros_msgs:$ENV{CMAKE_PREFIX_PATH}")
 message(STATUS "[NRPROS] CMAKE_PREFIX_PATH now includes ${ROS2_WS}/install/nrp_ros_msgs")
 
+# Re-install the colcon-built nrp_ros_msgs tree into the NRP deps prefix
+# (EBR2-72). Without this step the typesupport .so files live in
+# ${ROS2_WS}/install/nrp_ros_msgs/lib/ — a path that is NOT on the final
+# image's LD_LIBRARY_PATH (the Dockerfile only COPYs ${NRP_INSTALL_DIR}
+# and ${NRP_DEPS_INSTALL_DIR} from the builder stage to the final stage).
+# At runtime event_loop.so dlopens libnrp_ros_msgs__rosidl_typesupport_cpp.so
+# and fails with "cannot open shared object file: No such file or directory",
+# breaking 14+ ctest cases (RosMsgConverter.*, ComputationalGraphPythonNodes.*,
+# EventLoop.EVENT_LOOP / EventLoopPython / EventLoopEnginePython,
+# EngineScript / ServerCallbacks / PyServerGrpcCallbacks). Installing the
+# whole colcon tree into ${NRP_DEP_CMAKE_INSTALL_PREFIX} puts lib/ on the
+# image's LD_LIBRARY_PATH and share/nrp_ros_msgs/cmake/ on a path that
+# find_package(nrp_ros_msgs) can pick up post-install too.
+install(
+    DIRECTORY "${ROS2_WS}/install/nrp_ros_msgs/"
+    DESTINATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}"
+    USE_SOURCE_PERMISSIONS
+)
+
 ##########################################
 ## Build nrp ros python bindings (Boost.Python)
 add_subdirectory(python_bindings)
