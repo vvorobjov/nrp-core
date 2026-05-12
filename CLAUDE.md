@@ -243,6 +243,13 @@ Useful flags:
   Pre-EBR2-71 the script silently fell back to `vanilla.cmake` and skipped
   those tests; the default preset is now load-bearing.
 
+The script also passes `--timeout 120` to `ctest` (EBR2-78), capping each
+test at 2 min. The longest legitimately-passing test in the canonical preset
+finishes in ~42 s, so 120 s leaves comfortable headroom; the default ctest
+1500 s timeout burns half an hour per hung test. Override the cap for an
+individual test in cmake via
+`set_tests_properties(<name> PROPERTIES TIMEOUT <seconds>)`.
+
 Copilot / Claude note: cite **both** ubuntu20 and ubuntu22 runs in PR
 descriptions. Do *not* claim a change passes if either run did not exit 0.
 
