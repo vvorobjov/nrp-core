@@ -304,12 +304,25 @@ if(ENABLE_SPINNAKER)
             ${Boost_INCLUDE_DIRS}
             )
 
+    # libspynnaker_external_device_lib.a uses sqlite3 (the spynnaker
+    # partitioner backs onto a SQLite database). Without an explicit
+    # link to libsqlite3, the unresolved sqlite3_* symbols leak up
+    # into event_loop.so's NEEDED list. ubuntu20 (foxy / Boost 1.71)
+    # happens to pull libsqlite3 in transitively, so dlopen works;
+    # ubuntu22 (humble / Boost 1.74) has a stricter link graph and
+    # dlopen fails with
+    #   undefined symbol: sqlite3_column_double
+    # which breaks every Python/C++ test that imports nrp_core.event_loop
+    # (#100-108, #148-150, plus the cascading #187 NrpServer).
+    # See EBR2-79.
+    find_package(SQLite3 REQUIRED)
     target_link_libraries(${SPINNAKER_LIBRARY_NAME}
             PUBLIC
             ${NRP_EVENT_LOOP_TARGET}
             ${NRP_GEN_LIB_TARGET}
             ${Boost_LIBRARIES}
             ${spynnakervisualiser_SOURCE_DIR}/spynnaker_external_device_lib/libspynnaker_external_device_lib.a
+            SQLite::SQLite3
             )
 endif()
 
