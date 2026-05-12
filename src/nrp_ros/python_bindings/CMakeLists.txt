@@ -134,7 +134,24 @@ file(WRITE ${GEN_PYTHON_ROOT}/__init__.py "\n")
 ## Python bindings for the ROS 2 builtin_interfaces/Time and /Duration
 ## (these have no .msg file in-tree; they ship with rclcpp).
 add_definitions("-Wl,--no-undefined ")
-add_library(rostime_boost_python src/rostime_exports.cpp)
+# SHARED not the default STATIC: this target is both a Python extension
+# (`PREFIX ""` + `LIBRARY_OUTPUT_DIRECTORY ${GEN_PYTHON_ROOT}` below
+# only make sense for a loadable .so) AND a library that the per-
+# package boost::python bindings link against (see the
+# `target_link_libraries(${ROS_PACKAGE} ... rostime_boost_python ...)`
+# in gen_ros_package_python a few lines above). MODULE would satisfy
+# Python's import but cmake refuses `target_link_libraries(... <module>)`,
+# so SHARED is the only fit.
+#
+# The previous bare
+#   add_library(rostime_boost_python src/rostime_exports.cpp)
+# produced rostime_boost_python.a, the `install(DIRECTORY)` rule below
+# installed nothing for this module, and
+# `import nrp_core.data.nrp_ros.rostime_boost_python` raised
+# ModuleNotFoundError. That broke the RosMsgConverter tests (#70-72)
+# because their SetUpTestSuite imports test_functions.py which in turn
+# imports rostime_boost_python at module load. See EBR2-77.
+add_library(rostime_boost_python SHARED src/rostime_exports.cpp)
 set_target_properties(rostime_boost_python
   PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${GEN_PYTHON_ROOT}
