@@ -1,4 +1,18 @@
 @PACKAGE_INIT@
 
+# NRPRosProxy's exported target links rclcpp::rclcpp PUBLIC via
+# ament_target_dependencies(... PUBLIC rclcpp) — see the EBR2-26 ROS 2
+# migration. Downstream consumers (including the sub-cmake invoked by
+# TEST_FN_FACTORY_MODULE) therefore need rclcpp resolved as an imported
+# target when they find_package(NRPRosProxy). Without this dependency
+# pull, the FN_FACTORY_MODULE generate step fails with:
+#   Target "FNFactoryModule" links to target "rclcpp::rclcpp" but the
+#   target was not found.  Perhaps a find_package() call is missing
+#   for an IMPORTED target, or an ALIAS target is missing?
+# Use CMakeFindDependencyMacro so REQUIRED/QUIET status flows from the
+# enclosing find_package(NRPRosProxy) call. See EBR2-73.
+include(CMakeFindDependencyMacro)
+find_dependency(rclcpp)
+
 include(${CMAKE_CURRENT_LIST_DIR}/@LIB_EXPORT_NAME@.cmake)
 
