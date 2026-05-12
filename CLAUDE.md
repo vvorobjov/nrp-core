@@ -236,6 +236,12 @@ Useful flags:
 - `--test-filter REGEX` — forward `-R REGEX` to ctest for a subset.
 - `--no-image` — skip the docker-image existence check.
 - `--rebuild-image` — force-rebuild the image first.
+- `--cmake-cache PATH` — override the cmake initial-cache preset (in-container
+  path, e.g. `/workspace/.ci/cmake_cache/vanilla.cmake`). Defaults to the
+  canonical `nest-gazebo.cmake` / `nest-gazebo-ubuntu22.cmake` for the chosen
+  Ubuntu target so the suite exercises MQTT / NEST / Gazebo / ROS by default.
+  Pre-EBR2-71 the script silently fell back to `vanilla.cmake` and skipped
+  those tests; the default preset is now load-bearing.
 
 Copilot / Claude note: cite **both** ubuntu20 and ubuntu22 runs in PR
 descriptions. Do *not* claim a change passes if either run did not exit 0.
