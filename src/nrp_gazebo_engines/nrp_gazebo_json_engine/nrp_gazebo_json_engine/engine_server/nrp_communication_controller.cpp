@@ -135,8 +135,19 @@ json NRPJSONCommunicationController::initialize(const json &data, EngineJSONServ
         }
     }
 
-    // Forces plugins to load
-    this->_stepController->finishWorldLoading(waitTime);
+    // Forces plugins to load.
+    // Give finishWorldLoading() a fresh WorldLoadTime budget instead of the
+    // residual waitTime: the world-load wait, the synchronous `gz model` spawn
+    // (which is not budgeted at all), and the wait-for-models phase each
+    // consume real wall time. Reusing the leftover budget meant that on hosts
+    // where gzserver took close to WorldLoadTime to publish the world plugin,
+    // finishWorldLoading had ~0 s left and tripped its own model-add timeout
+    // 300 ms after entry — even though all the model's joints had already
+    // registered.
+    double finishWaitTime = data.at("WorldLoadTime");
+    if(finishWaitTime <= 0)
+        finishWaitTime = std::numeric_limits<double>::max();
+    this->_stepController->finishWorldLoading(finishWaitTime);
 
     lock.lock();
 

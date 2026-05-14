@@ -47,8 +47,8 @@
       },
       "WorldLoadTime": {
         "type": "integer",
-        "default": 20,
-        "description": "Maximum time (in seconds) to wait for the NRPCommunicatioPlugin to load the world sdf file. 0 means it will wait indefinitely"
+        "default": 60,
+        "description": "Maximum time (in seconds) to wait for the NRPCommunicatioPlugin to load the world sdf file. Applied per phase: gzserver SDF parsing (Ogre / rendering init can take 15-25 s under headless xvfb the first time a camera plugin loads) and the wait for required models to be added. 0 means it will wait indefinitely."
       }
     },
     "required": ["GazeboWorldFile"]

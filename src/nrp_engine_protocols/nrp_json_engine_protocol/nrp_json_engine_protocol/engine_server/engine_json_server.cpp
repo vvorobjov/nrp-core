@@ -24,6 +24,7 @@
 #include "nrp_json_engine_protocol/config/engine_json_config.h"
 #include "nrp_json_engine_protocol/nrp_client/engine_json_registration_server.h"
 #include "nrp_general_library/utils/restclient_setup.h"
+#include "nrp_general_library/utils/utils.h"
 
 #include <nlohmann/json.hpp>
 #include <pistache/listener.h>
@@ -48,7 +49,15 @@ EngineJSONServer::EngineJSONServer(const std::string &engineAddress, const std::
     do
     {
         const Pistache::Address newEngineAddr(addrParser.rawHost(), static_cast<uint16_t>(std::stoi(addrParser.rawPort())+i));
-        this->_serverAddress = newEngineAddr.host() + ":" + newEngineAddr.port().toString();
+        // formatHostPort brackets IPv6 literals per RFC 3986 §3.2.2. On hosts
+        // where getaddrinfo("localhost") resolves to ::1 first (focal default),
+        // Pistache::Address::host() returns the unbracketed "::1", and an
+        // unbracketed "::1:9002" can't be parsed back by curl/restclient-cpp
+        // (the colons collide with the port separator). Without the brackets
+        // every JSON engine init call dies with "Failed to query" because the
+        // client never reaches the server it just registered.
+        this->_serverAddress = formatHostPort(newEngineAddr.host(),
+                                              static_cast<uint16_t>(std::stoi(addrParser.rawPort())+i));
 
         try
         {

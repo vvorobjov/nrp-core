@@ -51,9 +51,10 @@ is loaded into every conversation.
 - **Tracker:** Atlassian cloud at `hbpneurorobotics.atlassian.net`, project
   key **EBR2**, board 11.
 - **One ticket per change.** Before you start, create (or claim) an EBR2 issue
-  describing the problem and acceptance criteria. If you don't have direct
-  Jira access from your Claude Code session, ask the user to create it via
-  claude.ai (the repo's `docs/jira_prompt.md` has the ready-made prompt).
+  describing the problem and acceptance criteria. If the Atlassian MCP is
+  loaded in this session (you'll see `mcp__*Atlassian*` tools available),
+  create the issue directly via that MCP. Otherwise, hand the user a
+  ready-to-paste claude.ai prompt instead — see the section below.
 - **Branch name:** `EBR2-<num>-<short-slug>`, lower-kebab-case slug, ≤ 60
   chars total, branch from development always.
   Examples: `EBR2-234-fix-entrypoint-newline`,
@@ -61,6 +62,22 @@ is loaded into every conversation.
 - **Commit subject:** `[EBR2-<num>] <imperative summary>`. The `<num>` is the
   same as the branch's. Multiple commits on one branch are fine — all share
   the same key.
+- **Atomic commits.** One logical change per commit. If you've done three
+  things on the branch — a cmake fix, a script rewrite, and a Dockerfile
+  patch — that's three commits, not one. The subject must describe
+  *exactly* what landed in the commit, no broader. Stage selectively
+  (`git add <path>` per file, or `git add -p` for partial hunks); never
+  blanket-stage with `git add -A` / `git add .` just to flush the working
+  tree. If a "bug fix" requires unrelated cleanup, the cleanup goes in
+  its own commit (its own ticket if it's not trivial). Bisect, revert,
+  and review all rely on this.
+- **Commit body:** short but substantive — a few tight lines that name the
+  symptom, the root cause, and the fix. Skip filler ("this commit", "in
+  order to"); skip prose retellings of the diff. If the *why* fits in the
+  subject, the body can be empty.
+- **No AI co-author trailers.** Do not append `Co-Authored-By: Claude …`,
+  `… Copilot …`, `… Codex …`, or any other AI/assistant identity to commit
+  messages or PR bodies. The human author is the sole author of record.
 - **PR title:** `[EBR2-<num>] <summary>` and the PR description must link
   back to the issue URL.
 - **Exception — placeholder keys.** You'll see `[EBR2-0000]` /
@@ -68,14 +85,48 @@ is loaded into every conversation.
   yourself tempted, open an issue first.
 - **Merging:** do not squash commits that already carry the correct ticket
   key — the prefix is the audit trail.
+- **After merge — move the ticket to Done.** As soon as the PR for an
+  `EBR2-<num>` branch is merged into `development` (or `master`),
+  transition that Jira issue to **Done**. Don't leave it In Progress / In
+  Review — the board is the single source of truth for what's shipped.
+  If the Atlassian MCP is available, call `transitionJiraIssue` with the
+  "Done" transition directly (look it up via `getTransitionsForJiraIssue`
+  if you don't already know the ID). If the MCP is not available, tell
+  the user one line: *"PR merged — please move EBR2-NNN to Done on the
+  board."* Apply the same rule when handling a batch of merges: every
+  ticket whose branch landed gets moved.
 
 If the issue key doesn't exist yet, stop and create it. A PR without a real
 ticket will be bounced in review.
 
-### Before starting work — you must hand the user a ready-to-paste claude.ai prompt
+### Before starting work — create or request the Jira ticket
 
-Claude Code cannot create Jira issues directly (no Atlassian MCP in this
-session). Claude.ai can. To keep the user's effort to a single copy-paste:
+This rule applies to every fix, refactor, doc-only update, and dependency
+bump. The only exception is work explicitly scoped to an already-created
+ticket (the user will tell you the key up front).
+
+**First, check whether the Atlassian MCP is available in this session.**
+Look at the tool list for names matching `mcp__*Atlassian*` (e.g.
+`mcp__claude_ai_Atlassian__createJiraIssue`). Pick a path based on what
+you see:
+
+**Path A — Atlassian MCP is available**
+
+1. **As soon as** you identify a new problem or improvement, compose the
+   issue text (one-line summary, 1–3 sentence context, concrete acceptance
+   criteria) and call the MCP's create-issue tool directly against project
+   `EBR2`. Don't ask first — high-impact destructive operations need
+   confirmation, but creating a tracker ticket is the standard precondition
+   for any work and is the user's intent.
+2. Tell the user one line: *"Opened EBR2-NNN — `<URL>`."*
+3. Proceed immediately: create the `EBR2-NNN-<slug>` branch, use
+   `[EBR2-NNN] …` in every commit subject, and reference the issue URL in
+   the PR body.
+
+**Path B — Atlassian MCP is NOT available**
+
+Claude Code cannot create Jira issues directly without the MCP. Claude.ai
+can. To keep the user's effort to a single copy-paste:
 
 1. **As soon as** you identify a new problem or improvement — before reading
    more code, before writing a plan, before touching anything — compose the
@@ -98,10 +149,6 @@ session). Claude.ai can. To keep the user's effort to a single copy-paste:
 5. If the user groups multiple small fixes under one ticket, use the short
    variant of the prompt. Don't unilaterally split one change across two
    tickets — ask.
-
-This rule applies to every fix, refactor, doc-only update, and dependency
-bump. The only exception is work explicitly scoped to an already-created
-ticket (the user will tell you the key up front).
 
 ## What nrp-core is
 
