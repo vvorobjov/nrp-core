@@ -269,13 +269,34 @@ if(NOT ${spdlog_FOUND})
 endif()
 
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
-# Hide spdlog symbols inside libNRPGeneralLibrary.so so they don't
-# clash at runtime with the system libspdlog.so.1 that rclcpp loads
-# via librcl_logging_spdlog.so. Without this NRPCoreSim crashes with
-# a double-free in ~ansicolor_stdout_sink at startup. The --exclude-
-# libs flag is GNU ld / lld specific; harmless on toolchains that
-# don't recognise it.
-target_link_options(${LIBRARY_NAME} PRIVATE LINKER:--exclude-libs,libspdlog.a)
+# Hide spdlog symbols inside every shared library that transitively
+# links libspdlog.a so they don't clash at runtime with the system
+# libspdlog.so.1 that rclcpp loads via librcl_logging_spdlog.so.
+# Without this NRPCoreSim crashes with a double-free in
+# ~ansicolor_stdout_sink at startup; the ComputationalGraphPythonNodes.
+# ROS_NODES gtest reproduces a SIGSEGV during rclcpp::init() ->
+# rcl_logging_external_initialize -> spdlog::pattern_formatter::~pattern_formatter
+# (focal apt spdlog 1.5 / fmt 6 calling our bundled spdlog 1.11 / fmt 9
+# destructor through the wrong ABI). The --exclude-libs flag is GNU
+# ld / lld specific; harmless on toolchains that don't recognise it.
+#
+# PUBLIC, not PRIVATE: lib_spdlog is added PUBLIC below so consumers
+# (NRPEventLoop*, NRPGazebo*, ...) transitively link libspdlog.a into
+# their own .so files. The exclude flag must propagate the same way,
+# otherwise those .so files re-export the 1.11 symbols and
+# librcl_logging_spdlog.so's dlopen-time symbol resolution picks them
+# up instead of the system 1.5 it was built against.
+target_link_options(${LIBRARY_NAME} PUBLIC LINKER:--exclude-libs,libspdlog.a)
+# --exclude-libs hides symbols *from the static archive* but GCC also
+# emits weak DSO exports of non-inline spdlog symbols
+# (pattern_formatter::~pattern_formatter, _Hashtable<...>::~_Hashtable
+# for the custom_flag_formatter map, etc.) in the same translation
+# unit's object code — those slip past --exclude-libs and reappear in
+# the consumer .so's dynamic symbol table. Force them to local
+# visibility via a linker version script. PUBLIC so consumer .so
+# files inherit it, same reasoning as --exclude-libs above.
+target_link_options(${LIBRARY_NAME} PUBLIC
+    LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/hide_bundled_spdlog.lds)
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}

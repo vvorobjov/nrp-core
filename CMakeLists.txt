@@ -43,6 +43,20 @@ else()
 endif()
 
 set(NRP_COMMON_COMPILATION_FLAGS -Wall -Wextra -Werror -Wno-maybe-uninitialized ${GCOV_CXX_FLAGS})
+# -fvisibility-inlines-hidden hides weak symbols emitted by header-only
+# template instantiations (vtables, typeinfo, inline dtors of templated
+# spdlog::pattern_formatter / fmt::* / nlohmann::json etc.) so they
+# don't leak into the dynamic symbol table of the resulting .so files.
+# Without this, focal's libspdlog.so.1 (system 1.5 / fmt 6) loaded by
+# librcl_logging_spdlog.so allocates a pattern_formatter via its own
+# vtable, but the destructor lookup in the shared NRP process binds to
+# the WEAK pattern_formatter::~pattern_formatter that NRPGeneralLibrary
+# emitted from its bundled spdlog 1.11 / fmt 9 headers — the ABI
+# mismatch SIGSEGVs inside __memset_avx512_erms at rclcpp::init().
+# --exclude-libs,libspdlog.a in target_link_options handles the
+# strong symbols from libspdlog.a but not these consumer-emitted weak
+# ones, hence the project-wide compile flag.
+set(NRP_COMMON_COMPILATION_FLAGS ${NRP_COMMON_COMPILATION_FLAGS} -fvisibility-inlines-hidden)
 set(NRP_COMMON_LD_FLAGS ${GCOV_LD_FLAGS})
 
 # ROS 2 Humble's rclcpp cmake export lists `fastcdr` as a bare target

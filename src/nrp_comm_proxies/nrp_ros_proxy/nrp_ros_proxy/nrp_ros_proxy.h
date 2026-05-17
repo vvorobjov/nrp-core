@@ -36,10 +36,12 @@
 // how to publish the concrete message type.
 // ─────────────────────────────────────────────────────────────────────
 
+#include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
@@ -105,9 +107,37 @@ public:
      * \brief Process pending subscription callbacks (ROS 2 equivalent
      * of the ROS 1 ros::spinOnce). Drains any messages that arrived
      * since the last call and invokes their callbacks once.
+     *
+     * rclcpp::spin_some only drains messages that are present in the
+     * subscription history *at the moment of the call*: rcl_wait is
+     * invoked with timeout=0 and returns as soon as nothing is ready,
+     * even if a DDS receiver thread is one millisecond away from
+     * pushing the next in-flight message into the same history. With
+     * a back-to-back publish burst (test_python_ros_nodes.cpp
+     * publishes "first" then "second" to the same topic and then
+     * sleeps 1 s before calling spinSome) the result is that the
+     * first spin_some only picks up "first"; "second" stays buffered
+     * inside DDS and is processed by the next spin_some — which in
+     * the test is one sleep(1) later, so the graph computes with the
+     * older "first" instead of the intended "second" and the
+     * assertion fails.
+     *
+     * Loop spin_some with a brief sleep so any message that lands in
+     * the subscription history within the next ~100 ms is processed
+     * before this call returns. 100 ms is well below the test's
+     * sleep(1) granularity and small enough not to noticeably slow
+     * down real event-loop iterations.
      */
     void spinSome()
-    { rclcpp::spin_some(_node); }
+    {
+        const auto deadline = std::chrono::steady_clock::now()
+                              + std::chrono::milliseconds(100);
+        do {
+            rclcpp::spin_some(_node);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        } while(std::chrono::steady_clock::now() < deadline);
+        rclcpp::spin_some(_node);
+    }
 
     /*!
      * \brief Access the underlying rclcpp::Node (for tests / advanced users).
@@ -133,9 +163,26 @@ private:
     /*!
      * Constructor. Requires rclcpp::init() to have been called by
      * the executable before the singleton is instantiated.
+     *
+     * Registers an rclcpp on-shutdown callback that releases the
+     * node, subscribers and publishers BEFORE rcl finishes shutting
+     * down. Otherwise the static _instance destructor runs at
+     * _dl_fini (process exit, after rclcpp::shutdown returned), the
+     * rclcpp::Subscription destructors call into FastDDS to
+     * deregister, and FastDDS's RTPSParticipant is already gone —
+     * the destructor SIGSEGVs in eprosima::fastrtps::rtps::
+     * RTPSParticipant::getGuid(). Clearing the resources while rcl
+     * is still alive makes the static destructor a no-op.
      */
     NRPROSProxy()
-    { _node = rclcpp::Node::make_shared("nrp_core"); }
+    {
+        _node = rclcpp::Node::make_shared("nrp_core");
+        rclcpp::on_shutdown([this]() {
+            _subscribers.clear();
+            _publishers.clear();
+            _node.reset();
+        });
+    }
 
     static std::unique_ptr<NRPROSProxy> _instance;
 

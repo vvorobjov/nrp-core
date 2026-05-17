@@ -27,12 +27,14 @@ J_LIM_CPU=$(python3 -c "print(max(${NPROC} * 7 // 10, min(${NPROC}, 4)))")
 # Memory-based cap: one parallel job per ~10 GB of available RAM.
 # python_module.cpp on jammy/Humble peaks above 8 GB during the
 # gazebo image build at -O0 (Boost 1.74 + rclcpp transitive headers
-# + Gazebo 11 headers + Humble's typesupport machinery). 4 and 6 GB
-# estimates both OOM-killed cc1plus when *another* heavy TU was in
-# flight at the same time. 10 GB selects -j2 on a 24 GB host —
-# painful but reliable, and CI agents with 32+ GB still get a
-# reasonable -j (e.g. 64 GB -> -j6).
-J_LIM_MEM=$(python3 -c "print(max(int(${MEM_GB} // 10), 1))")
+# + Gazebo 11 headers + Humble's typesupport machinery). Outside
+# the gazebo image build the typical NRPCore TU peaks closer to
+# 2-3 GB, so reserve one parallel job per 4 GB of available RAM —
+# fast on dev hosts, still safe on the 16-32 GB CI agents. The
+# previous 10 GB/job heuristic was tuned for the worst-case
+# python_module.cpp during image rebuilds and made -j2 the
+# routine on a 24 GB host (slow).
+J_LIM_MEM=$(python3 -c "print(max(int(${MEM_GB} // 4), 1))")
 J_LIM=$(python3 -c "print(min(${J_LIM_CPU}, ${J_LIM_MEM}))")
 echo "[20-build.sh] NPROC=${NPROC} MEM_GB=${MEM_GB} J_LIM_CPU=${J_LIM_CPU} J_LIM_MEM=${J_LIM_MEM} -> -j${J_LIM}"
 
