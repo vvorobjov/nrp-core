@@ -4,11 +4,11 @@ name: Build & push env images
 # future full-suite workflow consume as their build environment, and
 # pushes them to GHCR. The chain matches docker-compose.yaml exactly:
 #
-#   ubuntu20: base-env -> nrp-vanilla-env
-#             base-env -> gazebo-env -> nest-gazebo-env -> nrp-nest-gazebo-env
-#   ubuntu22: base-ubuntu22-env -> nrp-vanilla-ubuntu22-env
-#             base-ubuntu22-env -> gazebo-ubuntu22-env -> nest-gazebo-ubuntu22-env
-#                                  -> nrp-nest-gazebo-ubuntu22-env
+#   base-env -> nrp-vanilla-env
+#   base-env -> gazebo-env -> nest-gazebo-env -> nrp-nest-gazebo-env
+#
+# Only the Ubuntu 22.04 (jammy) target is supported; EBR2-81 dropped
+# the parallel focal chain.
 #
 # The `nrp-core-env` Dockerfile target stops *before* the source tree is
 # compiled, so the resulting images are the build environment, not a
@@ -63,7 +63,7 @@ concurrency:
 
 env:
   # Resolves image names like
-  # `ghcr.io/<owner>/nrp-vanilla-ubuntu20-env:latest` via the
+  # `ghcr.io/<owner>/nrp-vanilla-env:latest` via the
   # `${NRP_DOCKER_REGISTRY}/<service>:${NRP_CORE_TAG}` template that
   # docker-compose.yaml uses. github.repository_owner is lowercased
   # (`${{ github.repository_owner }}` already is on GitHub).
@@ -72,31 +72,18 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.label }} env images
+    name: jammy env images
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: ubuntu-20.04
-            vanilla_service: nrp-vanilla-env
-            nest_gazebo_service: nrp-nest-gazebo-env
-            images: |
-              base-ubuntu20-env
-              nrp-vanilla-ubuntu20-env
-              gazebo-ubuntu20-env
-              nest-gazebo-ubuntu20-env
-              nrp-nest-gazebo-ubuntu20-env
-          - label: ubuntu-22.04
-            vanilla_service: nrp-vanilla-ubuntu22-env
-            nest_gazebo_service: nrp-nest-gazebo-ubuntu22-env
-            images: |
-              base-ubuntu22-env
-              nrp-vanilla-ubuntu22-env
-              gazebo-ubuntu22-env
-              nest-gazebo-ubuntu22-env
-              nrp-nest-gazebo-ubuntu22-env
+    env:
+      vanilla_service: nrp-vanilla-env
+      nest_gazebo_service: nrp-nest-gazebo-env
+      images: |
+        base-env
+        nrp-vanilla-env
+        gazebo-env
+        nest-gazebo-env
+        nrp-nest-gazebo-env
 
     steps:
       - name: Reclaim disk space
@@ -137,10 +124,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build vanilla env chain (base + nrp-vanilla)
-        run: bash build_nrp_core_image.sh ${{ matrix.vanilla_service }}
+        run: bash build_nrp_core_image.sh ${{ env.vanilla_service }}
 
       - name: Build nest-gazebo env chain (gazebo + nest + nrp-nest-gazebo)
-        run: bash build_nrp_core_image.sh ${{ matrix.nest_gazebo_service }}
+        run: bash build_nrp_core_image.sh ${{ env.nest_gazebo_service }}
 
       - name: Push images to GHCR
         run: |
@@ -150,7 +137,7 @@ jobs:
             ref="${NRP_DOCKER_REGISTRY}/${name}:${NRP_CORE_TAG}"
             echo "Pushing ${ref}"
             docker push "${ref}"
-          done <<< '${{ matrix.images }}'
+          done <<< '${{ env.images }}'
 
       - name: Show pushed images
         run: docker images "${NRP_DOCKER_REGISTRY}/*"

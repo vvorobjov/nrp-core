@@ -20,7 +20,7 @@
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
 				"DockerDaemonAddress":"unix:///var/run/docker.sock",
-				"ImageName":"nrp-core/nrp-gazebo-ubuntu20:latest"
+				"ImageName":"nrp-core/nrp-gazebo:latest"
 			}
 		},
 		{

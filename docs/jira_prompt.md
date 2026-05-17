@@ -38,11 +38,10 @@ Description (use Jira Markdown / ADF):
 ## Proposed fix / acceptance criteria
 - [ ] <criterion 1>
 - [ ] <criterion 2>
-- [ ] **Unit test suite on `development` passes on BOTH supported Ubuntu
-      targets — this is the always-true baseline, never weaken it:**
-      `bash .ci/00-dev-rebuild-and-test.sh` (ubuntu20 / Foxy / py3.8)
-      AND `bash .ci/00-dev-rebuild-and-test.sh --ubuntu22`
-      (ubuntu22 / Humble / py3.10) both exit 0 after the fix.
+- [ ] **Unit test suite on `development` passes on the canonical Ubuntu
+      22.04 target — this is the always-true baseline, never weaken it:**
+      `bash .ci/00-dev-rebuild-and-test.sh` (ubuntu22 / Humble / py3.10)
+      exits 0 after the fix.
 
 ## Branch / commit convention
 - Branch: `EBR2-<key>-<short-slug>` (to be filled in after issue creation)

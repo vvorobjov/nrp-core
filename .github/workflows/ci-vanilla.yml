@@ -1,11 +1,12 @@
 name: CI (vanilla)
 
 # Runs cmake configure / build / ctest / gcovr against the prebuilt
-# `nrp-vanilla-{ubuntu20,ubuntu22}-env:latest` images that
-# build-env-images.yml pushes to GHCR. The image already has every apt
-# / pip / paho-mqtt dependency from the canonical nrp-core.Dockerfile
-# `nrp-core-env` target — this workflow only contributes the source
-# checkout, the cmake build, the tests, and the coverage report.
+# `nrp-vanilla-env:latest` image that build-env-images.yml pushes to
+# GHCR. The image already has every apt / pip / paho-mqtt dependency
+# from the canonical nrp-core.Dockerfile `nrp-core-env` target — this
+# workflow only contributes the source checkout, the cmake build, the
+# tests, and the coverage report. Only Ubuntu 22.04 (jammy) is
+# supported; EBR2-81 dropped the parallel focal chain.
 #
 # The matching cmake preset .ci/cmake_cache/ci-vanilla.cmake disables
 # every optional simulator / transport (Gazebo, NEST, EDLUT, ROS,
@@ -40,19 +41,11 @@ defaults:
 
 jobs:
   test:
-    name: ${{ matrix.label }} vanilla
+    name: jammy vanilla
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: ubuntu-20.04
-            image: nrp-vanilla-ubuntu20-env
-          - label: ubuntu-22.04
-            image: nrp-vanilla-ubuntu22-env
     container:
-      image: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:latest
+      image: ghcr.io/${{ github.repository_owner }}/nrp-vanilla-env:latest
       # Image's default user is `nrpuser` (uid 1000), but the runner
       # mounts the workspace as uid 1001; running as root sidesteps
       # the mismatch. We still set safe.directory='*' below for git.
@@ -130,7 +123,7 @@ jobs:
           gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" --print-summary \
             | tee gcovr-summary.txt
           {
-            echo "## Coverage (${{ matrix.label }})"
+            echo "## Coverage (jammy)"
             echo
             echo '```'
             cat gcovr-summary.txt
@@ -141,7 +134,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-vanilla-${{ matrix.label }}
+          name: ci-vanilla-jammy
           path: |
             build/gcovr.xml
             build/gcovr.html

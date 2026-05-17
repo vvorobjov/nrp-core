@@ -42,12 +42,12 @@ if(NOT _cp_result EQUAL 0)
 endif()
 
 # colcon requires /opt/ros/<distro>/setup.bash in the shell env, so we
-# go through bash -lc; the ROS 2 distro is discovered from ROS_DISTRO /
-# an /opt/ros/*/setup.bash, whichever is available.
+# go through bash -lc. ROS 2 Humble is the canonical distro (jammy
+# only since EBR2-81); ROS_DISTRO is honoured if set to override.
 message(STATUS "[NRPROS] Running colcon build for nrp_ros_msgs in ${ROS2_WS}")
 execute_process(
     WORKING_DIRECTORY ${ROS2_WS}
-    COMMAND bash -c "source /opt/ros/\${ROS_DISTRO:-foxy}/setup.bash && colcon build --packages-select nrp_ros_msgs"
+    COMMAND bash -c "source /opt/ros/\${ROS_DISTRO:-humble}/setup.bash && colcon build --packages-select nrp_ros_msgs"
     RESULT_VARIABLE _colcon_result
 )
 if(NOT _colcon_result EQUAL 0)

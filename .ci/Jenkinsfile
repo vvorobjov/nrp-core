@@ -3,49 +3,49 @@
 def jobs = [
     [
         name: "Nest+Gazebo Examples",
-        image: "nrp-nest-gazebo-ubuntu20",
+        image: "nrp-nest-gazebo",
         cmakeconf: ".ci/cmake_cache/nest-gazebo.cmake",
         build: false,
         cmakeProj: "./examples/"
     ],
     [
         name: "Nest+Gazebo -ROS-MQTT Build+Examples",
-        image: "nrp-nest-gazebo-ubuntu20-env",
+        image: "nrp-nest-gazebo-env",
         cmakeconf: ".ci/cmake_cache/nest-gazebo-nomqtt-noros.cmake",
         build: true,
         cmakeProj: ""
     ],
     [
         name: "Vanilla_NRP Build+Examples",
-        image: "nrp-vanilla-ubuntu20-env",
+        image: "nrp-vanilla-env",
         cmakeconf: ".ci/cmake_cache/vanilla.cmake",
         build: true,
         cmakeProj: ""
     ],
     [
         name: "Vanilla_NRP -ROS-MQTT Build+Examples",
-        image: "nrp-vanilla-ubuntu20-env",
+        image: "nrp-vanilla-env",
         cmakeconf: ".ci/cmake_cache/vanilla-nomqtt-noros.cmake",
         build: true,
         cmakeProj: ""
     ],
     [
         name: "Vanilla_NRP CUDA Examples",
-        image: "nrp-nvidia-cuda-ubuntu20",
+        image: "nrp-nvidia-cuda",
         cmakeconf: ".ci/cmake_cache/nrp-nvidia-cuda.cmake",
         build: false,
         cmakeProj: "./examples/"
     ],
     [
         name: "Opensim Examples",
-        image: "nrp-opensim-ubuntu20",
+        image: "nrp-opensim",
         cmakeconf: ".ci/cmake_cache/opensim.cmake",
         build: false,
         cmakeProj: "./examples/"
     ],
     [
         name: "Opensim+TVB Examples",
-        image: "nrp-tvb-opensim-ubuntu20",
+        image: "nrp-tvb-opensim",
         cmakeconf: ".ci/cmake_cache/opensim-tvb-tests.cmake",
         build: false,
         cmakeProj: "./examples/"

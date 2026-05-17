@@ -21,7 +21,7 @@
 			"EngineLaunchCommand":{
 				"LaunchType":"DockerLauncher",
 				"DockerDaemonAddress":"unix:///var/run/docker.sock",
-				"ImageName":"nrp-core/nrp-opensim-ubuntu20:latest"
+				"ImageName":"nrp-core/nrp-opensim:latest"
 			}
 		}
 	],

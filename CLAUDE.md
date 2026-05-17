@@ -7,35 +7,37 @@ is loaded into every conversation.
 ## The two rules that always win
 
 1. **No change lands unless the full unit-test suite AND the
-   docker-compose example pass on BOTH supported Ubuntu targets**.
-   The acceptance gate has two parts. First, two ctest runs:
+   docker-compose example pass on the canonical Ubuntu 22.04 target**.
+   The acceptance gate has two parts. First, one ctest run:
 
    ```bash
-   bash .ci/00-dev-rebuild-and-test.sh              # ubuntu20 (canonical)
-   bash .ci/00-dev-rebuild-and-test.sh --ubuntu22   # ubuntu22 (jammy)
+   bash .ci/00-dev-rebuild-and-test.sh              # ubuntu22 / Humble / py3.10
    ```
 
    Second, the husky_braitenberg docker-compose example must run end-
-   to-end without errors in all four supported configurations:
+   to-end without errors in both supported display modes:
 
    ```bash
-   bash examples/run_docker-compose_example.sh                       # ubuntu20 + xvfb
-   bash examples/run_docker-compose_example.sh --ubuntu22            # ubuntu22 + xvfb
-   bash examples/run_docker-compose_example.sh --xpra                # ubuntu20 + xpra
-   bash examples/run_docker-compose_example.sh --ubuntu22 --xpra     # ubuntu22 + xpra
+   bash examples/run_docker-compose_example.sh           # xvfb (headless)
+   bash examples/run_docker-compose_example.sh --xpra    # xpra (browser-accessible)
    ```
 
-   All six commands must exit 0 before a commit, merge, or review can
-   be claimed done. The ctest runs cover unit-test correctness; the
-   compose runs catch integration regressions (entrypoint scripts,
+   All three commands must exit 0 before a commit, merge, or review
+   can be claimed done. The ctest run covers unit-test correctness;
+   the compose runs catch integration regressions (entrypoint scripts,
    PYTHONPATH, gazebo plugins, nrp-core ↔ nest-server wire
    compatibility, MQTT proxy) that single-process unit tests miss.
    The compose example exits cleanly when SimulationTimeout is reached
    (success); container errors or non-zero exits are real failures.
 
-   If you cannot run any of the six checks (e.g. missing image build
-   artifact, no Docker access), say so explicitly — do not claim the
-   task is done.
+   If you cannot run any of the three checks (e.g. missing image
+   build artifact, no Docker access), say so explicitly — do not
+   claim the task is done.
+
+   EBR2-81 dropped the parallel Ubuntu 20.04 (focal / Foxy / Py 3.8)
+   chain. Anything in the tree that still says `ubuntu20`, `focal`,
+   `foxy`, `python3.8`, or `--ubuntu22` is a leftover bug; fix it
+   under a follow-up ticket.
 
    See [Running the tests](#running-the-tests) and
    [If tests fail](#if-tests-fail).
@@ -180,27 +182,22 @@ Top-level layout:
 
 ## The canonical build+test environment
 
-The project supports **two Ubuntu target versions**:
-
 | Version | ROS 2 | Python | Status |
 |---|---|---|---|
-| Ubuntu 20.04 (focal) | Foxy | 3.8 | **Primary / canonical** |
-| Ubuntu 22.04 (jammy) | Humble | 3.10 | Supported (EBR2-27) |
+| Ubuntu 22.04 (jammy) | Humble | 3.10 | **Primary / canonical** |
 
-Core deps are pinned identically on both (Gazebo 11, NEST 3.1, Boost.Python
-matching the distro, gRPC from apt). The EBR2-26 work replaced ROS 1 Noetic
-with ROS 2 (rclcpp / ament_cmake / colcon) for both targets.
+Core deps: Gazebo 11 Classic (apt: `gazebo`, `gazebo-plugin-base`,
+`libgazebo-dev`), NEST 3.1, Boost.Python 1.74, gRPC from apt. The
+EBR2-26 work replaced ROS 1 Noetic with ROS 2 (rclcpp / ament_cmake /
+colcon); EBR2-81 dropped the parallel Ubuntu 20.04 (focal / Foxy / Py
+3.8) chain so there is now exactly one supported target.
 
-**Canonical image:** `nrp-local/nrp-nest-gazebo-ubuntu20:local`, declared in
+**Canonical image:** `nrp-local/nrp-nest-gazebo:local`, declared in
 [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) and built by
 the `nrp-nest-gazebo` service in [docker-compose.yaml](docker-compose.yaml).
-For Ubuntu 22.04 use `nrp-local/nrp-nest-gazebo-ubuntu22:local` (service
-`nrp-nest-gazebo-ubuntu22`).
 
 The corresponding cmake preset is
-[.ci/cmake_cache/nest-gazebo.cmake](.ci/cmake_cache/nest-gazebo.cmake) (ubuntu20)
-or [.ci/cmake_cache/nest-gazebo-ubuntu22.cmake](.ci/cmake_cache/nest-gazebo-ubuntu22.cmake)
-(ubuntu22):
+[.ci/cmake_cache/nest-gazebo.cmake](.ci/cmake_cache/nest-gazebo.cmake):
 
 ```
 ENABLE_GAZEBO=ON  BUILD_GAZEBO_ENGINE_SERVER=ON
@@ -225,9 +222,9 @@ cp .env.template .env
 
 The helper script walks the `depends_on:` chain in `docker-compose.yaml` and
 builds `base-env → gazebo-env → nest-gazebo-env → nrp-nest-gazebo-env →
-nrp-nest-gazebo` in order. Expect a multi-hour initial build: it fetches Gazebo
-11, compiles NEST 3.1, installs ROS Noetic, and compiles the whole of nrp-core
-inside the final stage.
+nrp-nest-gazebo` in order. Expect a multi-hour initial build: it installs
+Gazebo 11 + ROS 2 Humble from apt, compiles NEST 3.1, and compiles the
+whole of nrp-core inside the final stage.
 
 Other targets worth knowing:
 
@@ -258,19 +255,16 @@ bash .ci/20-build.sh              # make + make install, -j auto-sized
 
 ### The one-command local path (preferred)
 
-From the **host**, at the repo root, run the dev-helper **twice** —
-once per supported Ubuntu target. Both must exit 0:
+From the **host**, at the repo root, run the dev-helper. It must exit 0:
 
 ```bash
-bash .ci/00-dev-rebuild-and-test.sh              # ubuntu20 / foxy / py3.8
-bash .ci/00-dev-rebuild-and-test.sh --ubuntu22   # ubuntu22 / humble / py3.10
+bash .ci/00-dev-rebuild-and-test.sh              # ubuntu22 / humble / py3.10
 ```
 
 The script:
 
-1. Ensures the target image (`nrp-local/nrp-nest-gazebo-ubuntu20:local`
-   or `nrp-local/nrp-nest-gazebo-ubuntu22:local`) exists — builds it if
-   missing; `--rebuild-image` to force.
+1. Ensures the canonical image `nrp-local/nrp-nest-gazebo:local`
+   exists — builds it if missing; `--rebuild-image` to force.
 2. Runs `.ci/11-prepare-build.sh` + `.ci/20-build.sh` inside the container
    against the mounted source tree.
 3. Runs `ctest` directly (bypassing `.ci/30-run-tests.sh`'s Jenkins `0x8`
@@ -278,17 +272,15 @@ The script:
 
 Useful flags:
 
-- `--ubuntu22` — target the Ubuntu 22.04 image instead of the default 20.04.
 - `--keep-build` — reuse the existing `build/` directory (fast iteration).
 - `--test-filter REGEX` — forward `-R REGEX` to ctest for a subset.
 - `--no-image` — skip the docker-image existence check.
 - `--rebuild-image` — force-rebuild the image first.
 - `--cmake-cache PATH` — override the cmake initial-cache preset (in-container
   path, e.g. `/workspace/.ci/cmake_cache/vanilla.cmake`). Defaults to the
-  canonical `nest-gazebo.cmake` / `nest-gazebo-ubuntu22.cmake` for the chosen
-  Ubuntu target so the suite exercises MQTT / NEST / Gazebo / ROS by default.
-  Pre-EBR2-71 the script silently fell back to `vanilla.cmake` and skipped
-  those tests; the default preset is now load-bearing.
+  canonical `nest-gazebo.cmake` so the suite exercises MQTT / NEST / Gazebo
+  / ROS. Pre-EBR2-71 the script silently fell back to `vanilla.cmake` and
+  skipped those tests; the default preset is load-bearing.
 
 The script also passes `--timeout 120` to `ctest` (EBR2-78), capping each
 test at 2 min. The longest legitimately-passing test in the canonical preset
@@ -296,9 +288,6 @@ finishes in ~42 s, so 120 s leaves comfortable headroom; the default ctest
 1500 s timeout burns half an hour per hung test. Override the cap for an
 individual test in cmake via
 `set_tests_properties(<name> PROPERTIES TIMEOUT <seconds>)`.
-
-Copilot / Claude note: cite **both** ubuntu20 and ubuntu22 runs in PR
-descriptions. Do *not* claim a change passes if either run did not exit 0.
 
 ### Inside-container primitives
 
@@ -313,7 +302,7 @@ bash .ci/30-run-tests.sh
 What `.ci/30-run-tests.sh` does:
 
 1. `cd build`, source `~/.bashrc` (sets `NRP_INSTALL_DIR`, `PYTHONPATH`, sources
-   ROS Noetic).
+   ROS 2 Humble).
 2. If no `$DISPLAY`, runs `ctest` under `xvfb-run` — many Gazebo tests need an
    X server.
 3. Runs `ctest -T Test` and tolerates exit bit `0x8` (failed tests) so Jenkins
@@ -375,13 +364,13 @@ that's a flake signal — note it and dig.
   must be behind such a flag so the vanilla build stays small.
 - Proto files go in the `src/nrp-core-msgs` submodule, not the main tree.
 - Python modules install to `${NRP_INSTALL_DIR}/lib/python<X.Y>/site-packages`
-  where X.Y is detected by cmake's `find_package(Python3)` (3.8 on focal, 3.10
-  on jammy). Never hardcode `python3.8`; use
-  `${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}` in cmake and
+  where X.Y is detected by cmake's `find_package(Python3)` (3.10 on jammy).
+  Don't hardcode `python3.10` even though jammy is now the only target —
+  use `${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}` in cmake and
   `python3 -c "import sys; ..."` in shell scripts.
-- Don't hardcode the ROS 2 distribution either — the image-building ARG is
-  `ROS_DISTRO` (foxy on focal, humble on jammy). In shell scripts, prefer a
-  loop that sources whichever `/opt/ros/<distro>/setup.bash` is present.
+- The ROS 2 distribution is `humble` (image-building ARG `ROS_DISTRO`). In
+  shell scripts that may be sourced before the env is set up, source
+  `/opt/ros/humble/setup.bash` directly.
 - Submodules must be initialized before cmake:
   `git submodule update --init --recursive`. The cmake configure will fail fast
   with a clear message if `src/nrp-core-msgs/protobuf` is missing.
@@ -399,17 +388,19 @@ The `onCreateCommand` just installs `gdb`.
 
 ## What NOT to do
 
-- Don't change the canonical image (`nrp-nest-gazebo-ubuntu20:local`) without
+- Don't change the canonical image (`nrp-nest-gazebo:local`) without
   updating `.devcontainer/devcontainer.json`, `docker-compose.yaml`, and
   `.ci/cmake_cache/nest-gazebo.cmake` in the same commit — reviewers rely on
   all three lining up.
-- Both Ubuntu 20.04 and Ubuntu 22.04 are now active targets. Don't introduce
-  Ubuntu-22-only syntax (python 3.10+, glibc-2.35-only APIs) without
-  verifying it also builds on 20.04. The `.ci/00-dev-rebuild-and-test.sh
-  --ubuntu22` flag builds and tests the jammy variant.
-- Don't bump `NEST`, `Gazebo`, or `grpc++` versions casually — the CMake files
-  pin them deliberately (`v3.1`, `gazebo11`, `libgrpc++-dev` from focal). These
-  are coupled to the Dockerfiles and to the NEST Python bindings path.
+- Jammy (Ubuntu 22.04) is the only supported target. EBR2-81 dropped the
+  parallel focal chain; do not reintroduce focal/Foxy/python 3.8 branches,
+  `-ubuntu20` or `-ubuntu22` service suffixes, or `--ubuntu22` flags in
+  helper scripts.
+- Don't bump `NEST`, `Gazebo`, or `grpc++` versions casually — the CMake
+  files pin them deliberately (`v3.1`, Gazebo 11 from jammy apt,
+  `libgrpc++-dev` from jammy). These are coupled to the Dockerfiles and to
+  the NEST Python bindings path. NEST 3.9 migration is tracked separately
+  in EBR2-82.
 - Don't delete the ctest `0x8` mask in `.ci/30-run-tests.sh` — it exists so
   Jenkins can parse the xunit output even on failing builds. Your *local*
   pass/fail check must still treat failures as failures.
@@ -426,11 +417,10 @@ The `onCreateCommand` just installs `gdb`.
 - **Gazebo unit tests hang in a fresh container** → `DISPLAY` not set; run
   under `xvfb-run-nrp` or source the provided `.ci/30-run-tests.sh` wrapper.
 - **NEST-Python tests can't import `nest`** → `PYTHONPATH` missing
-  `$NRP_DEPS_INSTALL_DIR/lib/python<X.Y>/site-packages` (3.8 on focal,
-  3.10 on jammy); re-source `$NRP_INSTALL_DIR/bin/.nrp_env`.
-- **ROS tests fail immediately** → `/opt/ros/foxy/setup.bash` (focal) or
-  `/opt/ros/humble/setup.bash` (jammy) not sourced. The canonical image's
-  `~/.bashrc` loops over both and sources whichever is present; if you shelled
+  `$NRP_DEPS_INSTALL_DIR/lib/python3.10/site-packages`; re-source
+  `$NRP_INSTALL_DIR/bin/.nrp_env`.
+- **ROS tests fail immediately** → `/opt/ros/humble/setup.bash` not
+  sourced. The canonical image's `~/.bashrc` sources it; if you shelled
   in with `docker exec --no-tty`, re-source it.
 - **MQTT link errors on rebuild** → Paho C/C++ libs were built into
   `$NRP_DEPS_INSTALL_DIR`; make sure `LD_LIBRARY_PATH` includes it.

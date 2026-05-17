@@ -10,7 +10,7 @@ class TestNrpHandle(unittest.TestCase):
     def test_basic(self):
 
         nrp_docker = NRPDockerHandle('unix:///var/run/docker.sock',
-                                     'nrp-core/nrp-gazebo-nest-ubuntu20:latest',
+                                     'nrp-core/nrp-gazebo-nest:latest',
                                      'docker_handle_test_folder',
                                      '/bin/bash -c "echo \"hi\" && echo $MESSAGE >| test_file2.txt && sleep 100"',
                                      ['MESSAGE=message_from_outside'])
@@ -67,7 +67,7 @@ class TestNrpHandle(unittest.TestCase):
         # wrong ip
         with self.assertRaises(ValueError):
             NRPDockerHandle('wrong_ip',
-                            'nrp-core/nrp-gazebo-nest-ubuntu20:latest',
+                            'nrp-core/nrp-gazebo-nest:latest',
                             'docker_handle_test_folder',
                             '/bin/bash -c "echo \"hi\""',
                             ['MESSAGE=message_from_outside'])
@@ -75,7 +75,7 @@ class TestNrpHandle(unittest.TestCase):
         # wrong experiment folder
         with self.assertRaises(ValueError):
             NRPDockerHandle('unix:///var/run/docker.sock',
-                            'nrp-core/nrp-gazebo-nest-ubuntu20:latest',
+                            'nrp-core/nrp-gazebo-nest:latest',
                             'wrong_folder',
                             '/bin/bash -c "echo \"hi\""',
                             ['MESSAGE=message_from_outside'])

@@ -5,10 +5,10 @@ In each of these experiments there is a `simulation_config_docker.json` configur
 
 <table>
 <tr><th>Example folder<th>Description<th>DockerImage
-<tr><td>husky_braitenberg<td>Running a gazebo_grpc engine with a husky model inside a docker container<td>nrp-core/nrp-gazebo-ubuntu20:latest
-<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp-core/nrp-nest-ubuntu20:latest
-<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp-core/nrp-opensim-ubuntu20:latest
-<tr><td>tf_exchange<td>Running a python_json engine  inside a docker container<td>nrp-core/nrp-vanilla-ubuntu20:latest
+<tr><td>husky_braitenberg<td>Running a gazebo_grpc engine with a husky model inside a docker container<td>nrp-core/nrp-gazebo:latest
+<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp-core/nrp-nest:latest
+<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp-core/nrp-opensim:latest
+<tr><td>tf_exchange<td>Running a python_json engine  inside a docker container<td>nrp-core/nrp-vanilla:latest
 </table>
 
 The images referenced in the table can be manually built from the different dockerfiles available in the folder "/dockerfiles" using docker-compose.

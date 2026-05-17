@@ -90,8 +90,8 @@ COPY --from=opensim-build ${NRP_OPENSIM_INSTALL_DIR} ${NRP_OPENSIM_INSTALL_DIR}
 # Export opensim python wrappers and packages
 
 # Opensim's wrapper install path follows the interpreter's version;
-# detect it at image-build time rather than hardcoding python3.8 so
-# the same Dockerfile works for focal (3.8) and jammy (3.10).
+# detect it at image-build time so the path stays correct if the base
+# image's Python version ever moves (jammy currently ships 3.10).
 RUN PYVER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')") && \
     echo "export PYTHONPATH=\${NRP_OPENSIM_INSTALL_DIR}/lib/python${PYVER}/site-packages/:\"\${PYTHONPATH}\"" >> .bashrc
 

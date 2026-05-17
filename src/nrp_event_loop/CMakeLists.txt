@@ -107,7 +107,7 @@ if(ENABLE_ROS)
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
     # Humble needs fastcdr imported explicitly; see comment in
-    # nrp_ros_proxy/CMakeLists.txt. QUIET because Foxy doesn't need it.
+    # nrp_ros_proxy/CMakeLists.txt.
     find_package(fastcdr QUIET)
     find_package(nrp_ros_msgs REQUIRED)
     foreach(PACK ${NRP_ROS_MSGS_PACKAGES})
@@ -305,12 +305,9 @@ if(ENABLE_SPINNAKER)
             )
 
     # libspynnaker_external_device_lib.a uses sqlite3 (the spynnaker
-    # partitioner backs onto a SQLite database). Without an explicit
-    # link to libsqlite3, the unresolved sqlite3_* symbols leak up
-    # into event_loop.so's NEEDED list. ubuntu20 (foxy / Boost 1.71)
-    # happens to pull libsqlite3 in transitively, so dlopen works;
-    # ubuntu22 (humble / Boost 1.74) has a stricter link graph and
-    # dlopen fails with
+    # partitioner backs onto a SQLite database). On jammy (Humble /
+    # Boost 1.74) the link graph is strict, so without an explicit
+    # link to libsqlite3 dlopen fails with
     #   undefined symbol: sqlite3_column_double
     # which breaks every Python/C++ test that imports nrp_core.event_loop
     # (#100-108, #148-150, plus the cascading #187 NrpServer).

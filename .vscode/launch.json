@@ -19,7 +19,7 @@
                 },
                 {
                     "name": "PYTHONPATH",
-                    "value": "${env:NRP_INSTALL_DIR}/lib/python3.8/site-packages:${env:NRP_DEPS_INSTALL_DIR}/lib/python3.8/site-packages:${env:PYTHONPATH}"
+                    "value": "${env:NRP_INSTALL_DIR}/lib/python3.10/site-packages:${env:NRP_DEPS_INSTALL_DIR}/lib/python3.10/site-packages:${env:PYTHONPATH}"
                 },
                 {
                     "name": "PATH",

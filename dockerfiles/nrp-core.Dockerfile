@@ -102,10 +102,9 @@ RUN cd ${HOME}/nrp-core-src && ls -al && bash .ci/11-prepare-build.sh && bash .c
 # Copy the installed nrp to the main image (the intermediate container with code will be unseen for production)
 FROM nrp-core-env
 
-# Python version must match the base image's system python. Defaults
-# to 3.8 (ubuntu20); override to 3.10 in docker-compose.yaml for the
-# ubuntu22 services.
-ARG PYTHON_VERSION=3.8
+# Python version must match the base image's system python — 3.10 on
+# jammy (the only supported target after EBR2-81 dropped focal).
+ARG PYTHON_VERSION=3.10
 
 ARG NRP_TEMPLATES_DIR=/nrp-templates
 ENV NRP_TEMPLATES_DIR ${NRP_TEMPLATES_DIR}

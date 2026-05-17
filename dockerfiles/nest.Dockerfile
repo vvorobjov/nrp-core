@@ -2,9 +2,9 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Python version must match the base image's system python (3.8 on
-# focal, 3.10 on jammy). Passed through from docker-compose.yaml.
-ARG PYTHON_VERSION=3.8
+# Python version must match the base image's system python — 3.10 on
+# jammy. Passed through from docker-compose.yaml.
+ARG PYTHON_VERSION=3.10
 
 # Install nest dependencies
 

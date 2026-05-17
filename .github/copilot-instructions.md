@@ -10,9 +10,11 @@ lives at [../CLAUDE.md](../CLAUDE.md) — everything there applies here too.
 
 **No code change is accepted unless the full unit-test suite passes inside the
 canonical container.** The canonical container is
-`nrp-local/nrp-nest-gazebo-ubuntu20:local`, configured with the
+`nrp-local/nrp-nest-gazebo:local` (Ubuntu 22.04 / Humble / Python 3.10),
+configured with the
 [.ci/cmake_cache/nest-gazebo.cmake](../.ci/cmake_cache/nest-gazebo.cmake)
-preset (Gazebo + NEST + ROS + MQTT, Ubuntu 20.04).
+preset (Gazebo + NEST + ROS + MQTT). EBR2-81 dropped the parallel Ubuntu
+20.04 / Foxy / Python 3.8 chain — jammy is now the only target.
 
 The canonical local verification command is one host-side script:
 
@@ -87,10 +89,10 @@ Exception: work against an already-existing ticket the user names up front.
 
 ## Project context Copilot needs
 
-- **Language mix:** C++17 (most of the codebase), Python 3.8 (engines, scripts,
+- **Language mix:** C++17 (most of the codebase), Python 3.10 (engines, scripts,
   pytest tests), CMake. Boost.Python is the C++↔Python bridge.
-- **Target OS:** Ubuntu 20.04. Ubuntu 22.04 is an unofficial secondary target;
-  do not assume a newer glibc, Python 3.10+, or gcc ≥ 10 behaviors.
+- **Target OS:** Ubuntu 22.04 (jammy). EBR2-81 dropped the parallel Ubuntu
+  20.04 chain — there is exactly one supported target.
 - **Canonical image:** see
   [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json).
 - **CI:** Jenkins only, orchestrated via the root
@@ -137,14 +139,15 @@ the `add_test(...)` line requires approval from a maintainer.
 Do not casually change versions pinned in:
 
 - [dockerfiles/nest.Dockerfile](../dockerfiles/nest.Dockerfile) — `nest v3.1`
+  (full migration to 3.9 tracked in EBR2-82)
 - [dockerfiles/gazebo.Dockerfile](../dockerfiles/gazebo.Dockerfile) —
-  `gazebo11`, `ros-noetic-*`
+  Gazebo 11 Classic from jammy apt, `ros-humble-*`
 - [dockerfiles/nrp-core.Dockerfile](../dockerfiles/nrp-core.Dockerfile) —
   `paho.mqtt.cpp v1.4.0`
 - [.ci/dependencies/apt/requirements.*.txt](../.ci/dependencies/apt/)
 
-Those versions are coupled to the Ubuntu 20.04 package set and to the Python
-3.8 ABI. Bumping them requires rebuilding every image in the compose graph
+Those versions are coupled to the Ubuntu 22.04 package set and to the Python
+3.10 ABI. Bumping them requires rebuilding every image in the compose graph
 and rerunning the full test matrix.
 
 ### "Add a GitHub Action / change the Jenkinsfile"
@@ -153,7 +156,7 @@ CI today is Jenkins-only. If you are asked to add GitHub Actions, propose a
 workflow that:
 
 1. Runs on `pull_request` and `push` to `master` / `development`.
-2. Uses the canonical `nrp-nest-gazebo-ubuntu20` image (pulled from a
+2. Uses the canonical `nrp-nest-gazebo` image (pulled from a
    registry — do not rebuild it per-run).
 3. Invokes exactly the three shell scripts above, mirroring the
    `Jenkinsfile` matrix.

@@ -1,6 +1,6 @@
 This README file contains information on how to get nrp-core installed in your system. Information on how to get started with nrp-core, architecture details, and much more can be found at the nrp-core [online documentation](https://hbpneurorobotics.bitbucket.io/)
 
-**WARNING:** nrp-core has only been tested on Ubuntu 20.04 at the moment and this OS and version are assumed in the instructions below. Installation in other environments might be possible but has not been tested yet.
+**WARNING:** nrp-core targets Ubuntu 22.04 (jammy) only. The instructions below assume that OS and version. Installation in other environments might be possible but has not been tested. EBR2-81 dropped the parallel Ubuntu 20.04 chain.
 
 ## Quick start for contributors (devcontainer loop)
 
@@ -8,9 +8,9 @@ If you have Docker installed and just want to rebuild + run the full test
 suite the way reviewers will, use the one-shot helper:
 
 ```bash
-# From the repo root. Builds the nrp-local/nrp-nest-gazebo-ubuntu20:local
+# From the repo root. Builds the nrp-local/nrp-nest-gazebo:local
 # image if missing, then compiles + installs nrp-core and runs ctest inside
-# the canonical devcontainer.
+# the canonical devcontainer (Ubuntu 22.04 / Humble / Python 3.10).
 bash .ci/00-dev-rebuild-and-test.sh
 ```
 
@@ -29,7 +29,7 @@ callable individually for CI. Exit status is the real ctest status — the
 is NOT applied when running through `00-dev-rebuild-and-test.sh`.
 
 The sections below document the manual install path, which is retained for
-users who want to run nrp-core directly on an Ubuntu 20.04 host without
+users who want to run nrp-core directly on an Ubuntu 22.04 host without
 Docker.
 
  * Before starting the installation, define, please, the nrp-core installation directory:
@@ -116,11 +116,11 @@ sudo ldconfig && cd ..
 
 # CUDA Support
 # The EDLUT simulator supports running on CUDA GPUs. This option can be enabled if EDLUT_WITH_CUDA cmake option is set to ON while configuring nrp-core. 
-# It is highly recommended to install a CUDA version >=11.0 due to compatibility version with GCC9 (default compiler for Ubuntu 20.04)
+# It is highly recommended to install a CUDA version >=12.0 (compatible with gcc 11, default on Ubuntu 22.04).
 # In order to ensure that you can follow these steps which install CUDA 12.0:
 sudo apt-get --purge -y remove 'cuda*' 
 sudo apt-get --purge -y remove 'nvidia*'
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_1.0-1_all.deb
 sudo apt update
 sudo apt install cuda
@@ -181,7 +181,7 @@ make nrp_doxygen
      - nrp_python_json_engine: Python JSON Engine
      - nrp_simulation: Contains the FTILoop and -Manager. Creates the NRPCoreSim executable
  - Each of these folders also contains a 'tests' folder with basic integration testing capabilities. To run the tests, look for generated executables inside the build folder. Before running the tests, setup the environment as described above in **Running an experiment**
- - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `${NRP_INSTALL_DIR}/lib/python3.8/site-packages`
+ - All libraries generate a python module. This can be used to interface with the datapacks from the TFs. After installation, they will be located inside `${NRP_INSTALL_DIR}/lib/python3.10/site-packages`
 
 ## Examples
 

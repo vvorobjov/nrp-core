@@ -8,7 +8,7 @@ The instructions required to install NRP-core from the source (the only option c
 
 \subsection os Operative System
 
-NRP-core has only been tested on <b>Ubuntu 20.04</b> at the moment, and therefore this OS and version are recommended. Installation in other environments might be possible but has not been tested yet.
+NRP-core targets <b>Ubuntu 22.04</b> (jammy) only, and therefore this OS and version are recommended. Installation in other environments might be possible but has not been tested. EBR2-81 dropped the parallel Ubuntu 20.04 chain.
 
 \subsection nest_version NEST
 
@@ -236,7 +236,7 @@ cd $HOME
 
 # Export opensim python wrappers and packages
 
-echo 'export PYTHONPATH=$HOME/opensim_install/lib/python3.8/site-packages/:$PYTHONPATH' >> .bashrc
+echo 'export PYTHONPATH=$HOME/opensim_install/lib/python3.10/site-packages/:$PYTHONPATH' >> .bashrc
 
 # Export opensim libraries
 # Some of the dependecies (ipopt, adolc) arent installed with 'make install', we have to export them too

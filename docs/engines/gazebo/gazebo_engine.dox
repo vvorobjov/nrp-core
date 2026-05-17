@@ -1,6 +1,6 @@
 /*! \page gazebo_engine Gazebo Engine
 
-This is an engine implementation that integrates the <a href="http://gazebosim.org/">Gazebo physics simulator</a> in NRP-core: the <a href="http://manpages.ubuntu.com/manpages/focal/man1/gzserver.1.html">gzserver executable</a> is running inside the gazebo engine server process.
+This is an engine implementation that integrates the <a href="http://gazebosim.org/">Gazebo physics simulator</a> in NRP-core: the <a href="http://manpages.ubuntu.com/manpages/jammy/man1/gzserver.1.html">gzserver executable</a> is running inside the gazebo engine server process.
 
 The integration of gzserver in NRP-core is implemented through gazebo plugins, which must be used in the gazebo simulation sdf file in order to register the engine with the SimulationManager and setup datapack communication.
 

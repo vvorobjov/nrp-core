@@ -168,39 +168,15 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
 
 endif()
 
-## Log library — keep spdlog 1.11.0 (we use newer-fmt-only formatting
-## of nlohmann::json values that breaks under focal apt's spdlog 1.5
-## bundled fmt 6.x). Build it as a STATIC archive into
-## NRP_DEP_CMAKE_INSTALL_PREFIX and link it into our shared libs with
-## --exclude-libs so its symbols are NOT exported from the resulting
-## libNRP*.so. That way the rclcpp-loaded /lib/.../libspdlog.so.1
-## (1.5 on focal, 1.9 on jammy) and our embedded 1.11.0 don't share
-## a registry, and the husky_braitenberg docker-compose example
-## doesn't crash with a double-free in
-## spdlog::sinks::ansicolor_stdout_sink::~ansicolor_stdout_sink.
-##
-## Test the static archive's presence directly. find_package(spdlog 1.11.0)
-## happily matches a previously-installed shared 1.11.0 (left over from
-## pre-873417a5 builds in the canonical focal image), which would set
-## spdlog_FOUND=TRUE and skip the ExternalProject — but our IMPORTED
-## lib_spdlog target still points at libspdlog.a, breaking the link.
-set(NRP_SPDLOG_STATIC "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.a")
-if(EXISTS "${NRP_SPDLOG_STATIC}")
-    set(spdlog_FOUND TRUE)
-else()
-    set(spdlog_FOUND FALSE)
-    message("Please wait. Downloading spdlog...")
-    ExternalProject_Add(spdlog
-            GIT_REPOSITORY https://github.com/gabime/spdlog.git
-            GIT_TAG v1.11.0
-            INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX}
-            CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${NRP_DEP_CMAKE_INSTALL_PREFIX}
-                       -DSPDLOG_BUILD_SHARED=OFF
-                       -DCMAKE_POSITION_INDEPENDENT_CODE=ON)
-
-    set(SPDLOG_BUILD_SHARED OFF)
-    set(SPDLOG_INSTALL ON)
-endif()
+## Log library — use jammy's apt-provided libspdlog-dev (1.9.2 / fmt 8).
+## Earlier versions of this file built spdlog 1.11.0 from source as a
+## static archive to work around focal's apt spdlog 1.5 / fmt 6 not
+## being able to disambiguate format calls passing nlohmann::basic_json
+## values. With focal dropped (EBR2-81) the system spdlog is recent
+## enough and we don't need the bundle, the --exclude-libs hide, the
+## hide_bundled_spdlog.lds version script, or the
+## -fvisibility-inlines-hidden compile flag any more.
+find_package(spdlog 1.8 REQUIRED)
 
 # libzip: ZIP Manipulation
 find_package(PkgConfig REQUIRED)
@@ -246,12 +222,6 @@ add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
 set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
         IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libnlohmann_json_schema_validator.so")
 
-# spdlog is now built as a static archive into NRP_DEP_CMAKE_INSTALL_PREFIX
-# (see find_package + ExternalProject_Add block above).
-add_library(lib_spdlog STATIC IMPORTED)
-set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "${NRP_DEP_CMAKE_INSTALL_PREFIX}/lib/libspdlog.a")
-
 if(NOT ${cxxopts_FOUND})
     add_dependencies(${LIBRARY_NAME} cxxopts)
 endif()
@@ -264,39 +234,7 @@ if(NOT ${nlohmann_json_schema_validator_FOUND})
     add_dependencies(${LIBRARY_NAME} nlohmann_json_schema_validator)
 endif()
 
-if(NOT ${spdlog_FOUND})
-    add_dependencies(${LIBRARY_NAME} spdlog)
-endif()
-
 target_link_options(${LIBRARY_NAME} PUBLIC ${NRP_COMMON_LD_FLAGS})
-# Hide spdlog symbols inside every shared library that transitively
-# links libspdlog.a so they don't clash at runtime with the system
-# libspdlog.so.1 that rclcpp loads via librcl_logging_spdlog.so.
-# Without this NRPCoreSim crashes with a double-free in
-# ~ansicolor_stdout_sink at startup; the ComputationalGraphPythonNodes.
-# ROS_NODES gtest reproduces a SIGSEGV during rclcpp::init() ->
-# rcl_logging_external_initialize -> spdlog::pattern_formatter::~pattern_formatter
-# (focal apt spdlog 1.5 / fmt 6 calling our bundled spdlog 1.11 / fmt 9
-# destructor through the wrong ABI). The --exclude-libs flag is GNU
-# ld / lld specific; harmless on toolchains that don't recognise it.
-#
-# PUBLIC, not PRIVATE: lib_spdlog is added PUBLIC below so consumers
-# (NRPEventLoop*, NRPGazebo*, ...) transitively link libspdlog.a into
-# their own .so files. The exclude flag must propagate the same way,
-# otherwise those .so files re-export the 1.11 symbols and
-# librcl_logging_spdlog.so's dlopen-time symbol resolution picks them
-# up instead of the system 1.5 it was built against.
-target_link_options(${LIBRARY_NAME} PUBLIC LINKER:--exclude-libs,libspdlog.a)
-# --exclude-libs hides symbols *from the static archive* but GCC also
-# emits weak DSO exports of non-inline spdlog symbols
-# (pattern_formatter::~pattern_formatter, _Hashtable<...>::~_Hashtable
-# for the custom_flag_formatter map, etc.) in the same translation
-# unit's object code — those slip past --exclude-libs and reappear in
-# the consumer .so's dynamic symbol table. Force them to local
-# visibility via a linker version script. PUBLIC so consumer .so
-# files inherit it, same reasoning as --exclude-libs above.
-target_link_options(${LIBRARY_NAME} PUBLIC
-    LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/hide_bundled_spdlog.lds)
 target_link_libraries(${LIBRARY_NAME}
     PUBLIC
         ${BOOST_PYTHON}
@@ -308,7 +246,7 @@ target_link_libraries(${LIBRARY_NAME}
         Python3::Python
         lib_nlohmann_json_schema_validator
         lib_restclient
-        lib_spdlog
+        spdlog::spdlog
         rt
 
     PRIVATE

@@ -1,37 +1,32 @@
 #!/bin/bash
 # Unified runner for the husky_braitenberg docker-compose example.
-# Replaces the earlier pair (run_docker-compose_example.sh +
-# run_docker-compose_example-xpra.sh) and covers all four supported
-# combinations:
+# Two display modes:
 #
-#   default                Ubuntu 20.04 (focal) + xvfb (headless)
-#   --ubuntu22             Ubuntu 22.04 (jammy) + xvfb (headless)
-#   --xpra                 Ubuntu 20.04 + xpra (remote display)
-#   --ubuntu22 --xpra      Ubuntu 22.04 + xpra
+#   default      xvfb (headless)
+#   --xpra       xpra (browser-accessible remote display on
+#                ${NRP_XPRA_HOST_PORT:-9876})
+#
+# Only the jammy image set (Humble / Python 3.10) is supported;
+# EBR2-81 dropped the parallel focal chain.
 #
 # NRP_DOCKER_REGISTRY and NRP_CORE_TAG are read from <repo>/.env (the
 # same file build_nrp_core_image.sh sources). If .env is missing or
 # does not set them, falls back to nrp-local / local — the locally
-# built image set. Variables already exported in the environment win
-# over the file (the script intentionally only fills defaults via
-# ${VAR:-...} after sourcing).
+# built image set.
 
 set -euo pipefail
 
 EXAMPLES_PATH=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$EXAMPLES_PATH/.." && pwd)
 
-UBUNTU=20
 XPRA=0
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--ubuntu20|--ubuntu22] [--xpra] [-h|--help]
+Usage: $(basename "$0") [--xpra] [-h|--help]
 
 Runs the husky_braitenberg docker-compose example.
 
-  --ubuntu20   Ubuntu 20.04 / Foxy / Python 3.8 image set (default).
-  --ubuntu22   Ubuntu 22.04 / Humble / Python 3.10 image set.
   --xpra       Use the xpra-enabled gazebo image; expose the xpra
                session on \$NRP_XPRA_HOST_PORT (default 9876).
 
@@ -46,8 +41,6 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --ubuntu20) UBUNTU=20 ;;
-        --ubuntu22) UBUNTU=22 ;;
         --xpra)     XPRA=1 ;;
         -h|--help)  usage; exit 0 ;;
         *)          echo "Unknown argument: $1" >&2; usage >&2; exit 1 ;;
@@ -55,12 +48,8 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ $XPRA -eq 1 && $UBUNTU -eq 22 ]]; then
-    COMPOSE_FILE="docker-compose-xpra-nest-gazebo-ubuntu22.yaml"
-elif [[ $XPRA -eq 1 ]]; then
+if [[ $XPRA -eq 1 ]]; then
     COMPOSE_FILE="docker-compose-xpra-nest-gazebo.yaml"
-elif [[ $UBUNTU -eq 22 ]]; then
-    COMPOSE_FILE="docker-compose-nest-gazebo-ubuntu22.yaml"
 else
     COMPOSE_FILE="docker-compose-nest-gazebo.yaml"
 fi

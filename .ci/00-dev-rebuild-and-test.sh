@@ -4,11 +4,14 @@
 #
 # One-shot helper for the local dev loop in nrp-core:
 #   1. Ensure the canonical devcontainer image
-#      (nrp-local/nrp-nest-gazebo-ubuntu20:local) exists. Rebuild it if
+#      (nrp-local/nrp-nest-gazebo:local) exists. Rebuild it if
 #      missing or when --rebuild-image is given.
 #   2. Run cmake configure + make + make install inside the container,
 #      against the mounted source tree.
 #   3. Run the ctest suite.
+#
+# Only the jammy (Ubuntu 22.04 / Humble / Python 3.10) target is
+# supported; EBR2-81 dropped the parallel focal chain.
 #
 # Intended as the single entry point while iterating locally. The
 # numbered stages .ci/11-prepare-build.sh, .ci/20-build.sh,
@@ -30,7 +33,6 @@ REBUILD_IMAGE=0
 NO_IMAGE=0
 TEST_FILTER=""
 KEEP_BUILD=0
-UBUNTU_VERSION="20"
 CMAKE_CACHE_OVERRIDE=""
 
 usage() {
@@ -42,19 +44,15 @@ Options:
   --no-image            Skip the image existence check entirely (assume it exists).
   --test-filter REGEX   Pass -R REGEX to ctest (run only matching tests).
   --keep-build          Do not wipe build/ before configuring.
-  --ubuntu22            Target the Ubuntu 22.04 image (nrp-nest-gazebo-ubuntu22)
-                        instead of the default Ubuntu 20.04 one.
   --cmake-cache PATH    Override the cmake initial-cache preset. PATH must be
                         the in-container path (e.g.
-                        /workspace/.ci/cmake_cache/vanilla.cmake). By default
-                        the canonical preset is selected:
-                          ubuntu20 -> /workspace/.ci/cmake_cache/nest-gazebo.cmake
-                          ubuntu22 -> /workspace/.ci/cmake_cache/nest-gazebo-ubuntu22.cmake
+                        /workspace/.ci/cmake_cache/vanilla.cmake). The default
+                        is /workspace/.ci/cmake_cache/nest-gazebo.cmake.
   -h, --help            Show this message and exit.
 
-Default image: nrp-local/nrp-nest-gazebo-ubuntu20:local (canonical).
-Ubuntu 22 image: nrp-local/nrp-nest-gazebo-ubuntu22:local.
-Both come from docker-compose.yaml.
+Canonical image: nrp-local/nrp-nest-gazebo:local (Ubuntu 22.04 /
+Humble / Python 3.10), built by docker-compose.yaml's nrp-nest-gazebo
+service.
 EOF
 }
 
@@ -68,7 +66,6 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --keep-build)    KEEP_BUILD=1 ;;
-        --ubuntu22)      UBUNTU_VERSION="22" ;;
         --cmake-cache)
             [[ $# -ge 2 ]] || { echo "[$0] --cmake-cache requires an argument" >&2; exit 2; }
             CMAKE_CACHE_OVERRIDE="$2"
@@ -92,25 +89,16 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." &>/dev/null && pwd)"
 cd "$REPO_ROOT"
 
-# Ubuntu 20 and Ubuntu 22 images and their docker-compose service
-# names don't line up (ubuntu20 keeps the original, unqualified
-# "nrp-nest-gazebo" for historical reasons).
-if [[ "$UBUNTU_VERSION" == "22" ]]; then
-    IMAGE="nrp-local/nrp-nest-gazebo-ubuntu22:local"
-    BUILD_SERVICE="nrp-nest-gazebo-ubuntu22"
-    DEFAULT_CMAKE_CACHE="/workspace/.ci/cmake_cache/nest-gazebo-ubuntu22.cmake"
-else
-    IMAGE="nrp-local/nrp-nest-gazebo-ubuntu20:local"
-    BUILD_SERVICE="nrp-nest-gazebo"
-    DEFAULT_CMAKE_CACHE="/workspace/.ci/cmake_cache/nest-gazebo.cmake"
-fi
+IMAGE="nrp-local/nrp-nest-gazebo:local"
+BUILD_SERVICE="nrp-nest-gazebo"
+DEFAULT_CMAKE_CACHE="/workspace/.ci/cmake_cache/nest-gazebo.cmake"
 
-# The canonical preset for each Ubuntu target enables MQTT / NEST /
-# Gazebo / ROS — i.e. it's what CLAUDE.md and reviewers expect ctest to
-# exercise. Without this the in-container 11-prepare-build.sh falls
-# back to vanilla.cmake and silently skips ~100 of the 185 tests
-# (every MQTT / Gazebo / NEST / ROS gated test goes uncompiled), which
-# masks real regressions. See EBR2-71.
+# The canonical preset enables MQTT / NEST / Gazebo / ROS — i.e. it's
+# what CLAUDE.md and reviewers expect ctest to exercise. Without this
+# the in-container 11-prepare-build.sh falls back to vanilla.cmake and
+# silently skips ~100 of the 185 tests (every MQTT / Gazebo / NEST /
+# ROS gated test goes uncompiled), which masks real regressions.
+# See EBR2-71.
 CMAKE_CACHE_IN_CONTAINER="${CMAKE_CACHE_OVERRIDE:-$DEFAULT_CMAKE_CACHE}"
 
 # Pretty logger

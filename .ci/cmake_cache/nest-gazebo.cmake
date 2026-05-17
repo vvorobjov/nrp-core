@@ -1,3 +1,7 @@
+# Canonical cmake preset for the nrp-nest-gazebo image (Ubuntu 22.04,
+# Humble, Python 3.10). Enables Gazebo + NEST engine server sides and
+# the ROS / MQTT proxies. Used by .ci/00-dev-rebuild-and-test.sh and
+# the .devcontainer.
 set(COVERAGE ON CACHE BOOL "Evaluate coverage")
 set(BUILD_RST OFF CACHE BOOL "Build rst files for the documentation")
 
@@ -10,5 +14,3 @@ set(BUILD_NEST_ENGINE_SERVER ON CACHE BOOL  "Disable nest-simulator engines serv
 
 set(ENABLE_ROS ON CACHE BOOL "Enable ROS support")
 set(ENABLE_MQTT ON CACHE BOOL "Enable MQTT support")
-
-
