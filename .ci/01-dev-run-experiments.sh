@@ -119,20 +119,34 @@ BUILD_SERVICE="nrp-nest-gazebo"
 
 log() { printf '\n[%s] %s\n' "$(basename "$0")" "$*"; }
 
-# -----------------------------------------------------------------------------
-# Step 1: ensure the canonical image
-# -----------------------------------------------------------------------------
+# Map a canonical docker tag (nrp-local/<service>:local) back to the
+# docker-compose service name that build_nrp_core_image.sh expects. We
+# assume the EBR2-81 naming convention (nrp-local registry, :local tag,
+# unsuffixed service names); anything else is a manifest bug.
+tag_to_service() {
+    local tag="$1"
+    if [[ "$tag" != nrp-local/*:local ]]; then
+        echo "[$(basename "$0")] IMAGE override '$tag' must be of the form" \
+             "nrp-local/<service>:local (EBR2-81 naming)." >&2
+        exit 5
+    fi
+    local rest="${tag#nrp-local/}"
+    echo "${rest%:local}"
+}
 
-if [[ "$NO_IMAGE" -eq 0 ]]; then
-    need_rebuild=0
+# Ensure a single image is present locally; build via build_nrp_core_image.sh
+# when missing or when --rebuild-image was passed.
+ensure_image() {
+    local tag="$1"
+    local need_rebuild=0
     if [[ "$REBUILD_IMAGE" -eq 1 ]]; then
-        log "--rebuild-image given; forcing rebuild of $IMAGE."
+        log "--rebuild-image given; forcing rebuild of $tag."
         need_rebuild=1
-    elif ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-        log "image $IMAGE not found; will build it."
+    elif ! docker image inspect "$tag" >/dev/null 2>&1; then
+        log "image $tag not found; will build it."
         need_rebuild=1
     else
-        log "image $IMAGE already present; skipping rebuild. (use --rebuild-image to force.)"
+        log "image $tag already present; skipping rebuild. (use --rebuild-image to force.)"
     fi
 
     if [[ "$need_rebuild" -eq 1 ]]; then
@@ -143,9 +157,24 @@ NRP_CORE_TAG=local
 NRP_DOCKER_REGISTRY=nrp-local
 ENVEOF
         fi
+        local service
+        service="$(tag_to_service "$tag")"
         NRP_DOCKER_REGISTRY=nrp-local NRP_CORE_TAG=local \
-            ./build_nrp_core_image.sh "$BUILD_SERVICE"
+            ./build_nrp_core_image.sh "$service"
     fi
+}
+
+# -----------------------------------------------------------------------------
+# Step 1: ensure every image referenced by the manifest (canonical + any
+# per-experiment IMAGE= override) is present locally.
+# -----------------------------------------------------------------------------
+
+if [[ "$NO_IMAGE" -eq 0 ]]; then
+    # Defer the actual ensure_image() calls until after the manifest is parsed
+    # so the override-set is known. Just record that we still need to do it.
+    DO_ENSURE_IMAGES=1
+else
+    DO_ENSURE_IMAGES=0
 fi
 
 # -----------------------------------------------------------------------------
@@ -160,9 +189,18 @@ fi
 #                          before running this experiment.
 #   NEEDS_DOCKER_SOCKET    Mount /var/run/docker.sock so NRPCoreSim's
 #                          docker_launcher can spawn sibling engine containers.
+#   IMAGE=<docker-tag>     Run this experiment against the named image instead
+#                          of the canonical jammy nrp-nest-gazebo:local
+#                          default. Used for cross-image experiments (e.g.
+#                          opensim_tvb against nrp-(xpra-)tvb-opensim:local)
+#                          whose engine prerequisites are not compiled into
+#                          the canonical preset. Any non-default image is
+#                          verified-or-built at script start, just like the
+#                          default.
 #
-# The list mirrors the EBR2-83 spec and totals 24 entries (20 active,
-# 4 documented skips: 3× SpiNNaker + 1× external-OpenSim).
+# The base set mirrors the EBR2-83 spec (24 entries; 20 active, 4 documented
+# skips: 3× SpiNNaker + 1× external-OpenSim). EBR2-84 adds the two
+# opensim_tvb variants with explicit IMAGE= overrides.
 
 EXPERIMENTS=(
     "examples/event_loop_examples/cpp_nodes_simple/simulation_config.json|"
@@ -189,6 +227,11 @@ EXPERIMENTS=(
     "examples/generic_proto_test/simulation_config.json|"
     "examples/nest_simple/simulation_config.json|"
     "examples/nest_simple/simulation_config_docker.json|NEEDS_DOCKER_SOCKET"
+    # EBR2-84: opensim_tvb experiment runs against the tvb-opensim image
+    # chain (OpenSim arm26 + TVB cosim brain). The canonical
+    # nrp-nest-gazebo image does not ship OpenSim or TVB Python bindings.
+    "examples/opensim_tvb/simulation_config.json|IMAGE=nrp-local/nrp-tvb-opensim:local"
+    "examples/opensim_tvb/simulation_config_xpra.json|IMAGE=nrp-local/nrp-xpra-tvb-opensim:local"
 )
 
 # Sanity-check the manifest at script start so a typo'd path is flagged
@@ -203,6 +246,36 @@ done
 unset _entry _cfg
 
 log "manifest validated: ${#EXPERIMENTS[@]} entries."
+
+# Collect the distinct set of images the manifest references (default
+# + every IMAGE= override on a non-skipped entry). Skipped entries do
+# not trigger an image build — there is no point building an image we
+# will not run against.
+declare -A IMAGES_NEEDED=()
+IMAGES_NEEDED["$IMAGE"]=1
+for _entry in "${EXPERIMENTS[@]}"; do
+    _flagstr="${_entry#*|}"
+    _skip=""
+    _img=""
+    IFS=',' read -ra _flags <<< "$_flagstr"
+    for _f in "${_flags[@]}"; do
+        case "$_f" in
+            SKIP=*)  _skip="${_f#SKIP=}" ;;
+            IMAGE=*) _img="${_f#IMAGE=}" ;;
+        esac
+    done
+    if [[ -z "$_skip" && -n "$_img" ]]; then
+        IMAGES_NEEDED["$_img"]=1
+    fi
+done
+unset _entry _flagstr _skip _img _flags _f
+
+if [[ "$DO_ENSURE_IMAGES" -eq 1 ]]; then
+    for _img in "${!IMAGES_NEEDED[@]}"; do
+        ensure_image "$_img"
+    done
+    unset _img
+fi
 
 # -----------------------------------------------------------------------------
 # Step 3: side-process management (MQTT broker)
@@ -338,6 +411,7 @@ run_one() {
     local skip_reason=""
     local needs_mqtt=0
     local needs_docker_socket=0
+    local image_override=""
 
     IFS=',' read -ra flags <<< "$flagstr"
     for f in "${flags[@]}"; do
@@ -345,10 +419,13 @@ run_one() {
             SKIP=*)             skip_reason="${f#SKIP=}" ;;
             NEEDS_MQTT)         needs_mqtt=1 ;;
             NEEDS_DOCKER_SOCKET) needs_docker_socket=1 ;;
+            IMAGE=*)            image_override="${f#IMAGE=}" ;;
             "")                 ;;
             *) echo "[$(basename "$0")] unknown flag '$f' on $config" >&2; exit 4 ;;
         esac
     done
+
+    local run_image="${image_override:-$IMAGE}"
 
     if [[ -n "$skip_reason" ]]; then
         printf '[SKIP] %s — %s\n' "$config" "$skip_reason"
@@ -389,9 +466,13 @@ run_one() {
             docker_args+=( -v /var/run/docker.sock:/var/run/docker.sock )
         fi
     fi
-    docker_args+=( -v "$exp_dir":/experiment -w /experiment "$IMAGE" )
+    docker_args+=( -v "$exp_dir":/experiment -w /experiment "$run_image" )
 
-    printf '[RUN ] %s ... ' "$config"
+    if [[ -n "$image_override" ]]; then
+        printf '[RUN ] %s  (image=%s) ... ' "$config" "$run_image"
+    else
+        printf '[RUN ] %s ... ' "$config"
+    fi
     local t_start t_end elapsed rc
     t_start=$(date +%s)
     set +e

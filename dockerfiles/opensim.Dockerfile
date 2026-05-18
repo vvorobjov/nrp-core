@@ -70,6 +70,14 @@ RUN cd opensim_dependencies_build \
 
 # We are still in NRP_OPENSIM_GIT_DIR dir
 RUN mkdir opensim_build
+# BUILD_TESTING=OFF disables OpenSim's own test targets, including the
+# Vendors/tropter/tests/test_parameter_optimization binary whose bundled
+# Catch.hpp (v1) does not compile against modern glibc: it relies on
+# sysconf() being constexpr-eligible and on altStackMem being sized from
+# a non-constant expression, both of which fail on jammy's libstdc++ 11
+# + glibc 2.35. The runtime engine and Python wrappings do not depend on
+# those test binaries, so dropping them is safe and lets the rest of
+# OpenSim build clean. See EBR2-84.
 RUN cd opensim_build \
     && cmake ${HOME}/opensim-core \
       -DCMAKE_INSTALL_PREFIX="${NRP_OPENSIM_INSTALL_DIR}" \
@@ -78,6 +86,7 @@ RUN cd opensim_build \
       -DBUILD_PYTHON_WRAPPING=ON \
       -DBUILD_JAVA_WRAPPING=ON \
       -DWITH_BTK=ON \
+      -DBUILD_TESTING=OFF \
     && make -j -l$((`nproc`-2)) && make -j install
 
 # Start a new image that doesn't have the build artifacts

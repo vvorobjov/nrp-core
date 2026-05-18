@@ -6,6 +6,11 @@ gnupg2
 inetutils-ping
 inetutils-tools
 inetutils-traceroute
+# EBR2-81 dropped the bundled spdlog 1.11 ExternalProject in favour of
+# find_package(spdlog REQUIRED) against jammy's apt-shipped libspdlog-dev.
+# The nest-gazebo chain pulled it in transitively via gazebo; chains
+# without gazebo (opensim, tvb-opensim, vanilla) need it explicitly.
+libspdlog-dev
 lsb-release
 nano
 net-tools
