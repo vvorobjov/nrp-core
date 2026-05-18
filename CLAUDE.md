@@ -34,6 +34,28 @@ is loaded into every conversation.
    build artifact, no Docker access), say so explicitly — do not
    claim the task is done.
 
+   The three commands above are the **minimum** gate — they catch
+   build/wire-format/integration regressions cheaply. Above that
+   sits the **ultimate-test gate**, the gold standard before
+   shipping anything load-bearing:
+
+   ```bash
+   bash .ci/01-dev-run-experiments.sh                   # 20 NRPCoreSim experiments
+   ```
+
+   It walks every `examples/<subset>/simulation_config*.json` listed
+   in the script (event_loop_examples, status_function_test,
+   husky_braitenberg_multi_robot, nrp_vectorization, baseball_icub,
+   generic_proto_test, nest_simple), launches each one inside the
+   canonical jammy container, and reports PASS/FAIL/SKIP. Three
+   SpiNNaker variants and one external-OpenSim variant are
+   documented skips (counted, not silently dropped). Total
+   wall-clock is on the order of 15 minutes. Run this whenever
+   you change anything that the husky_braitenberg compose example
+   doesn't exercise — Event Loop wiring, status functions,
+   docker-launcher engines, the gRPC + protobuf path,
+   multi-robot/iCub Gazebo plumbing. Tracked in EBR2-83.
+
    EBR2-81 dropped the parallel Ubuntu 20.04 (focal / Foxy / Py 3.8)
    chain. Anything in the tree that still says `ubuntu20`, `focal`,
    `foxy`, `python3.8`, or `--ubuntu22` is a leftover bug; fix it
