@@ -14,10 +14,13 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 RUN pip install flask flask_cors RestrictedPython
 
 
-# Install nest-simulator (to NRP_DEPS_INSTALL_DIR)
+# Install nest-simulator (to NRP_DEPS_INSTALL_DIR).
+# NEST is bumped to 3.9 (EBR2-82) — the previous v3.1 pin disagreed with
+# the compose-side nest-simulator:3.3 image and with the polimi
+# experiment's v3.0 / v3.7 pins; 3.9 is the current stable release.
 RUN git clone https://github.com/nest/nest-simulator.git \
     && cd nest-simulator \
-    && git checkout v3.1 \
+    && git checkout v3.9 \
     && mkdir build && cd build \
     && cmake -DCMAKE_INSTALL_PREFIX:PATH=${NRP_DEPS_INSTALL_DIR} -Dwith-mpi=ON -Dwith-python=ON .. \
     && make -j4 && make install \

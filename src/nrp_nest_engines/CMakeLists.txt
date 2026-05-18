@@ -22,9 +22,13 @@ if(BUILD_NEST_ENGINE_SERVER)
         set(NRP_NEST_CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/nest-simulator/nest-simulator)
         set(NEST_INSTALL_DIR ${NRP_DEP_CMAKE_INSTALL_PREFIX})
         if(NOT TARGET nest-simulator)
+            # NEST pin matches dockerfiles/nest.Dockerfile (v3.9, EBR2-82).
+            # Kept in sync deliberately — both code paths land in the same
+            # ${NRP_DEPS_INSTALL_DIR}, so a mismatch produces an unhealthy
+            # mix of v3.x Python bindings against v3.y C++ runtime.
             ExternalProject_Add(nest-simulator
                     GIT_REPOSITORY https://github.com/nest/nest-simulator.git
-                    GIT_TAG v3.1
+                    GIT_TAG v3.9
                     GIT_PROGRESS true
 
                     PREFIX ${NEST_BUILD_DIR}

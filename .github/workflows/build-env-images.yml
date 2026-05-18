@@ -87,7 +87,7 @@ jobs:
 
     steps:
       - name: Reclaim disk space
-        # The nest-gazebo chain is multi-GB (NEST 3.1 from source +
+        # The nest-gazebo chain is multi-GB (NEST 3.9 from source +
         # Gazebo 11 + ROS 2). The ~14 GB free on a fresh GitHub-hosted
         # ubuntu-latest is enough only after we drop the unused
         # toolchains / android sdk / .NET / haskell that the runner

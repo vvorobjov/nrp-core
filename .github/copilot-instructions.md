@@ -138,8 +138,7 @@ the `add_test(...)` line requires approval from a maintainer.
 
 Do not casually change versions pinned in:
 
-- [dockerfiles/nest.Dockerfile](../dockerfiles/nest.Dockerfile) — `nest v3.1`
-  (full migration to 3.9 tracked in EBR2-82)
+- [dockerfiles/nest.Dockerfile](../dockerfiles/nest.Dockerfile) — `nest v3.9`
 - [dockerfiles/gazebo.Dockerfile](../dockerfiles/gazebo.Dockerfile) —
   Gazebo 11 Classic from jammy apt, `ros-humble-*`
 - [dockerfiles/nrp-core.Dockerfile](../dockerfiles/nrp-core.Dockerfile) —
