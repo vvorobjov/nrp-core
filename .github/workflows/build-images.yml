@@ -1,0 +1,103 @@
+name: Build & push runtime images
+
+# Builds the nrp-core *runtime* images (source compiled on top of the
+# matching *-env build environment) and pushes them to public Docker
+# Hub. Two variants in the first iteration:
+#
+#   nrp-vanilla       base-env -> nrp-vanilla        (vanilla.cmake)
+#   nrp-nest-gazebo   base-env -> gazebo-env ->
+#                     nest-gazebo-env -> nrp-nest-gazebo (nest-gazebo.cmake)
+#
+# CI runs on GitHub Actions (public repo = free unlimited standard-runner
+# minutes + 6 h/job, vs Bitbucket's metered minutes + 2 h/step). Bitbucket
+# stays the canonical repo for PRs + tickets; development/master are synced
+# to GitHub (and GitLab), and that synced push is what fires this workflow.
+#
+# Naming (EBR2-91): clean names, no -ubuntu20 suffix (Ubuntu 20.04 dropped
+# in EBR2-81): hbpneurorobotics/nrp-vanilla, hbpneurorobotics/nrp-nest-gazebo.
+#
+# Tag policy:
+#   pull_request        -> build only, NO push (validate)
+#   push to development  -> :latest + :development + :sha-<short>
+#   push to master       -> :stable + :master + :sha-<short>
+#
+# Repo/org secrets required (Settings -> Secrets and variables -> Actions):
+#   DOCKERHUB_USER   = hbpneurorobotics
+#   DOCKERHUB_TOKEN  = Docker Hub PAT with write scope
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [development, master]
+  pull_request:
+
+concurrency:
+  group: build-images-${{ github.ref }}-${{ matrix.service || 'all' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.service }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [nrp-vanilla, nrp-nest-gazebo]
+    env:
+      NRP_DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USER }}
+    steps:
+      - name: Reclaim disk space
+        # The nest-gazebo chain is multi-GB (NEST 3.9 from source +
+        # Gazebo 11 + ROS 2). Drop the runner's unused toolchains first.
+        run: |
+          set -euxo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          docker image prune -af || true
+          df -h /
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build ${{ matrix.service }}
+        run: |
+          set -euxo pipefail
+          export NRP_CORE_TAG="sha-${GITHUB_SHA::12}"
+          echo "Building ${NRP_DOCKER_REGISTRY}/${{ matrix.service }}:${NRP_CORE_TAG}"
+          bash build_nrp_core_image.sh "${{ matrix.service }}"
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag & push channel tags
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euxo pipefail
+          SHORT="sha-${GITHUB_SHA::12}"
+          IMAGE="${NRP_DOCKER_REGISTRY}/${{ matrix.service }}"
+          case "${GITHUB_REF_NAME}" in
+            development) CHANNELS="latest development" ;;
+            master)      CHANNELS="stable master" ;;
+            *) echo "Ref '${GITHUB_REF_NAME}' is not a publish branch; skipping push."; exit 0 ;;
+          esac
+          docker push "${IMAGE}:${SHORT}"
+          for c in $CHANNELS; do
+            docker tag "${IMAGE}:${SHORT}" "${IMAGE}:${c}"
+            docker push "${IMAGE}:${c}"
+          done
+
+      - name: PR build summary
+        if: github.event_name == 'pull_request'
+        run: echo "PR build of ${NRP_DOCKER_REGISTRY}/${{ matrix.service }} succeeded; not pushing."
