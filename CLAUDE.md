@@ -6,23 +6,26 @@ is loaded into every conversation.
 
 ## The two rules that always win
 
-1. **No change lands unless the full unit-test suite AND the
-   docker-compose example pass on the canonical Ubuntu 22.04 target**.
-   The acceptance gate has two parts. First, one ctest run:
+1. **No change lands unless the full unit-test suite AND the two
+   docker-compose example experiments pass on the canonical Ubuntu
+   22.04 target**. The acceptance gate has two parts. First, one
+   ctest run:
 
    ```bash
    bash .ci/00-dev-rebuild-and-test.sh              # ubuntu22 / Humble / py3.10
    ```
 
-   Second, the husky_braitenberg docker-compose example must run end-
-   to-end without errors in both supported display modes:
+   Second, both compose examples must run end-to-end without errors
+   in both supported display modes (four invocations total):
 
    ```bash
-   bash examples/run_docker-compose_example.sh           # xvfb (headless)
-   bash examples/run_docker-compose_example.sh --xpra    # xpra (browser-accessible)
+   bash examples/run_docker-compose_example.sh                          # husky_braitenberg, xvfb
+   bash examples/run_docker-compose_example.sh --xpra                   # husky_braitenberg, xpra
+   bash examples/run_docker-compose_example.sh --foraging               # foraging_husky, xvfb
+   bash examples/run_docker-compose_example.sh --foraging --xpra        # foraging_husky, xpra
    ```
 
-   All three commands must exit 0 before a commit, merge, or review
+   All five commands must exit 0 before a commit, merge, or review
    can be claimed done. The ctest run covers unit-test correctness;
    the compose runs catch integration regressions (entrypoint scripts,
    PYTHONPATH, gazebo plugins, nrp-core ↔ nest-server wire
@@ -30,7 +33,14 @@ is loaded into every conversation.
    The compose example exits cleanly when SimulationTimeout is reached
    (success); container errors or non-zero exits are real failures.
 
-   If you cannot run any of the three checks (e.g. missing image
+   The two compose experiments exercise different parts of the
+   nrp-core surface: `husky_braitenberg` is a stateless Braitenberg
+   2b reflex (camera → motor only), `foraging_husky` (EBR2-32) is a
+   stateful drive-state SNN with goal switching and an obstacle
+   reflex, plus model-pose writes for food respawn. Together they
+   catch regressions that either alone would miss.
+
+   If you cannot run any of the five checks (e.g. missing image
    build artifact, no Docker access), say so explicitly — do not
    claim the task is done.
 

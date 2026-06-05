@@ -1,10 +1,15 @@
 #!/bin/bash
-# Unified runner for the husky_braitenberg docker-compose example.
-# Two display modes:
+# Unified runner for the docker-compose example experiments.
 #
-#   default      xvfb (headless)
-#   --xpra       xpra (browser-accessible remote display on
+# Two orthogonal axes:
+#
+#   experiment:  default = husky_braitenberg
+#                --foraging = foraging_husky (EBR2-32, drive-state SNN)
+#   display:     default = xvfb (headless)
+#                --xpra = xpra (browser-accessible remote display on
 #                ${NRP_XPRA_HOST_PORT:-9876})
+#
+# Combinations produce four possible compose files under examples/.
 #
 # Only the jammy image set (Humble / Python 3.10) is supported;
 # EBR2-81 dropped the parallel focal chain.
@@ -20,15 +25,22 @@ EXAMPLES_PATH=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$EXAMPLES_PATH/.." && pwd)
 
 XPRA=0
+FORAGING=0
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--xpra] [-h|--help]
+Usage: $(basename "$0") [--xpra] [--foraging] [-h|--help]
 
-Runs the husky_braitenberg docker-compose example.
+Runs a docker-compose example experiment. Two orthogonal axes:
 
-  --xpra       Use the xpra-enabled gazebo image; expose the xpra
-               session on \$NRP_XPRA_HOST_PORT (default 9876).
+  experiment:
+    (default)    husky_braitenberg (one-shot Braitenberg-2b reflex).
+    --foraging   foraging_husky (drive-state SNN with goal switching
+                 and obstacle reflex — EBR2-32).
+
+  display:
+    (default)    xvfb (headless).
+    --xpra       xpra HTML5 on \$NRP_XPRA_HOST_PORT (default 9876).
 
 Environment (read from $REPO_ROOT/.env, defaults shown):
   NRP_DOCKER_REGISTRY  nrp-local        (locally built image set)
@@ -41,17 +53,29 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --xpra)     XPRA=1 ;;
-        -h|--help)  usage; exit 0 ;;
-        *)          echo "Unknown argument: $1" >&2; usage >&2; exit 1 ;;
+        --xpra)      XPRA=1 ;;
+        --foraging)  FORAGING=1 ;;
+        -h|--help)   usage; exit 0 ;;
+        *)           echo "Unknown argument: $1" >&2; usage >&2; exit 1 ;;
     esac
     shift
 done
 
-if [[ $XPRA -eq 1 ]]; then
-    COMPOSE_FILE="docker-compose-xpra-nest-gazebo.yaml"
+# Compose-file dispatch: experiment × display.
+if [[ $FORAGING -eq 1 ]]; then
+    EXP_DIR="$EXAMPLES_PATH/foraging_husky/"
+    if [[ $XPRA -eq 1 ]]; then
+        COMPOSE_FILE="docker-compose-foraging-xpra-nest-gazebo.yaml"
+    else
+        COMPOSE_FILE="docker-compose-foraging-nest-gazebo.yaml"
+    fi
 else
-    COMPOSE_FILE="docker-compose-nest-gazebo.yaml"
+    EXP_DIR="$EXAMPLES_PATH/husky_braitenberg/"
+    if [[ $XPRA -eq 1 ]]; then
+        COMPOSE_FILE="docker-compose-xpra-nest-gazebo.yaml"
+    else
+        COMPOSE_FILE="docker-compose-nest-gazebo.yaml"
+    fi
 fi
 
 if [[ -f "$REPO_ROOT/.env" ]]; then
@@ -60,9 +84,39 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
 fi
 export NRP_DOCKER_REGISTRY="${NRP_DOCKER_REGISTRY:-nrp-local}"
 export NRP_CORE_TAG="${NRP_CORE_TAG:-local}"
-export NRPCORE_EXPERIMENT_DIR="$EXAMPLES_PATH/husky_braitenberg/"
+export NRPCORE_EXPERIMENT_DIR="$EXP_DIR"
 
-echo "[run_docker-compose_example] compose=$COMPOSE_FILE  registry=$NRP_DOCKER_REGISTRY  tag=$NRP_CORE_TAG"
+echo "[run_docker-compose_example] compose=$COMPOSE_FILE  exp_dir=$EXP_DIR  registry=$NRP_DOCKER_REGISTRY  tag=$NRP_CORE_TAG"
+
+# For the foraging experiment we capture the compose log to a temp
+# file and run a post-run functional check that asserts the SNN
+# actually drove the husky (camera saw colour, brain produced motor
+# output, wheels received non-zero commands). The husky_braitenberg
+# experiment doesn't yet ship the same diagnostics, so the check is
+# foraging-only — for husky we keep the simple "exec docker compose"
+# path.
+if [[ $FORAGING -eq 1 ]]; then
+    LOG_FILE="$(mktemp -t nrp-foraging-XXXXXX.log)"
+    echo "[run_docker-compose_example] capturing log to $LOG_FILE for post-run functional check"
+    set +e
+    docker compose -f "$EXAMPLES_PATH/$COMPOSE_FILE" \
+        up --abort-on-container-exit --remove-orphans 2>&1 | tee "$LOG_FILE"
+    compose_rc=${PIPESTATUS[0]}
+    set -e
+    echo
+    echo "[run_docker-compose_example] --- functional check ---"
+    # set+e while the check runs so a non-zero exit doesn't abort the
+    # wrapper before check_rc is captured / messages are printed.
+    set +e
+    bash "$EXP_DIR/check_functionality.sh" "$LOG_FILE"
+    check_rc=$?
+    set -e
+    if [[ "$compose_rc" -ne 0 ]]; then
+        echo "[run_docker-compose_example] compose exited $compose_rc (non-zero)" >&2
+        exit "$compose_rc"
+    fi
+    exit "$check_rc"
+fi
 
 exec docker compose -f "$EXAMPLES_PATH/$COMPOSE_FILE" \
     up --abort-on-container-exit --remove-orphans

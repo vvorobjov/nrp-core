@@ -1,0 +1,45 @@
+{
+    "SimulationName": "foraging_husky_simulation",
+    "SimulationDescription": "Husky with a drive-state SNN (POP_HUNGRY / POP_SATED) foraging for green food and resting at blue zones, with grey-obstacle reflex avoidance. Tracked in EBR2-32.",
+    "SimulationTimeout": 60,
+    "EngineConfigs": [
+        {
+            "EngineType": "gazebo_grpc",
+            "EngineName": "gazebo",
+            "ServerAddress": "localhost:9020",
+            "GazeboWorldFile": "foraging_world.sdf",
+            "GazeboSDFModels": [
+                {
+                    "Name": "husky",
+                    "File": "husky.sdf",
+                    "InitPose": "0.0 0.0 0.19 0 0 0"
+                }
+            ],
+            "EngineProcStartParams": ["--verbose"]
+        },
+        {
+            "EngineType": "nest_json",
+            "EngineName": "nest",
+            "NestInitFileName": "brain.py",
+            "EngineEnvParams": ["PYNEST_QUIET=1"]
+        }
+    ],
+    "DataPackProcessingFunctions": [
+        {
+            "Name": "camera_to_sensory",
+            "FileName": "camera_to_sensory.py"
+        },
+        {
+            "Name": "obstacle_to_avoidance",
+            "FileName": "obstacle_to_avoidance.py"
+        },
+        {
+            "Name": "drive_update",
+            "FileName": "drive_update.py"
+        },
+        {
+            "Name": "motors_to_husky",
+            "FileName": "motors_to_husky.py"
+        }
+    ]
+}

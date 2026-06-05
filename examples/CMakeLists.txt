@@ -75,6 +75,31 @@ set_tests_properties(Examples.HuskyBraitenbergCG
         DISABLED $<OR:$<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>,$<NOT:$<BOOL:${BUILD_GAZEBO_ENGINE_SERVER}>>>
         TIMEOUT 150)
 
+# EBR2-32: foraging_husky drive-state SNN experiment.
+# Integration smoke runs at SimulationTimeout=2 like the other
+# example smoke entries — long enough to confirm nrp-core can launch
+# both engines and ship one tick around the loop, short enough not
+# to dominate ctest wall-clock.
+add_test(
+    NAME Examples.ForagingHusky
+    COMMAND NRPCoreSim -c simulation_config.json -p "NRPNestJSONEngine.so,NRPGazeboGrpcEngine.so" -o SimulationTimeout=2
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/foraging_husky)
+set_tests_properties(Examples.ForagingHusky
+    PROPERTIES
+        DISABLED $<OR:$<NOT:$<BOOL:${BUILD_NEST_ENGINE_SERVER}>>,$<NOT:$<BOOL:${BUILD_GAZEBO_ENGINE_SERVER}>>>
+        TIMEOUT 150)
+
+# Pure-Python unit tests over the TF helpers in foraging_husky/. These
+# do not require Gazebo or NEST, so they stay enabled even on builds
+# where ENGINE_SERVER flags are OFF.
+add_test(
+    NAME Examples.ForagingHuskyTFUnit
+    COMMAND python3 -m pytest -q tests/test_tfs.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/foraging_husky)
+set_tests_properties(Examples.ForagingHuskyTFUnit
+    PROPERTIES
+        TIMEOUT 60)
+
 add_custom_target(gcovr-examples
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMAND echo "gcovr is not available for the Tests with examples"

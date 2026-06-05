@@ -1,0 +1,238 @@
+<sdf version='1.7'>
+  <world name='foraging'>
+
+    <light name='sun' type='directional'>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>0 0.1 -0.9</direction>
+      <cast_shadows>1</cast_shadows>
+    </light>
+
+    <model name='ground_plane'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.4 0.3 0.2 1</ambient>
+            <diffuse>0.4 0.3 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ===================================================================
+         Food (green cylinders). Names food_0..food_3 — must match params.py.
+         Drive-state SNN treats these as goals when POP_HUNGRY is winning;
+         camera_to_sensory.py picks them up by HSV-green pixel detection;
+         motors_to_husky.py respawns one when the husky base_link comes
+         within EAT_DISTANCE_M.
+         =================================================================== -->
+
+    <model name='food_0'>
+      <!-- All food + rest models are placed OUTSIDE the husky's
+           initial camera cone (heading 0, FOV 90° → ±45° from +X).
+           The husky must rotate (driven by the POP_HUNGRY search bias
+           in brain.py) to scan the arena and discover any target.
+           The whole point of the experiment is the SNN actually
+           controlling exploration — a target dead-ahead at startup
+           would defeat that. -->
+      <pose>3.5 3.5 0.25 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.25</radius><length>0.5</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.8 0.1 1</ambient>
+            <diffuse>0.1 0.8 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="food_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <model name='food_1'>
+      <pose>-2.5 3.5 0.25 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.25</radius><length>0.5</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.8 0.1 1</ambient>
+            <diffuse>0.1 0.8 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="food_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <model name='food_2'>
+      <pose>3.0 -3.5 0.25 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.25</radius><length>0.5</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.8 0.1 1</ambient>
+            <diffuse>0.1 0.8 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="food_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <model name='food_3'>
+      <pose>-2.5 -3.0 0.25 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.25</radius><length>0.5</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.8 0.1 1</ambient>
+            <diffuse>0.1 0.8 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="food_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <!-- ===================================================================
+         Rest zones (blue boxes). Names rest_0..rest_2. Sought when
+         POP_SATED is winning.
+         =================================================================== -->
+
+    <model name='rest_0'>
+      <pose>0.0 4.0 0.05 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><box><size>0.8 0.8 0.1</size></box></geometry>
+          <material>
+            <ambient>0.1 0.2 0.9 1</ambient>
+            <diffuse>0.1 0.2 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="rest_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <model name='rest_1'>
+      <pose>3.5 -3.5 0.05 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><box><size>0.8 0.8 0.1</size></box></geometry>
+          <material>
+            <ambient>0.1 0.2 0.9 1</ambient>
+            <diffuse>0.1 0.2 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="rest_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <model name='rest_2'>
+      <pose>-4.0 -1.0 0.05 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <visual name='v'>
+          <geometry><box><size>0.8 0.8 0.1</size></box></geometry>
+          <material>
+            <ambient>0.1 0.2 0.9 1</ambient>
+            <diffuse>0.1 0.2 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+          <plugin name="rest_model" filename="NRPGazeboGrpcModelControllerPlugin.so"/>
+    </model>
+
+    <!-- ===================================================================
+         Obstacles (grey cylinders). Names obstacle_0..obstacle_2. The
+         camera-driven reflex pathway in brain.py injects strong
+         contralateral inhibition into the motor populations when the
+         grey pixel area on one side of the camera exceeds threshold —
+         the husky turns away regardless of drive state.
+         =================================================================== -->
+
+    <model name='obstacle_0'>
+      <!-- Obstacles also outside the husky's initial FOV cone — first
+           the husky has to rotate, find a coloured target, drive
+           toward it; only then does the obstacle reflex kick in
+           when the husky's heading brings an obstacle into view. -->
+      <pose>2.5 -3.0 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <collision name='c'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+        </collision>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='obstacle_1'>
+      <pose>-2.5 3.0 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <collision name='c'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+        </collision>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='obstacle_2'>
+      <!-- Kept off the straight-line path from origin to food_0 so the
+           first eat event can fire even at modest steering accuracy. -->
+      <pose>3.5 2.5 0.5 0 0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <collision name='c'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+        </collision>
+        <visual name='v'>
+          <geometry><cylinder><radius>0.4</radius><length>1.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.5 0.5 1</ambient>
+            <diffuse>0.5 0.5 0.5 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <physics name='default_physics' default='1' type='ode'>
+      <gravity>0 0 -9.81</gravity>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <plugin name='nrp_world' filename='NRPGazeboGrpcWorldPlugin.so'/>
+
+  </world>
+</sdf>
