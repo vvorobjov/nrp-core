@@ -33,9 +33,16 @@ add_library(lib_nlohmann_json_schema_validator STATIC IMPORTED )
 set_property(TARGET lib_nlohmann_json_schema_validator PROPERTY
         IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libnlohmann_json_schema_validator.so")
 
-add_library(lib_spdlog STATIC IMPORTED )
-set_property(TARGET lib_spdlog PROPERTY
-        IMPORTED_LOCATION "@NRP_DEP_CMAKE_INSTALL_PREFIX@/lib/libspdlog.a")
+# spdlog: since EBR2-81 dropped focal, nrp_general_library links the
+# system spdlog via the imported target spdlog::spdlog (CMakeLists.txt
+# `find_package(spdlog 1.8 REQUIRED)` + PUBLIC link), replacing the old
+# bundled libspdlog.a / lib_spdlog target. That PUBLIC link is recorded
+# in the exported targets file, so downstream consumers that
+# find_package(NRPGeneralLibrary) must resolve spdlog::spdlog too —
+# otherwise configure fails with "links to target spdlog::spdlog but the
+# target was not found" (e.g. the sub-cmake invoked by
+# TEST_FN_FACTORY_MODULE; see EBR2-92). Mirror the main CMakeLists call.
+find_package(spdlog 1.8 REQUIRED)
 
 include(${CMAKE_CURRENT_LIST_DIR}/@LIB_EXPORT_NAME@.cmake)
 
