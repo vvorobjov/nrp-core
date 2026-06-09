@@ -64,6 +64,24 @@ jobs:
           docker image prune -af || true
           df -h /
 
+      - name: Add swap
+        # The nest-gazebo runtime compile links Gazebo/ROS-typesupport
+        # C++ units that each peak >8 GB; .ci/20-build.sh runs -j4 on a
+        # 16 GB runner, which OOM-kills the link (exit 143 / SIGTERM at
+        # ~94%). A large swapfile (disk is 100+ GB free) lets the peak
+        # spill instead of being killed. Host swap is used automatically
+        # by the `docker build` compiler processes — no Dockerfile or
+        # build-script change needed.
+        run: |
+          set -euxo pipefail
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile
+          sudo fallocate -l 30G /mnt/swapfile || sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=30720
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
