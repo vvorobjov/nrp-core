@@ -105,11 +105,11 @@ class EventLoopEngine(EventLoopInterface):
         for name in self._dp_names:
             self._dp_store[name] = []
 
-        def on_connect(client, userdata, flags, rc):
-            if rc == 0:
+        def on_connect(client, userdata, flags, reason_code, properties):
+            if reason_code == 0:
                 logging.info("Connected to mqtt server")
             else:
-                logging.warning("Failed to connect to mqtt server with result code {}".format(rc))
+                logging.warning("Failed to connect to mqtt server with result code {}".format(reason_code))
                 return
 
             for name in self._dp_names:
@@ -120,8 +120,10 @@ class EventLoopEngine(EventLoopInterface):
             t = msg.topic
             self._topic_callback(t[t.rfind('/')+1:], msg.payload)
 
-        self._client = mqtt.Client(self._mqtt_config["ClientName"] if "ClientName" in self._mqtt_config
-                                   else self._engine_wrapper.get_engine_name(), True)
+        self._client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+                                   client_id=self._mqtt_config["ClientName"] if "ClientName" in self._mqtt_config
+                                   else self._engine_wrapper.get_engine_name(),
+                                   clean_session=True)
 
         self._client.on_connect = on_connect
         self._client.on_message = on_message
