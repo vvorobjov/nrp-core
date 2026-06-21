@@ -29,7 +29,7 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 # pytest 7.x satisfies both. /home/nrpuser/.local/lib/python3.8/site-
 # packages is already ahead of /usr/lib/python3/dist-packages on
 # sys.path, so the pip-user pytest wins over the apt-provided 4.6.9.
-RUN pip install "grpcio-tools>=1.62.2" "pytest>=7,<8" psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt==1.6.1"
+RUN pip install "grpcio-tools>=1.62.2" "pytest>=7,<8" psutil flask gunicorn flask_cors mpi4py docopt docker "urllib3>=2.0" "paho-mqtt>=2.0,<3"
 
 # Experiments — opencv-python is needed by examples/husky_braitenberg's
 # cam_pf.py (and any other camera-data transceiver function). Without
