@@ -38,5 +38,16 @@ int main(int argc, char *argv[])
     server.waitForInit();
 
     // Run server
-    return server.run();
+    const int returnCode = server.run();
+
+    // Tear the singleton down here, while spdlog is still alive, rather than at
+    // static-destruction time. The server is held in a static unique_ptr; if it
+    // were destroyed during static teardown, a static NRPLogger's destructor may
+    // already have called the global spdlog::shutdown(), and the engine-server
+    // destructors' trace logging would then dereference freed spdlog state
+    // (SIGSEGV on shutdown). Destroying it explicitly here makes the order
+    // deterministic. [EBR2-98]
+    NestServerExecutable::shutdown();
+
+    return returnCode;
 }
