@@ -2,6 +2,8 @@ This README file contains information on how to get nrp-core installed in your s
 
 **WARNING:** nrp-core targets Ubuntu 22.04 (jammy) only. The instructions below assume that OS and version. Installation in other environments might be possible but has not been tested. EBR2-81 dropped the parallel Ubuntu 20.04 chain.
 
+**NOTE:** the heavy runtime image variants (`nrp-vanilla`, `nrp-gazebo`, `nrp-nest-gazebo`, and their xpra/opensim siblings) are not yet published to a registry. On a fresh clone you must build them locally with `build_nrp_core_image.sh` before running the docker-compose examples; the `.env.template` default (`NRP_DOCKER_REGISTRY=nrp-local`) points at that locally-built image set. Switch to the published namespace only once CI ships those images.
+
 ## Quick start for contributors (devcontainer loop)
 
 If you have Docker installed and just want to rebuild + run the full test
