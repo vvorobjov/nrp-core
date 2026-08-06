@@ -53,7 +53,7 @@ jobs:
       NRP_DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USER }}
     steps:
       - name: Reclaim disk space
-        # The nest-gazebo chain is multi-GB (NEST 3.9 from source +
+        # The nest-gazebo chain is multi-GB (NEST 3.10 from source +
         # Gazebo 11 + ROS 2). Drop the runner's unused toolchains first.
         run: |
           set -euxo pipefail

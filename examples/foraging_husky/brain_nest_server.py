@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Foraging-husky brain — nest_server / docker-compose variant.
 
-This script runs **inside the docker-registry.ebrains.eu/nest/nest-simulator:3.9
+This script runs **inside the docker-registry.ebrains.eu/nest/nest-simulator:3.10
 container** spawned by docker-compose-foraging-nest-gazebo.yaml. That
-container ships pure NEST 3.9 plus the nest-server REST API; it does
+container ships pure NEST 3.10 plus the nest-server REST API; it does
 NOT have nrp_core installed AND does not mount the experiment dir, so
 neither `from nrp_core...` nor `import params` is reachable here. NRP-
 core POSTs this file's contents to /exec and the nest-server evaluates

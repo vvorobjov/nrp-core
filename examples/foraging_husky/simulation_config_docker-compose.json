@@ -1,6 +1,6 @@
 {
     "SimulationName": "foraging_husky_simulation",
-    "SimulationDescription": "Husky with a drive-state SNN foraging for food / resting at blue zones, with grey-obstacle reflex. Compose variant: NEST runs as a docker-registry.ebrains.eu/nest/nest-simulator:3.9 sidecar with nest-server REST, Gazebo runs as nrp-gazebo (or nrp-xpra-gazebo for the visualised topology), NRPCoreSim runs as nrp-vanilla and talks to both over the docker-compose network.",
+    "SimulationDescription": "Husky with a drive-state SNN foraging for food / resting at blue zones, with grey-obstacle reflex. Compose variant: NEST runs as a docker-registry.ebrains.eu/nest/nest-simulator:3.10 sidecar with nest-server REST, Gazebo runs as nrp-gazebo (or nrp-xpra-gazebo for the visualised topology), NRPCoreSim runs as nrp-vanilla and talks to both over the docker-compose network.",
     "SimulationTimeout": 60,
     "EngineConfigs": [
         {
