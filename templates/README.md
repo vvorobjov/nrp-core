@@ -13,6 +13,15 @@ mounted catalog.
 
 ## Requirements for a template to work in the UI
 
+A UI tile launches through a different path than `examples/` do: UI → proxy →
+backend (`nrp-backend`) → `NRPCoreSim`, on the single-image `nest-gazebo`
+backend. An `examples/` config authored for the CLI / docker-compose run path
+is **not** automatically launchable there — dropping a copy into `templates/`
+(even after adding a `datatransfer_grpc_engine`) is necessary but **not
+sufficient**, and can produce a tile that renders but transitions
+`started → failed` at launch. Making an experiment backend-runnable is a
+per-experiment adaptation, tracked in **EBR2-120**.
+
 Every config placed here must, on top of being valid JSON:
 
 - Use **only engines available in the shipped `nest-gazebo` backend**:
@@ -35,19 +44,21 @@ Every config placed here must, on top of being valid JSON:
   is `husky_braitenberg/simulation_config_nest_server_empty_launch.json`, the
   NEST Desktop integration tile, which only runs under the nest-desktop compose
   topology — see the table below.
+- **Launch-gate it.** Before adding a tile, confirm it clones, creates, starts
+  and advances the sim clock on the live `nest-gazebo` stack
+  (`nrp-user-scripts` husky/acceptance gate). Static JSON validity does not
+  prove backend-runnability.
 
 ## Current catalog
 
 Because the glob is per-JSON, a directory with several `simulation_config*.json`
-files renders **one tile per file**. The current set is **7 tiles** across 4
+files renders **one tile per file**. The current set is **5 tiles** across 2
 directories (the `SimulationName` column is exactly the label shown in the UI):
 
 | Dir / config | UI tile (`SimulationName`) | Engines | What it shows |
 |---|---|---|---|
 | `husky_braitenberg/simulation_config.json` | `husky_simulation` | gazebo_grpc + nest_json | Braitenberg-2b reflex: camera → NEST → wheels. |
 | `husky_braitenberg/simulation_config_nest_server_empty_launch.json` | `husky_simulation_nest_server` | gazebo_grpc + nest_server | NEST Desktop integration variant — expects a separate `nest-server` (nest-desktop compose topology), not the single-image backend. |
-| `foraging_husky/simulation_config.json` | `Foraging Husky (drive-state SNN)` | gazebo_grpc + nest_json | Drive-state SNN (HUNGRY/SATED) foraging + obstacle reflex (EBR2-32). |
-| `nest_simple/simulation_config.json` | `NEST Simple (noise-driven neuron)` | nest_json | Minimal NEST-only demo: noise-driven neuron with a voltmeter readout. |
 | `tf_exchange/simulation_config.json` | `tf_exchange Python` | python_json ×2 | Two Python (JSON) engines exchanging a datapack via a transceiver function. |
 | `tf_exchange/simulation_config_datatransfer.json` | `tf_exchange_mqtt_dump_test` | python_json ×2 | Same, exercising the MQTT data-dump path. |
 | `tf_exchange/simulation_config_grpc.json` | `tf_exchange gRPC` | python_grpc ×2 | Same exchange over the gRPC Python engines. |
@@ -60,3 +71,10 @@ directories (the `SimulationName` column is exactly the label shown in the UI):
   but never launched. The experiment is kept under
   [`../examples/opensim_tvb/`](../examples/opensim_tvb/). It can return to
   the catalog once a `tvb-opensim` backend variant exists (separate work).
+- **`foraging_husky`** and **`nest_simple`** — good demo candidates, but a
+  straight copy of their `examples/` configs fails at backend launch (they are
+  authored for the CLI / compose run path). They stay under
+  [`../examples/foraging_husky/`](../examples/foraging_husky/) and
+  [`../examples/nest_simple/`](../examples/nest_simple/), where they run via
+  `NRPCoreSim` / docker-compose. Promoting them to the catalog needs the
+  per-experiment backend adaptation tracked in **EBR2-120**.
