@@ -88,6 +88,35 @@ export NRPCORE_EXPERIMENT_DIR="$EXP_DIR"
 
 echo "[run_docker-compose_example] compose=$COMPOSE_FILE  exp_dir=$EXP_DIR  registry=$NRP_DOCKER_REGISTRY  tag=$NRP_CORE_TAG"
 
+# Preflight: make sure the runtime images this compose file references
+# exist. A fresh clone has none, and the documented build
+# (build_nrp_core_image.sh nrp-nest-gazebo) produces the *-env chain plus
+# nrp-nest-gazebo — NOT the images these compose files pull, which are
+# nrp-vanilla (nrp-core-service) and nrp-gazebo / nrp-xpra-gazebo
+# (gazebo-service). When the local registry is in use, build any that are
+# missing so `docker compose up` doesn't fail; for a remote registry,
+# assume they can be pulled and let compose fetch them.
+ensure_image() {
+    local service="$1"
+    local image="${NRP_DOCKER_REGISTRY}/${service}:${NRP_CORE_TAG}"
+    if docker image inspect "$image" >/dev/null 2>&1; then
+        return 0
+    fi
+    if [[ "$NRP_DOCKER_REGISTRY" == "nrp-local" ]]; then
+        echo "[run_docker-compose_example] $image missing — building via build_nrp_core_image.sh $service"
+        ( cd "$REPO_ROOT" && bash build_nrp_core_image.sh "$service" )
+    else
+        echo "[run_docker-compose_example] $image not present locally — docker compose will pull it from $NRP_DOCKER_REGISTRY"
+    fi
+}
+
+if [[ $XPRA -eq 1 ]]; then
+    ensure_image "nrp-xpra-gazebo"
+else
+    ensure_image "nrp-gazebo"
+fi
+ensure_image "nrp-vanilla"
+
 # For the foraging experiment we capture the compose log to a temp
 # file and run a post-run functional check that asserts the SNN
 # actually drove the husky (camera saw colour, brain produced motor
