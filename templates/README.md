@@ -16,9 +16,12 @@ mounted catalog.
 Every config placed here must, on top of being valid JSON:
 
 - Use **only engines available in the shipped `nest-gazebo` backend**:
-  `gazebo_grpc`, `nest_json`, `nest_server`, `python_json`, `python_grpc`,
-  `datatransfer_grpc_engine`, plus the ROS/MQTT proxies. Engines that need
-  another image (OpenSim, TVB, PyBullet, EDLUT, SpiNNaker) must not appear.
+  `gazebo_grpc`, `nest_json`, `python_json`, `python_grpc`,
+  `datatransfer_grpc_engine`, plus the ROS/MQTT proxies. (`nest_server` is also
+  available as a client engine, but it talks to an *external* NEST server, so a
+  config using it only launches when a `nest-server` sidecar is present — the
+  nest-desktop compose topology.) Engines that need another image (OpenSim, TVB,
+  PyBullet, EDLUT, SpiNNaker) must not appear.
 - Include a **`datatransfer_grpc_engine`** entry — the backend refuses to
   launch a template without one (`experiment_configuration.validate` raises
   `No datatransfer_grpc_engine in experiment configuration`). The backend
