@@ -7,7 +7,7 @@ version: '3.2'
 services:
 
     nest-service:
-        image: docker-registry.ebrains.eu/nest/nest-simulator:3.9
+        image: docker-registry.ebrains.eu/nest/nest-simulator:3.10
         environment:
             NEST_CONTAINER_MODE: "nest-server"
             NEST_SERVER_BUFFER_SIZE: 65535
