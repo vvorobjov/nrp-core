@@ -26,18 +26,28 @@ Every config placed here must, on top of being valid JSON:
   the `localhost:1883` placeholder here is fine.
 - Carry a friendly **`SimulationName`** and **`SimulationDescription`** so the
   tile renders with a human-readable label.
-- Use the **single-backend variant** of the experiment (everything launched
-  in-image by `NRPCoreSim`), not a distributed / sidecar config that expects
-  separate `nest-server` or `nrp-gazebo` containers.
+- Prefer the **single-backend variant** of the experiment (everything launched
+  in-image by `NRPCoreSim`) over a distributed / sidecar config that expects
+  separate `nest-server` or `nrp-gazebo` containers. The one existing exception
+  is `husky_braitenberg/simulation_config_nest_server_empty_launch.json`, the
+  NEST Desktop integration tile, which only runs under the nest-desktop compose
+  topology — see the table below.
 
 ## Current catalog
 
-| Template | Engines | What it shows |
-|---|---|---|
-| `husky_braitenberg` | gazebo_grpc + nest_json | Braitenberg-2b reflex: camera → NEST → wheels. |
-| `foraging_husky` | gazebo_grpc + nest_json | Drive-state SNN (HUNGRY/SATED) foraging + obstacle reflex (EBR2-32). |
-| `nest_simple` | nest_json | Minimal NEST-only demo: noise-driven neuron with a voltmeter readout. |
-| `tf_exchange` | python_json / python_grpc | Two Python engines exchanging a datapack via a transceiver function. |
+Because the glob is per-JSON, a directory with several `simulation_config*.json`
+files renders **one tile per file**. The current set is **7 tiles** across 4
+directories (the `SimulationName` column is exactly the label shown in the UI):
+
+| Dir / config | UI tile (`SimulationName`) | Engines | What it shows |
+|---|---|---|---|
+| `husky_braitenberg/simulation_config.json` | `husky_simulation` | gazebo_grpc + nest_json | Braitenberg-2b reflex: camera → NEST → wheels. |
+| `husky_braitenberg/simulation_config_nest_server_empty_launch.json` | `husky_simulation_nest_server` | gazebo_grpc + nest_server | NEST Desktop integration variant — expects a separate `nest-server` (nest-desktop compose topology), not the single-image backend. |
+| `foraging_husky/simulation_config.json` | `Foraging Husky (drive-state SNN)` | gazebo_grpc + nest_json | Drive-state SNN (HUNGRY/SATED) foraging + obstacle reflex (EBR2-32). |
+| `nest_simple/simulation_config.json` | `NEST Simple (noise-driven neuron)` | nest_json | Minimal NEST-only demo: noise-driven neuron with a voltmeter readout. |
+| `tf_exchange/simulation_config.json` | `tf_exchange Python` | python_json ×2 | Two Python (JSON) engines exchanging a datapack via a transceiver function. |
+| `tf_exchange/simulation_config_datatransfer.json` | `tf_exchange_mqtt_dump_test` | python_json ×2 | Same, exercising the MQTT data-dump path. |
+| `tf_exchange/simulation_config_grpc.json` | `tf_exchange gRPC` | python_grpc ×2 | Same exchange over the gRPC Python engines. |
 
 ## Not in the catalog
 
