@@ -1,0 +1,161 @@
+name: CI (nest-gazebo)
+
+# Runs cmake configure / build / ctest against the prebuilt
+# `nrp-nest-gazebo-env:latest` image that build-env-images.yml pushes to
+# GHCR. That image already carries NEST 3.9, Gazebo 11, ROS 2 Humble,
+# paho-mqtt and every apt / pip dependency from the nrp-core.Dockerfile
+# `nrp-core-env` target, so this workflow only adds the source checkout,
+# the cmake build and the tests — it does NOT rebuild the env (reuse).
+#
+# This is the integration gate CLAUDE.md declares mandatory but that
+# ci-vanilla.yml does NOT cover: the nest-gazebo preset
+# (.ci/cmake_cache/nest-gazebo.cmake) turns ON the Gazebo + NEST engine
+# servers and the ROS / MQTT proxies, so the build + ctest here exercise
+# the entrypoint / PYTHONPATH / gazebo plugins / nest-server / MQTT wiring
+# that the vanilla slice can't. Only Ubuntu 22.04 (jammy) is supported;
+# EBR2-81 dropped the parallel focal chain.
+
+on:
+  push:
+    branches:
+      - master
+      - development
+      - "ci-**"
+      - "gh-actions-**"
+  pull_request:
+    # Docs-only PRs don't change the build; skip the heavy nest-gazebo
+    # build + test for them. Mirrors the doc/markdown paths.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-nest-gazebo-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Inside the container GH Actions falls back to `sh` (dash) for
+    # multi-line `run:` steps unless we pin bash explicitly. The .ci
+    # scripts use `set -o pipefail` and process substitution, both
+    # bash-only. Pinning here covers every step in the workflow.
+    shell: bash
+
+jobs:
+  test:
+    name: jammy nest-gazebo
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/nrp-nest-gazebo-env:latest
+      # Image's default user is `nrpuser` (uid 1000), but the runner
+      # mounts the workspace as a different uid; running as root sidesteps
+      # the mismatch. We still set safe.directory='*' below for git.
+      options: --user 0:0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      # NRP_INSTALL_DIR / NRP_DEPS_INSTALL_DIR match the paths baked into
+      # the env image so the NEST / Gazebo / ROS / paho libs stay findable
+      # and our fresh nrp-core install lands where every canonical helper
+      # (and ~/.bashrc / .nrp_env) expects it. GH Actions forces
+      # HOME=/github/home for container jobs, so pin it back to the
+      # nrpuser home that owns ~/.bashrc and the .local install trees.
+      NRP_INSTALL_DIR: /home/nrpuser/.local/nrp
+      NRP_DEPS_INSTALL_DIR: /home/nrpuser/.local/nrp_deps
+      CMAKE_CACHE_FILE: .ci/cmake_cache/nest-gazebo.cmake
+      HOME: /home/nrpuser
+      # gtest_discover_tests runs each freshly-linked test binary during
+      # the build step (post-link --gtest_list_tests), so the env image's
+      # dep libs and this build's own libs must be discoverable at compile
+      # time.
+      LD_LIBRARY_PATH: /home/nrpuser/.local/nrp/lib:/home/nrpuser/.local/nrp_deps/lib
+      # The env image's Dockerfile only adds NRP_DEPS_INSTALL_DIR/bin to
+      # PATH (NRP_INSTALL_DIR/bin doesn't exist at image build time). Add
+      # NRP_INSTALL_DIR/bin so ctest's NrpServer / Launcher cases find the
+      # freshly-installed NRPCoreSim.
+      PATH: /home/nrpuser/.local/nrp/bin:/home/nrpuser/.local/nrp_deps/bin:/home/nrpuser/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Mark workspace as a safe git directory
+        # cmake's configure step calls `git submodule update --init
+        # --recursive`, which refuses to operate on a workspace owned
+        # by a different uid than the running shell.
+        run: git config --system --add safe.directory '*'
+
+      - name: Configure
+        run: bash .ci/11-prepare-build.sh
+
+      - name: Build & install
+        run: bash .ci/20-build.sh
+
+      - name: Run unit tests
+        # Gate the PR on the nest-gazebo ctest run. Gazebo tests need an X
+        # server, so wrap ctest in xvfb-run (as .ci/30-run-tests.sh does).
+        # We deliberately do NOT call .ci/30-run-tests.sh: its 0x8 exit
+        # mask (kept for Jenkins xunit parsing) would swallow failing tests
+        # and defeat the gate. Any non-zero ctest exit fails the job — the
+        # same strict rule .ci/00-dev-rebuild-and-test.sh uses locally.
+        run: |
+          # ~/.bashrc wires ROS 2 Humble + Gazebo + NEST/nrp env; it ends
+          # by sourcing $NRP_INSTALL_DIR/bin/.nrp_env, so source it before
+          # `set -e` (the source is env setup, not a gate).
+          source "${HOME}/.bashrc" || true
+          set -euxo pipefail
+          PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          export PYTHONPATH="${NRP_INSTALL_DIR}/lib/python${PYVER}/site-packages:${PYTHONPATH:-}"
+          cd build
+          # --timeout 120 caps each test at 2 min (EBR2-78); the longest
+          # legitimately-passing test finishes in ~42 s.
+          xvfb-run -s "-screen 0 1280x1024x24 -ac -nolisten tcp -nolisten unix" \
+            --auto-servernum -e /dev/stdout \
+            ctest --output-on-failure --no-compress-output --test-output-size-failed 300000 --timeout 120 -T Test
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          set -euxo pipefail
+          if [ ! -f build/Makefile ]; then
+            echo "build/Makefile missing — coverage step skipped."
+            exit 0
+          fi
+          # gcovr is intentionally NOT in the env image (dev-only tool);
+          # the canonical .ci/30-run-tests.sh pip-installs it at coverage
+          # time, so do the same here. Pin to 5.0 to match the gcovr.xml
+          # schema the repo is wired against.
+          python3 -m pip install --user "gcovr==5.0"
+          cd build
+          make gcovr
+          gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" --print-summary \
+            | tee gcovr-summary.txt
+          {
+            echo "## Coverage (jammy nest-gazebo)"
+            echo
+            echo '```'
+            cat gcovr-summary.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload coverage and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-nest-gazebo-jammy
+          path: |
+            build/gcovr.xml
+            build/gcovr.html
+            build/gcovr-summary.txt
+            build/Testing/**/*.xml
+            build/xml/**/*.xml
+          if-no-files-found: ignore
