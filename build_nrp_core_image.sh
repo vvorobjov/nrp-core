@@ -40,6 +40,20 @@ function build_service {
     local base_image=$(echo "$build_info" | grep BASE_IMAGE | awk -F 'BASE_IMAGE:' '{print $2}' | xargs)
     local image_name=$(echo "$build_info" | grep image | awk -F 'image:' '{print $2}' | xargs)
 
+    # Opt-in reuse: when NRP_REUSE_EXISTING_IMAGES is set, skip (re)building
+    # any *dependency* layer whose image is already present locally. CI
+    # pre-seeds the *-env layers by pulling + tagging the prebuilt GHCR
+    # images, so the multi-hour NEST/Gazebo/ROS env recompile is skipped.
+    # The requested target service is always (re)built, and local dev /
+    # the env-image workflow keep their always-rebuild behaviour when the
+    # variable is unset.
+    if [[ -n "${NRP_REUSE_EXISTING_IMAGES:-}" ]] \
+        && [[ $target_service_name != $service_name ]] \
+        && docker image inspect "$image_name" > /dev/null 2>&1; then
+        echo "Image $image_name already present; reusing it for service $service_name (skipping build)"
+        return
+    fi
+
     if [[ $base_image == ${NRP_DOCKER_REGISTRY}/* ]]; then
         echo "Trying to build the base image $base_image"
         base_image_service_name=$(envsubst < "${docker_compose_file}" | awk -v RS= -v FS="\n" -v image_name="image: ${base_image}" '$0 ~ image_name {print $1}' | awk -F':' '{print $1}')
