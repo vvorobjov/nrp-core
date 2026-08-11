@@ -120,8 +120,18 @@ class EventLoopEngine(EventLoopInterface):
             t = msg.topic
             self._topic_callback(t[t.rfind('/')+1:], msg.payload)
 
-        self._client = mqtt.Client(self._mqtt_config["ClientName"] if "ClientName" in self._mqtt_config
-                                   else self._engine_wrapper.get_engine_name(), True)
+        client_name = self._mqtt_config["ClientName"] if "ClientName" in self._mqtt_config \
+            else self._engine_wrapper.get_engine_name()
+
+        # paho-mqtt 2.0 made callback_api_version a required first argument and 2.1+
+        # raises without it. VERSION1 keeps the existing v1 callback signatures
+        # (on_connect(client, userdata, flags, rc), on_message(client, userdata, msg))
+        # working unchanged. Guarded with hasattr so the module still constructs a
+        # client against paho-mqtt 1.x, where CallbackAPIVersion does not exist.
+        client_kwargs = {"client_id": client_name, "clean_session": True}
+        if hasattr(mqtt, "CallbackAPIVersion"):
+            client_kwargs["callback_api_version"] = mqtt.CallbackAPIVersion.VERSION1
+        self._client = mqtt.Client(**client_kwargs)
 
         self._client.on_connect = on_connect
         self._client.on_message = on_message
