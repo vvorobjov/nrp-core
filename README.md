@@ -2,6 +2,8 @@ This README file contains information on how to get nrp-core installed in your s
 
 **WARNING:** nrp-core targets Ubuntu 22.04 (jammy) only. The instructions below assume that OS and version. Installation in other environments might be possible but has not been tested. EBR2-81 dropped the parallel Ubuntu 20.04 chain.
 
+**NOTE:** the heavy runtime image variants (`nrp-vanilla`, `nrp-gazebo`, `nrp-nest-gazebo`, and their xpra/opensim siblings) are not yet published to a registry. On a fresh clone you must build them locally with `build_nrp_core_image.sh` before running the docker-compose examples; the `.env.template` default (`NRP_DOCKER_REGISTRY=nrp-local`) points at that locally-built image set. Switch to the published namespace only once CI ships those images.
+
 ## Quick start for contributors (devcontainer loop)
 
 If you have Docker installed and just want to rebuild + run the full test
@@ -53,8 +55,8 @@ wget https://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
 sudo apt update
 sudo apt install git cmake libpistache-dev libboost-python-dev libboost-filesystem-dev libboost-numpy-dev libcurl4-openssl-dev nlohmann-json3-dev libzip-dev cython3 python3-numpy libgrpc++-dev protobuf-compiler-grpc libprotobuf-dev doxygen libgsl-dev libopencv-dev python3-opencv python3-pil python3-pip libgmock-dev libclang-dev libomp-dev
 
-# required by gazebo engine
-sudo apt install libgazebo11-dev gazebo11 gazebo11-plugin-base
+# required by gazebo engine (jammy Classic packages: no '11' suffix)
+sudo apt install libgazebo-dev gazebo gazebo-plugin-base
 
 # 3- Install required python packages   
 # Remove flask if it was installed to ensure it is installed from pip
@@ -80,14 +82,19 @@ pip install paramiko
 pip install python-on-whales pyyaml
 
    
-# 4- Installing ROS
+# 4- Installing ROS 2
 
-# Install ROS: follow the installation instructions: http://wiki.ros.org/noetic/Installation/Ubuntu. To enable ros support in nrp on `ros-noetic-ros-base` is required.
+# Install ROS 2 Humble: follow the installation instructions at
+# https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
+# To enable ROS support in nrp-core, ros-humble-ros-base and colcon are required.
+sudo apt install ros-humble-ros-base python3-colcon-common-extensions
 
-# 5- Setting CATKIN workspace 
-# If there is an existing catkin workspace in your environment and you would like nrp-core to use it, export the variable CATKIN_WS pointing to it:
-# E.g. export CATKIN_WS=<path to your catkin workspace>
-# Otherwise nrp-core will create and compile a new catkin workspace at: ${HOME}/catkin_ws
+# 5- Setting the colcon workspace
+# nrp-core builds its ROS 2 message package (nrp_ros_msgs) with colcon at
+# cmake-configure time. To reuse an existing colcon workspace, export ROS2_WS
+# pointing to it:
+# E.g. export ROS2_WS=<path to your colcon workspace>
+# Otherwise nrp-core will create and build a new one at: ${HOME}/ros2_ws
 
 # 6- Install SpiNNaker
 # Follow the instructions at: https://spinnakermanchester.github.io/development/gitinstall.html.
@@ -133,14 +140,16 @@ echo 'export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}' >> ~/.bashrc
 
 ```bash
 # Start of installation
-git clone https://bitbucket.org/hbpneurorobotics/nrp-core.git
+# GitHub (vvorobjov/nrp-core) is the canonical repository; contributors add it
+# as the 'github' remote (see CLAUDE.md), a plain clone names it 'origin'.
+git clone https://github.com/vvorobjov/nrp-core.git
 cd nrp-core
 mkdir build
 cd build
 
 export LD_LIBRARY_PATH=${NRP_DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-# if you have ROS installed (Step 4 in dependencies installation), you need to source its setup.bash file before cmake. If you don't need ROS (and did not install it) skip the next line. 
-. /opt/ros/noetic/setup.bash 
+# if you have ROS 2 installed (Step 4 in dependencies installation), you need to source its setup.bash file before cmake. If you don't need ROS (and did not install it) skip the next line. 
+. /opt/ros/humble/setup.bash 
 # make sure that NRP_INSTALL_DIR is set properly as mentioned at the beginning of tutorial
 # See the section "Common NRP-core CMake options" in the documentation for the additional ways to configure the project with CMake
 cmake .. -DCMAKE_INSTALL_PREFIX="${NRP_INSTALL_DIR}" -DNRP_DEP_CMAKE_INSTALL_PREFIX="${NRP_DEPS_INSTALL_DIR}"
@@ -162,11 +171,11 @@ make nrp_doxygen
     source  ${NRP_INSTALL_DIR}/bin/.nrp_env 
     
     . /usr/share/gazebo-11/setup.sh
-    . /opt/ros/noetic/setup.bash
+    . /opt/ros/humble/setup.bash
 
-    # If ROS was installed, setup your catkin workspace. 
-    # If you let nrp-core create one for you (Step 5- Setting CATKIN workspace in dependencies installation) the path to it will be: ${HOME}/catkin_ws
-    . <path to your catkin workspace>/devel/setup.bash # Ex: . ${CATKIN_WS}/devel/setup.bash 
+    # If ROS 2 was installed, source your colcon workspace. 
+    # If you let nrp-core create one for you (Step 5 in dependencies installation) the path to it will be: ${HOME}/ros2_ws
+    . <path to your colcon workspace>/install/setup.bash # Ex: . ${ROS2_WS}/install/setup.bash 
      
     NRPCoreSim -c <SIMULATION_CONFIG_FILE>
 ```
