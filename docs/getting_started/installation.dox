@@ -69,7 +69,7 @@ export NRP_INSTALL_DIR="/home/${USER}/.local/nrp"
 export NRP_DEPS_INSTALL_DIR="/home/${USER}/.local/nrp_deps"
 source  ${NRP_INSTALL_DIR}/bin/.nrp_env
 . /usr/share/gazebo-11/setup.sh
-. /opt/ros/noetic/setup.bash
+. /opt/ros/humble/setup.bash
 \endcode
 
 \section installation_sim Steps for installing additional simulators
