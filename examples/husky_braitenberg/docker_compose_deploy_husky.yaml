@@ -3,7 +3,7 @@ version: '3.2'
 services:
 
     nest-service:
-        image: docker-registry.ebrains.eu/nest/nest-simulator:3.9
+        image: docker-registry.ebrains.eu/nest/nest-simulator:3.10
         env_file:
             - nest.env
         container_name: nrp-nest-simulator
