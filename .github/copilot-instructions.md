@@ -95,10 +95,14 @@ Exception: work against an already-existing ticket the user names up front.
   20.04 chain — there is exactly one supported target.
 - **Canonical image:** see
   [.devcontainer/devcontainer.json](../.devcontainer/devcontainer.json).
-- **CI:** Jenkins only, orchestrated via the root
-  [Jenkinsfile](../Jenkinsfile) and [.ci/Jenkinsfile](../.ci/Jenkinsfile).
-  There are no GitHub Actions workflows today — don't invent one in a drive-by
-  edit.
+- **CI:** GitHub Actions under [.github/workflows/](workflows/):
+  `build-env-images.yml` builds the `*-env` build environments and pushes
+  them to GHCR; `ci-vanilla.yml` and `ci-nest-gazebo.yml` are the unit-test /
+  integration gates (they reuse the prebuilt GHCR env images — no env
+  recompile); `build-images.yml` builds + publishes the runtime images. The
+  root [Jenkinsfile](../Jenkinsfile) / [.ci/Jenkinsfile](../.ci/Jenkinsfile)
+  are legacy. Don't add a new workflow in a drive-by edit — scope it to a
+  ticket like every other change.
 - **Build system:** CMake with feature flags (`ENABLE_GAZEBO`, `ENABLE_NEST`,
   `ENABLE_ROS`, `ENABLE_MQTT`, `ENABLE_OPENSIM`, `ENABLE_TVB`,
   `ENABLE_SPINNAKER`, `ENABLE_EDLUT`). Every new simulator integration must

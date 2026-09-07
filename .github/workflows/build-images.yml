@@ -30,6 +30,11 @@ on:
   push:
     branches: [development, master]
   pull_request:
+    # Docs-only PRs don't change the runtime images; skip the multi-hour
+    # build for them. Mirrors the doc/markdown paths.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 concurrency:
   # NB: the `matrix` context is not available at workflow level, only
@@ -39,6 +44,8 @@ concurrency:
 
 permissions:
   contents: read
+  # Read the prebuilt *-env layers from GHCR (build-env-images.yml pushes them).
+  packages: read
 
 jobs:
   build:
@@ -87,10 +94,56 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build ${{ matrix.service }}
+      - name: Compute image tag
+        # Share NRP_CORE_TAG across the reuse/build/push steps so the
+        # tag the env layers are seeded under matches what build_service
+        # resolves and what the publish step pushes.
+        run: echo "NRP_CORE_TAG=sha-${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR (read prebuilt env layers)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reuse prebuilt env layers from GHCR
+        # Pull the *-env layers that build-env-images.yml already
+        # compiled + pushed and tag them under the local (Docker Hub)
+        # registry name that docker-compose.yaml resolves. build_service()
+        # (guarded by NRP_REUSE_EXISTING_IMAGES in the next step) then
+        # skips the multi-hour NEST/Gazebo/ROS env recompile. Any layer
+        # missing from GHCR is left to be rebuilt from source.
+        env:
+          GHCR_REGISTRY: ghcr.io/${{ github.repository_owner }}
         run: |
           set -euxo pipefail
-          export NRP_CORE_TAG="sha-${GITHUB_SHA::12}"
+          if [[ -z "${NRP_DOCKER_REGISTRY}" ]]; then
+            echo "NRP_DOCKER_REGISTRY unset (e.g. fork PR without secrets); skipping env reuse — layers will be rebuilt."
+            exit 0
+          fi
+          case "${{ matrix.service }}" in
+            nrp-vanilla)     ENV_LAYERS="base-env" ;;
+            nrp-nest-gazebo) ENV_LAYERS="base-env gazebo-env nest-gazebo-env" ;;
+            *)               ENV_LAYERS="" ;;
+          esac
+          for layer in $ENV_LAYERS; do
+            src="${GHCR_REGISTRY}/${layer}:latest"
+            dst="${NRP_DOCKER_REGISTRY}/${layer}:${NRP_CORE_TAG}"
+            if docker pull "$src"; then
+              docker tag "$src" "$dst"
+              echo "Seeded ${dst} from ${src}"
+            else
+              echo "WARNING: ${src} not found in GHCR; ${layer} will be built from source."
+            fi
+          done
+
+      - name: Build ${{ matrix.service }}
+        env:
+          # Reuse the env layers seeded above instead of recompiling them.
+          NRP_REUSE_EXISTING_IMAGES: "1"
+        run: |
+          set -euxo pipefail
           echo "Building ${NRP_DOCKER_REGISTRY}/${{ matrix.service }}:${NRP_CORE_TAG}"
           bash build_nrp_core_image.sh "${{ matrix.service }}"
 

@@ -171,7 +171,7 @@ services:
     gazebo-service:
         env_file:
             - gazebo.env
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-gazebo:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         command: /usr/xvfb-run-gazebo-runcmd.bash
@@ -180,7 +180,7 @@ services:
         container_name: nrp-gazebo
 
     nrp-core-service:
-        image: ${NRP_DOCKER_REGISTRY}nrp-core/nrp-gazebo-nest${NRP_CORE_TAG}
+        image: ${NRP_DOCKER_REGISTRY}/nrp-nest-gazebo:${NRP_CORE_TAG}
         volumes:
             - ${NRPCORE_EXPERIMENT_DIR}:/experiment
         command: NRPCoreSim -c /experiment/simulation_config_docker-compose.json  -m server --server_address 172.16.238.10:50050 --logoutput=all --logfilename=.console_output.log --slave

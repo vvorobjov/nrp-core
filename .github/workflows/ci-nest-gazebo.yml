@@ -1,0 +1,166 @@
+name: CI (nest-gazebo)
+
+# Integration gate for the nest-gazebo path. Runs cmake configure / build /
+# ctest against the prebuilt `nrp-nest-gazebo-env:latest` image that
+# build-env-images.yml compiled + pushed to GHCR — this workflow REUSES
+# that env image (docker pull) and never rebuilds NEST/Gazebo/ROS.
+#
+# ci-vanilla.yml only exercises the vanilla slice; the nest-gazebo preset
+# (.ci/cmake_cache/nest-gazebo.cmake) turns ON the Gazebo + NEST engine
+# servers and the ROS / MQTT proxies, so the build + ctest here exercise the
+# entrypoint / PYTHONPATH / gazebo-plugins / nest-server / MQTT wiring that
+# CLAUDE.md declares mandatory and the vanilla slice can't reach.
+#
+# Unlike ci-vanilla.yml this is NOT a `container:` job: the nest-gazebo
+# source compile links Gazebo/ROS-typesupport C++ units that peak >8 GB
+# (same OOM class build-images.yml hits), and a container job can't free
+# host disk or add host swap. So we run on the host, reclaim disk + add
+# swap first, then `docker run` the env image (the compiler processes use
+# the host swap automatically) — the same recipe .ci/00-dev-rebuild-and-
+# test.sh uses locally. Only Ubuntu 22.04 (jammy) is supported; EBR2-81
+# dropped the parallel focal chain.
+
+on:
+  push:
+    branches:
+      - master
+      - development
+      - "ci-**"
+      - "gh-actions-**"
+  pull_request:
+    # Docs-only PRs don't change the build; skip the heavy nest-gazebo
+    # build + test for them. Mirrors the doc/markdown paths.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-nest-gazebo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: jammy nest-gazebo
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # Reuse the prebuilt env image build-env-images.yml pushes to GHCR.
+      ENV_IMAGE: ghcr.io/${{ github.repository_owner }}/nrp-nest-gazebo-env:latest
+    steps:
+      - name: Reclaim disk space
+        # The nest-gazebo-env image is multi-GB; drop the runner's unused
+        # toolchains so the pull + build tree fit on /.
+        run: |
+          set -euxo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          docker image prune -af || true
+          df -h /
+
+      - name: Add swap
+        # The nest-gazebo source compile links C++ units that each peak
+        # >8 GB; .ci/20-build.sh runs ~-j3 on a 16 GB runner, which
+        # OOM-kills the link without swap. A large swapfile (disk is 100+
+        # GB free after reclaim) lets the peak spill instead of being
+        # killed; the `docker run` compiler processes use host swap
+        # automatically — no Dockerfile or build-script change needed.
+        run: |
+          set -euxo pipefail
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile
+          sudo fallocate -l 30G /mnt/swapfile || sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=30720
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          free -h
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Log in to GHCR (read prebuilt env image)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull prebuilt nest-gazebo env image
+        run: docker pull "${ENV_IMAGE}"
+
+      - name: Build & test (nest-gazebo preset, reuse env image)
+        # Run against the mounted source tree, like .ci/00-dev-rebuild-and-
+        # test.sh. --user 0:0 sidesteps the runner-uid vs nrpuser mismatch
+        # on the mounted workspace; --net=host / --privileged keep parity
+        # with the local dev recipe (localhost ports, gazebo/xvfb plumbing).
+        # The image ENV (HOME=/home/nrpuser, NRP_INSTALL_DIR, PATH,
+        # LD_LIBRARY_PATH, NEST_INSTALL_DIR) is preserved by docker run.
+        run: |
+          set -euxo pipefail
+          docker run --rm --net=host --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace \
+            --user 0:0 \
+            -e CMAKE_CACHE_FILE=.ci/cmake_cache/nest-gazebo.cmake \
+            "${ENV_IMAGE}" \
+            bash -c '
+              set -euxo pipefail
+              git config --system --add safe.directory "*"
+              # Configure + build + install (both scripts source ~/.bashrc).
+              bash .ci/11-prepare-build.sh
+              bash .ci/20-build.sh
+              # ~/.bashrc wires ROS 2 Humble + Gazebo + NEST/nrp env,
+              # including PYTHONPATH via .nrp_env (now present post-install).
+              # ROS/gazebo setup.sh reference unbound vars and may return
+              # non-zero, so source with errexit+nounset off (the .ci
+              # scripts and .ci/00-dev-rebuild-and-test.sh do the same); a
+              # nounset abort inside a sourced file is NOT caught by || true.
+              set +eu
+              source "$HOME/.bashrc"
+              set -eu
+              cd build
+              # Gate: ctest under xvfb (Gazebo needs X). Deliberately NOT
+              # .ci/30-run-tests.sh, whose 0x8 mask (kept for Jenkins xunit)
+              # would swallow failing tests. --timeout 120 caps each test at
+              # 2 min (EBR2-78). Any non-zero ctest exit fails the job.
+              xvfb-run -s "-screen 0 1280x1024x24 -ac -nolisten tcp -nolisten unix" \
+                --auto-servernum -e /dev/stdout \
+                ctest --output-on-failure --no-compress-output --test-output-size-failed 300000 --timeout 120 -T Test
+              # Coverage — best-effort, must not fail the gate.
+              python3 -m pip install --user "gcovr==5.0" && make gcovr \
+                && gcovr -r .. --exclude "_deps" --exclude ".*example_engine.*" \
+                     --print-summary | tee gcovr-summary.txt || true
+            '
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f build/gcovr-summary.txt ]; then
+            {
+              echo "## Coverage (jammy nest-gazebo)"
+              echo
+              echo '```'
+              cat build/gcovr-summary.txt
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload coverage and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-nest-gazebo-jammy
+          path: |
+            build/gcovr.xml
+            build/gcovr.html
+            build/gcovr-summary.txt
+            build/Testing/**/*.xml
+            build/xml/**/*.xml
+          if-no-files-found: ignore
