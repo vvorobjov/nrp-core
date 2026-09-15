@@ -4,15 +4,20 @@ The folder `"examples"` contains four examples (listed in the table below) of ho
 In each of these experiments there is a `simulation_config_docker.json` configuration file which uses DockerLauncher to launch and run one of the engines in the experiment in a docker container.
 
 <table>
-<tr><th>Example folder<th>Description<th>DockerImage
-<tr><td>husky_braitenberg<td>Running a gazebo_grpc engine with a husky model inside a docker container<td>nrp-core/nrp-gazebo:latest
-<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp-core/nrp-nest:latest
-<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp-core/nrp-opensim:latest
-<tr><td>tf_exchange<td>Running a python_json engine  inside a docker container<td>nrp-core/nrp-vanilla:latest
+<tr><th>Example folder<th>Description<th>ImageName<th>Local build command
+<tr><td>husky_braitenberg<td>Running a gazebo_grpc engine with a husky model inside a docker container<td>nrp-local/nrp-gazebo:local<td>./build_nrp_core_image.sh nrp-gazebo
+<tr><td>nest_simple<td>Running a nest_json engine with a simple nest model inside a docker container<td>nrp-local/nrp-nest-gazebo:local<td>./build_nrp_core_image.sh nrp-nest-gazebo
+<tr><td>pysim_examples/opensim_control<td>Running a pysim engine with a arm26 model of OpenSim inside a docker container<td>nrp-local/nrp-opensim:local<td>./build_nrp_core_image.sh nrp-opensim
+<tr><td>tf_exchange<td>Running a python_json engine inside a docker container<td>nrp-local/nrp-vanilla:local<td>./build_nrp_core_image.sh nrp-vanilla
 </table>
 
-The images referenced in the table can be manually built from the different dockerfiles available in the folder "/dockerfiles" using docker-compose.
-For more information on how to use the provided dockerfiles to build custom, modular docker images with the necessary dependencies to run different Engines, see this \ref docker_compose "page".
+The `ImageName` values are the tags produced by the local image build, i.e. `build_nrp_core_image.sh <service>` run with the `.env.template` defaults `NRP_DOCKER_REGISTRY=nrp-local` and `NRP_CORE_TAG=local`.
+The service names and the layered build are described in \ref docker_compose "Building NRPCore Docker images". The image set targets Ubuntu 22.04 (jammy) with ROS 2 Humble and Python 3.10 only.
+
+Unlike the docker-compose example files, the DockerLauncher configuration does not substitute `${NRP_DOCKER_REGISTRY}` and `${NRP_CORE_TAG}`: `ImageName` is passed literally to the docker daemon, and the image must already exist on the daemon's host.
+Nothing is built or pulled automatically on this path (the docker-compose runner `examples/run_docker-compose_example.sh` builds missing images itself, DockerLauncher does not), so run the build command from the table first, or `docker pull` the image on the (remote) host.
+To use another registry or tag, edit `ImageName` in the `simulation_config_docker.json` file.
+Of the runtime variants only `hbpneurorobotics/nrp-vanilla` and `hbpneurorobotics/nrp-nest-gazebo` are published on Docker Hub (the `latest` and `development` tags follow the `development` branch); `nrp-gazebo` and `nrp-opensim` have to be built locally.
 
 To run the experiments, users should first, on the host where Engines are to be launched in docker containers, setup docker daemon properly.
 See this \ref configuring_docker_daemon "guide" for more information on how to do this.
