@@ -222,8 +222,11 @@ The NRPCORE_EXPERIMENT_DIR should be set to the path of experiment on manager no
 
 \code{.sh}
 
-export NRP_DOCKER_REGISTRY=nexus.neurorobotics.ebrains.eu:443/
-export NRP_CORE_TAG=:latest
+# The compose file joins them as ${NRP_DOCKER_REGISTRY}/<image>:${NRP_CORE_TAG}: no trailing slash, no leading colon.
+# nrp-local / local is the locally built image set. The workers need nrp-gazebo and nrp-nest-gazebo, so either build
+# them on every worker node with build_nrp_core_image.sh or push them to a registry the workers can pull from.
+export NRP_DOCKER_REGISTRY=nrp-local
+export NRP_CORE_TAG=local
 export NRPCORE_EXPERIMENT_DIR=/home/ubuntu/nrp-core/examples/husky_braitenberg
 
 \endcode
