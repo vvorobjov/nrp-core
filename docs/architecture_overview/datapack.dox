@@ -348,11 +348,11 @@ message Image
 }
 \endcode
 
-The definitions of the protobuf messages used by the DataPacks can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/nrp_generic.proto`.
+The definitions of the protobuf messages used by the DataPacks can be found in the <a href="https://github.com/vvorobjov/nrp-core/tree/development/src/nrp-core-msgs/protobuf/engine_proto_defs">nrp-core-msgs folder</a> of the nrp-core repository, in `src/nrp-core-msgs/protobuf/engine_proto_defs/nrp_generic.proto`.
 
 A subset of wrappers that mimic the (<a href="https://protobuf.dev/reference/protobuf/google.protobuf/">well-known protobuf types</a>) is also available to use.
 Unfortunately, at the moment it is not possible to use the official wrappers directly, and one must use the wrappers provided with NRP Core.
-The messages can be found in the <a href="https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git">messages repository</a>, in `protobuf/engine_proto_defs/wrappers.proto`.
+The messages can be found in the same folder, in `src/nrp-core-msgs/protobuf/engine_proto_defs/wrappers.proto`.
 
 An example use of the generic DataPacks, as well as the wrappers, can be found in the `examples/generic_proto_test` directory.
 
