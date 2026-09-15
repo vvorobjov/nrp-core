@@ -226,6 +226,8 @@ EXPERIMENTS=(
     "examples/baseball_icub/simulation_config.json|"
     "examples/generic_proto_test/simulation_config.json|"
     "examples/nest_simple/simulation_config.json|"
+    # Its DockerLauncher ImageName is nrp-local/nrp-nest-gazebo:local, the
+    # canonical image ensure_image verifies/builds at script start.
     "examples/nest_simple/simulation_config_docker.json|NEEDS_DOCKER_SOCKET"
     # EBR2-84: opensim_tvb experiment runs against the tvb-opensim image
     # chain (OpenSim arm26 + TVB cosim brain). The canonical
@@ -336,48 +338,8 @@ stop_mqtt_broker() {
     fi
 }
 
-# -----------------------------------------------------------------------------
-# Docker-launcher image alias
-# -----------------------------------------------------------------------------
-#
-# examples/nest_simple/simulation_config_docker.json hardcodes the
-# registry-pushed engine image name
-#   nrp-core/nrp-nest-gazebo:latest
-# which is not present on a dev machine that only has the locally-
-# built canonical image (nrp-local/nrp-nest-gazebo:local). Rather than
-# rewriting the experiment config (out of scope here) or skipping the
-# experiment (we'd miss the docker_launcher code path entirely), we
-# tag-alias the canonical local image to the expected name for the
-# duration of this script run. `docker tag` only adds another name
-# reference to the same underlying image — no mutation of image
-# content, just a pointer — and we remove the alias on exit so the
-# host tag namespace is unchanged after.
-
-DOCKER_ALIAS_TAG="nrp-core/nrp-nest-gazebo:latest"
-DOCKER_ALIAS_ADDED=0
-
-ensure_docker_alias() {
-    if [[ "$DOCKER_ALIAS_ADDED" -eq 1 ]]; then return; fi
-    if docker image inspect "$DOCKER_ALIAS_TAG" >/dev/null 2>&1; then
-        log "image $DOCKER_ALIAS_TAG already present; using as-is."
-        return
-    fi
-    log "tag-aliasing $IMAGE -> $DOCKER_ALIAS_TAG (removed on script exit)."
-    docker tag "$IMAGE" "$DOCKER_ALIAS_TAG"
-    DOCKER_ALIAS_ADDED=1
-}
-
-remove_docker_alias() {
-    if [[ "$DOCKER_ALIAS_ADDED" -eq 1 ]]; then
-        log "removing docker-launcher tag alias $DOCKER_ALIAS_TAG."
-        docker rmi "$DOCKER_ALIAS_TAG" >/dev/null 2>&1 || true
-        DOCKER_ALIAS_ADDED=0
-    fi
-}
-
 cleanup() {
     stop_mqtt_broker
-    remove_docker_alias
 }
 trap cleanup EXIT
 
@@ -435,9 +397,6 @@ run_one() {
 
     if [[ "$needs_mqtt" -eq 1 ]]; then
         start_mqtt_broker
-    fi
-    if [[ "$needs_docker_socket" -eq 1 ]]; then
-        ensure_docker_alias
     fi
 
     local exp_dir="$REPO_ROOT/$(dirname "$config")"
