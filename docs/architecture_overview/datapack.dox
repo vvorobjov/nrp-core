@@ -56,11 +56,11 @@ A method "isEmpty" is provided to check whether a DataPack is empty or not befor
 
 \code{.py}
 if not datapack.isEmpty():
-	# It's safe to get the data
-	print(datapack.data)
+    # It's safe to get the data
+    print(datapack.data)
 else:
-	# This will raise an exception
-	print(datapack.data)
+    # This will raise an exception
+    print(datapack.data)
 \endcode
 
 
@@ -75,9 +75,9 @@ The flag can be accessed from Preprocessing, Transceiver, and Status Functions i
 
 \code{.py}
 if datapack.isUpdated():
-	# Perform some operations, because the DataPack has just been updated
+    # Perform some operations, because the DataPack has just been updated
 else:
-	# The DataPack is 'stale', i.e. it was updated in one of the previous simulation iterations
+    # The DataPack is 'stale', i.e. it was updated in one of the previous simulation iterations
 \endcode
 
 
@@ -104,7 +104,7 @@ After that they can be accessed in TFs as input arguments.
 @EngineDataPack(keyword="datapack", id=DataPackIdentifier("datapack_name", "engine_name"))
 @TransceiverFunction("engine_name")
 def transceiver_function(datapack):
-	print(datapack.data)
+    print(datapack.data)
 
 # Multiple input datapacks from different engines can be declared
 
@@ -112,8 +112,8 @@ def transceiver_function(datapack):
 @EngineDataPack(keyword="datapack2", id=DataPackIdentifier("datapack_name2", "engine_name2"))
 @TransceiverFunction("engine_name1")
 def transceiver_function(datapack1, datapack2):
-	print(datapack1.data)
-	print(datapack2.data)
+    print(datapack1.data)
+    print(datapack2.data)
 \endcode
 
 By default, all input DataPacks are passed to Transceiver Functions by value, i.e. the function receives a copy of the original DataPack object.
@@ -129,18 +129,18 @@ DataPacks can be returned from the transceiver function.
 
 @TransceiverFunction("engine_name")
 def transceiver_function():
-	datapack = JsonDataPack("datapack_name", "engine_name")
+    datapack = JsonDataPack("datapack_name", "engine_name")
 
-	return [ datapack ]
+    return [ datapack ]
 
 # Multiple datapacks can be returned
 
 @TransceiverFunction("engine_name")
 def transceiver_function():
-	datapack1 = JsonDataPack("datapack_name1", "engine_name")
-	datapack2 = JsonDataPack("datapack_name2", "engine_name")
+    datapack1 = JsonDataPack("datapack_name1", "engine_name")
+    datapack2 = JsonDataPack("datapack_name2", "engine_name")
 
-	return [ datapack1, datapack2 ]
+    return [ datapack1, datapack2 ]
 \endcode
 
 \section supported_datapack_types Supported DataPack data types
