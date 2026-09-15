@@ -7,7 +7,7 @@ nrp-core itself is ROS 2 only: EBR2-26 replaced ROS 1 Noetic with ROS 2 (the `RO
 - `husky_gazebo_plugins.tar.gz` is a catkin package (`roscpp`, the ROS 1 `gazebo_ros` plugin API, ROS 1 `tf`, `message_generation` for its `msg`/`srv` files);
 - `husky_world.launch` is a `roslaunch` XML file that includes `gazebo_ros/launch/empty_world.launch` and spawns the robot with `spawn_model`; `simulation_config.json` starts it through `"ProcCmd": "roslaunch husky_world.launch"`.
 
-As shipped, `roslaunch` does not exist under Humble, so the `ExternalProcesses` entry cannot start and no Gazebo world or robot ever appears; the Computational Graph then runs without camera input. `cam_fn.py` also imports `cv_bridge`, which is not among the ROS packages the nrp-core Dockerfiles install.
+As shipped, two things fail: `roslaunch` does not exist under Humble, so the `ExternalProcesses` child exits immediately and no Gazebo world or robot ever appears (NRPCoreSim does not treat a dead external process as an error); and `cam_fn.py` imports `cv_bridge`, which none of the nrp-core images install, so loading the Computational Graph fails, NRPCoreSim marks the initialization as failed and shuts down without running a single iteration (it still exits with status 0). Even with `cv_bridge` installed, the graph would only run without camera input.
 
 ## Porting checklist
 
