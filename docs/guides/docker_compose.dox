@@ -44,7 +44,7 @@ which can be exported before calling docker-compose
 
  -  `NRP_DOCKER_REGISTRY` should be specified, at least with some non-existent repository (you will not be able to push images in this case). If it is not defined, the default value `nrp-local` is set when using the dedicated script `build_nrp_core_image.sh`. The images are tagget with "${NRP_DOCKER_REGISTRY}/image-name";
  -  as a `NRP_DOCKER_REGISTRY` one can specify the user name at DockerHub (to be able to pull/push there) or private Docker registry;
- -  if `NRP_CORE_TAG` is not defined, the images are built with `latest` tag when using the dedicated script;
+ -  if `NRP_CORE_TAG` is not defined, the images are built with the `local` tag when using the dedicated script;
  -  in order to build the chain of images (the desired and all in the dependency), use the script `build_nrp_core_image.sh`;
  -  in order to push/pull to a specific registry, export the NRP_DOCKER_REGISTRY and NRP_CORE_TAG before running docker-compose, or define them in `.env` file.
 
