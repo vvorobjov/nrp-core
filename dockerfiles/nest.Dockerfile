@@ -14,8 +14,12 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 RUN pip install flask flask_cors RestrictedPython
 
 # NEST 3.10 requires Cython >= 3.0.0 to build PyNEST; jammy apt cython3 is
-# 0.29.28 (too old), so install it from pip instead (EBR2-115).
-RUN pip install 'cython>=3.0.0'
+# 0.29.28 (too old). Install it globally with sudo so the `cython` binary
+# lands in /usr/local/bin (on PATH): NEST's FindCython.cmake locates it via
+# find_program, not a Python-module import, and the base image runs as
+# nrpuser, so a plain `pip install` would go to ~/.local/bin, off PATH,
+# and cmake-configure fails with "Could NOT find Cython" (EBR2-115).
+RUN sudo pip install 'cython>=3.0.0'
 
 
 # Install nest-simulator (to NRP_DEPS_INSTALL_DIR).
