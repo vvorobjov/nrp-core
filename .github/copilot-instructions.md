@@ -122,7 +122,7 @@ Exception: work against an already-existing ticket the user names up front.
 4. Add a matching plugin-registration line so `NRPCoreSim` can load it at
    runtime (see [src/nrp_general_library/plugin_system/](../src/nrp_general_library/plugin_system/)).
 5. Regenerate/check protobuf stubs — proto lives in the
-   [src/nrp-core-msgs/](../src/nrp-core-msgs/) submodule.
+   [src/nrp-core-msgs/](../src/nrp-core-msgs/) tree (vendored in-tree, not a submodule).
 
 ### "Fix bug X"
 

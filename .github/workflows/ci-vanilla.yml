@@ -85,8 +85,8 @@ jobs:
           submodules: recursive
 
       - name: Mark workspace as a safe git directory
-        # git commands run during the build (e.g. version lookup) refuse to
-        # operate on a workspace owned by a different uid than the running shell.
+        # Kept defensively: the workspace is owned by a different uid than the
+        # shell, and without this any git invocation would refuse to run.
         run: git config --system --add safe.directory '*'
 
       - name: Configure
