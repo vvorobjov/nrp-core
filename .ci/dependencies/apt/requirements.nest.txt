@@ -1,4 +1,5 @@
-cython3
+# Cython is installed via pip (cython>=3.0.0) in dockerfiles/nest.Dockerfile:
+# NEST 3.10 requires Cython >= 3.0.0 and jammy apt cython3 is 0.29.28 (EBR2-115).
 libgsl-dev
 libltdl-dev
 libncurses-dev
