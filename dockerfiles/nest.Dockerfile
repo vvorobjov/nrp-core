@@ -13,14 +13,25 @@ RUN sudo apt-get update && sudo apt-get -y install $(grep -vE "^\s*#" ${HOME}/.d
 
 RUN pip install flask flask_cors RestrictedPython
 
+# NEST 3.10 requires Cython >= 3.0.0 to build PyNEST; jammy apt cython3 is
+# 0.29.28 (too old). Install it globally with sudo so the `cython` binary
+# lands in /usr/local/bin (on PATH): NEST's FindCython.cmake locates it via
+# find_program, not a Python-module import, and the base image runs as
+# nrpuser, so a plain `pip install` would go to ~/.local/bin, off PATH,
+# and cmake-configure fails with "Could NOT find Cython" (EBR2-115).
+RUN sudo pip install 'cython>=3.0.0'
+
 
 # Install nest-simulator (to NRP_DEPS_INSTALL_DIR).
-# NEST is bumped to 3.9 (EBR2-82) — the previous v3.1 pin disagreed with
-# the compose-side nest-simulator:3.3 image and with the polimi
-# experiment's v3.0 / v3.7 pins; 3.9 is the current stable release.
+# NEST is pinned to 3.10 (EBR2-115, mechanical bump from 3.9/EBR2-82).
+# Keep this tag in lockstep with the compose-side nest-simulator image
+# tag and with src/nrp_nest_engines/CMakeLists.txt — both land PyNEST
+# bindings and the C++ runtime in the same ${NRP_DEPS_INSTALL_DIR}.
+# NEST 3.10 needs Cython >= 3.0.0, installed via pip below (jammy apt
+# cython3 is 0.29.28, too old); C++20 is already satisfied by jammy GCC 11.
 RUN git clone https://github.com/nest/nest-simulator.git \
     && cd nest-simulator \
-    && git checkout v3.9 \
+    && git checkout v3.10 \
     && mkdir build && cd build \
     && cmake -DCMAKE_INSTALL_PREFIX:PATH=${NRP_DEPS_INSTALL_DIR} -Dwith-mpi=ON -Dwith-python=ON .. \
     && make -j4 && make install \

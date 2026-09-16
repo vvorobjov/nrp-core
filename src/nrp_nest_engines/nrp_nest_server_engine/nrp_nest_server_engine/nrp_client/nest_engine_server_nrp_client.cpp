@@ -30,6 +30,7 @@
 #include "nrp_general_library/utils/utils.h"
 
 #include <chrono>
+#include <cmath>
 #include <thread>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -191,7 +192,7 @@ namespace
 
         if(resp.code != 200)
         {
-            throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code));
+            throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code) + ": " + resp.body);
         }
 
         NRPLogger::debug("nestGenericCall reply: {}", resp.body);
@@ -200,38 +201,79 @@ namespace
     }
 
     /*!
-     * \brief Sends SetStatus request to NEST server
+     * \brief Renders a JSON value as a Python literal (true/false/null -> True/False/None)
      *
-     * \param serverAddress Address of the NEST server
-     * \param argsStr Comma-separated arguments list to SetStatus as string (e.g. "arg1, arg2")
-     * \param kwargsStr Comma-separated keyword arguments to SetStatus as string (e.g. (" "key1": value1, "key2": value2 "))
-
+     * nest-server's /exec route comments out import lines (clean_code()), so datapack
+     * parameters cannot go through json.loads() and are inlined as Python source.
+     * JSON string literals are valid Python string literals.
      */
-    void nestSetStatus(const std::string & serverAddress, const std::string & argsStr, const std::string & kwargsStr)
+    std::string toPythonLiteral(const nlohmann::json & value)
     {
-        // equivalent to a NESTClient call client.SetStatus(arg1, arg2, key1=value1, key2=value2})
-        std::stringstream data;
-        data << "{" << R"("args": )" << "[" << argsStr << "], " << kwargsStr << "}";
+        if(value.is_null())
+            return "None";
+        if(value.is_boolean())
+            return value.get<bool>() ? "True" : "False";
+        if(value.is_number_float() && !std::isfinite(value.get<double>()))
+            return "None";
+        if(value.is_number() || value.is_string())
+            return value.dump();
 
-        nestGenericCall(serverAddress + "/api/SetStatus","application/json", data.str());
+        std::string out;
+        if(value.is_array())
+        {
+            out = "[";
+            for(const auto & item : value)
+                out += toPythonLiteral(item) + ",";
+            return out + "]";
+        }
+
+        out = "{";
+        for(const auto & item : value.items())
+            out += nlohmann::json(item.key()).dump() + ":" + toPythonLiteral(item.value()) + ",";
+        return out + "}";
     }
 
     /*!
-     * \brief Sends GetStatus request to NEST server
+     * \brief Sets the status of a population via NodeCollection.set() on the NEST server
+     *
+     * NEST 3.10 turned SetStatus()/GetStatus() into deprecation shims whose first parameter
+     * is nodes_or_conns; nest-server's nestify() only wraps a JSON id list into a
+     * NodeCollection for parameters named nodes/source/target, so /api/SetStatus with a
+     * raw id list fails with HTTP 400 ("'list' object has no attribute 'set'"). Building
+     * the NodeCollection server-side through /exec works on NEST 3.9 and 3.10 (EBR2-115).
      *
      * \param serverAddress Address of the NEST server
-     * \param argsStr Comma-separated arguments list to GetStatus as string (e.g. "arg1, arg2"))
-     * \return Response from GetStatus as string
+     * \param idsStr JSON array of node IDs as string (e.g. "[1, 2, 3]")
+     * \param params Parameters to set, as carried by the datapack (dict or list of dicts)
      */
-    std::string nestGetStatus(const std::string & serverAddress, const std::string & argsStr)
+    void nestSetStatus(const std::string & serverAddress, const std::string & idsStr, const nlohmann::json & params)
+    {
+        const std::string source = "nest.NodeCollection(" + idsStr + ").set(" + toPythonLiteral(params) + ")";
+
+        nestGenericCall(serverAddress + "/exec", "application/json", nlohmann::json({{"source", source}}).dump());
+    }
+
+    /*!
+     * \brief Reads the status of a population via NodeCollection.get() on the NEST server
+     *
+     * Replaces /api/GetStatus for the reason given in nestSetStatus(). Iterating the
+     * NodeCollection keeps the pre-3.10 GetStatus shape: one dictionary per node.
+     *
+     * \param serverAddress Address of the NEST server
+     * \param idsStr JSON array of node IDs as string (e.g. "[1, 2, 3]")
+     * \return JSON array of per-node status dictionaries as string
+     */
+    std::string nestGetStatus(const std::string & serverAddress, const std::string & idsStr)
     {
         //TODO kwargs support so to select keys to get.
         // Datapacks can't pass that info to engine clients yet.
-        // equivalent to a NESTClient call client.GetStatus(arg1, arg2, ..)
-        std::stringstream data;
-        data << "{" << R"("args": )" << "[" << argsStr << "]" << "}";
+        const std::string resultVar = "nrpcore_status";
+        const std::string source = resultVar + " = [nrpcore_node.get() for nrpcore_node in nest.NodeCollection(" + idsStr + ")]";
 
-        return nestGenericCall(serverAddress + "/api/GetStatus", "application/json", data.str());
+        const auto response = nestGenericCall(serverAddress + "/exec", "application/json",
+                                              nlohmann::json({{"source", source}, {"return", resultVar}}).dump());
+
+        return nlohmann::json::parse(response).at("data").dump();
     }
 
     /*!
@@ -507,12 +549,11 @@ void NestEngineServerNRPClient::sendDataPacksToEngine(const datapacks_set_t &dat
 
             const auto datapackName = datapack->name();
 
-            const std::string kwargsStr = "\"params\": " + ((JsonDataPack const *)datapack.get())->getData().dump();
+            const auto & params = ((JsonDataPack const *)datapack.get())->getData();
 
             try
             {
-                // SetStatus(args, kwargs)
-                nestSetStatus(this->serverAddress(), getDataPackIdList(datapackName), kwargsStr);
+                nestSetStatus(this->serverAddress(), getDataPackIdList(datapackName), params);
             }
             catch(std::exception& e)
             {

@@ -7,7 +7,7 @@ From a user point of view, this engine is very similar to \ref nest_json. At ini
 The main difference is that in this case datapacks can't be registered from within the aforementioned Python script, as it is done in the case of NestJsonEngine. Instead, users rely on the mechanism provided by nest-server to access populations and connections status.
 
 In order to access, from TransceiverFunctions, NEST populations defined in the brain python script, they have to be mapped to a datapack name in a dictionary referred to as <b>populations</b>.
-Afterwards the status of those population will be available as JsonDataPacks; they are updated with the results of calling the NEST <i>GetStatus</i> function.
+Afterwards the status of those population will be available as JsonDataPacks; they are updated with the results of <i>NodeCollection.get()</i> (one dictionary per node) and written back with <i>NodeCollection.set()</i>, both executed on the NEST server through its <i>/exec</i> route: since NEST 3.10 the REST <i>GetStatus</i>/<i>SetStatus</i> calls no longer accept plain node ID lists.
 The limitations on the objects that can be used as values in this dictionary will be those imposed by nest-server.
 Similarly, a dictionary named <b>connections</b> mapping datapack names to "source" and "target" population names (contained in <b>populations</b>) can be defined too.
 Such datapacks will be updated using the NEST <i>GetConnections</i> function.

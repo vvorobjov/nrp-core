@@ -219,7 +219,7 @@ Top-level layout:
 | Ubuntu 22.04 (jammy) | Humble | 3.10 | **Primary / canonical** |
 
 Core deps: Gazebo 11 Classic (apt: `gazebo`, `gazebo-plugin-base`,
-`libgazebo-dev`), NEST 3.9, Boost.Python 1.74, gRPC from apt. The
+`libgazebo-dev`), NEST 3.10, Boost.Python 1.74, gRPC from apt. The
 EBR2-26 work replaced ROS 1 Noetic with ROS 2 (rclcpp / ament_cmake /
 colcon); EBR2-81 dropped the parallel Ubuntu 20.04 (focal / Foxy / Py
 3.8) chain so there is now exactly one supported target.
@@ -255,7 +255,7 @@ cp .env.template .env
 The helper script walks the `depends_on:` chain in `docker-compose.yaml` and
 builds `base-env → gazebo-env → nest-gazebo-env → nrp-nest-gazebo-env →
 nrp-nest-gazebo` in order. Expect a multi-hour initial build: it installs
-Gazebo 11 + ROS 2 Humble from apt, compiles NEST 3.9, and compiles the
+Gazebo 11 + ROS 2 Humble from apt, compiles NEST 3.10, and compiles the
 whole of nrp-core inside the final stage.
 
 Other targets worth knowing:
@@ -429,7 +429,7 @@ The `onCreateCommand` just installs `gdb`.
   `-ubuntu20` or `-ubuntu22` service suffixes, or `--ubuntu22` flags in
   helper scripts.
 - Don't bump `NEST`, `Gazebo`, or `grpc++` versions casually — the CMake
-  files pin them deliberately (`v3.9`, Gazebo 11 from jammy apt,
+  files pin them deliberately (`v3.10`, Gazebo 11 from jammy apt,
   `libgrpc++-dev` from jammy). These are coupled to the Dockerfiles and to
   the NEST Python bindings path.
 - Don't delete the ctest `0x8` mask in `.ci/30-run-tests.sh` — it exists so
