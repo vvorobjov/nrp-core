@@ -135,26 +135,14 @@ else()
 endif()
 
 ##########################################
-## Update git submodules
-find_package(Git QUIET)
-option(GIT_SUBMODULE "Check submodules during build" ON)
-# Only fetch submodules when their content is actually missing. In a nrp-dev
-# submodule or `git worktree` checkout the tree's .git is a gitdir file pointing
-# outside the mounted tree, so git exits 128 inside the build container even
-# though the sources are all there (EBR2-126); the content check below is what
-# the build really needs.
-if(GIT_SUBMODULE AND GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git"
-   AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/nrp-core-msgs/protobuf")
-message(STATUS "Submodule content missing, running git submodule update --init --recursive")
-execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-RESULT_VARIABLE GIT_SUBMOD_RESULT)
-if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}. "
-"Run it on the host (inside a build container git cannot resolve the gitdir of a "
-"submodule/worktree checkout), then re-run cmake.")
-endif()
-endif()
+## Git submodules
+# src/nrp-core-msgs is vendored in-tree, and the only real submodule,
+# experiments/polimi_controller_v1, is not used by the default build, so cmake
+# no longer runs `git submodule update` here. That call failed with 128 from a
+# nrp-dev submodule or git-worktree checkout, whose .git is a gitdir file the
+# build container cannot resolve (EBR2-126). The option is kept so existing
+# `-DGIT_SUBMODULE=ON` invocations (.ci/10-prepare-build.sh) stay valid.
+option(GIT_SUBMODULE "Retained for compatibility; no longer triggers a git call" ON)
 
 ##########################################
 ## Declare nrp-core-msgs path
@@ -162,15 +150,15 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/nrp-core-msgs")
     set(NRP_CORE_MSGS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/nrp-core-msgs/")
 
     if(NOT EXISTS "${NRP_CORE_MSGS_PATH}/protobuf")
-        message(FATAL_ERROR "The Proto definitions are not found in submodule nrp-core-msgs! Please update submodules and try again.")
+        message(FATAL_ERROR "The Proto definitions are not found under src/nrp-core-msgs (vendored in-tree)! Restore them, e.g. `git checkout -- src/nrp-core-msgs`, and try again.")
     endif()
     set(NRP_CORE_MSGS_PROTO_PATH "${NRP_CORE_MSGS_PATH}/protobuf/")
 
     if(NOT EXISTS "${NRP_CORE_MSGS_PATH}/nrp_ros_msgs")
-        message(FATAL_ERROR "ROS definitions are not found in submodule nrp-core-msgs! Please update submodules and try again.")
+        message(FATAL_ERROR "ROS definitions are not found under src/nrp-core-msgs (vendored in-tree)! Restore them, e.g. `git checkout -- src/nrp-core-msgs`, and try again.")
     endif()
 else()
-    message(FATAL_ERROR "The submodule nrp-core-msgs does not exist! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+    message(FATAL_ERROR "src/nrp-core-msgs does not exist! It is vendored in-tree; restore it, e.g. `git checkout -- src/nrp-core-msgs`, and try again.")
 endif()
 
 
