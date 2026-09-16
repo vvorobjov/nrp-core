@@ -149,6 +149,12 @@ fi
 log "running configure + build + install + ctest inside $IMAGE"
 log "cmake initial-cache: $CMAKE_CACHE_IN_CONTAINER"
 
+# A nrp-dev submodule / git-worktree checkout has a gitdir *file* the container
+# cannot resolve, so fetch submodules here on the host where git can (EBR2-126).
+# Non-fatal: cmake still fails fast if the content is genuinely missing.
+git -C "$REPO_ROOT" submodule update --init --recursive 2>/dev/null \
+    || echo "[$(basename "$0")] note: could not update submodules on the host; cmake will check" >&2
+
 docker run --rm --net=host --privileged \
     -v "$REPO_ROOT:/workspace" -w /workspace \
     -e "NRP_TEST_FILTER=$TEST_FILTER" \
