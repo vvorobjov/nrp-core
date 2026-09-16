@@ -16,6 +16,14 @@ suite the way reviewers will, use the one-shot helper:
 bash .ci/00-dev-rebuild-and-test.sh
 ```
 
+The helper works from a plain clone, from the `nrp-dev` umbrella checkout
+(where nrp-core is a git submodule) and from a `git worktree`: it runs
+`git submodule update --init --recursive` on the host before starting the
+container, because inside the container git cannot resolve those checkouts'
+gitdir file. `src/nrp-core-msgs` is vendored in-tree (not a submodule); the
+only submodule, `experiments/polimi_controller_v1`, is optional and unused by
+the default build.
+
 Useful flags:
 
 - `--rebuild-image` — force rebuild of the devcontainer image even if it
