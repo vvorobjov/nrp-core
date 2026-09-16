@@ -282,7 +282,7 @@ numbers are duplicated. Key knobs:
 | File | Purpose |
 |---|---|
 | `simulation_config.json` | Standalone NRPCoreSim config (gazebo_grpc + nest_json, in-image NEST). |
-| `simulation_config_docker-compose.json` | Compose variant: nest as `nest-simulator:3.9` sidecar, gazebo as `nrp-gazebo`. |
+| `simulation_config_docker-compose.json` | Compose variant: nest as `nest-simulator:3.10` sidecar, gazebo as `nrp-gazebo`. |
 | `foraging_world.sdf` | Compact world: ground plane + 4 food cylinders + 3 rest boxes + 3 obstacles. SDF poses are bootstrap placeholders — drive_update re-randomises on tick 1. |
 | `husky.sdf` | Standard husky model with NRPGazeboGrpcLinkControllerPlugin so `husky::base_link` is readable. |
 | `brain.py` | NEST topology — drive populations, motor populations, brake coincidence detector, all leaky-integrator readouts. |
