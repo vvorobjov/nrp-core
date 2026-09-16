@@ -192,7 +192,7 @@ namespace
 
         if(resp.code != 200)
         {
-            throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code));
+            throw NRPException("REST call to \"" + url + "\" failed with code " + std::to_string(resp.code) + ": " + resp.body);
         }
 
         NRPLogger::debug("nestGenericCall reply: {}", resp.body);
