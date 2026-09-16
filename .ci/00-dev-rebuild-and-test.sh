@@ -151,9 +151,10 @@ log "cmake initial-cache: $CMAKE_CACHE_IN_CONTAINER"
 
 # A nrp-dev submodule / git-worktree checkout has a gitdir *file* the container
 # cannot resolve, so fetch submodules here on the host where git can (EBR2-126).
-# Non-fatal: cmake still fails fast if the content is genuinely missing.
-git -C "$REPO_ROOT" submodule update --init --recursive 2>/dev/null \
-    || echo "[$(basename "$0")] note: could not update submodules on the host; cmake will check" >&2
+# Non-fatal: only experiments/polimi_controller_v1 is a submodule (unused by the
+# default build); src/nrp-core-msgs is vendored in-tree and cmake checks it.
+git -C "$REPO_ROOT" submodule update --init --recursive \
+    || echo "[$(basename "$0")] note: could not update submodules on the host; cmake fails fast if src/nrp-core-msgs is incomplete" >&2
 
 docker run --rm --net=host --privileged \
     -v "$REPO_ROOT:/workspace" -w /workspace \
