@@ -137,20 +137,24 @@ endif()
 ##########################################
 ## Update git submodules
 find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-# Update submodules as needed
-    option(GIT_SUBMODULE "Check submodules during build" ON)
-    if(GIT_SUBMODULE)
-        message(STATUS "Submodule update")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-        endif()
-    endif()
+option(GIT_SUBMODULE "Check submodules during build" ON)
+# Only fetch submodules when their content is actually missing. In a nrp-dev
+# submodule or `git worktree` checkout the tree's .git is a gitdir file pointing
+# outside the mounted tree, so git exits 128 inside the build container even
+# though the sources are all there (EBR2-126); the content check below is what
+# the build really needs.
+if(GIT_SUBMODULE AND GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git"
+   AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/nrp-core-msgs/protobuf")
+message(STATUS "Submodule content missing, running git submodule update --init --recursive")
+execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+RESULT_VARIABLE GIT_SUBMOD_RESULT)
+if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}. "
+"Run it on the host (inside a build container git cannot resolve the gitdir of a "
+"submodule/worktree checkout), then re-run cmake.")
 endif()
-
+endif()
 
 ##########################################
 ## Declare nrp-core-msgs path
