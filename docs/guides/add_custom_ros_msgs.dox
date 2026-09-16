@@ -6,7 +6,7 @@ And this \ref event_loop_configuration "page" contains information on how to con
 
 Please notice, that in order to connect an NRP-Core experiment with ROS and being able to subscribe and publish to topics from the Computational Graph, the parameter *ROSNode* must be included in the experiment configuration (more information \ref nrp_connectors_schema "here").
 
-A complete example experiment using Computational Graph ROS nodes can be found in the folder `examples/event_loop_examples/husky_braitenberg_ros` in the nrp-core repository.
+A complete example experiment using Computational Graph ROS nodes can be found in the folder `examples/event_loop_examples/husky_braitenberg_ros` in the nrp-core repository. Note that the Gazebo side of that example (the `husky_gazebo_plugins` package and `husky_world.launch`) is still a ROS 1 artefact and has to be ported to ROS 2 Humble before the experiment can run; see the README in that folder.
 
 Finally, NRP-Core instantiates and stores C++ ROS message objects internally, but the Computational Graph is coded in Python and only those ROS message types for which compatible Python bindings has been generated can be used in experiments.
 

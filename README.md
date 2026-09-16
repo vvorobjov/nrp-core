@@ -2,7 +2,7 @@ This README file contains information on how to get nrp-core installed in your s
 
 **WARNING:** nrp-core targets Ubuntu 22.04 (jammy) only. The instructions below assume that OS and version. Installation in other environments might be possible but has not been tested. EBR2-81 dropped the parallel Ubuntu 20.04 chain.
 
-**NOTE:** the heavy runtime image variants (`nrp-vanilla`, `nrp-gazebo`, `nrp-nest-gazebo`, and their xpra/opensim siblings) are not yet published to a registry. On a fresh clone you must build them locally with `build_nrp_core_image.sh` before running the docker-compose examples; the `.env.template` default (`NRP_DOCKER_REGISTRY=nrp-local`) points at that locally-built image set. Switch to the published namespace only once CI ships those images.
+**NOTE:** CI publishes only `hbpneurorobotics/nrp-vanilla` and `hbpneurorobotics/nrp-nest-gazebo` to Docker Hub (the `latest` and `development` tags follow the `development` branch, `sha-<commit>` pins a build). `nrp-gazebo`, `nrp-opensim` and the xpra siblings are not published, and the docker-compose examples need `nrp-gazebo`, so on a fresh clone keep the `.env.template` default (`NRP_DOCKER_REGISTRY=nrp-local`) and build the images locally with `build_nrp_core_image.sh` (`examples/run_docker-compose_example.sh` builds any missing image itself). The DockerLauncher example configs (`simulation_config_docker.json`) name the same `nrp-local/<image>:local` tags; DockerLauncher never builds an image and the automatic pull of the `nrp-local` namespace fails, so build those images first (or point `ImageName` at a published image).
 
 ## Quick start for contributors (devcontainer loop)
 

@@ -2,6 +2,7 @@
 
 The folder `"examples"` contains an example for running the experiment with Gazebo, NEST and DataTransfer Engines with help of the docker-compose. 
 There is the docker-compose file itself `docker-compose-nest-gazebo.yaml`, the bash script `run_docker-compose_example.sh` for setting the environment for running the experiment and the corresponding experiment configuration file `husky_braitenberg/simulation_config_docker-compose.json`.
+The sibling compose files `docker-compose-xpra-nest-gazebo.yaml`, `docker-compose-foraging-nest-gazebo.yaml` and `docker-compose-foraging-xpra-nest-gazebo.yaml` run the same setup with an xpra display and/or the `foraging_husky` experiment; the launching script selects among them (see below).
 
 \section docker_compose_file docker-compose file
 
@@ -17,7 +18,8 @@ Note, that in case `NRP_DOCKER_REGISTRY` and `NRP_CORE_TAG` are not set, then th
 
 \section docker_compose_script Launching script
 
-The bash launching script `examples/run_docker-compose_example.sh` is needed only as an example for setting the needed environment variables and running docker-compose. It defines the experiment folder `NRPCORE_EXPERIMENT_DIR` as well as the tag and the registry to use. Then `docker-compose up` command is called.
+The bash launching script `examples/run_docker-compose_example.sh` sets the environment and runs docker-compose for the example experiments. It reads `NRP_DOCKER_REGISTRY` and `NRP_CORE_TAG` from `.env` in the repository root (falling back to `nrp-local` / `local`, the locally built image set), exports the experiment folder as `NRPCORE_EXPERIMENT_DIR` and picks the compose file from two flags: `--foraging` runs the `foraging_husky` experiment instead of `husky_braitenberg`, `--xpra` uses the xpra variant (browser-accessible display on the host port `NRP_XPRA_HOST_PORT`, default 9876) instead of headless xvfb.
+Before calling `docker compose up`, the script checks that the runtime images the selected compose file needs (`nrp-vanilla` plus `nrp-gazebo`, or `nrp-xpra-gazebo` with `--xpra`) exist. With the local registry (`nrp-local`) it builds any missing image through `build_nrp_core_image.sh`; with any other registry it leaves pulling to docker-compose. Only the jammy (Ubuntu 22.04 / ROS 2 Humble / Python 3.10) image set is supported.
 
 \section docker_compose_config Experiment configuration file
 

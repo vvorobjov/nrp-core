@@ -9,9 +9,10 @@ name: Build & push runtime images
 #                     nest-gazebo-env -> nrp-nest-gazebo (nest-gazebo.cmake)
 #
 # CI runs on GitHub Actions (public repo = free unlimited standard-runner
-# minutes + 6 h/job, vs Bitbucket's metered minutes + 2 h/step). Bitbucket
-# stays the canonical repo for PRs + tickets; development/master are synced
-# to GitHub (and GitLab), and that synced push is what fires this workflow.
+# minutes + 6 h/job, vs Bitbucket's metered minutes + 2 h/step). GitHub
+# (vvorobjov/nrp-core) is the canonical repo for branches and PRs, tickets
+# live on Jira (EBR2), and development/master are mirrored to Bitbucket and
+# GitLab after each merge; pushes to development/master here fire the publish.
 #
 # Naming (EBR2-91): clean names, no -ubuntu20 suffix (Ubuntu 20.04 dropped
 # in EBR2-81): hbpneurorobotics/nrp-vanilla, hbpneurorobotics/nrp-nest-gazebo.
