@@ -22,6 +22,10 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
@@ -116,4 +120,67 @@ TEST(EngineClientTest, EngineExtraConfigs)
 
 }
 
+// Engine whose loop step is slow and touches a member of the implementing class, mirroring the protocol
+// clients (gRPC stub / REST server address) that runLoopStepCallback() dereferences on the worker thread
+class SlowStepEngine
+        : public EngineClient<SlowStepEngine, TestEngineConfigConst::EngineSchema>
+{
+public:
+    SlowStepEngine(nlohmann::json &configHolder, std::atomic<bool> &stepDone)
+            : EngineClient(configHolder, nullptr),
+              _stepDone(stepDone),
+              _payload(256, 'x')
+    {}
 
+    ~SlowStepEngine() override
+    {
+        this->joinLoopStepThread();
+        // _payload is destroyed right after this body; the step must not be using it anymore
+        EXPECT_TRUE(_stepDone.load());
+    }
+
+    void initialize() override
+    {}
+
+    void reset() override
+    {}
+
+    void shutdown() override
+    {}
+
+    const std::vector<std::string> engineProcStartParams() const override
+    { return std::vector<std::string>(); }
+
+    void sendDataPacksToEngine(const datapacks_set_t &) override
+    {}
+
+    datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &) override
+    { return datapacks_vector_t(); }
+
+    SimulationTime runLoopStepCallback(SimulationTime timeStep) override
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        const auto payloadSize = _payload.size();
+        _stepDone = true;
+        return timeStep + SimulationTime(payloadSize);
+    }
+
+private:
+    std::atomic<bool> &_stepDone;
+    std::string _payload;
+};
+
+TEST(EngineClientTest, DestructorJoinsInFlightLoopStep)
+{
+    nlohmann::json config;
+    config["EngineName"] = "Name";
+    config["EngineType"] = "EngineType";
+
+    std::atomic<bool> stepDone(false);
+    {
+        SlowStepEngine engine(config, stepDone);
+        engine.runLoopStepAsync(SimulationTime(1));
+        // Leave the scope without runLoopStepAsyncGet(): the destructor has to wait for the step
+    }
+    ASSERT_TRUE(stepDone.load());
+}
