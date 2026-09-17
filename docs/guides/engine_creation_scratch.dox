@@ -167,7 +167,8 @@ before the simulation loop starts.
 
 - EngineClient::runLoopStepCallback() - callback method called from EngineClient::runLoopStepAsync() which should request the server to run a simulation step with specified timestep.
 The request is performed in a separate thread. This allows all engines to run their steps in parallel. EngineClientInterface::runLoopStepAsyncGet()
-must be used to join the threads again.
+must be used to join the threads again. Because the callback runs on a worker thread and uses members of the class implementing it, that class must also
+call EngineClient::joinLoopStepThread() from its destructor; otherwise a step still in flight when the client is destroyed keeps using members that are already gone.
 
 - EngineClientInterface::shutdown() - should request the server to perform cleanup, before the server process is requested to terminate.
 
