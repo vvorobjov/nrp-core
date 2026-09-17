@@ -46,6 +46,9 @@ public:
             : EngineClient(configHolder, std::move(launcher))
     {}
 
+    ~TestEngine() override
+    { this->joinLoopStepThread(); }
+
     virtual void initialize() override
     {}
 
