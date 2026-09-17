@@ -362,6 +362,20 @@ class EngineClient
         }
 
         /*!
+         * \brief Blocks until the loop step started by runLoopStepAsync(), if any, has completed
+         *
+         * runLoopStepCallback() runs on a worker thread and uses members of the class implementing it. Those
+         * members are destroyed before the _loopStepThread future of this base class implicitly joins the
+         * thread, so every class overriding runLoopStepCallback() must call this method from its destructor.
+         * An exception raised by the step stays in the future and is discarded together with it.
+         */
+        void joinLoopStepThread()
+        {
+            if(this->_loopStepThread.valid())
+                this->_loopStepThread.wait();
+        }
+
+        /*!
         * \brief Attempts to set a default value for a property in the engine configuration. If the property has been already
          * set either in the engine configuration file or from the engine schema, its value is not overwritten.
         * \param key Name of the property to be set
@@ -379,6 +393,8 @@ class EngineClient
          * This function is going to be called by runLoopStep using std::async.
          * It will be executed by a worker thread, which allows for runLoopStepFunction
          * from multiple engines to run simultaneously.
+         *
+         * The implementing class must call joinLoopStepThread() from its destructor.
          *
          * \param[in] timeStep A time step by which the simulation should be advanced
          * \return Engine time after loop step execution
