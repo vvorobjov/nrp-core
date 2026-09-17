@@ -261,7 +261,18 @@ class EngineClient
             setDefaultProperty<nlohmann::json>("EngineExtraConfigs", nlohmann::json(json::value_t::object));
         }
 
-        ~EngineClient() override = default;
+        ~EngineClient() override
+        {
+            // Reaching this with a step still running means the class implementing runLoopStepCallback()
+            // skipped joinLoopStepThread(): its members are already destroyed and the worker may be using
+            // them. The future below joins the thread anyway, too late to prevent the corruption, so at
+            // least name the culprit instead of failing silently somewhere inside the worker.
+            if(this->_loopStepThread.valid() &&
+               this->_loopStepThread.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+                NRPLogger::error("Engine \"" + this->engineName() + "\" is being destroyed while a loop step is "
+                                 "still running. The class implementing runLoopStepCallback() must call "
+                                 "joinLoopStepThread() in its destructor.");
+        }
 
         const std::string engineName() const override final
         { return this->engineConfig().at("EngineName"); }
@@ -367,7 +378,12 @@ class EngineClient
          * runLoopStepCallback() runs on a worker thread and uses members of the class implementing it. Those
          * members are destroyed before the _loopStepThread future of this base class implicitly joins the
          * thread, so every class overriding runLoopStepCallback() must call this method from its destructor.
-         * An exception raised by the step stays in the future and is discarded together with it.
+         * An exception raised by the step stays in the future and is discarded together with it, which is why
+         * this waits instead of calling get(): get() would rethrow, and throwing from a destructor terminates.
+         *
+         * The wait is unbounded, as EngineCommandTimeout defaults to 0 (no RPC deadline): an engine server that
+         * never answers blocks teardown. That is not new, the future destructor in ~EngineClient blocked the
+         * same way; bounding it needs a cancellable RPC context and is a separate change.
          */
         void joinLoopStepThread()
         {
