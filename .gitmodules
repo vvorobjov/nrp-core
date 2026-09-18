@@ -1,7 +1,3 @@
-[submodule "nrp-core-msgs"]
-	path = src/nrp-core-msgs
-	url = https://bitbucket.org/hbpneurorobotics/nrp-core-msgs.git
-	branch = development
 [submodule "polimi_controller_v1"]
 	path = experiments/polimi_controller_v1
 	url = https://bitbucket.org/hbpneurorobotics/polimi_controller_v1.git

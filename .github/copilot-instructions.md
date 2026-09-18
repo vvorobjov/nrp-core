@@ -122,7 +122,7 @@ Exception: work against an already-existing ticket the user names up front.
 4. Add a matching plugin-registration line so `NRPCoreSim` can load it at
    runtime (see [src/nrp_general_library/plugin_system/](../src/nrp_general_library/plugin_system/)).
 5. Regenerate/check protobuf stubs — proto lives in the
-   [src/nrp-core-msgs/](../src/nrp-core-msgs/) submodule.
+   [src/nrp-core-msgs/](../src/nrp-core-msgs/) tree (vendored in-tree, not a submodule).
 
 ### "Fix bug X"
 
@@ -190,13 +190,13 @@ workflow that:
 - Don't commit generated files (`build/`, `.pytest_cache/`,
   `generatedJUnitFiles/`). They're already in `.dockerignore` and
   `.gitignore`; don't remove those entries.
-- Don't rename or delete the `src/nrp-core-msgs` submodule.
+- Don't rename or delete the vendored `src/nrp-core-msgs` tree (proto + ROS message definitions).
 
 ## PR / commit checklist
 
 Before Copilot's suggested change is ready for review, confirm:
 
-- [ ] `git submodule status` shows `nrp-core-msgs` at the expected commit.
+- [ ] `src/nrp-core-msgs/protobuf` and `src/nrp-core-msgs/nrp_ros_msgs` are present (vendored in-tree, not a submodule).
 - [ ] `bash .ci/00-dev-rebuild-and-test.sh` exits 0 (or, if running the
       lower-level scripts by hand inside the container:
       `11-prepare-build.sh` + `20-build.sh` + `30-run-tests.sh` all green).
