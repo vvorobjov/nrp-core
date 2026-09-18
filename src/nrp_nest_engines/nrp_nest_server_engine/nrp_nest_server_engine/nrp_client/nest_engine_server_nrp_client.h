@@ -71,7 +71,6 @@ class NestEngineServerNRPClient
         /*!
          * \brief Future used during asynchronous execution of the runStep function
          */
-        std::future<bool> _runStepThread;
 
         /*!
          * \brief Contains populations returned by server after loading the brain file
