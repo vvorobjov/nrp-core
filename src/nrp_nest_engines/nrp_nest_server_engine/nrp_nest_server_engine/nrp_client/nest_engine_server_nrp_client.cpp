@@ -365,7 +365,10 @@ NestEngineServerNRPClient::NestEngineServerNRPClient(nlohmann::json &config, Pro
 }
 
 NestEngineServerNRPClient::~NestEngineServerNRPClient()
-{}
+{
+    // runLoopStepCallback() may still be reading _serverAddress on the worker thread
+    this->joinLoopStepThread();
+}
 
 void NestEngineServerNRPClient::initialize()
 {
