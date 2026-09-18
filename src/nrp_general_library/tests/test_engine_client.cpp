@@ -137,6 +137,9 @@ public:
 
     ~SlowStepEngine() override
     {
+        // Handshake: the step only proceeds once the destructor has started, so it is
+        // guaranteed to be in flight here without depending on wall-clock timing
+        _dtorEntered = true;
         this->joinLoopStepThread();
         // _payload is destroyed right after this body; the step must not be using it anymore
         EXPECT_TRUE(_stepDone.load());
@@ -162,7 +165,10 @@ public:
 
     SimulationTime runLoopStepCallback(SimulationTime timeStep) override
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        // Wait for the destructor to start (bounded, so a misuse of this engine cannot hang the suite)
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while(!_dtorEntered.load() && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::yield();
         const auto payloadSize = _payload.size();
         _stepDone = true;
         return timeStep + SimulationTime(payloadSize);
@@ -170,6 +176,7 @@ public:
 
 private:
     std::atomic<bool> &_stepDone;
+    std::atomic<bool> _dtorEntered{false};
     std::string _payload;
 };
 
@@ -185,5 +192,7 @@ TEST(EngineClientTest, DestructorJoinsInFlightLoopStep)
         engine.runLoopStepAsync(SimulationTime(1));
         // Leave the scope without runLoopStepAsyncGet(): the destructor has to wait for the step
     }
+    // The discriminating check is the EXPECT_TRUE inside ~SlowStepEngine (the base future joins
+    // unconditionally afterwards); this only confirms the step ran at all
     ASSERT_TRUE(stepDone.load());
 }
