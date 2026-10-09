@@ -69,10 +69,6 @@ class NestEngineServerNRPClient
     private:
 
         /*!
-         * \brief Future used during asynchronous execution of the runStep function
-         */
-
-        /*!
          * \brief Contains populations returned by server after loading the brain file
          *
          * The structure contains (population_name, [IDs]) pairs, which are returned
