@@ -7,6 +7,13 @@ import unittest
 from threading import Thread
 import json
 
+# The client default (10 s) effectively gives NRPCoreSim ~9 s to open its gRPC
+# port (gRPC reconnect backoff). One CI run saw a server stay alive without
+# listening for the whole window in setUp with the plain config (EBR2-128);
+# 60 s absorbs slow process/plugin/Python start-up. A dead server still
+# returns from the wait loop at the next 1 s tick.
+SERVER_TIMEOUT = 60
+
 
 class TestNrpServer(unittest.TestCase):
 
@@ -16,7 +23,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
 
     def tearDown(self) -> None:
@@ -117,7 +124,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_done_flag.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         self.nrp_core.initialize()
 
@@ -190,7 +197,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_loopback.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         data = {}
         data["test_data"] = 888
@@ -215,7 +222,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_trajectory_json.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         self.nrp_core.initialize()
 
@@ -236,7 +243,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_trajectory_timeout.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         self.nrp_core.initialize()
 
@@ -257,7 +264,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_trajectory_proto.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         self.nrp_core.initialize()
 
@@ -291,7 +298,7 @@ class TestNrpServer(unittest.TestCase):
         address = "localhost:50051"
         config_file = "simulation_config_trajectory_mixed.json"
 
-        self.nrp_core = NrpCore(address, config_file=config_file)
+        self.nrp_core = NrpCore(address, config_file=config_file, server_timeout=SERVER_TIMEOUT)
 
         self.nrp_core.initialize()
 
