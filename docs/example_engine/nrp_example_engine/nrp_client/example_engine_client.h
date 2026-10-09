@@ -25,6 +25,13 @@ class ExampleEngineClient
         ExampleEngineClient(nlohmann::json &config, ProcessLauncherInterface::unique_ptr &&launcher);
 
         /*!
+         * \brief Joins a loop step that may still be running when the client is destroyed
+         *
+         * Every class implementing runLoopStepCallback() needs this, see EngineClient::joinLoopStepThread()
+         */
+        ~ExampleEngineClient() override;
+
+        /*!
          * \brief Initializes the engine
          *
          * The function will be called at the start of the simulation. It should

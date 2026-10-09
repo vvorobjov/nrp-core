@@ -119,6 +119,12 @@ class EngineGrpcClient
                 _protoOpsStr.pop_back();
         }
 
+        ~EngineGrpcClient() override
+        {
+            // runLoopStepCallback() may still be inside _stub->runLoopStep() on the worker thread
+            this->joinLoopStepThread();
+        }
+
         virtual pid_t launchEngine() override
         {
             NRP_LOGGER_TRACE("{} called", __FUNCTION__);

@@ -22,6 +22,10 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include "nrp_general_library/engine_interfaces/engine_client_interface.h"
 #include "nrp_general_library/utils/json_schema_utils.h"
 #include "nrp_general_library/process_launchers/process_launcher_basic.h"
@@ -41,6 +45,9 @@ public:
     TestEngine(nlohmann::json  &configHolder, ProcessLauncherInterface::unique_ptr &&launcher)
             : EngineClient(configHolder, std::move(launcher))
     {}
+
+    ~TestEngine() override
+    { this->joinLoopStepThread(); }
 
     virtual void initialize() override
     {}
@@ -116,4 +123,76 @@ TEST(EngineClientTest, EngineExtraConfigs)
 
 }
 
+// Engine whose loop step is slow and touches a member of the implementing class, mirroring the protocol
+// clients (gRPC stub / REST server address) that runLoopStepCallback() dereferences on the worker thread
+class SlowStepEngine
+        : public EngineClient<SlowStepEngine, TestEngineConfigConst::EngineSchema>
+{
+public:
+    SlowStepEngine(nlohmann::json &configHolder, std::atomic<bool> &stepDone)
+            : EngineClient(configHolder, nullptr),
+              _stepDone(stepDone),
+              _payload(256, 'x')
+    {}
 
+    ~SlowStepEngine() override
+    {
+        // Handshake: the step only proceeds once the destructor has started, so it is
+        // guaranteed to be in flight here without depending on wall-clock timing
+        _dtorEntered = true;
+        this->joinLoopStepThread();
+        // _payload is destroyed right after this body; the step must not be using it anymore
+        EXPECT_TRUE(_stepDone.load());
+    }
+
+    void initialize() override
+    {}
+
+    void reset() override
+    {}
+
+    void shutdown() override
+    {}
+
+    const std::vector<std::string> engineProcStartParams() const override
+    { return std::vector<std::string>(); }
+
+    void sendDataPacksToEngine(const datapacks_set_t &) override
+    {}
+
+    datapacks_vector_t getDataPacksFromEngine(const datapack_identifiers_set_t &) override
+    { return datapacks_vector_t(); }
+
+    SimulationTime runLoopStepCallback(SimulationTime timeStep) override
+    {
+        // Wait for the destructor to start (bounded, so a misuse of this engine cannot hang the suite)
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while(!_dtorEntered.load() && std::chrono::steady_clock::now() < deadline)
+            std::this_thread::yield();
+        const auto payloadSize = _payload.size();
+        _stepDone = true;
+        return timeStep + SimulationTime(payloadSize);
+    }
+
+private:
+    std::atomic<bool> &_stepDone;
+    std::atomic<bool> _dtorEntered{false};
+    std::string _payload;
+};
+
+TEST(EngineClientTest, DestructorJoinsInFlightLoopStep)
+{
+    nlohmann::json config;
+    config["EngineName"] = "Name";
+    config["EngineType"] = "EngineType";
+
+    std::atomic<bool> stepDone(false);
+    {
+        SlowStepEngine engine(config, stepDone);
+        engine.runLoopStepAsync(SimulationTime(1));
+        // Leave the scope without runLoopStepAsyncGet(): the destructor has to wait for the step
+    }
+    // The discriminating check is the EXPECT_TRUE inside ~SlowStepEngine (the base future joins
+    // unconditionally afterwards); this only confirms the step ran at all
+    ASSERT_TRUE(stepDone.load());
+}

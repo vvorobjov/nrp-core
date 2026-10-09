@@ -6,6 +6,11 @@ ExampleEngineClient::ExampleEngineClient(nlohmann::json &config, ProcessLauncher
 
 }
 
+ExampleEngineClient::~ExampleEngineClient()
+{
+    this->joinLoopStepThread();
+}
+
 void ExampleEngineClient::initialize()
 {
 

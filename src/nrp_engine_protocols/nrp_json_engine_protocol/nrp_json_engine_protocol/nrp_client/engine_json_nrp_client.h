@@ -76,7 +76,11 @@ class EngineJSONNRPClient
             RestClientSetup::ensureInstance();
         }
 
-        virtual ~EngineJSONNRPClient() override = default;
+        virtual ~EngineJSONNRPClient() override
+        {
+            // runLoopStepCallback() may still be reading _serverAddress on the worker thread
+            this->joinLoopStepThread();
+        }
 
         virtual pid_t launchEngine() override
         {
