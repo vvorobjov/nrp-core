@@ -206,6 +206,9 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME NrpServer COMMAND python3 -m pytest server.py "${CMAKE_SOURCE_DIR}/examples/status_function_test" --junitxml "${CMAKE_BINARY_DIR}/xml/NrpServer.xml" WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     set_property(TEST NrpServer PROPERTY ENVIRONMENT
         "PYTHONPATH=${PYTHONPATH}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}/${PYTHON_MODULE_NAME}:${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_DIR_REL}")
+    # ~65 s baseline plus one SERVER_TIMEOUT (60 s) wait would trip the 120 s
+    # ctest cap of the CI and dev gates (EBR2-78 override mechanism).
+    set_property(TEST NrpServer PROPERTY TIMEOUT 300)
 endif()
 
 ##########################################
